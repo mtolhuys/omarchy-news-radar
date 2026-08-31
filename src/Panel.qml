@@ -786,15 +786,13 @@ Item {
               }
             }
 
-            RowLayout {
+            Flow {
               Layout.fillWidth: keySurface.narrow
-              Layout.alignment: Qt.AlignRight
+              Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
+              Layout.preferredHeight: childrenRect.height
+              implicitWidth: childrenRect.width
+              implicitHeight: childrenRect.height
               spacing: Style.spacing.controlGap
-
-              Item {
-                visible: keySurface.narrow
-                Layout.fillWidth: true
-              }
 
               RadarButton {
                 label: root.refreshing ? "Refreshing…" : "Refresh"
@@ -980,7 +978,7 @@ Item {
 
                 RadarButton {
                   id: settingsButton
-                  Layout.alignment: Qt.AlignRight
+                  Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
                   label: "⚙ Settings"
                   selected: root.filterSummary !== "No extra filters"
                   onClicked: root.showSectionSettings()
