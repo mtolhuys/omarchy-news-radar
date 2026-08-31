@@ -28,6 +28,7 @@ from .client import (
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
 from .errors import RadarError
 from .io import atomic_write_json
+from .local_edition import import_local_edition
 from .publisher import publish
 from .validation import parse_timestamp, validate_feed
 
@@ -140,6 +141,8 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
     site.add_argument("--feed", type=Path, default=ROOT / "tests/fixtures/feed-valid.json")
     site.add_argument("--output", type=Path, default=ROOT / "dist")
     commands.add_parser("validate-feed").add_argument("path", type=Path)
+    local_import = commands.add_parser("import-local-edition")
+    local_import.add_argument("--edition", type=Path, required=True)
     collect = commands.add_parser("collect")
     collect.add_argument("--snapshot", type=Path, default=ROOT / "state/source-snapshot.json")
     collect.add_argument("--output", type=Path, default=ROOT / "dist")
@@ -169,10 +172,14 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             result = publish(feed, args.output, source_revision=revision)
             save_snapshot(args.snapshot, snapshot)
             _print({"status": "ok", "events": len(feed["events"]), **result})
-        else:
+        elif args.command == "validate-feed":
             value = json.loads(args.path.read_text(encoding="utf-8"))
             validate_feed(value, now=parse_timestamp(value["generatedAt"]), public_only=True)
             _print({"status": "ok"})
+        else:
+            require_unprivileged()
+            imported = import_local_edition(args.edition)
+            _print({"status": "ok", **{key: value for key, value in imported.items() if key != "feed"}})
         return 0
     except (RadarError, OSError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)

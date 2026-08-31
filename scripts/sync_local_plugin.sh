@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Explicitly install or fast-forward the local Omarchy plugin clone to this
-# repository's current committed HEAD. This intentionally does not pull the
-# source checkout, install the optional shortcut, or overwrite another origin.
+# repository's current committed HEAD, then build and import one real local
+# edition. This intentionally does not pull the source checkout, install the
+# optional shortcut, or overwrite another origin.
 
 set -euo pipefail
 
@@ -16,7 +17,8 @@ fail() {
   exit 1
 }
 
-for command in git jq omarchy-plugin-add omarchy-plugin-update omarchy-plugin-validate; do
+for command in cp find git jq mktemp omarchy-plugin-add omarchy-plugin-disable omarchy-plugin-enable \
+  omarchy-plugin-update omarchy-plugin-validate python3 realpath; do
   command -v "$command" >/dev/null 2>&1 || fail "required command is unavailable: $command"
 done
 
@@ -63,5 +65,56 @@ INSTALLED_COMMIT=$(git -C "$TARGET" rev-parse --verify HEAD)
 [[ -z $(git -C "$TARGET" status --porcelain --untracked-files=normal) ]] ||
   fail "installed plugin is not clean after synchronization"
 
+# The early panel-only preview was stored in plugins[]. Omarchy correctly
+# stores the paired panel/bar-widget in bar.layout.*, but updating a manifest
+# cannot infer that one-time location migration. Move only the exact unmodified
+# owned entry through Omarchy's lifecycle; every other shape fails closed.
+SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
+if [[ -f $SHELL_CONFIG ]]; then
+  LEGACY_COUNT=$(jq -r --arg id "$PLUGIN_ID" \
+    '[.plugins[]? | select((if type == "object" then .id else . end) == $id)] | length' \
+    "$SHELL_CONFIG") || fail "cannot inspect Omarchy shell configuration"
+  BAR_COUNT=$(jq -r --arg id "$PLUGIN_ID" \
+    '[.bar.layout.left[]?, .bar.layout.center[]?, .bar.layout.right[]? | select((if type == "object" then .id else . end) == $id)] | length' \
+    "$SHELL_CONFIG") || fail "cannot inspect Omarchy bar configuration"
+  if (( LEGACY_COUNT > 0 && BAR_COUNT > 0 )); then
+    fail "plugin has ambiguous legacy and bar placements; refusing to change shell configuration"
+  elif (( LEGACY_COUNT > 1 )); then
+    fail "plugin has multiple legacy placements; refusing to change shell configuration"
+  elif (( LEGACY_COUNT == 1 )); then
+    jq -e --arg id "$PLUGIN_ID" \
+      'any(.plugins[]?; type == "object" and .id == $id and (keys | sort) == ["id"])' \
+      "$SHELL_CONFIG" >/dev/null ||
+      fail "legacy plugin placement has custom fields; refusing to replace it"
+    omarchy-plugin-disable "$PLUGIN_ID"
+    omarchy-plugin-enable "$PLUGIN_ID" --section right
+    "$TARGET/bin/news-radar-client" set-preferences --bar-visible true --images-visible true >/dev/null
+    printf 'Migrated the panel-only preview to the default-on right-side newspaper.\n'
+  fi
+fi
+
+WORK_DIR=$(mktemp -d)
+cleanup() {
+  [[ -n ${WORK_DIR:-} && -d $WORK_DIR ]] && find "$WORK_DIR" -depth -delete
+}
+trap cleanup EXIT
+
+if [[ ${OMARCHY_NEWS_RADAR_TEST_MODE:-} == 1 && -n ${OMARCHY_NEWS_RADAR_TEST_EDITION:-} ]]; then
+  EDITION=$(realpath -e -- "$OMARCHY_NEWS_RADAR_TEST_EDITION") ||
+    fail "test edition directory does not exist"
+else
+  cp -- "$SOURCE_ROOT/state/source-snapshot.json" "$WORK_DIR/source-snapshot.json"
+  EDITION="$WORK_DIR/edition"
+  PYTHONPATH="$SOURCE_ROOT" SOURCE_REVISION="$SOURCE_COMMIT" \
+    python3 -B -m radar collect --snapshot "$WORK_DIR/source-snapshot.json" --output "$EDITION"
+fi
+
+IMPORT_RESULT=$(PYTHONPATH="$SOURCE_ROOT" python3 -B -m radar import-local-edition --edition "$EDITION") ||
+  fail "real local edition could not be imported; the prior cache was preserved"
+[[ $(jq -r '.sourceRevision // empty' <<<"$IMPORT_RESULT") == "$SOURCE_COMMIT" ]] ||
+  fail "local edition revision does not match the synchronized source commit"
+
 printf 'News Radar local plugin is current at %s.\n' "$SOURCE_COMMIT"
-printf 'Rerun make local-latest after each committed source change.\n'
+printf 'Imported %s real stories with %s validated images from the live sources.\n' \
+  "$(jq -r '.events' <<<"$IMPORT_RESULT")" "$(jq -r '.images' <<<"$IMPORT_RESULT")"
+printf 'Rerun make local-latest whenever you want a newly collected local edition.\n'

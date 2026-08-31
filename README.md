@@ -54,7 +54,9 @@ When you deliberately want to run this checkout on your daily desktop, use:
 make local-latest
 ```
 
-The first run validates, clones, and enables the current committed checkout. Later runs fast-forward that installed clone and ask Omarchy to rescan it. “Latest” means this repository's current committed `HEAD`: the command never runs `git pull`, ignores uncommitted work by refusing to continue, preserves a deliberately disabled plugin, leaves `Super+Alt+N` untouched, and refuses to repoint an installation that came from another local checkout or public URL. Run it again after each commit; it is intentionally not a background updater.
+The first run validates, clones, and enables the current committed checkout. It then collects a real edition from the live allowlisted Omarchy release and marketplace sources, validates and mirrors eligible marketplace images, and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, rescan it, and collect a new local edition. The panel labels this mode “Local live edition” because the public Pages feed does not exist yet; rerun the command whenever you want newer news.
+
+“Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the new visual defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
 ## Install after publication
 
@@ -100,7 +102,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `/`: focus local search; `Escape` returns to panel navigation.
 - `o` or `Enter`: open the selected validated HTTPS source.
 - `s`: save or unsave the selected story locally.
-- `r`: refresh once while preserving the last-known-good edition.
+- `r`: refresh the published feed once while preserving the last-known-good edition; an unpublished local edition instead explains that `make local-latest` collects the next update.
 - `Escape` or `q`: close the panel.
 - `Tune`: enable/disable the top-bar newspaper and images, and save up to twelve comma-separated private interests.
 
@@ -121,6 +123,8 @@ Radar uses:
 
 ```text
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json
+${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/
+${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json
 ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json
 ```
 

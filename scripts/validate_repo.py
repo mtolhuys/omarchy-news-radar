@@ -130,12 +130,24 @@ def validate_manifest() -> None:
         "status --porcelain --untracked-files=normal",
         "installed plugin tracks a non-local origin",
         'omarchy-plugin-update "$PLUGIN_ID" --yes',
+        "import-local-edition",
+        "Migrated the panel-only preview",
     ):
         if required_text not in local_sync:
             fail(f"local-latest sync lacks required safety contract: {required_text}")
     for forbidden_text in ("git pull", "git reset", "news-radar-shortcut install"):
         if forbidden_text in local_sync:
             fail(f"local-latest sync contains forbidden mutation: {forbidden_text}")
+
+    local_edition = (ROOT / "radar" / "local_edition.py").read_text(encoding="utf-8")
+    for required_text in (
+        "BUILD_INFO_PATTERN",
+        "inspect_raster",
+        "hashlib.sha256(data).hexdigest() != source.stem",
+        "atomic_write_json(marker_path(environment), marker)",
+    ):
+        if required_text not in local_edition:
+            fail(f"local edition import lacks required validation contract: {required_text}")
 
 
 def validate_workflows() -> None:

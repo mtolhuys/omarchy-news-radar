@@ -305,12 +305,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.1.0+panel-2/news-radar-0.1.0+panel-3/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.1.0+panel-3/news-radar-0.1.0+panel-4/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell toggle io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.0+panel-3" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.0+panel-4" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1

@@ -14,6 +14,7 @@ from .constants import FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VE
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
+from .local_edition import local_edition_metadata, local_image_url
 from .model import project_section
 from .state import (
     RefreshLock,
@@ -38,7 +39,15 @@ def read_model(environment: Mapping[str, str] | None = None, *, now: datetime | 
     state, quarantined = load_state(environment)
     if feed is None:
         return response("first-use", feed=None, state=state, quarantine=quarantined)
-    return response("cached", feed=feed, state=state, quarantine=quarantined)
+    local = local_edition_metadata(feed, environment)
+    return response(
+        "cached",
+        feed=feed,
+        state=state,
+        quarantine=quarantined,
+        editionMode="local" if local else "published",
+        localEdition=local,
+    )
 
 
 def _test_feed(environment: Mapping[str, str]) -> dict[str, Any] | None:
@@ -89,6 +98,15 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
     env = dict(environment or os.environ)
     clock = now or datetime.now(timezone.utc)
     cached = load_feed(env, now=clock)
+    local = local_edition_metadata(cached, env)
+    if local is not None:
+        return response(
+            "local-current",
+            feed=cached,
+            cachePreserved=True,
+            editionMode="local",
+            localEdition=local,
+        )
     try:
         with RefreshLock(env):
             candidate = _test_feed(env)
@@ -96,7 +114,7 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
                 candidate = _fetch_feed()
             validated = validate_feed(candidate, now=clock, public_only=True)
             saved = save_feed(validated, env, now=clock)
-        return response("current", feed=saved, cachePreserved=False)
+        return response("current", feed=saved, cachePreserved=False, editionMode="published")
     except (RadarError, OSError) as exc:
         reason = exc.reason if isinstance(exc, FetchError) else "validation-failed" if isinstance(exc, ValidationError) else "local-error"
         invalid_candidate = isinstance(exc, ValidationError) or (
@@ -255,6 +273,7 @@ def projection_model(
     seen = state["seenThrough"]
     env = dict(environment or os.environ)
     image_base = FEED_URL
+    local = local_edition_metadata(feed, env)
     if env.get("OMARCHY_NEWS_RADAR_TEST_MODE") == "1" and env.get("OMARCHY_NEWS_RADAR_TEST_FEED_URL"):
         image_base = env["OMARCHY_NEWS_RADAR_TEST_FEED_URL"]
     decorated: list[dict[str, Any]] = []
@@ -264,7 +283,12 @@ def projection_model(
         item["isSaved"] = item["id"] in saved_ids
         image = item.get("image")
         if state["preferences"]["imagesVisible"] and isinstance(image, dict) and "path" in image:
-            item["imageUrl"] = urljoin(image_base, image["path"])
+            if local is not None:
+                cached_url = local_image_url(str(image["path"]), env)
+                if cached_url:
+                    item["imageUrl"] = cached_url
+            else:
+                item["imageUrl"] = urljoin(image_base, image["path"])
         decorated.append(item)
     return response("ok", section=section, events=decorated, counts=counts, seenThrough=seen)
 

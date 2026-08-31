@@ -135,3 +135,11 @@
 **Why:** A development installation should be easy to keep current without an invisible updater, a symlink outside the validated plugin contract, or an automatic pull that changes the owner's source branch.
 
 **Consequence:** First use clones and enables this checkout; later uses preserve enablement state and update through Omarchy's official Git-managed lifecycle. Dirty source or installed trees, symlinks, missing origins, public origins, and different local origins are refused. The command never installs the optional shortcut, pulls the source repository, or runs in the background.
+
+## D018 — Build a real private edition for an unpublished local installation
+
+**Decision:** `make local-latest` collects the allowlisted production sources at invocation time and imports the publisher's validated feed and mirrored content-addressed rasters into private local cache. A digest-bound marker identifies this explicitly as “Local live edition.”
+
+**Why:** The public Pages origin deliberately does not exist before owner-authorized publication. Leaving a deterministic acceptance fixture in a daily installation makes preferences appear broken and misrepresents synthetic/local test stories as current ecosystem news.
+
+**Consequence:** Local import revalidates canonical feed bytes, build digest/revision, and every referenced raster before atomically replacing the feed. The client uses private file URLs only for those imported assets, suppresses the nonexistent public refresh, and explains that rerunning the make target collects the next edition. Fresh visual preferences remain on by default. The exact unmodified panel-only preview placement migrates once through Omarchy's disable/enable lifecycle to the default right-side bar; custom, duplicate, ambiguous, or deliberately disabled modern configurations are not overwritten.

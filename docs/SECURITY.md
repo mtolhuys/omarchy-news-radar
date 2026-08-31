@@ -50,7 +50,9 @@ At most one refresh helper belongs to one panel or bar instance, and the atomic 
 
 ## Local checkout synchronization
 
-`make local-latest` is an explicit owner action, not an automatic updater. It validates a clean source checkout and then uses Omarchy's Git-managed plugin lifecycle to install or fast-forward only an installation whose local origin resolves to that exact checkout. It refuses dirty source or installed trees, symlinks, non-Git installs, missing origins, public origins, and different local origins. It never pulls or rewrites the source branch, repoints an installation, installs the optional shortcut, enables a deliberately disabled existing plugin, or creates a background process.
+`make local-latest` is an explicit owner action, not an automatic updater. It validates a clean source checkout and then uses Omarchy's Git-managed plugin lifecycle to install or fast-forward only an installation whose local origin resolves to that exact checkout. It refuses dirty source or installed trees, symlinks, non-Git installs, missing origins, public origins, and different local origins. It never pulls or rewrites the source branch, repoints an installation, installs the optional shortcut, enables a deliberately disabled modern installation, or creates a background process.
+
+The same command collects one edition into a private temporary directory using only the ordinary allowlisted publisher sources. Import requires canonical validated feed bytes, exact build digest and source revision, and complete byte/format/dimension/hash validation for every referenced raster before the cached feed changes. The one-time panel-only preview migration acts only on one exact unmodified owned `plugins[]` entry with no bar entry; it uses Omarchy disable/enable commands, restores the newly introduced bar/image defaults once, and refuses custom, duplicate, or ambiguous placement.
 
 ## Shortcut installer
 

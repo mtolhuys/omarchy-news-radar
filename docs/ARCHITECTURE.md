@@ -28,6 +28,8 @@ Omarchy shell
 
 The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API. The visible bar widget owns one due-checked refresh timer inside the existing shell process.
 
+The unpublished local-development route reuses the collector and publisher directly. `make local-latest` builds into a temporary directory from the tracked source baseline, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images into the user's private cache. A matching bounded marker makes the client project those assets as local file URLs and suppresses the nonexistent Pages refresh. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+
 ## Target repository layout
 
 The implementation should converge on this shape without preserving empty or redundant directories merely to match the diagram:
@@ -147,10 +149,14 @@ Follow XDG ownership:
 | Path | Purpose |
 | --- | --- |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Seen-through timestamp, saved items, local preferences/interests, and schema version |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/diagnostics.log` | Optional bounded local diagnostics without feed bodies or private paths |
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.
+
+An imported local marker is honored only when its SHA-256 matches the canonical cached feed. Every referenced local raster is re-inspected for format, dimensions, static structure, byte bound, and content-addressed filename before the feed changes. Missing local image bytes produce text fallback rather than a direct upstream request.
 
 ## Collector
 

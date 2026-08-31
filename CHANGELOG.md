@@ -8,5 +8,5 @@
 - Add the default-on optional newspaper bar indicator with unread/health state, zero-gap hiding, panel restoration, and due-checked refresh.
 - Mirror bounded official marketplace thumbnails to content-addressed same-origin assets and replace fixture-built local output with a real production collection.
 - Add an explicit, reversible helper for conflict-free `Super+Alt+N` setup without replacing Editor.
-- Add `make local-latest` for safe, explicit synchronization of a clean local checkout through Omarchy's supported plugin lifecycle.
+- Add `make local-latest` for safe checkout synchronization, live local collection, validated private image import, and one-time panel-only newspaper migration through Omarchy's supported lifecycle.
 - Add offline source tests and disposable Plugin Lab acceptance scenarios.

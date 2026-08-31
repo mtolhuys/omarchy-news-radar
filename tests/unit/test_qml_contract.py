@@ -36,6 +36,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("TUNE YOUR RADAR", qml)
         self.assertIn("Story images", qml)
         self.assertIn("Top-bar newspaper", qml)
+        self.assertIn("No stories in this edition include a validated image.", qml)
+        self.assertIn("Local live edition", qml)
 
     def test_complete_keyboard_and_visible_state_labels_exist(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

@@ -80,10 +80,13 @@ Opening an original source is not required to mark the edition seen. Saved state
 | Filtered empty | Current filters match nothing | Clear filters |
 | Invalid feed | Rejects candidate, preserves cache, explains validation failure | Retry or inspect diagnostics |
 | No cache and failed | Gives a concise failure and direct retry action | Retry when online |
+| Local live edition | Shows an owner-built edition collected from live allowlisted sources, including the number of validated images available | Rerun `make local-latest` |
 
 ## Source opening
 
 Titles, summaries, tags, image alternatives, credits, and URLs are untrusted data. Display text is plain text. Source URLs appear as labels but open only through a dedicated button or keyboard action. The UI never renders remote HTML, Markdown, SVG, scripts, or embedded media. It loads images only from content-addressed paths in the validated feed, resolved against that feed's fixed origin; the publisher has already mirrored and inspected those raster bytes. Missing or failed imagery leaves the complete text story intact.
+
+The image preference always reports whether the current edition actually contains validated images. Turning it on when an edition has no images must not imply that an image is loading or available.
 
 ## Top-bar newspaper
 

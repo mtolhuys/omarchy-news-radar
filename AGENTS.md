@@ -74,7 +74,7 @@ make local-latest
 
 `make test` must be offline and deterministic. `make validate` must cover the plugin manifest when present, tracked-English policy, generated-file drift, Python syntax/types available without network installation, shell lint when available, and QML validation against the selected Omarchy source when available.
 
-`make local-latest` is an explicit owner-run desktop mutation, never an agent-run host test. It may install or fast-forward only the Git-managed local plugin whose origin is this exact clean checkout; it must not pull the source checkout, repoint another origin, overwrite local changes, install the shortcut, or create a watcher/daemon.
+`make local-latest` is an explicit owner-run desktop mutation, never an agent-run host test. It may install or fast-forward only the Git-managed local plugin whose origin is this exact clean checkout, collect the allowlisted live sources into a temporary tree, and import only a fully validated digest-bound edition and its inspected content-addressed images. It must not pull the source checkout, repoint another origin, overwrite local changes, install the shortcut, or create a watcher/daemon. The panel-only preview placement may migrate once only when its owned shell entry is exact and unmodified.
 
 Runtime acceptance belongs in the Plugin Lab:
 

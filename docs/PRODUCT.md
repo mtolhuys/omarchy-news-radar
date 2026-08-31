@@ -38,6 +38,8 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 10. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
 11. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
 
+Before the public static feed is authorized and published, an owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts, imports the complete validated edition and mirrored images into private cache, and labels the result “Local live edition.” Test fixtures must never masquerade as this mode.
+
 ## Version 1 capabilities
 
 ### Activity

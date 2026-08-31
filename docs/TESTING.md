@@ -15,7 +15,7 @@ make site
 
 `make test` is offline, deterministic, creates only temporary synthetic state, and covers all Python, publisher, helper, shortcut, and pure presentation-model tests. `make validate` checks repository and plugin contracts without enabling the plugin.
 
-`make local-latest` is not a source gate: it installs or updates the plugin and therefore belongs only in a disposable Plugin Lab run during development. The local-sync scenario must prove first install/enable, exact origin and revision, fast-forward update, idempotence, dirty-source refusal, preservation of an installed checkout, and clean removal.
+`make local-latest` is not a source gate: it installs or updates the plugin, may migrate the old preview placement, and performs live network collection. It therefore belongs only in a disposable Plugin Lab run during development. The deterministic local-sync scenario injects a fully generated test edition through the explicit test boundary and must prove first install/enable, exact origin and revision, pictured local import, file-URL projection, default preferences, fast-forward update, idempotence, dirty-source refusal, exact panel-only placement migration, and clean removal.
 
 ## Unit coverage
 
@@ -58,6 +58,7 @@ make site
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, and no-cache failure.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
 - Indicator unread/health output, due-check age bounds, local bar/image preferences, interests, and no preference data in network requests.
+- Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, no public refresh while local mode is active, and purge of imported assets.
 
 ### Shortcut helper
 

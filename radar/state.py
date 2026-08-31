@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import stat
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -203,7 +204,12 @@ def purge(environment: Mapping[str, str] | None = None) -> list[str]:
     state_directory = state_root(environment)
     refuse_symlink(cache_root(environment))
     refuse_symlink(state_directory)
-    candidates = [feed_path(environment), user_state_path(environment), diagnostic_path(environment)]
+    candidates = [
+        feed_path(environment),
+        cache_root(environment) / "local-edition.json",
+        user_state_path(environment),
+        diagnostic_path(environment),
+    ]
     if state_directory.exists():
         candidates.extend(sorted(state_directory.glob("state.json.corrupt-*")))
     for path in candidates:
@@ -213,4 +219,18 @@ def purge(environment: Mapping[str, str] | None = None) -> list[str]:
             removed.append(path.name)
         except FileNotFoundError:
             pass
+    asset_root = cache_root(environment) / "assets"
+    refuse_symlink(asset_root)
+    image_root = asset_root / "images"
+    refuse_symlink(image_root)
+    if image_root.exists():
+        for path in sorted(image_root.iterdir()):
+            refuse_symlink(path)
+            info = path.stat()
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+                raise StorageError("cached image directory contains an unowned entry")
+            path.unlink()
+            removed.append(path.name)
+        image_root.rmdir()
+        asset_root.rmdir()
     return sorted(removed)

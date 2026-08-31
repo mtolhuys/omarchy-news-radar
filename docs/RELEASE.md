@@ -37,6 +37,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Shortcut install/remove preserves unrelated Lua exactly and rolls back on reload or config error.
 - Disable and removal preserve user state; explicit purge removes only validated Radar-owned paths.
 - No runtime package installation, privilege escalation, arbitrary command, or background daemon exists.
+- The unpublished local path identifies itself as a local live edition, revalidates imported feed/images, never presents fixtures as current news, and migrates only the exact old panel-only placement.
 
 ### Visual and accessibility
 

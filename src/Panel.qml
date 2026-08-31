@@ -17,7 +17,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-2"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-3"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -42,6 +42,7 @@ Item {
   property string statusDetail: "No validated cache yet. Radar will try one bounded refresh."
   property string sourceHealth: "No validated source status"
   property string generatedAt: ""
+  property string editionMode: "published"
   property bool refreshing: false
   property bool pendingProjection: false
   property bool preferencesOpen: false
@@ -60,6 +61,7 @@ Item {
   readonly property string currentSection: sections[sectionIndex].id
   readonly property var selectedStory: selectedIndex >= 0 && selectedIndex < stories.length
     ? stories[selectedIndex] : null
+  readonly property int availableImageCount: countEditionImages(cachedFeed)
   readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
     || installedProc.running || stateProc.running || openSourceProc.running
 
@@ -78,6 +80,8 @@ Item {
       selectedIsNew: selectedStory ? selectedStory.isNew === true : false,
       storyCount: stories.length,
       status: feedStatus,
+      editionMode: editionMode,
+      availableImageCount: availableImageCount,
       refreshing: refreshing,
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
@@ -95,6 +99,14 @@ Item {
     if (process.running) process.running = false
     process.command = [helperPath].concat(argumentsList)
     Qt.callLater(function() { if (root.opened || process === stateProc || process === openSourceProc) process.running = true })
+  }
+
+  function countEditionImages(feed) {
+    if (!feed || !Array.isArray(feed.events)) return 0
+    var count = 0
+    for (var index = 0; index < feed.events.length; index++)
+      if (feed.events[index] && feed.events[index].image) count++
+    return count
   }
 
   function open(payloadJson) {
@@ -141,6 +153,7 @@ Item {
   function handleRead(raw) {
     var result = RadarModel.parseResponse(raw)
     userState = result.state || userState
+    editionMode = String(result.editionMode || "published")
     if (!interestField.activeFocus)
       interestField.text = (userState.preferences && userState.preferences.interests || []).join(", ")
     if (result.feed) {
@@ -164,13 +177,17 @@ Item {
   function handleRefresh(raw) {
     var result = RadarModel.parseResponse(raw)
     refreshing = false
+    editionMode = String(result.editionMode || editionMode)
     if (result.feed) {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
       sourceHealth = RadarModel.sourceHealth(result.feed)
       requestProjection()
     }
-    if (result.status === "current") {
+    if (result.status === "local-current") {
+      feedStatus = "Local live edition"
+      statusDetail = "Collected from the live official sources by make local-latest. Run it again whenever you want a newer local edition."
+    } else if (result.status === "current") {
       feedStatus = sourceHealth.indexOf("Partial") === 0 ? "Source partial" : "Current"
       statusDetail = sourceHealth.indexOf("Partial") === 0
         ? "The valid edition is readable; unavailable sources are named above."
@@ -681,7 +698,7 @@ Item {
                 }
 
                 Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.image
+                  visible: !!root.selectedStory && !!root.selectedStory.imageUrl
                   width: parent.width
                   text: visible ? "IMAGE  " + root.selectedStory.image.credit : ""
                   textFormat: Text.PlainText
@@ -847,6 +864,20 @@ Item {
                   selected: root.preferences.imagesVisible
                   onClicked: root.setBooleanPreference("imagesVisible", !root.preferences.imagesVisible)
                 }
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: root.preferences.imagesVisible
+                  ? root.availableImageCount > 0
+                    ? root.availableImageCount + " validated marketplace images are available in this edition."
+                    : "No stories in this edition include a validated image."
+                  : "Images are hidden; every story remains available as text."
+                textFormat: Text.PlainText
+                color: Color.muted
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
               }
 
               Text {
