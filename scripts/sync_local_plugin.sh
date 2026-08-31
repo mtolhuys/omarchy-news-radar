@@ -115,6 +115,6 @@ IMPORT_RESULT=$(PYTHONPATH="$SOURCE_ROOT" python3 -B -m radar import-local-editi
   fail "local edition revision does not match the synchronized source commit"
 
 printf 'News Radar local plugin is current at %s.\n' "$SOURCE_COMMIT"
-printf 'Imported %s real stories with %s validated images from the live sources.\n' \
+printf 'Imported %s validated stories with %s validated images.\n' \
   "$(jq -r '.events' <<<"$IMPORT_RESULT")" "$(jq -r '.images' <<<"$IMPORT_RESULT")"
 printf 'Rerun make local-latest whenever you want a newly collected local edition.\n'
