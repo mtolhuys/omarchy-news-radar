@@ -6,7 +6,7 @@
 
 omarchy_host_test() {
   local product_root lab_root start_epoch before_hash after_hash before_change_count
-  local helper shortcut plugin_dir viewport_width viewport_height monitor_name bar_x bar_y
+  local helper shortcut plugin_dir viewport_width viewport_height monitor_name bar_x bar_y tune_x tune_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -121,7 +121,10 @@ omarchy_host_test() {
   wait_for_guest_state "Tune Your Radar is visibly open" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true'" || return 1
   capture_console "success-news-radar-00-tune-hidden"
-  qmp_pointer_tap "$viewport_width" "$viewport_height" $((viewport_width / 2 + 260)) $((viewport_height / 2 - 55)) left
+  tune_x="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar tuneNewspaperGeometry '' | jq -r 'select(.visible == true) | (.x + (.width / 2) | floor)'")" || return 1
+  tune_y="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar tuneNewspaperGeometry '' | jq -r 'select(.visible == true) | (.y + (.height / 2) | floor)'")" || return 1
+  [[ $tune_x =~ ^[0-9]+$ && $tune_y =~ ^[0-9]+$ ]] || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$tune_x" "$tune_y" left
   wait_for_guest_state "panel switch restores the newspaper" 15 ssh_session \
     "jq -e '.preferences.barVisible == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
      omarchy-shell shell debugBarGeometry | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .visible == true and .width > 0)'" || return 1
@@ -305,12 +308,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.1.0+panel-3/news-radar-0.1.0+panel-4/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.1.0+panel-4/news-radar-0.1.0+panel-5/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell toggle io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.0+panel-4" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.0+panel-5" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1

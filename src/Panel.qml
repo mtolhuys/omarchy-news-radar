@@ -17,7 +17,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-3"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-4"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -87,6 +87,17 @@ Item {
       searchFocused: searchField.activeFocus,
       sessionThrough: sessionThrough,
       preferencesOpen: preferencesOpen
+    })
+  }
+
+  function tuneNewspaperGeometry() {
+    var point = barPreferenceButton.mapToItem(null, 0, 0)
+    return JSON.stringify({
+      x: point.x,
+      y: point.y,
+      width: barPreferenceButton.width,
+      height: barPreferenceButton.height,
+      visible: preferencesOpen && barPreferenceButton.visible
     })
   }
 
@@ -844,6 +855,7 @@ Item {
                   font.pixelSize: Style.font.body
                 }
                 RadarButton {
+                  id: barPreferenceButton
                   label: root.preferences.barVisible ? "On" : "Off"
                   selected: root.preferences.barVisible
                   onClicked: root.setBooleanPreference("barVisible", !root.preferences.barVisible)
