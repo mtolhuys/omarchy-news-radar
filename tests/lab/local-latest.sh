@@ -36,7 +36,7 @@ omarchy_host_test() {
      (jq -e '.preferences.barVisible == true and .preferences.imagesVisible == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" 2>/dev/null || \
       test ! -e \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\") && \
      jq -e '.sourceRevision == \"$first_commit\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/local-edition.json\" && \
-     $helper project --section plugins --installed-json '[]' --query '' | jq -e 'any(.events[]; (.imageUrl // \"\") | startswith(\"file://\"))'" || return 1
+     $helper project --section front-page --installed-json '[]' --query '' | jq -e 'any(.events[]; (.imageUrl // \"\") | startswith(\"file://\"))'" || return 1
   ssh_session "omarchy-shell shell debugBarGeometry" >"$RUN_DIR/news-radar-local-latest-bar.json" || return 1
   jq -e 'any(.[]; .id == "io.github.mtolhuys.news-radar" and .section == "right" and .visible == true and .width > 0)' \
     "$RUN_DIR/news-radar-local-latest-bar.json" >/dev/null || return 1
