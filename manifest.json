@@ -6,6 +6,7 @@
     "panel": "src/Panel.qml"
   },
   "id": "io.github.mtolhuys.news-radar",
+  "icon": "assets/io.github.mtolhuys.news-radar.svg",
   "kinds": [
     "panel",
     "bar-widget"

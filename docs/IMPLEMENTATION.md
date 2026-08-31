@@ -48,7 +48,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 2. Create `src/Panel.qml` and supporting components with an explicit runtime build identity.
 3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin and explicit-interest matching, deterministic front page, safe feed-image projection, icon metrics, human-facing plugin pages, search, selection, save, source opening, Tune preferences, per-section appearance/fixed-source/filter options, finite load-more pagination, and state labels.
 4. Implement the complete keyboard map and pointer equivalents, including `Tab`/`Shift+Tab` section cycling.
-5. Implement a normal compositor-managed movable/resizable/minimizable/maximizable `FloatingWindow`, ordinary `Alt+Tab`, responsive one/two-column presentation, and explicit selected-state contrast without changing semantic order.
+5. Implement a normal compositor-managed movable/resizable/maximizable `FloatingWindow`, ordinary `Alt+Tab`, responsive one/two-column presentation, and explicit selected-state contrast without changing semantic order. Omit the unreliable minimize control.
 6. Add `manifest.json` only after both entry points exist and validation passes.
 
 **Done when:** Source tests prove structure and a fixture-driven component can represent every UX state without remote HTML, arbitrary image URLs, hard-coded theme values, or network-blocked opening.

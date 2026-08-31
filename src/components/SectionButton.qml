@@ -22,7 +22,7 @@ FocusScope {
     return "transparent"
   }
 
-  implicitHeight: Math.max(Style.spacing.controlHeight, labelText.implicitHeight + Style.spacing.controlPaddingY * 2)
+  implicitHeight: Math.max(Style.spacing.controlHeight, iconText.implicitHeight + Style.spacing.controlPaddingY * 2)
   activeFocusOnTab: true
 
   Accessible.role: Accessible.RadioButton
@@ -42,18 +42,32 @@ FocusScope {
     borderSpec: Border.controlSpec(root.activeFocus ? "focus" : root.selected ? "selected" : "normal", Color.foreground, Color.accent, Color.urgent)
 
     Text {
-      id: labelText
+      id: iconText
       anchors.left: parent.left
       anchors.leftMargin: Style.spacing.controlPaddingX
       anchors.verticalCenter: parent.verticalCenter
-      text: (root.icon ? root.icon + "  " : "") + root.label
+      text: root.icon
+      textFormat: Text.PlainText
+      color: root.selected || root.activeFocus || hover.hovered ? Color.accent : Color.popups.text
+      font.family: Style.font.family
+      font.pixelSize: Style.font.iconLarge
+      width: Style.font.iconLarge + Style.spacing.controlGap
+      horizontalAlignment: Text.AlignHCenter
+    }
+
+    Text {
+      id: labelText
+      anchors.left: iconText.right
+      anchors.leftMargin: Style.spacing.controlGap
+      anchors.verticalCenter: parent.verticalCenter
+      text: root.label
       textFormat: Text.PlainText
       color: Color.popups.text
       font.family: Style.font.family
       font.pixelSize: Style.font.bodySmall
       font.bold: root.selected
       elide: Text.ElideRight
-      width: parent.width - countText.width - Style.spacing.controlPaddingX * 3
+      width: parent.width - anchors.leftMargin - iconText.width - countText.width - Style.spacing.controlPaddingX * 3
     }
 
     Text {

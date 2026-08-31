@@ -63,7 +63,7 @@ omarchy_host_test() {
     geometry="$(awk '/^\{.*\}$/ { value = $0 } END { print value }' <<<"$geometry_raw")"
     [[ -n $geometry ]] || return 1
     [[ $(jq -r '.visible' <<<"$geometry") == true ]] || return 1
-    window_position="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | [.at[0], .at[1]] | @tsv'")" || return 1
+    window_position="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | [.at[0], .at[1]] | @tsv'")" || return 1
     read -r window_x window_y <<<"$window_position"
     local_x="$(jq -r '(.x + (.width / 2) | floor)' <<<"$geometry")" || return 1
     local_y="$(jq -r '(.y + (.height / 2) | floor)' <<<"$geometry")" || return 1
@@ -147,7 +147,7 @@ omarchy_host_test() {
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" >/dev/null || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
   wait_for_guest_state "left click on the newspaper opens the panel" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"Omarchy News Radar\")'" || {
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || {
       ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/news-radar-panel-load-failure-journal.log" 2>&1 || true
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-panel-load-failure-debug.log" 2>&1 || true
       capture_console "failure-news-radar-panel-load"
@@ -201,7 +201,7 @@ omarchy_host_test() {
   open_started_ms="$(date +%s%3N)"
   press meta_l-alt-n
   wait_for_guest_state "QMP Super+Alt+N opens the rendered Radar layer" 20 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"Omarchy News Radar\")'" || return 1
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
   wait_for_guest_state "first-use failure has visible deterministic recovery" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No cache and failed\" and .storyCount == 0'" || {
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-debug-first-use.json" 2>&1 || true
@@ -213,7 +213,7 @@ omarchy_host_test() {
   capture_console "success-news-radar-01-first-use"
   press esc
   wait_for_guest_state "Escape closes first use and leaves no helper" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
 
   log "Proving cached-first reading, offline preservation, and pointer close"
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
@@ -227,7 +227,7 @@ omarchy_host_test() {
   radar_control_geometry closeGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   if ! wait_for_guest_state "visible close control responds to QMP pointer input" 8 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"Omarchy News Radar\")'"; then
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'"; then
     press esc
     return 1
   fi
@@ -243,8 +243,8 @@ omarchy_host_test() {
 
   log "Proving normal window management, section tabs, metrics, and local filters"
   wait_for_guest_state "Radar is an independently resizable floating client" 10 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"Omarchy News Radar\" and .floating == true)'" || {
-      ssh_session "hyprctl -j clients | jq '.[] | select(.title == \"Omarchy News Radar\")'" \
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and .floating == true)'" || {
+      ssh_session "hyprctl -j clients | jq '.[] | select(.title == \"📰 Omarchy News Radar\")'" \
         >"$RUN_DIR/news-radar-window-state-failure.json" 2>&1 || true
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
         >"$RUN_DIR/news-radar-window-debug-failure.json" 2>&1 || true
@@ -267,18 +267,18 @@ omarchy_host_test() {
   wait_for_guest_state "rendered Restore control returns the normal window" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.maximized == false'" || return 1
 
-  window_before_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[0]'")" || return 1
-  window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .at[0]'")" || return 1
-  window_y="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .at[1]'")" || return 1
+  window_before_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .size[0]'")" || return 1
+  window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[0]'")" || return 1
+  window_y="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[1]'")" || return 1
   window_width="$window_before_width"
-  window_height="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[1]'")" || return 1
-  ssh_session "hyprctl -j clients | jq '.[] | select(.title == \"Omarchy News Radar\")'" \
+  window_height="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .size[1]'")" || return 1
+  ssh_session "hyprctl -j clients | jq '.[] | select(.title == \"📰 Omarchy News Radar\")'" \
     >"$RUN_DIR/news-radar-window-before-resize.json" || return 1
   qmp_pointer_drag "$viewport_width" "$viewport_height" \
     "$((window_x + window_width - 3))" "$((window_y + window_height / 2))" \
     "$((window_x + window_width - 123))" "$((window_y + window_height / 2))" || return 1
-  window_after_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[0]'")" || return 1
-  ssh_session "hyprctl -j clients | jq '.[] | select(.title == \"Omarchy News Radar\")'" \
+  window_after_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .size[0]'")" || return 1
+  ssh_session "hyprctl -j clients | jq '.[] | select(.title == \"📰 Omarchy News Radar\")'" \
     >"$RUN_DIR/news-radar-window-after-resize.json" || return 1
   if ((window_after_width >= window_before_width)); then
     log "Resize assertion failed: before=$window_before_width after=$window_after_width"
@@ -290,7 +290,7 @@ omarchy_host_test() {
     "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"'" || return 1
   press alt-tab
   wait_for_guest_state "Alt+Tab returns focus to the Radar toplevel" 10 ssh_session \
-    "hyprctl -j activewindow | jq -e '.title == \"Omarchy News Radar\"'" || return 1
+    "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"'" || return 1
 
   press tab
   wait_for_guest_state "Tab cycles to the next section" 10 ssh_session \
@@ -307,11 +307,11 @@ omarchy_host_test() {
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "plugin page opens the exact human-facing marketplace URL" 10 ssh_session \
     "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = 'https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.disk-lens'" || return 1
-  radar_control_geometry filterGeometry || return 1
+  radar_control_geometry settingsGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "cogwheel opens the current section options" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.filtersOpen == true and (.sectionSources | startswith(\"Omarchy Plugin Marketplace\"))'" || return 1
-  capture_console "success-news-radar-03-filter-options"
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true and (.sectionSources | startswith(\"Omarchy Plugin Marketplace\"))'" || return 1
+  capture_console "success-news-radar-03-settings-options"
 
   radar_control_geometry sectionNameGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
@@ -335,10 +335,10 @@ omarchy_host_test() {
   wait_for_guest_state "appearance reset restores only the selected section defaults" 10 ssh_session \
     "jq -e '.preferences.sectionProfiles.plugins == {name:\"Plugins\",icon:\"plugins\",tone:\"clear\"} and .preferences.sectionProfiles.core.name == \"Core\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
 
-  window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .at[0]'")" || return 1
-  window_y="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .at[1]'")" || return 1
-  window_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[0]'")" || return 1
-  window_height="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[1]'")" || return 1
+  window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[0]'")" || return 1
+  window_y="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[1]'")" || return 1
+  window_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .size[0]'")" || return 1
+  window_height="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .size[1]'")" || return 1
   settings_center_x=$((window_x + window_width / 2))
   settings_center_y=$((window_y + window_height / 2))
   qmp_pointer_scroll_down "$viewport_width" "$viewport_height" "$settings_center_x" "$settings_center_y" 8 || return 1
@@ -470,7 +470,7 @@ omarchy_host_test() {
   close_started_ms="$(date +%s%3N)"
   press esc
   wait_for_guest_state "close tears down every owned helper" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
   close_ready_ms="$(date +%s%3N)"
   shell_rss_closed="$(ssh_session "ps -o rss= -p \"\$(pgrep -n -u \"\$USER\" quickshell)\" | tr -d ' '")"
   [[ $projection_seconds =~ ^[0-9]+([.][0-9]+)?$ ]] || return 1

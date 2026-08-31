@@ -11,7 +11,7 @@ from typing import Any
 
 from .errors import RadarError
 
-WINDOW_TITLE = "Omarchy News Radar"
+WINDOW_TITLE = "📰 Omarchy News Radar"
 WINDOW_CLASS = "org.quickshell"
 ADDRESS_PATTERN = re.compile(r"0x[0-9a-fA-F]+")
 PROBE_ATTEMPTS = 10

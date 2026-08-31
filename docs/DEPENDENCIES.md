@@ -2,7 +2,7 @@
 
 ## Runtime platform
 
-Radar targets the maintained Omarchy Quattro third-party plugin contract selected by the disposable Plugin Lab: `schemaVersion: 1`, paired `panel` and `bar-widget` entry points, current shell-injected properties, current `Color`/`Style`/`Border` UI tokens, shell IPC, Hyprland, and Quickshell/QML modules shipped by Omarchy. The panel uses Quickshell's supported `FloatingWindow`, `minimumSize`, `minimized`, `maximized`, `startSystemMove()`, and `startSystemResize()` interfaces already exercised by current Omarchy source.
+Radar targets the maintained Omarchy Quattro third-party plugin contract selected by the disposable Plugin Lab: `schemaVersion: 1`, paired `panel` and `bar-widget` entry points, current shell-injected properties, current `Color`/`Style`/`Border` UI tokens, shell IPC, Hyprland, and Quickshell/QML modules shipped by Omarchy. The panel uses Quickshell's supported `FloatingWindow`, `minimumSize`, `maximized`, `startSystemMove()`, and `startSystemResize()` interfaces already exercised by current Omarchy source.
 
 A public minimum Omarchy release must not be claimed until clean-clone installation and runtime acceptance pass against that exact release.
 

@@ -112,7 +112,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
-8. `Tab` and `Shift+Tab` cycle sections; the cogwheel renames one section, selects a vetted icon and theme-derived background, displays its fixed sources and built-in rule, independently resets appearance and filters, and Load more expands a dense local projection without another feed request.
+8. `Tab` and `Shift+Tab` cycle sections; the Settings cogwheel renames one section, selects a large semantic icon and theme-derived background, displays its fixed sources and built-in rule, independently resets appearance and filters, and Load more expands a dense local projection without another feed request.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
 10. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.

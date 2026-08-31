@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+window-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+identity-2"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -24,7 +24,7 @@ Item {
 
   property bool opened: false
   property bool closingFromHost: false
-  readonly property string compositorWindowTitle: "Omarchy News Radar"
+  readonly property string compositorWindowTitle: "📰 Omarchy News Radar"
   property string sessionIdentity: ""
   property string sessionThrough: ""
   property var cachedFeed: null
@@ -60,7 +60,7 @@ Item {
   property bool refreshing: false
   property bool pendingProjection: false
   property bool preferencesOpen: false
-  property bool filtersOpen: false
+  property bool sectionSettingsOpen: false
   property string windowIntegrationStatus: "idle"
   property int totalStories: 0
   property bool hasMoreStories: false
@@ -128,7 +128,7 @@ Item {
       searchFocused: searchField.activeFocus,
       sessionThrough: sessionThrough,
       preferencesOpen: preferencesOpen,
-      filtersOpen: filtersOpen,
+      sectionSettingsOpen: sectionSettingsOpen,
       totalStories: totalStories,
       hasMoreStories: hasMoreStories,
       filterSummary: filterSummary,
@@ -140,7 +140,6 @@ Item {
       windowWidth: panelWindow.width,
       windowHeight: panelWindow.height,
       maximized: panelWindow.maximized,
-      minimized: panelWindow.minimized,
       windowIntegrationStatus: windowIntegrationStatus
     })
   }
@@ -159,7 +158,7 @@ Item {
 
   function maximizeGeometry() { return itemGeometry(maximizeButton, maximizeButton.visible) }
   function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
-  function filterGeometry() { return itemGeometry(filterButton, filterButton.visible) }
+  function settingsGeometry() { return itemGeometry(settingsButton, settingsButton.visible) }
   function loadMoreGeometry() {
     return itemGeometry(storyList.footerItem, !!storyList.footerItem && hasMoreStories)
   }
@@ -209,14 +208,14 @@ Item {
 
   function sectionIcon(iconId) {
     var icons = {
-      newspaper: "▤",
-      spark: "✦",
-      core: "◆",
-      plugins: "⬡",
-      community: "●",
-      saved: "★"
+      newspaper: "",
+      spark: "",
+      core: "",
+      plugins: "",
+      community: "",
+      saved: ""
     }
-    return icons[iconId] || "▤"
+    return icons[iconId] || ""
   }
 
   function open(payloadJson) {
@@ -228,7 +227,7 @@ Item {
     opened = true
     windowIntegrationStatus = "waiting"
     preferencesOpen = false
-    filtersOpen = false
+    sectionSettingsOpen = false
     panelWindow.visible = true
     selectedIndex = 0
     startProcess(windowProc, ["ensure-window-floating"])
@@ -263,7 +262,7 @@ Item {
     persistSeen()
     opened = false
     preferencesOpen = false
-    filtersOpen = false
+    sectionSettingsOpen = false
     stopOwnedProcesses()
     panelWindow.visible = false
     closingFromHost = false
@@ -275,8 +274,8 @@ Item {
   }
 
   function handleEscape() {
-    if (filtersOpen) {
-      filtersOpen = false
+    if (sectionSettingsOpen) {
+      sectionSettingsOpen = false
       navigationFocus.forceActiveFocus()
     } else if (preferencesOpen) {
       preferencesOpen = false
@@ -475,9 +474,9 @@ Item {
     Qt.callLater(function() { interestField.forceActiveFocus() })
   }
 
-  function showFilters() {
+  function showSectionSettings() {
     sectionNameField.text = String(currentProfile.name || "")
-    filtersOpen = true
+    sectionSettingsOpen = true
     Qt.callLater(function() { sectionNameField.forceActiveFocus() })
   }
 
@@ -639,7 +638,7 @@ Item {
       focus: true
       Keys.onEscapePressed: root.handleEscape()
       Keys.onPressed: function(event) {
-        if (root.filtersOpen || root.preferencesOpen) return
+        if (root.sectionSettingsOpen || root.preferencesOpen) return
         if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
           var backwards = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier)
           root.cycleSection(backwards ? -1 : 1)
@@ -714,6 +713,17 @@ Item {
             Layout.fillWidth: true
             spacing: Style.spacing.controlGap
 
+            Image {
+              Layout.preferredWidth: Style.space(42)
+              Layout.preferredHeight: Style.space(42)
+              source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
+              sourceSize: Qt.size(Style.space(84), Style.space(84))
+              fillMode: Image.PreserveAspectFit
+              mipmap: true
+              Accessible.role: Accessible.Graphic
+              Accessible.name: "Omarchy News Radar newspaper mark"
+            }
+
             Item {
               Layout.fillWidth: true
               implicitHeight: titleStack.implicitHeight
@@ -767,23 +777,6 @@ Item {
             RadarButton {
               label: "Tune"
               onClicked: root.showPreferences()
-            }
-
-            PanelActionButton {
-              id: minimizeButton
-              iconText: "−"
-              tooltipText: "Minimize"
-              foreground: Color.popups.text
-              fontFamily: Style.font.family
-              fontSize: Style.font.title
-              size: Style.spacing.controlHeight
-              bordered: true
-              focusable: true
-              Accessible.role: Accessible.Button
-              Accessible.name: tooltipText
-              Accessible.focusable: true
-              Accessible.onPressAction: clicked()
-              onClicked: panelWindow.minimized = true
             }
 
             PanelActionButton {
@@ -927,9 +920,19 @@ Item {
 
               RowLayout {
                 Layout.fillWidth: true
+
+                Text {
+                  text: root.sectionIcon(root.currentProfile.icon)
+                  textFormat: Text.PlainText
+                  color: Color.accent
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.iconLarge
+                  Accessible.ignored: true
+                }
+
                 Text {
                   Layout.fillWidth: true
-                  text: root.sectionIcon(root.currentProfile.icon) + "  " + root.currentProfile.name.toUpperCase()
+                  text: root.currentProfile.name.toUpperCase()
                   textFormat: Text.PlainText
                   color: Color.popups.text
                   font.family: Style.font.family
@@ -940,10 +943,10 @@ Item {
                 }
 
                 RadarButton {
-                  id: filterButton
-                  label: "⚙ Filters"
+                  id: settingsButton
+                  label: "⚙ Settings"
                   selected: root.filterSummary !== "No extra filters"
-                  onClicked: root.showFilters()
+                  onClicked: root.showSectionSettings()
                 }
 
                 RadarButton {
@@ -1376,10 +1379,10 @@ Item {
 
         Rectangle {
           anchors.fill: parent
-          visible: root.filtersOpen
+          visible: root.sectionSettingsOpen
           z: 21
           color: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.82)
-          MouseArea { anchors.fill: parent; onClicked: root.filtersOpen = false }
+          MouseArea { anchors.fill: parent; onClicked: root.sectionSettingsOpen = false }
 
           BorderSurface {
             anchors.centerIn: parent
@@ -1411,7 +1414,7 @@ Item {
                   id: filterDoneButton
                   label: "Done"
                   onClicked: {
-                    root.filtersOpen = false
+                    root.sectionSettingsOpen = false
                     navigationFocus.forceActiveFocus()
                   }
                 }
@@ -1485,34 +1488,40 @@ Item {
                     Layout.preferredHeight: childrenRect.height
                     spacing: Style.spacing.controlGap
 
-                    RadarButton {
-                      label: "▤ News"
+                    SectionIconChoice {
+                      iconText: root.sectionIcon("newspaper")
+                      label: "Newspaper"
                       selected: root.currentProfile.icon === "newspaper"
                       onClicked: root.updateSectionProfile("icon", "newspaper")
                     }
-                    RadarButton {
+                    SectionIconChoice {
                       id: sectionIconSparkButton
-                      label: "✦ Spark"
+                      iconText: root.sectionIcon("spark")
+                      label: "Target"
                       selected: root.currentProfile.icon === "spark"
                       onClicked: root.updateSectionProfile("icon", "spark")
                     }
-                    RadarButton {
-                      label: "◆ Core"
+                    SectionIconChoice {
+                      iconText: root.sectionIcon("core")
+                      label: "Core"
                       selected: root.currentProfile.icon === "core"
                       onClicked: root.updateSectionProfile("icon", "core")
                     }
-                    RadarButton {
-                      label: "⬡ Plugin"
+                    SectionIconChoice {
+                      iconText: root.sectionIcon("plugins")
+                      label: "Plugin"
                       selected: root.currentProfile.icon === "plugins"
                       onClicked: root.updateSectionProfile("icon", "plugins")
                     }
-                    RadarButton {
-                      label: "● People"
+                    SectionIconChoice {
+                      iconText: root.sectionIcon("community")
+                      label: "Community"
                       selected: root.currentProfile.icon === "community"
                       onClicked: root.updateSectionProfile("icon", "community")
                     }
-                    RadarButton {
-                      label: "★ Saved"
+                    SectionIconChoice {
+                      iconText: root.sectionIcon("saved")
+                      label: "Saved"
                       selected: root.currentProfile.icon === "saved"
                       onClicked: root.updateSectionProfile("icon", "saved")
                     }

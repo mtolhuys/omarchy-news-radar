@@ -22,7 +22,7 @@ def completed(stdout: str = "") -> subprocess.CompletedProcess[str]:
     return subprocess.CompletedProcess([], 0, stdout, "")
 
 
-def client(*, title: str = "Omarchy News Radar", floating: bool = False, address: str = "0x1") -> dict[str, object]:
+def client(*, title: str = "📰 Omarchy News Radar", floating: bool = False, address: str = "0x1") -> dict[str, object]:
     return {
         "title": title,
         "initialTitle": title,

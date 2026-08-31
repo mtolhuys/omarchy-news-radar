@@ -20,7 +20,7 @@ omarchy-shell shell toggle io.github.mtolhuys.news-radar
 
 ## Surface
 
-Version 1 is an on-demand normal desktop window paired with a default-on, optional top-bar newspaper. The panel entry point creates a compositor-managed `FloatingWindow` with a bounded minimum size. It is movable, resizable, minimizable, maximizable, and participates in ordinary `Alt+Tab`; closing it through window management follows the same state/process teardown as `Escape`.
+Version 1 is an on-demand normal desktop window paired with a default-on, optional top-bar newspaper. The panel entry point creates a compositor-managed `FloatingWindow` with a bounded minimum size. It is movable, resizable, maximizable, and participates in ordinary `Alt+Tab`; closing it through window management follows the same state/process teardown as `Escape`. Radar does not expose a minimize button because that action is unreliable in the supported hosted-window lifecycle.
 
 The panel has four stable visual zones:
 
@@ -63,7 +63,7 @@ Shortcuts must not fire while a text field is actively editing, except `Escape` 
 
 ## Section settings, filters, and pagination
 
-Each section exposes a cogwheel control. Its options screen permits a bounded plain-text display name, one icon from a closed six-item palette, and one background from a closed four-tone palette derived from current Omarchy colors. Appearance applies only to that section, persists privately, and has an exact per-section reset.
+Each section exposes a cogwheel named **Settings**. Its options screen permits a bounded plain-text display name, one large semantic icon from a closed six-item palette, and one background from a closed four-tone palette derived from current Omarchy colors. Appearance applies only to that section, persists privately, and has an exact per-section reset.
 
 The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Community into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 

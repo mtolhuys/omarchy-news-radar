@@ -14,7 +14,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - A documented IPC route keeps the panel reachable without the shortcut.
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
 - Front Page, For You, Core, Plugins, Community, and Saved match the implemented model.
-- The panel is a normal movable/resizable/minimizable/maximizable window, participates in `Alt+Tab`, and closes through one shell lifecycle.
+- The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
 - `Tab`/`Shift+Tab`, bounded per-section names/icons/theme-derived backgrounds, fixed-source disclosure, independent filters, exact resets, and finite Load more behavior match the local projection model.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.

@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -36,7 +37,7 @@ def tracked_files() -> list[Path]:
 
 def validate_tracked_text() -> None:
     text_suffixes = {
-        ".md", ".py", ".qml", ".js", ".json", ".xml", ".css", ".yml", ".yaml", ".sh", ".lua", ".toml", ""
+        ".md", ".py", ".qml", ".js", ".json", ".xml", ".svg", ".css", ".yml", ".yaml", ".sh", ".lua", ".toml", ""
     }
     forbidden_paths = ("/home/", "file://", ".qcow2", ".iso")
     for path in tracked_files():
@@ -102,6 +103,18 @@ def validate_manifest() -> None:
     entries = {name: ROOT / value for name, value in manifest["entryPoints"].items()}
     if not all(entry.is_file() for entry in entries.values()):
         fail("manifest entry point does not exist")
+    icon_value = manifest.get("icon")
+    if icon_value != "assets/io.github.mtolhuys.news-radar.svg":
+        fail("manifest icon identity is invalid")
+    icon_path = ROOT / icon_value
+    if not icon_path.is_file():
+        fail("manifest icon does not exist")
+    try:
+        icon_root = ET.fromstring(icon_path.read_text(encoding="utf-8"))
+    except (OSError, ET.ParseError) as exc:
+        fail(f"manifest icon is invalid SVG: {exc}")
+    if icon_root.tag != "{http://www.w3.org/2000/svg}svg" or icon_root.get("viewBox") != "0 0 128 128":
+        fail("manifest icon must be a bounded 128-unit SVG")
     qml = entries["panel"].read_text(encoding="utf-8")
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
         if required_text not in qml:
