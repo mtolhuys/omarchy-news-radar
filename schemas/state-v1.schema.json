@@ -1,0 +1,62 @@
+{
+  "$id": "https://mtolhuys.github.io/omarchy-news-radar/schemas/state-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "saved": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "occurredAt": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "type": "string"
+          },
+          "savedAt": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "type": "string"
+          },
+          "sourceUrl": {
+            "maxLength": 2048,
+            "pattern": "^https://",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "savedAt",
+          "title",
+          "sourceUrl",
+          "occurredAt",
+          "type"
+        ],
+        "type": "object"
+      },
+      "maxProperties": 250,
+      "propertyNames": {
+        "pattern": "^evt_[0-9a-f]{24}$"
+      },
+      "type": "object"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "seenThrough": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "seenThrough",
+    "saved"
+  ],
+  "title": "Omarchy News Radar local state v1",
+  "type": "object"
+}

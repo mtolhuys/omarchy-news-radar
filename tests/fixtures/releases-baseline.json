@@ -1,0 +1,22 @@
+[
+  {
+    "body": "## Omarchy 4.0.1\n\nThis maintenance release refines the Quattro shell and plugin lifecycle.",
+    "draft": false,
+    "html_url": "https://github.com/omacom/omarchy/releases/tag/v4.0.1",
+    "id": 379400001,
+    "name": "Omarchy 4.0.1",
+    "prerelease": false,
+    "published_at": "2026-08-27T12:00:00Z",
+    "tag_name": "v4.0.1"
+  },
+  {
+    "body": "A draft must never become a public event.",
+    "draft": true,
+    "html_url": "https://github.com/omacom/omarchy/releases/tag/v4.1.0-draft",
+    "id": 379400002,
+    "name": "Draft",
+    "prerelease": false,
+    "published_at": "2026-08-28T12:00:00Z",
+    "tag_name": "v4.1.0-draft"
+  }
+]

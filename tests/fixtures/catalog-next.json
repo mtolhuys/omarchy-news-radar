@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-08-31T13:59:00.000Z",
+  "mode": "production",
+  "plugins": [
+    {
+      "addedAt": "2026-08-01",
+      "category": "System",
+      "description": "Metadata wording changed without creating a separate event.",
+      "id": "io.github.mtolhuys.disk-lens",
+      "listedAt": "2026-08-01T00:00:00.000Z",
+      "name": "Omarchy Disk Lens",
+      "repo": "https://github.com/mtolhuys/omarchy-disk-lens",
+      "repositoryRelease": {
+        "tag": "v0.4.1",
+        "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.1"
+      },
+      "stars": 999,
+      "status": "Installable",
+      "tags": [
+        "storage",
+        "system"
+      ],
+      "verificationStatus": "verified",
+      "version": "0.4.1"
+    },
+    {
+      "addedAt": "2026-08-31",
+      "category": "Desktop",
+      "description": "A small workspace note panel.",
+      "id": "org.example.notes",
+      "listedAt": "2026-08-31T08:00:00.000Z",
+      "name": "Workspace Notes",
+      "repo": "https://github.com/example/omarchy-notes",
+      "status": "Installable",
+      "tags": [
+        "notes"
+      ],
+      "verificationStatus": "unverified",
+      "version": "0.1.0"
+    },
+    {
+      "addedAt": "2026-07-01",
+      "category": "Desktop",
+      "description": "A calm focus timer.",
+      "id": "org.example.focus",
+      "listedAt": "2026-07-01T00:00:00.000Z",
+      "name": "Focus",
+      "repo": "https://github.com/example/omarchy-focus",
+      "status": "Installable",
+      "tags": [
+        "focus"
+      ],
+      "verificationStatus": "unverified",
+      "version": "1.0.0"
+    }
+  ],
+  "stateSchemaVersion": 2,
+  "warnings": []
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "body": "## Omarchy 4.0.2\n\nThis release improves shell focus and third-party panel reload behavior.\n\n```sh\nunsafe-example\n```",
+    "draft": false,
+    "html_url": "https://github.com/omacom/omarchy/releases/tag/v4.0.2",
+    "id": 379486590,
+    "name": "Omarchy 4.0.2",
+    "prerelease": false,
+    "published_at": "2026-08-31T03:42:33Z",
+    "tag_name": "v4.0.2"
+  },
+  {
+    "body": "## Omarchy 4.0.1\n\nThis maintenance release refines the Quattro shell and plugin lifecycle.",
+    "draft": false,
+    "html_url": "https://github.com/omacom/omarchy/releases/tag/v4.0.1",
+    "id": 379400001,
+    "name": "Omarchy 4.0.1",
+    "prerelease": false,
+    "published_at": "2026-08-27T12:00:00Z",
+    "tag_name": "v4.0.1"
+  }
+]

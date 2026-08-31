@@ -1,6 +1,6 @@
 # Contributing
 
-Omarchy News Radar is specification-first and evidence-driven. Start with [`AGENTS.md`](AGENTS.md), then read the complete documentation set it requires before changing behavior.
+Omarchy News Radar is contract-first and evidence-driven. Start with [`AGENTS.md`](AGENTS.md), then read the complete documentation set it requires before changing behavior.
 
 ## Principles
 
@@ -14,7 +14,7 @@ Omarchy News Radar is specification-first and evidence-driven. Start with [`AGEN
 
 ## Local source work
 
-The implemented repository will expose:
+The repository exposes:
 
 ```bash
 make test

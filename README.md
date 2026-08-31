@@ -2,75 +2,128 @@
 
 > Press one key and catch up with what changed across Omarchy.
 
-Omarchy News Radar is a keyboard-first activity reader for meaningful Omarchy core releases, plugin additions and releases, verification changes, and selected community work. It turns a scattered ecosystem into a calm, source-linked “newspaper” without requiring another busy status-bar icon.
+Omarchy News Radar is a keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with a panel-only Omarchy plugin, a deterministic Python collector and publisher, a bounded static JSON/RSS/HTML edition, and a cached local reader that remains useful offline.
 
 ## Project status
 
-This repository currently contains the complete product and engineering specification. The implementation has not been built or released yet. Commands and installation examples described in the documentation are target contracts until the corresponding code and disposable-guest evidence exist.
+Version `0.1.0` is a complete local release candidate, not a public release. The source, tests, workflows, and disposable Plugin Lab scenario are implemented. The intended GitHub repository and Pages feed do not exist yet, so the public URL, public clean-clone proof, tag, release, and marketplace submission remain deliberately pending owner authorization.
 
-## Intended experience
+The main plugin declares only `panel`. Version 1 has no top-bar widget, hidden bar slot, daemon, notification, telemetry, account, analytics, AI summary, or plugin-management action. A future indicator remains a separate companion-plugin decision.
 
-The recommended shortcut is `Super+Shift+N`. Omarchy Quattro currently assigns that chord to Editor, so Radar treats setup as a deliberate reassignment rather than pretending the key is free. The helper requires explicit authorization, accepts only the exact audited default Editor case, refuses personal or ambiguous conflicts, and makes removal reveal the original default again.
+## What is included
 
-Pressing the shortcut opens a theme-native front page:
+- A standard-library Python collector for published Omarchy releases, bounded marketplace catalog diffs, and reviewed repository-owned community records.
+- A tracked normalized source snapshot with a rolling 90-day event ledger, silent first marketplace bootstrap, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
+- Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, a bounded archive projection, and build digest metadata.
+- A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
+- A theme-native QML panel with Front Page, For You, Core, Plugins, Community, Saved, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
+- A narrowly scoped shortcut helper that can replace only the exact audited default Omarchy Editor binding on `Super+Shift+N`, and only after the named authorization flag.
+- Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and eventual public-clone acceptance.
 
-- **Front Page** presents a small edition of the most consequential changes.
-- **For You** relates events to plugins installed on the current machine.
-- **Core** contains official Omarchy releases and compatibility-relevant changes.
-- **Plugins** contains new plugins, version changes, retirements, and verification changes.
-- **Community** contains manually accepted tutorials, showcases, and projects.
-- **Saved** contains local bookmarks.
+## Review the local candidate
 
-The panel renders cached data first, refreshes in the background, works offline with its last-known-good edition, and opens original sources only after an explicit user action.
+The four source gates are offline and do not activate desktop integration:
 
-## Why a panel rather than another bar widget?
-
-Omarchy desktops are already shortcut-heavy and top bars are often crowded. The version 1 plugin is therefore an on-demand `panel`, not a `bar-widget`. There is no required or invisible bar slot. A separate, truly optional indicator may be designed later if real usage proves it valuable.
-
-## System shape
-
-```text
-Official releases ───────┐
-Marketplace catalog ─────┼── deterministic collector ── versioned static feed
-Reviewed community links ┘                                  │
-                                                            ├── Omarchy panel
-                                                            ├── static website
-                                                            └── RSS/JSON consumers
+```bash
+make test
+make validate
+make feed-fixture
+make site
 ```
 
-The collector and static publisher are owned by this repository. The plugin consumes one bounded feed and keeps personal read state on the local machine. No cooperation from Omarchy core, the marketplace maintainers, or a newsletter operator is required for the product to work.
+Generated site output is written to ignored `dist/`. Desktop installation, enabling, shortcut changes, Hyprland reloads, rendered interaction, hot updates, and removal belong only in the disposable Omarchy Plugin Lab during development; see [`docs/TESTING.md`](docs/TESTING.md).
 
-## Design principles
+## Install after publication
 
-- Facts before volume.
-- Original sources before copied content.
-- Deterministic summaries before generated prose.
-- Local relevance before popularity.
-- Cached usefulness before network dependency.
-- Explicit setup before hidden system mutation.
-- Keyboard access before ornamental chrome.
-- Honest trust labels before unsupported safety claims.
+These commands become usable only after the owner creates and publishes the intended repository:
 
-## Documentation map
+```bash
+omarchy plugin add https://github.com/mtolhuys/omarchy-news-radar --enable --yes
+```
 
-- [`AGENTS.md`](AGENTS.md) — binding engineering contract for coding agents.
-- [`BUILD-PROMPT.md`](BUILD-PROMPT.md) — copy-ready handoff prompt for the implementation agent.
-- [`docs/PRODUCT.md`](docs/PRODUCT.md) — promise, scope, user journey, and non-goals.
-- [`docs/UX.md`](docs/UX.md) — newspaper interaction, keyboard model, states, and accessibility.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — plugin, collector, publisher, local state, and lifecycle.
-- [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) — versioned feed, event, and local-state schemas.
-- [`docs/SOURCES.md`](docs/SOURCES.md) — source adapters, diff semantics, failure handling, and bootstrap.
-- [`docs/CURATION.md`](docs/CURATION.md) — what counts as notable and how summaries remain trustworthy.
-- [`docs/SECURITY.md`](docs/SECURITY.md) — trust boundaries, URL handling, cache safety, and shortcut mutation.
-- [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — allowed runtime, development, and CI dependencies.
-- [`docs/TESTING.md`](docs/TESTING.md) — deterministic tests and disposable desktop acceptance.
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — settled architectural and product decisions.
-- [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) — ordered build plan and definitions of done.
-- [`docs/RELEASE.md`](docs/RELEASE.md) — evidence-driven release contract.
-- [`docs/RESEARCH.md`](docs/RESEARCH.md) — dated audit of current Omarchy and marketplace contracts.
+The panel is always reachable without changing a shortcut:
+
+```bash
+omarchy-shell shell toggle io.github.mtolhuys.news-radar
+```
+
+### Explicit shortcut reassignment
+
+Omarchy Quattro currently assigns `Super+Shift+N` to Editor. Radar does not silently take it. First inspect the exact source, personal configuration, and live action:
+
+```bash
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut status
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut install
+```
+
+The plain install is a read-only preview and exits with status `3` when it finds the unmodified Editor default. If the reported displacement is exactly Editor and you want that deliberate reassignment, run:
+
+```bash
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut install --replace-default-editor
+```
+
+The helper refuses personal, modified, multiple, unknown, symlinked, unowned, or ambiguous configuration. It creates a timestamped backup, writes one clearly marked `hl.unbind`/Radar binding block, reloads Hyprland, validates the live action and config errors, and rolls back on failure. There is no general force flag.
+
+To choose another free chord, do not use the replacement option. Add your own reviewed line to `~/.config/hypr/bindings.lua`, for example:
+
+```lua
+o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io.github.mtolhuys.news-radar")
+```
+
+## Panel controls
+
+- `1`–`6`: Front Page, For You, Core, Plugins, Community, Saved.
+- `j` / `k` or arrow keys: move the selected story.
+- `Home` / `End`: first or last story.
+- `/`: focus local search; `Escape` returns to panel navigation.
+- `o` or `Enter`: open the selected validated HTTPS source.
+- `s`: save or unsave the selected story locally.
+- `r`: refresh once while preserving the last-known-good edition.
+- `Escape` or `q`: close the panel.
+
+Installed plugin IDs are read locally through Omarchy shell IPC and used only for exact `For You` matching. They are never sent to the feed host.
+
+## Local data and removal
+
+Radar uses:
+
+```text
+${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json
+${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json
+```
+
+Normal disablement and removal preserve the cache, seen cutoff, and saved items. Remove in this order while the helper still exists:
+
+```bash
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut remove
+omarchy plugin remove io.github.mtolhuys.news-radar --yes
+```
+
+Removing the exact owned block reveals Omarchy’s upstream Editor action again. If you also want to delete Radar-owned cache, state, diagnostics, and quarantined state, run the explicit purge before removing the plugin:
+
+```bash
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-client purge
+```
+
+If the plugin is removed before its shortcut, the marked block is a harmless unresolved shell IPC action; remove only the block between the `OMARCHY NEWS RADAR MANAGED SHORTCUT` markers or reinstall the same plugin checkout and run `remove`.
+
+## Collection and publication
+
+Production collection is explicit and networked; ordinary tests never run it:
+
+```bash
+python3 -m radar collect --bootstrap-marketplace  # first successful baseline only
+python3 -m radar collect                          # later editions
+```
+
+The first successful marketplace run is intentionally silent for historical plugin listings. A failed adapter retains its prior normalized state and cannot manufacture additions, releases, or mass retirements.
+
+The Pages workflow keeps repository permissions read-only. Each manual publication uploads the updated `state/source-snapshot.json` as a separate run artifact. The owner must review, validate, and commit that artifact before the next publication; otherwise the next run is intentionally not considered an advanced source baseline. Exact first-publication steps are in [`docs/RELEASE.md`](docs/RELEASE.md) and the local evidence record.
+
+## Documentation
+
+Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, source, security, testing, implementation, decision, and release contracts live under [`docs/`](docs/). [`docs/RESEARCH.md`](docs/RESEARCH.md) records the dated Omarchy, shortcut, marketplace, and Plugin Lab audits.
 
 ## Independence
 
-The intended public repository is `github.com/mtolhuys/omarchy-news-radar`, with a GitHub Pages deployment generated from the same source. An official domain or organization transfer may happen later, but is not part of the architecture and is not required for launch.
-
-Omarchy News Radar is intended as an independent community project and must not imply official affiliation unless that status is explicitly granted later.
+Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.

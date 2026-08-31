@@ -1,0 +1,14 @@
+{
+  "author": "Maarten Tolhuijs",
+  "description": "A keyboard-first front page for meaningful Omarchy activity.",
+  "entryPoints": {
+    "panel": "src/Panel.qml"
+  },
+  "id": "io.github.mtolhuys.news-radar",
+  "kinds": [
+    "panel"
+  ],
+  "name": "Omarchy News Radar",
+  "schemaVersion": 1,
+  "version": "0.1.0"
+}

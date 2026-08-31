@@ -1,0 +1,12 @@
+/dist/
+/.coverage
+/htmlcov/
+/__pycache__/
+/**/*.pyc
+/.mypy_cache/
+/.pytest_cache/
+/.lab.env
+*.qcow2
+*.iso
+*.log
+*.corrupt-*

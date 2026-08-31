@@ -1,0 +1,300 @@
+{
+  "$id": "https://mtolhuys.github.io/omarchy-news-radar/schemas/feed-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "events": {
+      "items": {
+        "$ref": "#/$defs/event"
+      },
+      "maxItems": 500,
+      "type": "array"
+    },
+    "generatedAt": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "leadEventId": {
+      "$ref": "#/$defs/eventId"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/sourceHealth"
+      },
+      "maxItems": 3,
+      "type": "array"
+    },
+    "window": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "through": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "from",
+        "through"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "window",
+    "sources",
+    "events"
+  ],
+  "title": "Omarchy News Radar feed v1",
+  "type": "object",
+  "$defs": {
+    "event": {
+      "additionalProperties": true,
+      "properties": {
+        "classification": {
+          "additionalProperties": true,
+          "properties": {
+            "curated": {
+              "type": "boolean"
+            },
+            "section": {
+              "enum": [
+                "core",
+                "plugins",
+                "community"
+              ]
+            },
+            "significance": {
+              "enum": [
+                "routine",
+                "notable",
+                "critical"
+              ]
+            },
+            "tags": {
+              "items": {
+                "maxLength": 32,
+                "minLength": 1,
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "type": "string"
+              },
+              "maxItems": 12,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "section",
+            "significance",
+            "curated",
+            "tags"
+          ],
+          "type": "object"
+        },
+        "compatibility": {
+          "additionalProperties": true,
+          "properties": {
+            "basis": {
+              "enum": [
+                "declared",
+                "inferred-from-source",
+                "unknown"
+              ]
+            },
+            "channels": {
+              "items": {
+                "enum": [
+                  "quattro",
+                  "stable",
+                  "development"
+                ]
+              },
+              "maxItems": 8,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "channels",
+            "basis"
+          ],
+          "type": "object"
+        },
+        "discoveredAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "entity": {
+          "additionalProperties": true,
+          "properties": {
+            "id": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "omarchy",
+                "plugin",
+                "community"
+              ]
+            },
+            "name": {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            "repository": {
+              "$ref": "#/$defs/httpsUrl"
+            },
+            "version": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "name"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/eventId"
+        },
+        "occurredAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "source": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "maxLength": 60,
+              "minLength": 1,
+              "type": "string"
+            },
+            "url": {
+              "$ref": "#/$defs/httpsUrl"
+            }
+          },
+          "required": [
+            "label",
+            "url"
+          ],
+          "type": "object"
+        },
+        "summary": {
+          "maxLength": 400,
+          "minLength": 1,
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "trust": {
+          "additionalProperties": true,
+          "properties": {
+            "marketplace": {
+              "enum": [
+                "verified",
+                "reviewed",
+                "unverified",
+                "unknown",
+                "not-applicable"
+              ]
+            },
+            "securityAudit": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "marketplace",
+            "securityAudit"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "enum": [
+            "omarchy-released",
+            "plugin-added",
+            "plugin-released",
+            "plugin-retired",
+            "plugin-verification-changed",
+            "community-link"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "occurredAt",
+        "discoveredAt",
+        "title",
+        "summary",
+        "source",
+        "entity",
+        "classification",
+        "trust",
+        "compatibility"
+      ],
+      "type": "object"
+    },
+    "eventId": {
+      "pattern": "^evt_[0-9a-f]{24}$",
+      "type": "string"
+    },
+    "httpsUrl": {
+      "maxLength": 2048,
+      "pattern": "^https://",
+      "type": "string"
+    },
+    "sourceHealth": {
+      "additionalProperties": false,
+      "properties": {
+        "checkedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "id": {
+          "enum": [
+            "omarchy-releases",
+            "marketplace",
+            "community"
+          ]
+        },
+        "reason": {
+          "maxLength": 32,
+          "type": "string"
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "status": {
+          "enum": [
+            "current",
+            "not-modified",
+            "stale",
+            "failed"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "checkedAt",
+        "sourceUrl"
+      ],
+      "type": "object"
+    },
+    "timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  }
+}

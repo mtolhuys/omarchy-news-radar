@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-08-30T14:00:00.000Z",
+  "mode": "production",
+  "plugins": [
+    {
+      "addedAt": "2026-08-01",
+      "category": "System",
+      "description": "A native disk-usage dashboard.",
+      "id": "io.github.mtolhuys.disk-lens",
+      "listedAt": "2026-08-01T00:00:00.000Z",
+      "name": "Omarchy Disk Lens",
+      "repo": "https://github.com/mtolhuys/omarchy-disk-lens",
+      "repositoryRelease": {
+        "tag": "v0.4.0",
+        "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.0"
+      },
+      "status": "Installable",
+      "tags": [
+        "storage",
+        "system"
+      ],
+      "verificationStatus": "reviewed",
+      "version": "0.4.0"
+    },
+    {
+      "addedAt": "2026-07-01",
+      "category": "Desktop",
+      "description": "A calm focus timer.",
+      "id": "org.example.focus",
+      "listedAt": "2026-07-01T00:00:00.000Z",
+      "name": "Focus",
+      "repo": "https://github.com/example/omarchy-focus",
+      "status": "Installable",
+      "tags": [
+        "focus"
+      ],
+      "verificationStatus": "unverified",
+      "version": "1.0.0"
+    }
+  ],
+  "stateSchemaVersion": 2,
+  "warnings": []
+}

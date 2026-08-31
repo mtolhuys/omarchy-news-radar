@@ -1,0 +1,134 @@
+{
+  "events": [
+    {
+      "classification": {
+        "curated": false,
+        "section": "community",
+        "significance": "routine",
+        "tags": [
+          "guide",
+          "plugins"
+        ]
+      },
+      "compatibility": {
+        "basis": "declared",
+        "channels": [
+          "quattro"
+        ]
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "keyboard-first-plugin-workflow-2026",
+        "kind": "community",
+        "name": "Omarchy community"
+      },
+      "id": "evt_9c9e361197cc2dcf1c80f360",
+      "occurredAt": "2026-08-30T10:00:00Z",
+      "source": {
+        "label": "Community guide",
+        "url": "https://github.com/omacom/omarchy/wiki"
+      },
+      "summary": "A source-linked walkthrough shows how keyboard-first Omarchy plugin workflows fit the current shell lifecycle.",
+      "title": "A keyboard-first plugin workflow",
+      "trust": {
+        "marketplace": "not-applicable",
+        "securityAudit": false
+      },
+      "type": "community-link"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "core",
+        "significance": "routine",
+        "tags": [
+          "release"
+        ]
+      },
+      "compatibility": {
+        "basis": "declared",
+        "channels": [
+          "quattro"
+        ]
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "omarchy",
+        "kind": "omarchy",
+        "name": "Omarchy",
+        "repository": "https://github.com/omacom/omarchy",
+        "version": "v4.0.1"
+      },
+      "id": "evt_8e2429aa4a80339c5cd2ab2c",
+      "occurredAt": "2026-08-27T12:00:00Z",
+      "source": {
+        "label": "GitHub release",
+        "url": "https://github.com/omacom/omarchy/releases/tag/v4.0.1"
+      },
+      "summary": "This maintenance release refines the Quattro shell and plugin lifecycle.",
+      "title": "Omarchy v4.0.1",
+      "trust": {
+        "marketplace": "not-applicable",
+        "securityAudit": false
+      },
+      "type": "omarchy-released"
+    }
+  ],
+  "schemaVersion": 1,
+  "sources": {
+    "community": {
+      "recordIds": [
+        "keyboard-first-plugin-workflow-2026"
+      ]
+    },
+    "marketplace": {
+      "generatedAt": "2026-08-30T14:00:00Z",
+      "plugins": {
+        "io.github.mtolhuys.disk-lens": {
+          "absenceCount": 0,
+          "addedAt": "2026-08-01T00:00:00Z",
+          "category": "System",
+          "description": "A native disk-usage dashboard.",
+          "name": "Omarchy Disk Lens",
+          "repository": "https://github.com/mtolhuys/omarchy-disk-lens",
+          "retired": false,
+          "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.0",
+          "tags": [
+            "storage",
+            "system"
+          ],
+          "verification": "reviewed",
+          "version": "0.4.0"
+        },
+        "org.example.focus": {
+          "absenceCount": 0,
+          "addedAt": "2026-07-01T00:00:00Z",
+          "category": "Desktop",
+          "description": "A calm focus timer.",
+          "name": "Focus",
+          "repository": "https://github.com/example/omarchy-focus",
+          "retired": false,
+          "sourceUrl": "https://github.com/example/omarchy-focus",
+          "tags": [
+            "focus"
+          ],
+          "verification": "unverified",
+          "version": "1.0.0"
+        }
+      }
+    },
+    "omarchy-releases": {
+      "releases": {
+        "379400001": {
+          "id": "379400001",
+          "prerelease": false,
+          "publishedAt": "2026-08-27T12:00:00Z",
+          "summary": "This maintenance release refines the Quattro shell and plugin lifecycle.",
+          "tag": "v4.0.1",
+          "title": "Omarchy 4.0.1",
+          "url": "https://github.com/omacom/omarchy/releases/tag/v4.0.1"
+        }
+      }
+    }
+  }
+}

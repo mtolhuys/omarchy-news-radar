@@ -1,0 +1,133 @@
+"""Escaped JSON, RSS and static HTML publication."""
+
+from __future__ import annotations
+
+import hashlib
+import html
+import os
+import shutil
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping
+from xml.etree import ElementTree as ET
+
+from .io import canonical_json_bytes
+from .model import front_page
+from .validation import parse_timestamp, validate_feed
+
+CSP = "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+
+
+def render_rss(feed: Mapping[str, Any]) -> bytes:
+    validated = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
+    rss = ET.Element("rss", {"version": "2.0"})
+    channel = ET.SubElement(rss, "channel")
+    ET.SubElement(channel, "title").text = "Omarchy News Radar"
+    ET.SubElement(channel, "link").text = "https://mtolhuys.github.io/omarchy-news-radar/"
+    ET.SubElement(channel, "description").text = "Source-linked Omarchy ecosystem activity. Independent community project."
+    ET.SubElement(channel, "lastBuildDate").text = datetime.strptime(validated["generatedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+    for event in validated["events"]:
+        item = ET.SubElement(channel, "item")
+        ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = event["id"]
+        ET.SubElement(item, "title").text = event["title"]
+        ET.SubElement(item, "link").text = event["source"]["url"]
+        ET.SubElement(item, "description").text = event["summary"]
+        ET.SubElement(item, "pubDate").text = datetime.strptime(event["occurredAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+    ET.indent(rss, space="  ")
+    return b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(rss, encoding="utf-8") + b"\n"
+
+
+def _story(event: Mapping[str, Any], *, lead: bool = False) -> str:
+    title = html.escape(str(event["title"]))
+    summary = html.escape(str(event["summary"]))
+    source_label = html.escape(str(event["source"]["label"]))
+    source_url = html.escape(str(event["source"]["url"]), quote=True)
+    occurred = html.escape(str(event["occurredAt"]))
+    section = html.escape(str(event["classification"]["section"]))
+    trust = html.escape(str(event["trust"]["marketplace"]))
+    class_name = "story lead" if lead else "story"
+    return f'''<article class="{class_name}">
+  <p class="kicker">{section} · {occurred}</p>
+  <h2>{title}</h2>
+  <p>{summary}</p>
+  <p class="meta">Trust: {trust}</p>
+  <a href="{source_url}" rel="noopener noreferrer external">{source_label} →</a>
+</article>'''
+
+
+def render_html(feed: Mapping[str, Any]) -> bytes:
+    validated = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
+    edition = front_page(validated["events"])
+    stories = "\n".join(_story(event, lead=index == 0) for index, event in enumerate(edition))
+    health = ", ".join(f"{html.escape(source['id'])}: {html.escape(source['status'])}" for source in validated["sources"])
+    generated = html.escape(validated["generatedAt"])
+    page = f'''<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="{html.escape(CSP, quote=True)}">
+  <meta name="referrer" content="no-referrer">
+  <title>Omarchy News Radar</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="alternate" type="application/rss+xml" title="Omarchy News Radar" href="feed.xml">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Independent community project</p>
+    <h1>Omarchy News Radar</h1>
+    <p class="deck">A calm, source-linked edition of meaningful Omarchy activity.</p>
+    <p class="health">Generated {generated} · {health}</p>
+  </header>
+  <main>{stories if stories else '<p class="empty">This edition contains no events.</p>'}</main>
+  <footer><a href="events.json">JSON feed</a> · <a href="feed.xml">RSS</a></footer>
+</body>
+</html>
+'''
+    return page.encode("utf-8")
+
+
+SITE_CSS = b'''*{box-sizing:border-box}body{margin:0 auto;max-width:1120px;padding:3rem 1.25rem;background:#101315;color:#e7e7e2;font:16px/1.6 ui-monospace,monospace}header{border-bottom:2px solid #e7e7e2;margin-bottom:2rem;padding-bottom:2rem}h1{font-size:clamp(2.5rem,8vw,5.5rem);letter-spacing:-.08em;line-height:.88;margin:.3rem 0 1rem}.eyebrow,.kicker,.meta,.health{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a3}.deck{font-size:1.25rem;max-width:46rem}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#4a5053}.story{background:#101315;padding:1.5rem}.story.lead{grid-column:1/-1;padding:2.5rem}.story h2{font-size:1.55rem;line-height:1.1}.lead h2{font-size:clamp(2rem,5vw,3.8rem)}a{color:#e7e7e2;text-underline-offset:.2em}footer{padding:2rem 0}.empty{background:#101315;padding:2rem}@media(max-width:700px){body{padding:2rem 1rem}main{display:block}.story{border-bottom:1px solid #4a5053}.story.lead{padding:1.5rem}}@media(prefers-color-scheme:light){body,.story,.empty{background:#f2f0e9;color:#181a1b}main{background:#aaa}.eyebrow,.kicker,.meta,.health{color:#596064}a{color:#181a1b}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}\n'''
+
+
+def publish(feed: Mapping[str, Any], destination: Path, *, source_revision: str = "unknown") -> dict[str, str]:
+    validated = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
+    parent = destination.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f".{destination.name}.", dir=parent))
+    try:
+        (temporary / "assets").mkdir()
+        (temporary / "archive").mkdir()
+        events_bytes = canonical_json_bytes(validated)
+        rss_bytes = render_rss(validated)
+        html_bytes = render_html(validated)
+        (temporary / "events.json").write_bytes(events_bytes)
+        (temporary / "feed.xml").write_bytes(rss_bytes)
+        (temporary / "index.html").write_bytes(html_bytes)
+        (temporary / "assets" / "site.css").write_bytes(SITE_CSS)
+        month = validated["generatedAt"][:7]
+        (temporary / "archive" / f"{month}.json").write_bytes(events_bytes)
+        digest = hashlib.sha256(events_bytes).hexdigest()
+        (temporary / "BUILD-INFO.txt").write_text(
+            f"sourceRevision={source_revision}\neventsSha256={digest}\n", encoding="utf-8"
+        )
+        if destination.exists():
+            backup = destination.with_name(f".{destination.name}.previous")
+            if backup.exists():
+                shutil.rmtree(backup)
+            os.replace(destination, backup)
+            try:
+                os.replace(temporary, destination)
+                temporary = Path()
+            except OSError:
+                os.replace(backup, destination)
+                raise
+            shutil.rmtree(backup)
+        else:
+            os.replace(temporary, destination)
+            temporary = Path()
+        return {"eventsSha256": digest, "sourceRevision": source_revision}
+    finally:
+        if temporary and temporary.exists() and temporary != Path("."):
+            shutil.rmtree(temporary)

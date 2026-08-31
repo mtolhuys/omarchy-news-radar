@@ -1,0 +1,313 @@
+"""Manual validation for every public feed and state boundary."""
+
+from __future__ import annotations
+
+import ipaddress
+import re
+import unicodedata
+from datetime import datetime, timedelta, timezone
+from typing import Any, Iterable, Mapping
+from urllib.parse import urlsplit
+
+from .constants import (
+    CHANNELS,
+    COMPATIBILITY_BASIS,
+    EVENT_TYPES,
+    FUTURE_SKEW_SECONDS,
+    MARKETPLACE_TRUST,
+    MAX_EVENTS,
+    MAX_SAVED,
+    SCHEMA_VERSION,
+    SECTIONS,
+    SIGNIFICANCE,
+    SOURCE_IDS,
+    SOURCE_REASON_CODES,
+    SOURCE_STATUSES,
+)
+from .errors import ValidationError
+
+TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+EVENT_ID_RE = re.compile(r"^evt_[0-9a-f]{24}$")
+ENTITY_ID_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._:+-]{0,159})$")
+TAG_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,31})$")
+CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def require_mapping(value: Any, name: str) -> Mapping[str, Any]:
+    if not isinstance(value, dict):
+        raise ValidationError(f"{name} must be an object")
+    return value
+
+
+def require_list(value: Any, name: str) -> list[Any]:
+    if not isinstance(value, list):
+        raise ValidationError(f"{name} must be an array")
+    return value
+
+
+def require_bool(value: Any, name: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValidationError(f"{name} must be a boolean")
+    return value
+
+
+def require_string(value: Any, name: str, minimum: int, maximum: int) -> str:
+    if not isinstance(value, str):
+        raise ValidationError(f"{name} must be a string")
+    if not minimum <= len(value) <= maximum:
+        raise ValidationError(f"{name} must contain {minimum} to {maximum} characters")
+    return value
+
+
+def normalize_text(value: Any, maximum: int, *, minimum: int = 1) -> str:
+    if not isinstance(value, str):
+        raise ValidationError("display text must be a string")
+    normalized = unicodedata.normalize("NFC", value)
+    normalized = CONTROL_RE.sub(" ", normalized)
+    normalized = " ".join(normalized.split())
+    if not minimum <= len(normalized) <= maximum:
+        raise ValidationError(f"display text must contain {minimum} to {maximum} characters")
+    return normalized
+
+
+def parse_timestamp(value: Any, name: str = "timestamp") -> datetime:
+    require_string(value, name, 20, 20)
+    if not TIMESTAMP_RE.fullmatch(value):
+        raise ValidationError(f"{name} must be canonical UTC RFC 3339")
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError as exc:
+        raise ValidationError(f"{name} is not a real timestamp") from exc
+    return parsed
+
+
+def format_timestamp(value: datetime) -> str:
+    if value.tzinfo is None:
+        raise ValidationError("timestamp must be timezone-aware")
+    return value.astimezone(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def validate_https_url(value: Any, name: str = "URL") -> str:
+    url = require_string(value, name, 1, 2048)
+    if CONTROL_RE.search(url):
+        raise ValidationError(f"{name} contains control characters")
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        raise ValidationError(f"{name} must be a credential-free HTTPS URL")
+    if parsed.port not in (None, 443):
+        raise ValidationError(f"{name} uses an unsupported port")
+    hostname = parsed.hostname.rstrip(".").lower()
+    if hostname == "localhost" or "." not in hostname:
+        raise ValidationError(f"{name} must use a public hostname")
+    try:
+        address = ipaddress.ip_address(hostname.strip("[]"))
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise ValidationError(f"{name} must not use a private host literal")
+    return url
+
+
+def validate_tags(value: Any) -> list[str]:
+    tags = require_list(value, "classification.tags")
+    if len(tags) > 12:
+        raise ValidationError("classification.tags exceeds 12 entries")
+    result: list[str] = []
+    for raw in tags:
+        tag = require_string(raw, "tag", 1, 32)
+        if not TAG_RE.fullmatch(tag) or tag in result:
+            raise ValidationError("tags must be unique normalized lowercase values")
+        result.append(tag)
+    return result
+
+
+def validate_event(value: Any) -> dict[str, Any]:
+    event = require_mapping(value, "event")
+    event_id = require_string(event.get("id"), "event.id", 28, 28)
+    if not EVENT_ID_RE.fullmatch(event_id):
+        raise ValidationError("event.id is invalid")
+    event_type = require_string(event.get("type"), "event.type", 1, 64)
+    if event_type not in EVENT_TYPES:
+        raise ValidationError("event.type is unsupported")
+    occurred_at = require_string(event.get("occurredAt"), "event.occurredAt", 20, 20)
+    discovered_at = require_string(event.get("discoveredAt"), "event.discoveredAt", 20, 20)
+    occurred = parse_timestamp(occurred_at, "event.occurredAt")
+    discovered = parse_timestamp(discovered_at, "event.discoveredAt")
+    if occurred > discovered + timedelta(seconds=FUTURE_SKEW_SECONDS):
+        raise ValidationError("event occurs after discovery")
+
+    source = require_mapping(event.get("source"), "event.source")
+    entity = require_mapping(event.get("entity"), "event.entity")
+    classification = require_mapping(event.get("classification"), "event.classification")
+    trust = require_mapping(event.get("trust"), "event.trust")
+    compatibility = require_mapping(event.get("compatibility"), "event.compatibility")
+
+    entity_kind = require_string(entity.get("kind"), "entity.kind", 1, 32)
+    if entity_kind not in {"omarchy", "plugin", "community"}:
+        raise ValidationError("entity.kind is unsupported")
+    entity_id = require_string(entity.get("id"), "entity.id", 1, 160)
+    if not ENTITY_ID_RE.fullmatch(entity_id):
+        raise ValidationError("entity.id is invalid")
+    section = require_string(classification.get("section"), "classification.section", 1, 16)
+    significance = require_string(classification.get("significance"), "classification.significance", 1, 16)
+    marketplace = require_string(trust.get("marketplace"), "trust.marketplace", 1, 32)
+    basis = require_string(compatibility.get("basis"), "compatibility.basis", 1, 32)
+    if section not in SECTIONS or significance not in SIGNIFICANCE:
+        raise ValidationError("event classification is unsupported")
+    if marketplace not in MARKETPLACE_TRUST or basis not in COMPATIBILITY_BASIS:
+        raise ValidationError("event trust or compatibility is unsupported")
+    channels = require_list(compatibility.get("channels"), "compatibility.channels")
+    if len(channels) > 8 or len(set(channels)) != len(channels) or any(channel not in CHANNELS for channel in channels):
+        raise ValidationError("compatibility.channels is invalid")
+
+    normalized: dict[str, Any] = {
+        "id": event_id,
+        "type": event_type,
+        "occurredAt": occurred_at,
+        "discoveredAt": discovered_at,
+        "title": normalize_text(event.get("title"), 160),
+        "summary": normalize_text(event.get("summary"), 400),
+        "source": {
+            "label": normalize_text(source.get("label"), 60),
+            "url": validate_https_url(source.get("url"), "source.url"),
+        },
+        "entity": {
+            "kind": entity_kind,
+            "id": entity_id,
+            "name": normalize_text(entity.get("name"), 120),
+        },
+        "classification": {
+            "section": section,
+            "significance": significance,
+            "curated": require_bool(classification.get("curated"), "classification.curated"),
+            "tags": validate_tags(classification.get("tags")),
+        },
+        "trust": {
+            "marketplace": marketplace,
+            "securityAudit": require_bool(trust.get("securityAudit"), "trust.securityAudit"),
+        },
+        "compatibility": {"channels": list(channels), "basis": basis},
+    }
+    for key in ("repository", "version"):
+        if key in entity:
+            normalized["entity"][key] = (
+                validate_https_url(entity[key], "entity.repository")
+                if key == "repository"
+                else require_string(entity[key], "entity.version", 1, 80)
+            )
+    if normalized["trust"]["securityAudit"] and marketplace == "unverified":
+        raise ValidationError("unverified marketplace data cannot assert a security audit")
+    if "correctedAt" in event:
+        normalized["correctedAt"] = require_string(event["correctedAt"], "event.correctedAt", 20, 20)
+        parse_timestamp(normalized["correctedAt"], "event.correctedAt")
+    return normalized
+
+
+def _event_sort_key(event: Mapping[str, Any]) -> tuple[float, float, str]:
+    occurred = parse_timestamp(event["occurredAt"]).timestamp()
+    discovered = parse_timestamp(event["discoveredAt"]).timestamp()
+    return (-occurred, -discovered, str(event["id"]))
+
+
+def validate_feed(value: Any, *, now: datetime | None = None) -> dict[str, Any]:
+    feed = require_mapping(value, "feed")
+    if feed.get("schemaVersion") != SCHEMA_VERSION:
+        raise ValidationError("unsupported feed schemaVersion")
+    generated_at = require_string(feed.get("generatedAt"), "generatedAt", 20, 20)
+    generated = parse_timestamp(generated_at, "generatedAt")
+    comparison = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    if generated > comparison + timedelta(seconds=FUTURE_SKEW_SECONDS):
+        raise ValidationError("feed generation time is materially in the future")
+    window = require_mapping(feed.get("window"), "window")
+    from_text = require_string(window.get("from"), "window.from", 20, 20)
+    through_text = require_string(window.get("through"), "window.through", 20, 20)
+    if parse_timestamp(from_text, "window.from") > parse_timestamp(through_text, "window.through"):
+        raise ValidationError("feed window is inverted")
+
+    sources_raw = require_list(feed.get("sources"), "sources")
+    sources: list[dict[str, Any]] = []
+    source_ids: set[str] = set()
+    for raw in sources_raw:
+        source = require_mapping(raw, "source health")
+        source_id = require_string(source.get("id"), "source.id", 1, 64)
+        status = require_string(source.get("status"), "source.status", 1, 32)
+        if source_id not in SOURCE_IDS or source_id in source_ids or status not in SOURCE_STATUSES:
+            raise ValidationError("source health identity or status is invalid")
+        checked_at = require_string(source.get("checkedAt"), "source.checkedAt", 20, 20)
+        parse_timestamp(checked_at, "source.checkedAt")
+        item = {
+            "id": source_id,
+            "status": status,
+            "checkedAt": checked_at,
+            "sourceUrl": validate_https_url(source.get("sourceUrl"), "source.sourceUrl"),
+        }
+        if "reason" in source:
+            reason = require_string(source["reason"], "source.reason", 1, 32)
+            if reason not in SOURCE_REASON_CODES or status != "failed":
+                raise ValidationError("source reason is invalid")
+            item["reason"] = reason
+        sources.append(item)
+        source_ids.add(source_id)
+
+    events_raw = require_list(feed.get("events"), "events")
+    if len(events_raw) > MAX_EVENTS:
+        raise ValidationError("feed exceeds event bound")
+    events = [validate_event(event) for event in events_raw]
+    ids = [event["id"] for event in events]
+    if len(set(ids)) != len(ids):
+        raise ValidationError("feed contains duplicate event IDs")
+    if events != sorted(events, key=_event_sort_key):
+        raise ValidationError("feed events are not in canonical order")
+
+    normalized = {
+        "schemaVersion": SCHEMA_VERSION,
+        "generatedAt": generated_at,
+        "window": {"from": from_text, "through": through_text},
+        "sources": sources,
+        "events": events,
+    }
+    if "leadEventId" in feed:
+        lead = require_string(feed["leadEventId"], "leadEventId", 28, 28)
+        if lead not in ids:
+            raise ValidationError("leadEventId does not reference an event")
+        normalized["leadEventId"] = lead
+    return normalized
+
+
+def validate_saved_record(value: Any, event_id: str) -> dict[str, Any]:
+    record = require_mapping(value, "saved record")
+    if not EVENT_ID_RE.fullmatch(event_id):
+        raise ValidationError("saved event ID is invalid")
+    saved_at = require_string(record.get("savedAt"), "savedAt", 20, 20)
+    occurred_at = require_string(record.get("occurredAt"), "occurredAt", 20, 20)
+    parse_timestamp(saved_at, "savedAt")
+    parse_timestamp(occurred_at, "occurredAt")
+    event_type = require_string(record.get("type"), "type", 1, 64)
+    if event_type not in EVENT_TYPES:
+        raise ValidationError("saved event type is unsupported")
+    return {
+        "savedAt": saved_at,
+        "title": normalize_text(record.get("title"), 160),
+        "sourceUrl": validate_https_url(record.get("sourceUrl"), "sourceUrl"),
+        "occurredAt": occurred_at,
+        "type": event_type,
+    }
+
+
+def validate_state(value: Any) -> dict[str, Any]:
+    state = require_mapping(value, "state")
+    if state.get("schemaVersion") != SCHEMA_VERSION:
+        raise ValidationError("unsupported state schemaVersion")
+    seen = require_string(state.get("seenThrough"), "seenThrough", 20, 20)
+    parse_timestamp(seen, "seenThrough")
+    saved_raw = require_mapping(state.get("saved"), "saved")
+    if len(saved_raw) > MAX_SAVED:
+        raise ValidationError("saved state exceeds item bound")
+    saved = {event_id: validate_saved_record(record, event_id) for event_id, record in sorted(saved_raw.items())}
+    return {"schemaVersion": SCHEMA_VERSION, "seenThrough": seen, "saved": saved}
+
+
+def require_unique(values: Iterable[str], name: str) -> None:
+    items = list(values)
+    if len(items) != len(set(items)):
+        raise ValidationError(f"{name} must be unique")

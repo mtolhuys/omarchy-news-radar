@@ -1,0 +1,151 @@
+"""Repository, collector, publisher and QML-helper command entry points."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Sequence
+
+from .client import (
+    installed_plugins,
+    mark_seen_state,
+    open_source,
+    projection_model,
+    purge_state,
+    read_model,
+    refresh,
+    require_unprivileged,
+    toggle_saved_state,
+)
+from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
+from .errors import RadarError
+from .io import atomic_write_json
+from .publisher import publish
+from .validation import parse_timestamp, validate_feed
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def _print(value: Any) -> None:
+    print(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+
+
+def client_main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="news-radar-client")
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("read")
+    commands.add_parser("refresh")
+    commands.add_parser("installed")
+    commands.add_parser("purge")
+    seen = commands.add_parser("mark-seen")
+    seen.add_argument("--through", required=True)
+    saved = commands.add_parser("toggle-saved")
+    saved.add_argument("--event-id", required=True)
+    opening = commands.add_parser("open-source")
+    opening.add_argument("--url", required=True)
+    projection = commands.add_parser("project")
+    projection.add_argument("--section", required=True)
+    projection.add_argument("--installed-json", default="[]")
+    projection.add_argument("--query", default="")
+    args = parser.parse_args(argv)
+    try:
+        require_unprivileged()
+        if args.command == "read":
+            result = read_model()
+        elif args.command == "refresh":
+            result = refresh()
+        elif args.command == "installed":
+            result = installed_plugins()
+        elif args.command == "mark-seen":
+            result = mark_seen_state(args.through)
+        elif args.command == "toggle-saved":
+            result = toggle_saved_state(args.event_id)
+        elif args.command == "open-source":
+            result = open_source(args.url)
+        elif args.command == "project":
+            result = projection_model(args.section, args.installed_json, args.query)
+        else:
+            result = purge_state()
+        _print(result)
+        return 0 if result.get("status") not in {"offline", "invalid-feed"} else 2
+    except (RadarError, OSError, subprocess.SubprocessError) as exc:
+        _print({"protocolVersion": 1, "status": "failed", "message": str(exc)})
+        return 2
+
+
+def build_fixture(*, second_generation: bool, output: Path, snapshot_output: Path | None = None) -> dict[str, Any]:
+    previous_path = ROOT / "tests/fixtures/source-snapshot-baseline.json"
+    previous = load_snapshot(previous_path) if second_generation else None
+    suffix = "next" if second_generation else "baseline"
+    inputs = FixtureInputs(
+        releases=ROOT / f"tests/fixtures/releases-{suffix}.json",
+        marketplace=ROOT / f"tests/fixtures/catalog-{suffix}.json",
+        community=ROOT / "content/community",
+        curation=ROOT / "content/curation",
+    )
+    clock = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
+    feed, snapshot = collect_from_fixtures(
+        inputs,
+        previous_snapshot=previous,
+        now=clock,
+        bootstrap_marketplace=not second_generation,
+    )
+    atomic_write_json(output, feed)
+    if snapshot_output:
+        save_snapshot(snapshot_output, snapshot)
+    return feed
+
+
+def repository_main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="python -m radar")
+    commands = parser.add_subparsers(dest="command", required=True)
+    fixture = commands.add_parser("feed-fixture")
+    fixture.add_argument("--baseline", action="store_true")
+    fixture.add_argument("--output", type=Path, default=ROOT / "dist/events.json")
+    fixture.add_argument("--snapshot-output", type=Path)
+    site = commands.add_parser("site")
+    site.add_argument("--feed", type=Path, default=ROOT / "tests/fixtures/feed-valid.json")
+    site.add_argument("--output", type=Path, default=ROOT / "dist")
+    commands.add_parser("validate-feed").add_argument("path", type=Path)
+    collect = commands.add_parser("collect")
+    collect.add_argument("--snapshot", type=Path, default=ROOT / "state/source-snapshot.json")
+    collect.add_argument("--output", type=Path, default=ROOT / "dist")
+    collect.add_argument("--bootstrap-marketplace", action="store_true")
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "feed-fixture":
+            feed = build_fixture(second_generation=not args.baseline, output=args.output, snapshot_output=args.snapshot_output)
+            _print({"status": "ok", "events": len(feed["events"]), "output": str(args.output)})
+        elif args.command == "site":
+            value = json.loads(args.feed.read_text(encoding="utf-8"))
+            feed = validate_feed(value, now=parse_timestamp(value["generatedAt"]))
+            revision = os.environ.get("SOURCE_REVISION", "working-tree")
+            _print({"status": "ok", **publish(feed, args.output, source_revision=revision)})
+        elif args.command == "collect":
+            previous = load_snapshot(args.snapshot)
+            clock = datetime.now(timezone.utc).replace(microsecond=0)
+            feed, snapshot = collect_production(
+                previous_snapshot=previous,
+                community_directory=ROOT / "content/community",
+                curation_directory=ROOT / "content/curation",
+                now=clock,
+                bootstrap_marketplace=args.bootstrap_marketplace,
+                github_token=os.environ.get("GITHUB_TOKEN"),
+            )
+            revision = os.environ.get("GITHUB_SHA", os.environ.get("SOURCE_REVISION", "working-tree"))
+            result = publish(feed, args.output, source_revision=revision)
+            save_snapshot(args.snapshot, snapshot)
+            _print({"status": "ok", "events": len(feed["events"]), **result})
+        else:
+            value = json.loads(args.path.read_text(encoding="utf-8"))
+            validate_feed(value, now=parse_timestamp(value["generatedAt"]))
+            _print({"status": "ok"})
+        return 0
+    except (RadarError, OSError, json.JSONDecodeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2

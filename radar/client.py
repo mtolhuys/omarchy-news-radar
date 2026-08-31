@@ -1,0 +1,220 @@
+"""Small versioned interface consumed by QML."""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping
+from urllib.parse import urlsplit
+
+from .constants import FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
+from .errors import FetchError, RadarError, StorageError, ValidationError
+from .http import FetchPolicy, decode_json, fetch_bytes
+from .io import read_json_bounded
+from .model import project_section
+from .state import (
+    RefreshLock,
+    load_feed,
+    load_state,
+    mark_seen,
+    purge,
+    save_feed,
+    save_state,
+    toggle_saved,
+)
+from .validation import validate_feed, validate_https_url
+
+
+def response(status: str, **values: Any) -> dict[str, Any]:
+    return {"protocolVersion": HELPER_PROTOCOL_VERSION, "status": status, **values}
+
+
+def read_model(environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
+    feed = load_feed(environment, now=now)
+    state, quarantined = load_state(environment)
+    if feed is None:
+        return response("first-use", feed=None, state=state, quarantine=quarantined)
+    return response("cached", feed=feed, state=state, quarantine=quarantined)
+
+
+def _test_feed(environment: Mapping[str, str]) -> dict[str, Any] | None:
+    if environment.get("OMARCHY_NEWS_RADAR_TEST_MODE") != "1":
+        return None
+    path = environment.get("OMARCHY_NEWS_RADAR_TEST_FEED")
+    url = environment.get("OMARCHY_NEWS_RADAR_TEST_FEED_URL")
+    if path and url:
+        raise ValidationError("test feed path and URL are mutually exclusive")
+    if path:
+        return read_json_bounded(Path(path), FEED_MAX_BYTES)
+    if url:
+        try:
+            timeout = float(environment.get("OMARCHY_NEWS_RADAR_TEST_TIMEOUT_SECONDS", "1"))
+        except ValueError as exc:
+            raise ValidationError("test timeout is invalid") from exc
+        if not 0.05 <= timeout <= 5.0:
+            raise ValidationError("test timeout is outside its bound")
+        parsed = urlsplit(url)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        data, _, _ = fetch_bytes(
+            url,
+            policy=FetchPolicy(
+                FEED_MAX_BYTES,
+                timeout,
+                frozenset({origin}),
+                allow_loopback_http=True,
+            ),
+            headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-client/0.1"},
+        )
+        return decode_json(data, label="test feed")
+    raise ValidationError("test mode requires an explicit fixture path or loopback URL")
+
+
+def _fetch_feed(*, timeout: float = 12.0) -> dict[str, Any]:
+    """Fetch production feed with a fixed URL and closed redirect origin."""
+
+    policy = FetchPolicy(FEED_MAX_BYTES, timeout, frozenset({FEED_ORIGIN}))
+    data, _, _ = fetch_bytes(
+        FEED_URL,
+        policy=policy,
+        headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-client/0.1"},
+    )
+    return decode_json(data, label="feed")
+
+
+def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
+    env = dict(environment or os.environ)
+    clock = now or datetime.now(timezone.utc)
+    cached = load_feed(env, now=clock)
+    try:
+        with RefreshLock(env):
+            candidate = _test_feed(env)
+            if candidate is None:
+                candidate = _fetch_feed()
+            validated = validate_feed(candidate, now=clock)
+            saved = save_feed(validated, env, now=clock)
+        return response("current", feed=saved, cachePreserved=False)
+    except (RadarError, OSError) as exc:
+        reason = exc.reason if isinstance(exc, FetchError) else "validation-failed" if isinstance(exc, ValidationError) else "local-error"
+        invalid_candidate = isinstance(exc, ValidationError) or (
+            isinstance(exc, FetchError) and exc.reason in {"invalid-json", "too-large"}
+        )
+        return response(
+            "invalid-feed" if invalid_candidate else "offline",
+            reason=reason,
+            message=str(exc),
+            feed=cached,
+            cachePreserved=cached is not None,
+        )
+
+
+def mark_seen_state(through: str, environment: Mapping[str, str] | None = None) -> dict[str, Any]:
+    state, _ = load_state(environment)
+    updated = save_state(mark_seen(state, through), environment)
+    return response("ok", state=updated)
+
+
+def toggle_saved_state(event_id: str, environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
+    feed = load_feed(environment, now=now)
+    if feed is None:
+        raise ValidationError("cannot save an event without a valid cached feed")
+    event = next((item for item in feed["events"] if item["id"] == event_id), None)
+    if event is None:
+        raise ValidationError("event is not present in the validated cache")
+    state, _ = load_state(environment)
+    updated, saved = toggle_saved(state, event, now=now)
+    save_state(updated, environment)
+    return response("ok", saved=saved, state=updated)
+
+
+def installed_plugins() -> dict[str, Any]:
+    completed = subprocess.run(
+        ["omarchy-shell", "shell", "listPlugins"],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if completed.returncode != 0 or len(completed.stdout) > 1024 * 1024:
+        return response("unavailable", pluginIds=[])
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return response("unavailable", pluginIds=[])
+    ids: list[str] = []
+    values = payload if isinstance(payload, list) else payload.get("plugins", []) if isinstance(payload, dict) else []
+    for item in values:
+        if isinstance(item, dict) and item.get("enabled") is True and isinstance(item.get("id"), str):
+            ids.append(item["id"])
+    return response("ok", pluginIds=sorted(set(ids))[:500])
+
+
+def projection_model(
+    section: str,
+    installed_json: str,
+    query: str,
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    if len(installed_json) > 256 * 1024 or len(query) > 100:
+        raise ValidationError("projection input exceeds its bound")
+    try:
+        installed_raw = json.loads(installed_json)
+    except json.JSONDecodeError as exc:
+        raise ValidationError("installed plugin IDs are invalid JSON") from exc
+    if not isinstance(installed_raw, list) or len(installed_raw) > 5000:
+        raise ValidationError("installed plugin IDs are invalid")
+    installed: list[str] = []
+    for item in installed_raw:
+        if not isinstance(item, str) or not 1 <= len(item) <= 160:
+            raise ValidationError("installed plugin ID is invalid")
+        installed.append(item)
+    feed = load_feed(environment, now=now)
+    state, _ = load_state(environment)
+    if feed is None:
+        return response("first-use", section=section, events=[], counts={name: 0 for name in ("front-page", "for-you", "core", "plugins", "community", "saved")})
+    saved_ids = set(state["saved"])
+    names = ("front-page", "for-you", "core", "plugins", "community", "saved")
+    counts = {
+        name: len(project_section(feed, name, installed_plugin_ids=installed, saved_ids=saved_ids))
+        for name in names
+    }
+    events = project_section(
+        feed,
+        section,
+        installed_plugin_ids=installed,
+        saved_ids=saved_ids,
+        query=query,
+    )
+    seen = state["seenThrough"]
+    decorated: list[dict[str, Any]] = []
+    for event in events:
+        item = dict(event)
+        item["isNew"] = item["occurredAt"] > seen
+        item["isSaved"] = item["id"] in saved_ids
+        decorated.append(item)
+    return response("ok", section=section, events=decorated, counts=counts, seenThrough=seen)
+
+
+def open_source(url: str) -> dict[str, Any]:
+    validated = validate_https_url(url, "source URL")
+    completed = subprocess.Popen(
+        ["uwsm-app", "--", "xdg-open", validated],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    return response("ok", pid=completed.pid)
+
+
+def purge_state(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
+    return response("ok", removed=purge(environment))
+
+
+def require_unprivileged() -> None:
+    if os.geteuid() == 0:
+        raise StorageError("news-radar-client refuses to run as root")

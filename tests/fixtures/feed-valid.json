@@ -1,0 +1,247 @@
+{
+  "events": [
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "storage",
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "io.github.mtolhuys.disk-lens",
+        "kind": "plugin",
+        "name": "Omarchy Disk Lens",
+        "repository": "https://github.com/mtolhuys/omarchy-disk-lens",
+        "version": "0.4.1"
+      },
+      "id": "evt_825c7d1fb97db6bfecc5e166",
+      "occurredAt": "2026-08-31T14:00:00Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.1"
+      },
+      "summary": "Marketplace verification changed from reviewed to verified; this is not a security audit.",
+      "title": "Omarchy Disk Lens verification changed",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-verification-changed"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "storage",
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "io.github.mtolhuys.disk-lens",
+        "kind": "plugin",
+        "name": "Omarchy Disk Lens",
+        "repository": "https://github.com/mtolhuys/omarchy-disk-lens",
+        "version": "0.4.1"
+      },
+      "id": "evt_ed4cdd2800453c22ba31be9c",
+      "occurredAt": "2026-08-31T14:00:00Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.1"
+      },
+      "summary": "The marketplace version changed from 0.4.0 to 0.4.1.",
+      "title": "Omarchy Disk Lens 0.4.1",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-released"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "notes"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "org.example.notes",
+        "kind": "plugin",
+        "name": "Workspace Notes",
+        "repository": "https://github.com/example/omarchy-notes",
+        "version": "0.1.0"
+      },
+      "id": "evt_53642b4d3e0e59c943494606",
+      "occurredAt": "2026-08-31T08:00:00Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/example/omarchy-notes"
+      },
+      "summary": "Workspace Notes is now listed in the Omarchy plugin marketplace.",
+      "title": "Workspace Notes joined the marketplace",
+      "trust": {
+        "marketplace": "unverified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "core",
+        "significance": "routine",
+        "tags": [
+          "release"
+        ]
+      },
+      "compatibility": {
+        "basis": "declared",
+        "channels": [
+          "quattro"
+        ]
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "omarchy",
+        "kind": "omarchy",
+        "name": "Omarchy",
+        "repository": "https://github.com/omacom/omarchy",
+        "version": "v4.0.2"
+      },
+      "id": "evt_dd25c4572efc307bdd4ce44c",
+      "occurredAt": "2026-08-31T03:42:33Z",
+      "source": {
+        "label": "GitHub release",
+        "url": "https://github.com/omacom/omarchy/releases/tag/v4.0.2"
+      },
+      "summary": "This release improves shell focus and third-party panel reload behavior.",
+      "title": "Omarchy v4.0.2",
+      "trust": {
+        "marketplace": "not-applicable",
+        "securityAudit": false
+      },
+      "type": "omarchy-released"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "community",
+        "significance": "routine",
+        "tags": [
+          "guide",
+          "plugins"
+        ]
+      },
+      "compatibility": {
+        "basis": "declared",
+        "channels": [
+          "quattro"
+        ]
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "keyboard-first-plugin-workflow-2026",
+        "kind": "community",
+        "name": "Omarchy community"
+      },
+      "id": "evt_9c9e361197cc2dcf1c80f360",
+      "occurredAt": "2026-08-30T10:00:00Z",
+      "source": {
+        "label": "Community guide",
+        "url": "https://github.com/omacom/omarchy/wiki"
+      },
+      "summary": "A source-linked walkthrough shows how keyboard-first Omarchy plugin workflows fit the current shell lifecycle.",
+      "title": "A keyboard-first plugin workflow",
+      "trust": {
+        "marketplace": "not-applicable",
+        "securityAudit": false
+      },
+      "type": "community-link"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "core",
+        "significance": "routine",
+        "tags": [
+          "release"
+        ]
+      },
+      "compatibility": {
+        "basis": "declared",
+        "channels": [
+          "quattro"
+        ]
+      },
+      "discoveredAt": "2026-08-31T14:00:00Z",
+      "entity": {
+        "id": "omarchy",
+        "kind": "omarchy",
+        "name": "Omarchy",
+        "repository": "https://github.com/omacom/omarchy",
+        "version": "v4.0.1"
+      },
+      "id": "evt_8e2429aa4a80339c5cd2ab2c",
+      "occurredAt": "2026-08-27T12:00:00Z",
+      "source": {
+        "label": "GitHub release",
+        "url": "https://github.com/omacom/omarchy/releases/tag/v4.0.1"
+      },
+      "summary": "This maintenance release refines the Quattro shell and plugin lifecycle.",
+      "title": "Omarchy v4.0.1",
+      "trust": {
+        "marketplace": "not-applicable",
+        "securityAudit": false
+      },
+      "type": "omarchy-released"
+    }
+  ],
+  "generatedAt": "2026-08-31T14:00:00Z",
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "checkedAt": "2026-08-31T14:00:00Z",
+      "id": "community",
+      "sourceUrl": "https://github.com/mtolhuys/omarchy-news-radar/tree/main/content/community",
+      "status": "current"
+    },
+    {
+      "checkedAt": "2026-08-31T14:00:00Z",
+      "id": "marketplace",
+      "sourceUrl": "https://raw.githubusercontent.com/omacom/omarchy-plugin-marketplace/main/site/catalog.json",
+      "status": "current"
+    },
+    {
+      "checkedAt": "2026-08-31T14:00:00Z",
+      "id": "omarchy-releases",
+      "sourceUrl": "https://github.com/basecamp/omarchy/releases",
+      "status": "current"
+    }
+  ],
+  "window": {
+    "from": "2026-06-02T14:00:00Z",
+    "through": "2026-08-31T14:00:00Z"
+  }
+}
