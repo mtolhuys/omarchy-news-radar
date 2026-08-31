@@ -6,9 +6,21 @@ FocusScope {
   id: root
 
   property string label: ""
+  property string icon: ""
+  property string tone: "clear"
   property int count: 0
   property bool selected: false
   signal clicked()
+
+  function toneFill() {
+    if (root.tone === "soft")
+      return Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
+    if (root.tone === "accent")
+      return Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.14)
+    if (root.tone === "ink")
+      return Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.11)
+    return "transparent"
+  }
 
   implicitHeight: Math.max(Style.spacing.controlHeight, labelText.implicitHeight + Style.spacing.controlPaddingY * 2)
   activeFocusOnTab: true
@@ -26,7 +38,7 @@ FocusScope {
       ? Style.selectedFillFor(Color.foreground, Color.accent, Color.urgent)
       : root.activeFocus || hover.hovered
         ? Style.focusFillFor(Color.foreground, Color.accent, Color.urgent)
-        : "transparent"
+        : root.toneFill()
     borderSpec: Border.controlSpec(root.activeFocus ? "focus" : root.selected ? "selected" : "normal", Color.foreground, Color.accent, Color.urgent)
 
     Text {
@@ -34,7 +46,7 @@ FocusScope {
       anchors.left: parent.left
       anchors.leftMargin: Style.spacing.controlPaddingX
       anchors.verticalCenter: parent.verticalCenter
-      text: root.label
+      text: (root.icon ? root.icon + "  " : "") + root.label
       textFormat: Text.PlainText
       color: Color.popups.text
       font.family: Style.font.family

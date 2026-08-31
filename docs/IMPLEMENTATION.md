@@ -36,7 +36,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 3 — Build the client helper
 
 1. Implement fixed-origin bounded HTTPS refresh, redirect policy, candidate validation, cache locking, and atomic last-known-good replacement.
-2. Implement state read, v1/v2-to-v3 migration, session cutoff, saved toggle, private bar/image/interest preferences, strict per-section filters, indicator model, quarantine, and explicit purge.
+2. Implement state read, v1/v2/v3-to-v4 migration, session cutoff, saved toggle, private bar/image/interest preferences, strict per-section filters and presentation profiles, indicator model, quarantine, and explicit purge.
 3. Return small versioned JSON responses designed for QML rather than exposing internal exceptions.
 4. Add loopback integration tests for success, timeout, redirect, oversize, truncation, invalid schema, concurrent refresh, and offline cache.
 
@@ -46,7 +46,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 
 1. Inspect and use the current host-owned panel/window, focus, token, border, scroll, and source-opening contracts.
 2. Create `src/Panel.qml` and supporting components with an explicit runtime build identity.
-3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin and explicit-interest matching, deterministic front page, safe feed-image projection, source-labelled metrics, search, selection, save, source opening, Tune preferences, per-section filter options, finite load-more pagination, and state labels.
+3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin and explicit-interest matching, deterministic front page, safe feed-image projection, icon metrics, human-facing plugin pages, search, selection, save, source opening, Tune preferences, per-section appearance/fixed-source/filter options, finite load-more pagination, and state labels.
 4. Implement the complete keyboard map and pointer equivalents, including `Tab`/`Shift+Tab` section cycling.
 5. Implement a normal compositor-managed movable/resizable/minimizable/maximizable `FloatingWindow`, ordinary `Alt+Tab`, responsive one/two-column presentation, and explicit selected-state contrast without changing semantic order.
 6. Add `manifest.json` only after both entry points exist and validation passes.
@@ -77,7 +77,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Create product-owned lab fixtures and `tests/lab/acceptance.sh` using lab helpers rather than another VM controller.
 2. Install the exact candidate, set deterministic guest-only feed/cache fixtures, and expose source/installed/runtime identities.
 3. Send `Super+Alt+N` through QMP and assert the rendered panel, not just IPC state; also prove the Editor binding remains live before, during, and after Radar setup.
-4. Drive keyboard and pointer journeys, window resize/maximize/restore/`Alt+Tab`, bar hide/restore, image on/off, source metrics, section filters, load-more pagination, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, dark/light selected-row contrast, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
+4. Drive keyboard and pointer journeys, window resize/maximize/restore/`Alt+Tab`, bar hide/restore, image on/off, icon metrics, human plugin-page opening, section appearance/fixed-source/filter options, load-more pagination, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, dark/light selected-row contrast, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
 5. Inspect shell logs and every visual checkpoint.
 6. Prove `make local-latest` in a separate guest scenario: clean first install, exact source origin/revision, committed fast-forward, validated pictured local-edition import, idempotence, dirty-source refusal without installed-state change, exact panel-only placement migration with visual defaults, and removal.
 

@@ -21,6 +21,7 @@ from radar.state import (
     toggle_saved,
     update_preferences,
     update_section_filter,
+    update_section_profile,
     user_state_path,
 )
 
@@ -79,7 +80,7 @@ class StateTests(unittest.TestCase):
         )
         state, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(3, state["schemaVersion"])
+        self.assertEqual(4, state["schemaVersion"])
         self.assertTrue(state["preferences"]["barVisible"])
         self.assertEqual(
             {"period": "all", "significance": "all", "unreadOnly": False, "imagesOnly": False, "types": []},
@@ -110,6 +111,19 @@ class StateTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             update_section_filter(state, "plugins", {"period": "forever"})
 
+        profiled = update_section_profile(
+            filtered,
+            "plugins",
+            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+        )
+        self.assertEqual(
+            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            profiled["preferences"]["sectionProfiles"]["plugins"],
+        )
+        self.assertEqual("Core", profiled["preferences"]["sectionProfiles"]["core"]["name"])
+        with self.assertRaises(ValidationError):
+            update_section_profile(state, "plugins", {"name": "Bad", "icon": "remote", "tone": "accent"})
+
         path.write_text(
             json.dumps({
                 "schemaVersion": 2,
@@ -123,6 +137,24 @@ class StateTests(unittest.TestCase):
         self.assertIsNone(quarantine)
         self.assertFalse(v2["preferences"]["barVisible"])
         self.assertEqual(["security"], v2["preferences"]["interests"])
+
+        v3_preferences = default_state()["preferences"]
+        del v3_preferences["sectionProfiles"]
+        v3_preferences["sectionFilters"]["plugins"]["period"] = "30d"
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 3,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": v3_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v3, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(4, v3["schemaVersion"])
+        self.assertEqual("30d", v3["preferences"]["sectionFilters"]["plugins"]["period"])
+        self.assertEqual("Plugins", v3["preferences"]["sectionProfiles"]["plugins"]["name"])
 
     def test_symlink_targets_and_concurrent_refresh_are_refused(self) -> None:
         path = feed_path(self.environment)

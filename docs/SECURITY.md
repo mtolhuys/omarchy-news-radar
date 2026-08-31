@@ -19,7 +19,8 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 - Opening a source requires an explicit user action and passes the validated URL as one structural process argument to the maintained desktop launcher and `xdg-open`.
 - The collector fetches only allowlisted machine sources. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
 - Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
-- Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS source URLs. They cannot create events or drive ranking, and marketplace aggregate caveats remain visible in the client.
+- Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS provenance URLs. They cannot create events or drive ranking. The QML projection strips raw metric URLs, renders only icon/value/accessible-label facts plus the marketplace caveat, and constructs human plugin pages from the fixed marketplace route and validated entity ID.
+- Section display names are normalized bounded plain text. Icon and background choices are closed IDs mapped to code-native glyphs and current theme tokens; profiles cannot introduce markup, arbitrary colors, URLs, source membership, or network requests.
 
 ## Client fetch
 

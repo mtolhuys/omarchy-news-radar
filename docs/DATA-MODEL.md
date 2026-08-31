@@ -167,7 +167,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "seenThrough": "2026-08-31T14:00:00Z",
   "saved": {
     "evt_8cb067f9ef7da216bcab4781": {
@@ -189,6 +189,14 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
       "plugins": {"period":"7d","significance":"notable","unreadOnly":false,"imagesOnly":true,"types":["plugin-released"]},
       "community": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
       "saved": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]}
+    },
+    "sectionProfiles": {
+      "front-page": {"name":"Front Page","icon":"newspaper","tone":"clear"},
+      "for-you": {"name":"For You","icon":"spark","tone":"clear"},
+      "core": {"name":"Core","icon":"core","tone":"clear"},
+      "plugins": {"name":"My Extensions","icon":"spark","tone":"accent"},
+      "community": {"name":"Community","icon":"community","tone":"clear"},
+      "saved": {"name":"Saved","icon":"saved","tone":"clear"}
     }
   }
 }
@@ -198,7 +206,9 @@ Saved records intentionally duplicate a small bounded subset so a bookmark survi
 
 `seenThrough` is monotonic. It advances only to the greatest event timestamp captured in a successfully rendered session and never to wall-clock “now.” Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v3 retains the three v2 preferences and adds one strict filter for each of the six client sections. A filter has a period (`all`, `24h`, `7d`, or `30d`), significance (`all`, `notable`, or `critical`), two booleans, and a canonical list of event types. All defaults are unfiltered. Valid v1 and v2 states migrate atomically with saved, seen, and existing v2 preferences preserved; filters receive defaults and no migration data is sent over the network.
+State v4 retains v3 filters and adds one strict presentation profile for each client section. A profile contains a normalized 1–32-character plain-text name, an icon from `newspaper`, `spark`, `core`, `plugins`, `community`, or `saved`, and a tone from `clear`, `soft`, `accent`, or `ink`. Tone IDs map to current Omarchy tokens in QML; no arbitrary color or markup enters state. Valid v1, v2, and v3 states migrate atomically with saved, seen, existing v2 preferences, and v3 filters preserved; profiles receive defaults and no migration data is sent over the network.
+
+Source membership is not part of the profile. Stable section IDs continue to own the fixed projection and are always shown in settings; changing a name, icon, or tone has no effect on collection, ranking, filtering semantics, or network requests.
 
 ## Schema evolution
 

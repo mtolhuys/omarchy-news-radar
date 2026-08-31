@@ -162,8 +162,16 @@
 
 ## D021 — Keep filters independent and pagination finite
 
-**Decision:** State v3 stores one strict local filter per client section, and the reader reveals a maximum twelve matching events at a time through an explicit Load more control.
+**Decision:** State v3 introduced one strict local filter per client section, and the reader reveals a maximum twelve matching events at a time through an explicit Load more control.
 
 **Why:** Users need inspectable control over time, significance, unread/image state, and event types without turning Radar into an infinite stream or personalized server API.
 
 **Consequence:** The options screen always exposes the immutable built-in rule and exact reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections; Load more expands the current bounded projection by twelve up to the feed's 500-event bound.
+
+## D022 — Personalize section presentation without changing editorial identity
+
+**Decision:** State v4 lets each stable client section store a bounded display name, one icon from a closed palette, and one theme-derived background tone. Source membership remains fixed and read-only in version 1.
+
+**Why:** Names, icons, and restrained color make a personal reader easier to scan, but arbitrary colors, markup, or source reassignment would weaken theme compatibility, validation, and the documented meaning of Core, Plugins, and Community.
+
+**Consequence:** The cogwheel screen shows appearance controls, exact appearance reset, the dictated source summary, built-in rule, and filters together. Stable section IDs continue to drive projection, counts, keys, source membership, and filter storage. Profiles are local-only, strictly validated, independently resettable, and migrated atomically from v1–v3 state.

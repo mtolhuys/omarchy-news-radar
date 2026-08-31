@@ -31,6 +31,7 @@ from .constants import (
     STATE_SCHEMA_VERSION,
 )
 from .errors import ValidationError
+from .sections import SECTION_ICON_IDS, SECTION_TONES
 
 TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 EVENT_ID_RE = re.compile(r"^evt_[0-9a-f]{24}$")
@@ -397,6 +398,20 @@ def validate_section_filter(value: Any) -> dict[str, Any]:
     }
 
 
+def validate_section_profile(value: Any) -> dict[str, str]:
+    current = require_mapping(value, "section profile")
+    if set(current) != {"name", "icon", "tone"}:
+        raise ValidationError("section profile must contain exactly name, icon, and tone")
+    name = normalize_text(current.get("name"), 32)
+    icon = require_string(current.get("icon"), "section profile icon", 1, 24)
+    tone = require_string(current.get("tone"), "section profile tone", 1, 16)
+    if icon not in SECTION_ICON_IDS:
+        raise ValidationError("section profile icon is unsupported")
+    if tone not in SECTION_TONES:
+        raise ValidationError("section profile tone is unsupported")
+    return {"name": name, "icon": icon, "tone": tone}
+
+
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
@@ -427,6 +442,13 @@ def validate_state(value: Any) -> dict[str, Any]:
         section: validate_section_filter(filters_raw[section])
         for section in CLIENT_SECTIONS
     }
+    profiles_raw = require_mapping(preferences.get("sectionProfiles"), "preferences.sectionProfiles")
+    if set(profiles_raw) != set(CLIENT_SECTIONS):
+        raise ValidationError("preferences.sectionProfiles must define every section")
+    section_profiles = {
+        section: validate_section_profile(profiles_raw[section])
+        for section in CLIENT_SECTIONS
+    }
     return {
         "schemaVersion": STATE_SCHEMA_VERSION,
         "seenThrough": seen,
@@ -436,6 +458,7 @@ def validate_state(value: Any) -> dict[str, Any]:
             "imagesVisible": images_visible,
             "interests": interests,
             "sectionFilters": section_filters,
+            "sectionProfiles": section_profiles,
         },
     }
 

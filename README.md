@@ -16,7 +16,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
-- A resizable, minimizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, source-labelled metrics, Front Page, For You, Core, Plugins, Community, Saved, private interests, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
+- A resizable, minimizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, For You, Core, Plugins, Community, Saved, private interests, configurable section names/icons/theme-derived backgrounds, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
 - A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free; it never displaces Editor or another action.
 - Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and eventual public-clone acceptance.
@@ -106,12 +106,12 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `r`: refresh the published feed once while preserving the last-known-good edition; an unpublished local edition instead explains that `make local-latest` collects the next update.
 - `Escape` or `q`: close the panel.
 - `Tune`: enable/disable the top-bar newspaper and images, and save up to twelve comma-separated private interests.
-- `⚙ Filters`: inspect the built-in rule for the active section and locally refine time, significance, unread/image state, and story types.
+- `⚙ Filters`: open section settings; customize its bounded plain-text name, vetted icon, and theme-derived background, inspect its fixed sources and built-in rule, then locally refine time, significance, unread/image state, and story types.
 - `Load more`: reveal the next twelve matching stories from the already validated bounded edition.
 
 The window uses the normal desktop window model: drag the masthead to move it, resize from an edge, use Minimize or Maximize/Restore, and switch to or from it with `Alt+Tab`.
 
-Marketplace views, hearts, and command copies are official anonymous aggregate interactions—not installs, downloads, unique people, rankings, votes, or security signals. Repository stars and GitHub release-asset download counts are labelled separately, include their observation time, and never influence Front Page ordering.
+Marketplace views, hearts, command copies, repository stars, and GitHub release-asset download counts appear as compact colored icons with accessible labels and an observation time. Raw metric endpoint links stay in feed provenance but are intentionally absent from the reader; plugin stories instead link to their human-facing `plugins.omarchy.org` detail page. Marketplace aggregates are anonymous interactions—not installs, downloads, unique people, rankings, votes, or security signals—and metrics never influence Front Page ordering.
 
 Installed plugin IDs and explicit interests are used only for local `For You` matching. They are never sent to the feed host.
 

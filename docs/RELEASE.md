@@ -15,8 +15,8 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
 - Front Page, For You, Core, Plugins, Community, and Saved match the implemented model.
 - The panel is a normal movable/resizable/minimizable/maximizable window, participates in `Alt+Tab`, and closes through one shell lifecycle.
-- `Tab`/`Shift+Tab`, independent per-section filters, exact reset, and finite Load more behavior match the local projection model.
-- Available metrics have exact labels, observation times, source links, and marketplace caveats, and cannot influence event creation or ranking.
+- `Tab`/`Shift+Tab`, bounded per-section names/icons/theme-derived backgrounds, fixed-source disclosure, independent filters, exact resets, and finite Load more behavior match the local projection model.
+- Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
 - The default-on newspaper indicator, zero-gap hiding, Tune re-enable, unread/health states, and no-notification boundary match the implementation.
 - No account, telemetry, AI summary, plugin installation action, or unsupported scraper is implied.

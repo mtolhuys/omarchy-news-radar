@@ -8,6 +8,7 @@ omarchy_host_test() {
   local product_root lab_root start_epoch before_hash after_hash before_change_count
   local helper shortcut plugin_dir viewport_width viewport_height monitor_name bar_x bar_y tune_x tune_y
   local control_x control_y window_before_width window_after_width window_x window_y window_width window_height window_initial_maximized
+  local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -37,6 +38,21 @@ omarchy_host_test() {
     done
     response=$(qmp '"input-send-event", "arguments": {"events": [{"type":"btn","data":{"down":false,"button":"left"}}]}')
     grep -q '"error"' <<<"$response" && return 1
+    sleep 0.5
+  }
+
+  qmp_pointer_scroll_down() {
+    local width="$1" height="$2" x="$3" y="$4" count="${5:-6}"
+    local qx qy response step
+    qx=$((x * 32767 / (width - 1)))
+    qy=$((y * 32767 / (height - 1)))
+    response=$(qmp "\"input-send-event\", \"arguments\": {\"events\": [{\"type\":\"abs\",\"data\":{\"axis\":\"x\",\"value\":$qx}},{\"type\":\"abs\",\"data\":{\"axis\":\"y\",\"value\":$qy}}]}")
+    grep -q '"error"' <<<"$response" && return 1
+    for ((step = 0; step < count; step++)); do
+      response=$(qmp '"input-send-event", "arguments": {"events": [{"type":"btn","data":{"down":true,"button":"wheel-down"}},{"type":"btn","data":{"down":false,"button":"wheel-down"}}]}')
+      grep -q '"error"' <<<"$response" && return 1
+      sleep 0.08
+    done
     sleep 0.5
   }
 
@@ -131,7 +147,12 @@ omarchy_host_test() {
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" >/dev/null || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
   wait_for_guest_state "left click on the newspaper opens the panel" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"Omarchy News Radar\")'" || return 1
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"Omarchy News Radar\")'" || {
+      ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/news-radar-panel-load-failure-journal.log" 2>&1 || true
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-panel-load-failure-debug.log" 2>&1 || true
+      capture_console "failure-news-radar-panel-load"
+      return 1
+    }
   press esc
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" right
   wait_for_guest_state "right click persists hidden state with exact zero slot geometry" 15 ssh_session \
@@ -280,17 +301,51 @@ omarchy_host_test() {
 
   press 4
   wait_for_guest_state "validated source metrics are rendered for plugin activity" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"plugins\" and (.selectedMetricsText | contains(\"Views\")) and (.selectedMetricsText | contains(\"Hearts\"))'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"plugins\" and (.selectedMetricIds | index(\"marketplace-views\")) != null and (.selectedMetricIds | index(\"marketplace-hearts\")) != null and .selectedMarketplaceUrl == \"https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.disk-lens\"'" || return 1
   capture_console "success-news-radar-03-metrics"
+  radar_control_geometry pluginPageGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "plugin page opens the exact human-facing marketplace URL" 10 ssh_session \
+    "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = 'https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.disk-lens'" || return 1
   radar_control_geometry filterGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "cogwheel opens the current section options" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.filtersOpen == true'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.filtersOpen == true and (.sectionSources | startswith(\"Omarchy Plugin Marketplace\"))'" || return 1
   capture_console "success-news-radar-03-filter-options"
+
+  radar_control_geometry sectionNameGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  press ctrl-a
+  type_text "Extensions"
+  radar_control_geometry sectionNameApplyGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "rendered section name persists locally" 10 ssh_session \
+    "jq -e '.schemaVersion == 4 and .preferences.sectionProfiles.plugins.name == \"Extensions\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  radar_control_geometry sectionIconSparkGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "rendered icon choice persists from the closed palette" 10 ssh_session \
+    "jq -e '.preferences.sectionProfiles.plugins.icon == \"spark\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  radar_control_geometry sectionToneAccentGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "theme-derived section tone is visible and persistent" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionName == \"Extensions\" and .sectionIcon == \"spark\" and .sectionTone == \"accent\"'" || return 1
+  capture_console "success-news-radar-03-section-appearance"
+  radar_control_geometry sectionAppearanceResetGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "appearance reset restores only the selected section defaults" 10 ssh_session \
+    "jq -e '.preferences.sectionProfiles.plugins == {name:\"Plugins\",icon:\"plugins\",tone:\"clear\"} and .preferences.sectionProfiles.core.name == \"Core\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+
+  window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .at[0]'")" || return 1
+  window_y="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .at[1]'")" || return 1
+  window_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[0]'")" || return 1
+  window_height="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"Omarchy News Radar\") | .size[1]'")" || return 1
+  settings_center_x=$((window_x + window_width / 2))
+  settings_center_y=$((window_y + window_height / 2))
+  qmp_pointer_scroll_down "$viewport_width" "$viewport_height" "$settings_center_x" "$settings_center_y" 8 || return 1
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
-    "jq -e '.schemaVersion == 3 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "jq -e '.schemaVersion == 4 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   radar_control_geometry filterResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered reset restores the exact section defaults" 10 ssh_session \
@@ -335,7 +390,7 @@ omarchy_host_test() {
   wait_for_guest_state "source opening reaches the inert shim with the exact HTTPS URL" 10 ssh_session \
     "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = https://github.com/example/omarchy-notes" || return 1
   press slash
-  press ctrl_l-a
+  press ctrl-a
   press backspace
   press esc
   capture_console "success-news-radar-03-keyboard-source-save"

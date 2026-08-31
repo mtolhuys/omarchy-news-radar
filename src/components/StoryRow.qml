@@ -98,16 +98,12 @@ FocusScope {
         elide: Text.ElideRight
       }
 
-      Text {
+      MetricStrip {
         width: parent.width
-        visible: !!root.story && !!root.story.metricsText
-        text: visible ? root.story.metricsText : ""
-        textFormat: Text.PlainText
-        color: root.secondaryTextColor
-        font.family: Style.font.family
-        font.pixelSize: Style.font.caption
-        font.bold: root.selected
-        elide: Text.ElideRight
+        visible: !!root.story && !!root.story.metricItems && root.story.metricItems.length > 0
+        metrics: visible ? root.story.metricItems : []
+        foreground: root.secondaryTextColor
+        compact: true
       }
     }
 

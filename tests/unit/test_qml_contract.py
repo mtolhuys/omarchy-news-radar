@@ -47,12 +47,46 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Load more", qml)
         self.assertIn("BUILT-IN SECTION RULE", qml)
         self.assertIn("METRICS", qml)
+        self.assertIn("MetricStrip", qml)
+        self.assertIn("PanelActionButton", qml)
+        self.assertIn('iconText: "−"', qml)
+        self.assertIn('iconText: panelWindow.maximized ? "❐" : "□"', qml)
+        self.assertIn('iconText: "×"', qml)
+        self.assertIn('label: "Plugin page"', qml)
+        self.assertIn("function pluginPageGeometry()", qml)
+        self.assertNotIn("metricSources", qml)
+        self.assertIn("SECTION SETTINGS", qml)
+        self.assertIn("SOURCES · FIXED FOR THIS SECTION", qml)
+        self.assertIn("set-section-profile", qml)
+        self.assertIn("sectionNameField", qml)
+        self.assertIn("sectionIconSparkButton", qml)
+        self.assertIn("sectionToneAccentButton", qml)
+        self.assertIn("Reset appearance", qml)
         self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
 
         story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
         self.assertIn("secondaryTextColor: selected", story)
         self.assertIn("Color.popups.text", story)
         self.assertIn("textFormat: Text.PlainText", story)
+        self.assertIn("MetricStrip", story)
+
+        section = (ROOT / "src/components/SectionButton.qml").read_text(encoding="utf-8")
+        self.assertIn("property string icon", section)
+        self.assertIn("property string tone", section)
+        self.assertIn("Color.accent", section)
+        self.assertIn("Color.foreground", section)
+
+        metrics = (ROOT / "src/components/MetricStrip.qml").read_text(encoding="utf-8")
+        for metric_id in (
+            "marketplace-views",
+            "marketplace-hearts",
+            "marketplace-copies",
+            "repository-stars",
+            "release-asset-downloads",
+        ):
+            self.assertIn(metric_id, metrics)
+        self.assertIn("Color.accent", metrics)
+        self.assertIn("Accessible.name", metrics)
 
     def test_complete_keyboard_and_visible_state_labels_exist(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

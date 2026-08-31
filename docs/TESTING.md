@@ -25,7 +25,7 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1/v2-to-v3 migration, preference/interest/filter bounds, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
+- State-v1/v2/v3-to-v4 migration, preference/interest/filter/profile bounds, closed icon/tone vocabularies, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
@@ -112,8 +112,8 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
-8. `Tab` and `Shift+Tab` cycle sections; the cogwheel shows the built-in rule, persists and resets a section-local filter, and Load more expands a dense local projection without another feed request.
-9. Source-labelled metrics, observed time, metric source link, and marketplace caveat render from the validated fixture without changing Front Page order.
+8. `Tab` and `Shift+Tab` cycle sections; the cogwheel renames one section, selects a vetted icon and theme-derived background, displays its fixed sources and built-in rule, independently resets appearance and filters, and Load more expands a dense local projection without another feed request.
+9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
 10. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
 12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.

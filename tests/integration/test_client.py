@@ -14,6 +14,7 @@ from radar.client import (
     refresh,
     set_preferences,
     set_section_filter,
+    set_section_profile,
     toggle_saved_state,
 )
 from radar.errors import ValidationError
@@ -108,13 +109,21 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertTrue(first["hasMore"])
         self.assertEqual("No extra filters", first["filterSummary"])
         self.assertIn("sectionRule", first)
+        self.assertIn("Official Omarchy releases", first["sectionSources"])
 
         plugins = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
-        metric_story = next(event for event in plugins["events"] if event.get("metricsText"))
-        self.assertIn("Views 145", metric_story["metricsText"])
-        self.assertIn("Hearts 9", metric_story["metricsText"])
+        metric_story = next(event for event in plugins["events"] if event.get("metricItems"))
+        metric_items = {item["id"]: item for item in metric_story["metricItems"]}
+        self.assertEqual("145", metric_items["marketplace-views"]["valueText"])
+        self.assertEqual("Views", metric_items["marketplace-views"]["label"])
+        self.assertEqual("9", metric_items["marketplace-hearts"]["valueText"])
         self.assertIn("not installs", metric_story["metricsCaveat"])
-        self.assertTrue(all(source["url"].startswith("https://") for source in metric_story["metricSources"]))
+        self.assertNotIn("metrics", metric_story)
+        self.assertNotIn("metricSources", metric_story)
+        self.assertEqual(
+            "https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.disk-lens",
+            metric_story["marketplaceUrl"],
+        )
 
         updated = set_section_filter(
             "plugins",
@@ -132,6 +141,20 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertTrue(filtered["events"])
         self.assertTrue(all(event["type"] == "plugin-released" for event in filtered["events"]))
         self.assertEqual("No extra filters", projection_model("core", "[]", "", self.environment, now=CLOCK)["filterSummary"])
+
+        profiled = set_section_profile(
+            "plugins",
+            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            self.environment,
+        )
+        self.assertEqual(
+            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            profiled["state"]["preferences"]["sectionProfiles"]["plugins"],
+        )
+        self.assertEqual(
+            "Core",
+            profiled["state"]["preferences"]["sectionProfiles"]["core"]["name"],
+        )
 
         with self.assertRaisesRegex(ValidationError, "limit"):
             projection_model("plugins", "[]", "", self.environment, now=CLOCK, limit=0)

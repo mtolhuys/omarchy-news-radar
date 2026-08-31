@@ -27,7 +27,7 @@ The panel has four stable visual zones:
 1. **Masthead:** Omarchy News Radar, local date, edition freshness, source health, and close action.
 2. **Section rail:** Front Page, For You, Core, Plugins, Community, and Saved with bounded counts.
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
-4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, source-labelled metrics and caveat, save action, and open-source action.
+4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow layouts collapse to one column without changing content or controls.
 
@@ -61,9 +61,11 @@ All behavior must remain reachable without a pointer:
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
 
-## Section filters and pagination
+## Section settings, filters, and pagination
 
-Each section exposes a cogwheel control. Its options screen always shows the immutable built-in section rule, then local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
+Each section exposes a cogwheel control. Its options screen permits a bounded plain-text display name, one icon from a closed six-item palette, and one background from a closed four-tone palette derived from current Omarchy colors. Appearance applies only to that section, persists privately, and has an exact per-section reset.
+
+The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Community into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 
 The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded.
 

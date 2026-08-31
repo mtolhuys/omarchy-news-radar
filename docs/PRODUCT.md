@@ -59,6 +59,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Category and tag filters operate locally.
 - Saved items and seen-through state remain local.
 - Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
+- Display names, vetted icons, and theme-derived background tones are independently stored per section and remain local; fixed source membership is always disclosed and is not user-editable in version 1.
 - Front Page ordering is deterministic and auditable.
 - Manually notable items are visibly distinguished from routine activity.
 
@@ -72,7 +73,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
 - A compositor-managed resizable/maximizable window with ordinary task switching, finite load-more controls, and selected-state text contrast across maintained themes.
-- Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with exact labels, observation times, and source links.
+- Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 
 ## What “interesting” means
 

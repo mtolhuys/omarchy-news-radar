@@ -8,11 +8,12 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlencode, urljoin, urlsplit
 
 from .constants import FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import SECTION_RULES, apply_section_filter, filter_options, filter_summary
+from .sections import SECTION_SOURCE_SUMMARIES
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
 from .local_edition import local_edition_metadata, local_image_url
@@ -28,8 +29,11 @@ from .state import (
     toggle_saved,
     update_preferences,
     update_section_filter,
+    update_section_profile,
 )
 from .validation import parse_timestamp, validate_feed, validate_https_url
+
+MARKETPLACE_PLUGIN_PAGE = "https://plugins.omarchy.org/plugin.html"
 
 
 def response(status: str, **values: Any) -> dict[str, Any]:
@@ -179,6 +183,18 @@ def set_section_filter(
     return response("ok", state=save_state(updated, environment))
 
 
+def set_section_profile(
+    section: str,
+    value: Mapping[str, Any],
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Persist one strictly validated, local-only section presentation profile."""
+
+    state, _ = load_state(environment)
+    updated = update_section_profile(state, section, value)
+    return response("ok", state=save_state(updated, environment))
+
+
 def indicator_model(
     environment: Mapping[str, str] | None = None, *, now: datetime | None = None
 ) -> dict[str, Any]:
@@ -287,6 +303,7 @@ def projection_model(
             filter=current_filter,
             filterSummary=filter_summary(current_filter),
             sectionRule=SECTION_RULES[section],
+            sectionSources=SECTION_SOURCE_SUMMARIES[section],
             filterOptions=filter_options(section),
         )
     saved_ids = set(state["saved"])
@@ -350,6 +367,12 @@ def projection_model(
                     item["imageUrl"] = cached_url
             else:
                 item["imageUrl"] = urljoin(image_base, image["path"])
+        entity = item.get("entity")
+        if isinstance(entity, dict) and entity.get("kind") == "plugin":
+            item["marketplaceUrl"] = validate_https_url(
+                f"{MARKETPLACE_PLUGIN_PAGE}?{urlencode({'id': entity['id']})}",
+                "plugin marketplace URL",
+            )
         metrics = item.get("metrics", [])
         if isinstance(metrics, list) and metrics:
             by_id = {
@@ -358,11 +381,12 @@ def projection_model(
                 if isinstance(metric, dict) and metric.get("id") in metric_labels
             }
             ordered = [by_id[metric_id] for metric_id in metric_order if metric_id in by_id]
-            item["metricsText"] = " · ".join(
-                f"{metric_labels[metric['id']]} {metric['value']:,}" for metric in ordered
-            )
-            item["metricSources"] = [
-                {"label": metric_labels[metric["id"]], "url": metric["sourceUrl"]}
+            item["metricItems"] = [
+                {
+                    "id": metric["id"],
+                    "label": metric_labels[metric["id"]],
+                    "valueText": f"{metric['value']:,}",
+                }
                 for metric in ordered
             ]
             item["metricsObservedAt"] = max(metric["observedAt"] for metric in ordered)
@@ -372,6 +396,10 @@ def projection_model(
                     "interactions—not installs, downloads, unique people, rankings, votes, "
                     "or security signals."
                 )
+        # The feed retains metric provenance for audits. The presentation model
+        # intentionally exposes only inert display facts, never raw aggregate
+        # endpoint links that are not useful reading destinations.
+        item.pop("metrics", None)
         decorated.append(item)
     return response(
         "ok",
@@ -385,6 +413,7 @@ def projection_model(
         filter=current_filter,
         filterSummary=filter_summary(current_filter),
         sectionRule=SECTION_RULES[section],
+        sectionSources=SECTION_SOURCE_SUMMARIES[section],
         filterOptions=filter_options(section),
     )
 

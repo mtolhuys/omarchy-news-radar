@@ -14,6 +14,7 @@ from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
 from .validation import format_timestamp, parse_timestamp, validate_feed, validate_state
 from .filters import default_section_filters
+from .sections import default_section_profiles
 
 EPOCH = "1970-01-01T00:00:00Z"
 
@@ -44,6 +45,7 @@ def default_state() -> dict[str, Any]:
             "imagesVisible": True,
             "interests": [],
             "sectionFilters": default_section_filters(),
+            "sectionProfiles": default_section_profiles(),
         },
     }
 
@@ -95,13 +97,16 @@ def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, 
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2}:
-            old_preferences = raw.get("preferences") if raw.get("schemaVersion") == 2 else None
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3}:
+            old_version = raw.get("schemaVersion")
+            old_preferences = raw.get("preferences") if old_version in {2, 3} else None
             preferences = default_state()["preferences"]
             if isinstance(old_preferences, dict):
                 for key in ("barVisible", "imagesVisible", "interests"):
                     if key in old_preferences:
                         preferences[key] = old_preferences[key]
+                if old_version == 3 and "sectionFilters" in old_preferences:
+                    preferences["sectionFilters"] = old_preferences["sectionFilters"]
             raw = {
                 "schemaVersion": STATE_SCHEMA_VERSION,
                 "seenThrough": raw.get("seenThrough"),
@@ -191,6 +196,18 @@ def update_section_filter(
         raise ValidationError("unknown client section")
     filters[section] = dict(value)
     current["preferences"] = {**current["preferences"], "sectionFilters": filters}
+    return validate_state(current)
+
+
+def update_section_profile(
+    state: Mapping[str, Any], section: str, value: Mapping[str, Any]
+) -> dict[str, Any]:
+    current = validate_state(dict(state))
+    profiles = dict(current["preferences"]["sectionProfiles"])
+    if section not in profiles:
+        raise ValidationError("unknown client section")
+    profiles[section] = dict(value)
+    current["preferences"] = {**current["preferences"], "sectionProfiles": profiles}
     return validate_state(current)
 
 

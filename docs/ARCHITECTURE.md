@@ -22,7 +22,7 @@ Omarchy shell
        ├─ on-demand compositor-managed window
        ├─ bundled Python client helper
        ├─ last-known-good cache
-       ├─ local seen/saved/preferences/filter state
+       ├─ local seen/saved/preferences/filter/presentation state
        ├─ installed-plugin + private-interest matching
        └─ explicit HTTPS source opening
 ```
@@ -51,6 +51,7 @@ omarchy-news-radar/
 │   ├── model.py
 │   ├── filters.py
 │   ├── metrics.py
+│   ├── sections.py
 │   ├── validation.py
 │   ├── collector.py
 │   ├── publisher.py
@@ -78,7 +79,8 @@ omarchy-news-radar/
 │   ├── feed-v1.schema.json
 │   ├── state-v1.schema.json
 │   ├── state-v2.schema.json
-│   └── state-v3.schema.json
+│   ├── state-v3.schema.json
+│   └── state-v4.schema.json
 ├── tests/
 │   ├── fixtures/
 │   ├── unit/
