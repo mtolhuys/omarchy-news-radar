@@ -47,6 +47,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("minimumSize:", qml)
         self.assertIn("screen.width - Style.gapsOut * 2", qml)
         self.assertIn("screen.height - Style.gapsOut * 2", qml)
+        self.assertGreaterEqual(qml.count("columns: keySurface.narrow ? 1 : 2"), 2)
         self.assertIn("panelWindow.maximized", qml)
         self.assertIn("startSystemResize", qml)
         self.assertIn("Load more", qml)

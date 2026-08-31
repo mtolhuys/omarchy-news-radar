@@ -720,111 +720,129 @@ Item {
           anchors.margins: Style.spacing.panelPadding
           spacing: Style.spacing.panelGap
 
-          RowLayout {
+          GridLayout {
             Layout.fillWidth: true
-            spacing: Style.spacing.controlGap
+            columns: keySurface.narrow ? 1 : 2
+            columnSpacing: Style.spacing.controlGap
+            rowSpacing: Style.spacing.sm
 
-            Image {
-              Layout.preferredWidth: Style.space(42)
-              Layout.preferredHeight: Style.space(42)
-              source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
-              sourceSize: Qt.size(Style.space(84), Style.space(84))
-              fillMode: Image.PreserveAspectFit
-              mipmap: true
-              Accessible.role: Accessible.Graphic
-              Accessible.name: "Omarchy News Radar newspaper mark"
-            }
-
-            Item {
+            RowLayout {
               Layout.fillWidth: true
-              implicitHeight: titleStack.implicitHeight
+              spacing: Style.spacing.controlGap
 
-              ColumnLayout {
-                id: titleStack
-                anchors.fill: parent
-                spacing: Style.spacing.xs
+              Image {
+                Layout.preferredWidth: Style.space(42)
+                Layout.preferredHeight: Style.space(42)
+                source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
+                sourceSize: Qt.size(Style.space(84), Style.space(84))
+                fillMode: Image.PreserveAspectFit
+                mipmap: true
+                Accessible.role: Accessible.Graphic
+                Accessible.name: "Omarchy News Radar newspaper mark"
+              }
 
-                Text {
-                  text: "OMARCHY NEWS RADAR"
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.display
-                  font.bold: true
-                  font.letterSpacing: Style.spaceReal(1)
-                  Accessible.role: Accessible.Heading
-                  Accessible.name: text
+              Item {
+                Layout.fillWidth: true
+                implicitHeight: titleStack.implicitHeight
+
+                ColumnLayout {
+                  id: titleStack
+                  anchors.fill: parent
+                  spacing: Style.spacing.xs
+
+                  Text {
+                    text: "OMARCHY NEWS RADAR"
+                    textFormat: Text.PlainText
+                    color: Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.display
+                    font.bold: true
+                    font.letterSpacing: Style.spaceReal(1)
+                    Accessible.role: Accessible.Heading
+                    Accessible.name: text
+                  }
+
+                  Text {
+                    Layout.fillWidth: true
+                    text: root.feedStatus + " · " + root.sourceHealth
+                    textFormat: Text.PlainText
+                    color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed" || root.feedStatus === "Failed"
+                      ? Color.urgent : Color.muted
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                    elide: Text.ElideRight
+                    Accessible.role: Accessible.StaticText
+                    Accessible.name: "Refresh status: " + text
+                  }
                 }
 
-                Text {
-                  Layout.fillWidth: true
-                  text: root.feedStatus + " · " + root.sourceHealth
-                  textFormat: Text.PlainText
-                  color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed" || root.feedStatus === "Failed"
-                    ? Color.urgent : Color.muted
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  elide: Text.ElideRight
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: "Refresh status: " + text
+                MouseArea {
+                  anchors.fill: parent
+                  acceptedButtons: Qt.LeftButton
+                  cursorShape: Qt.SizeAllCursor
+                  onPressed: panelWindow.startSystemMove()
+                  onDoubleClicked: panelWindow.maximized = !panelWindow.maximized
+                }
+              }
+            }
+
+            RowLayout {
+              Layout.fillWidth: keySurface.narrow
+              Layout.alignment: Qt.AlignRight
+              spacing: Style.spacing.controlGap
+
+              Item {
+                visible: keySurface.narrow
+                Layout.fillWidth: true
+              }
+
+              RadarButton {
+                label: root.refreshing ? "Refreshing…" : "Refresh"
+                enabled: !root.refreshing
+                onClicked: root.refreshFeed()
+              }
+
+              RadarButton {
+                label: "Tune"
+                onClicked: root.showPreferences()
+              }
+
+              PanelActionButton {
+                id: maximizeButton
+                iconText: panelWindow.maximized ? "❐" : "□"
+                tooltipText: panelWindow.maximized ? "Restore" : "Maximize"
+                foreground: Color.popups.text
+                fontFamily: Style.font.family
+                fontSize: Style.font.title
+                size: Style.spacing.controlHeight
+                bordered: true
+                focusable: true
+                Accessible.role: Accessible.Button
+                Accessible.name: tooltipText
+                Accessible.focusable: true
+                Accessible.onPressAction: clicked()
+                onClicked: {
+                  panelWindow.maximized = !panelWindow.maximized
+                  navigationFocus.forceActiveFocus()
                 }
               }
 
-              MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton
-                cursorShape: Qt.SizeAllCursor
-                onPressed: panelWindow.startSystemMove()
-                onDoubleClicked: panelWindow.maximized = !panelWindow.maximized
+              PanelActionButton {
+                id: closeButton
+                iconText: "×"
+                tooltipText: "Close"
+                foreground: Color.popups.text
+                fontFamily: Style.font.family
+                fontSize: Style.font.title
+                size: Style.spacing.controlHeight
+                bordered: true
+                focusable: true
+                Accessible.role: Accessible.Button
+                Accessible.name: tooltipText
+                Accessible.focusable: true
+                Accessible.onPressAction: clicked()
+                onClicked: root.dismiss()
               }
-            }
-
-            RadarButton {
-              label: root.refreshing ? "Refreshing…" : "Refresh"
-              enabled: !root.refreshing
-              onClicked: root.refreshFeed()
-            }
-
-            RadarButton {
-              label: "Tune"
-              onClicked: root.showPreferences()
-            }
-
-            PanelActionButton {
-              id: maximizeButton
-              iconText: panelWindow.maximized ? "❐" : "□"
-              tooltipText: panelWindow.maximized ? "Restore" : "Maximize"
-              foreground: Color.popups.text
-              fontFamily: Style.font.family
-              fontSize: Style.font.title
-              size: Style.spacing.controlHeight
-              bordered: true
-              focusable: true
-              Accessible.role: Accessible.Button
-              Accessible.name: tooltipText
-              Accessible.focusable: true
-              Accessible.onPressAction: clicked()
-              onClicked: {
-                panelWindow.maximized = !panelWindow.maximized
-                navigationFocus.forceActiveFocus()
-              }
-            }
-
-            PanelActionButton {
-              id: closeButton
-              iconText: "×"
-              tooltipText: "Close"
-              foreground: Color.popups.text
-              fontFamily: Style.font.family
-              fontSize: Style.font.title
-              size: Style.spacing.controlHeight
-              bordered: true
-              focusable: true
-              Accessible.role: Accessible.Button
-              Accessible.name: tooltipText
-              Accessible.focusable: true
-              Accessible.onPressAction: clicked()
-              onClicked: root.dismiss()
             }
           }
 
@@ -929,37 +947,44 @@ Item {
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.7 : card.width * 0.46
               spacing: Style.spacing.md
 
-              RowLayout {
+              GridLayout {
                 Layout.fillWidth: true
+                columns: keySurface.narrow ? 1 : 2
+                columnSpacing: Style.spacing.controlGap
+                rowSpacing: Style.spacing.sm
 
-                Text {
-                  text: root.sectionIcon(root.currentProfile.icon)
-                  textFormat: Text.PlainText
-                  color: Color.accent
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.iconLarge
-                  Accessible.ignored: true
-                }
-
-                Text {
+                RowLayout {
                   Layout.fillWidth: true
-                  text: root.currentProfile.name.toUpperCase()
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.heading
-                  font.bold: true
-                  Accessible.role: Accessible.Heading
-                  Accessible.name: text
+
+                  Text {
+                    text: root.sectionIcon(root.currentProfile.icon)
+                    textFormat: Text.PlainText
+                    color: Color.accent
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.iconLarge
+                    Accessible.ignored: true
+                  }
+
+                  Text {
+                    Layout.fillWidth: true
+                    text: root.currentProfile.name.toUpperCase()
+                    textFormat: Text.PlainText
+                    color: Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.heading
+                    font.bold: true
+                    Accessible.role: Accessible.Heading
+                    Accessible.name: text
+                  }
                 }
 
                 RadarButton {
                   id: settingsButton
+                  Layout.alignment: Qt.AlignRight
                   label: "⚙ Settings"
                   selected: root.filterSummary !== "No extra filters"
                   onClicked: root.showSectionSettings()
                 }
-
               }
 
               Text {
