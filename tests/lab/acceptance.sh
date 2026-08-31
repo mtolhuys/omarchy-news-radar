@@ -182,11 +182,11 @@ omarchy_host_test() {
       return 1
     }
   wait_for_guest_state "AltTab resolves the exact enabled Radar window identity" 15 ssh_session \
-    "qs -p /usr/share/omarchy/shell ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .label == \"Omarchy News Radar\" and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
+    "qs -p \"\$OMARCHY_PATH/shell\" ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .label == \"Omarchy News Radar\" and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
   wait_for_guest_state "Omadock renders the same exact manifest identity in its live model" 15 ssh_session \
-    "qs -p /usr/share/omarchy/shell ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .modelMatched == true and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
-  ssh_session "qs -p /usr/share/omarchy/shell ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0' && \
-    qs -p /usr/share/omarchy/shell ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0'" || return 1
+    "qs -p \"\$OMARCHY_PATH/shell\" ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .modelMatched == true and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
+  ssh_session "qs -p \"\$OMARCHY_PATH/shell\" ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0' && \
+    qs -p \"\$OMARCHY_PATH/shell\" ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0'" || return 1
   capture_console "success-news-radar-00-companion-dock-icon"
   press esc
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" right
@@ -287,7 +287,7 @@ omarchy_host_test() {
     }
   qmp '"send-key", "arguments": {"keys": [{"type":"qcode","data":"alt"},{"type":"qcode","data":"tab"}],"hold-time":3000}' >/dev/null
   wait_for_guest_state "the visible AltTab companion is presenting Radar" 5 ssh_session \
-    "test \"\$(qs -p /usr/share/omarchy/shell ipc call omarchy-alttab openState)\" = true" || return 1
+    "test \"\$(qs -p \"\$OMARCHY_PATH/shell\" ipc call omarchy-alttab openState)\" = true" || return 1
   capture_console "success-news-radar-03-companion-alttab-icon"
   sleep 3
   window_initial_maximized="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.maximized'")" || return 1
