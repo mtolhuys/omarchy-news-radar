@@ -291,7 +291,8 @@ omarchy_host_test() {
   wait_for_guest_state "the visible AltTab companion is presenting Radar" 5 ssh_session \
     "test \"\$(qs -p \"\$OMARCHY_PATH/shell\" ipc call omarchy-alttab openState)\" = true" || return 1
   capture_console "success-news-radar-03-companion-alttab-icon"
-  sleep 3
+  wait_for_guest_state "AltTab releases cleanly back to the Radar toplevel" 10 ssh_session \
+    "test \"\$(qs -p \"\$OMARCHY_PATH/shell\" ipc call omarchy-alttab openState)\" = false && hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"'" || return 1
   window_initial_maximized="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.maximized'")" || return 1
   if [[ $window_initial_maximized == true ]]; then
     radar_control_geometry maximizeGeometry || return 1
