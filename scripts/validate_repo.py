@@ -56,7 +56,7 @@ def validate_tracked_text() -> None:
 
 def validate_json_files() -> None:
     for path in tracked_files():
-        if path.suffix == ".json":
+        if path.exists() and path.suffix == ".json":
             try:
                 json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
@@ -68,7 +68,7 @@ def validate_generated_fixture() -> None:
     inputs = FixtureInputs(
         ROOT / "tests/fixtures/releases-next.json",
         ROOT / "tests/fixtures/catalog-next.json",
-        ROOT / "content/community",
+        ROOT / "tests/fixtures/community",
         ROOT / "content/curation",
     )
     feed, _ = collect_from_fixtures(
@@ -94,18 +94,18 @@ def validate_manifest() -> None:
         fail("manifest is missing required fields")
     if manifest["schemaVersion"] != 1 or manifest["id"] != "io.github.mtolhuys.news-radar":
         fail("manifest identity is invalid")
-    if manifest["kinds"] != ["panel"] or set(manifest["entryPoints"]) != {"panel"}:
-        fail("version 1 manifest must remain panel-only")
-    if manifest.get("keepLoaded") is not None or "barWidget" in manifest:
-        fail("version 1 manifest must not stay loaded or declare a bar widget")
-    entry = ROOT / manifest["entryPoints"]["panel"]
-    if not entry.is_file():
-        fail("manifest panel entry point does not exist")
-    qml = entry.read_text(encoding="utf-8")
+    if manifest["kinds"] != ["panel", "bar-widget"] or set(manifest["entryPoints"]) != {"panel", "barWidget"}:
+        fail("manifest must pair its panel with the optional bar widget")
+    if manifest.get("keepLoaded") is not None or manifest.get("barWidget", {}).get("defaultSection") != "right":
+        fail("manifest bar widget lifecycle or default placement is invalid")
+    entries = {name: ROOT / value for name, value in manifest["entryPoints"].items()}
+    if not all(entry.is_file() for entry in entries.values()):
+        fail("manifest entry point does not exist")
+    qml = entries["panel"].read_text(encoding="utf-8")
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
         if required_text not in qml:
             fail(f"panel entry point lacks {required_text}")
-    forbidden = ("Text.RichText", "Qt.openUrlExternally", '"bar-widget"', "shell -c", "bash -c")
+    forbidden = ("Text.RichText", "Qt.openUrlExternally", "shell -c", "bash -c")
     for value in forbidden:
         if value in qml:
             fail(f"panel contains forbidden runtime path: {value}")
@@ -152,7 +152,11 @@ def optional_tools() -> None:
         source = Path(omarchy_source)
         if not (source / "shell/services/PluginRegistry.qml").is_file():
             fail("OMARCHY_SOURCE is not a selected Omarchy checkout")
-        subprocess.run([qmllint, "-I", str(source / "shell"), str(ROOT / "src/Panel.qml")], cwd=ROOT, check=True)
+        subprocess.run(
+            [qmllint, "-I", str(source / "shell"), str(ROOT / "src/Panel.qml"), str(ROOT / "src/BarWidget.qml")],
+            cwd=ROOT,
+            check=True,
+        )
 
 
 def main() -> int:
@@ -166,7 +170,7 @@ def main() -> int:
     optional_tools()
     print("ok - Python source compiles")
     print("ok - tracked text is UTF-8 English-ready and free of placeholders")
-    print("ok - JSON, schema fixtures, generated feed, panel-only manifest, and pinned workflows validate")
+    print("ok - JSON, schemas, generated feed, paired panel/bar manifest, and pinned workflows validate")
     print("ok - optional shell/QML validators passed when available and configured")
     return 0
 

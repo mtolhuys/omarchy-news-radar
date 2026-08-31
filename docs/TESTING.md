@@ -21,9 +21,9 @@ make site
 
 - Required fields, closed enums, UTC timestamps, URL rules, text normalization, bounds, duplicate IDs, and unsupported schema versions.
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
-- Ordering, section projection, installed-plugin matching, front-page composition, and saved-item retention.
+- Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- Corrupt state quarantine, bounds, atomic replacement, symlink refusal, and last-known-good preservation.
+- State-v1-to-v2 migration, preference/interest bounds, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
 
 ### Omarchy releases
 
@@ -33,7 +33,7 @@ make site
 
 ### Marketplace
 
-- Explicit baseline with zero initial event flood.
+- Explicit baseline with a maximum twelve-item recent/fourteen-day backfill and no historical event flood.
 - Added plugin, non-empty version change, unchanged version with repository activity, verification transition, explicit retirement, one-run absence, two-run confirmed absence, reappearance, multi-plugin repository, schema mismatch, and warnings.
 - Stars, views, commits, validation times, descriptions, tags, and preview changes do not create unsupported events.
 - A failed current snapshot preserves prior state and creates no mass retirement.
@@ -49,11 +49,13 @@ make site
 - HTML/XML/context escaping defeats hostile titles, summaries, URLs, Unicode, quotes, angle brackets, and control characters.
 - CSP and external-link attributes remain present.
 - Generated-file drift fails validation.
+- Marketplace preview origin/path, byte/content-type agreement, PNG/JPEG/WebP structure, static-only, size/dimension/pixel bounds, SHA-256 naming, same-origin projection, SVG rejection, graceful omission, and no upstream URL in public feed.
 
 ### Client helper
 
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, and no-cache failure.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
+- Indicator unread/health output, due-check age bounds, local bar/image preferences, interests, and no preference data in network requests.
 
 ### Shortcut helper
 
@@ -80,7 +82,7 @@ Run a two-generation collector scenario: bootstrap a marketplace fixture, then a
 
 ## QML and static contract tests
 
-Source validation proves that the manifest references existing entry points, the panel exposes `open()` and `close()`, process commands are structural arrays, remote content is not assigned to rich-text paths, and hard-coded colors/sizing do not replace Omarchy tokens.
+Source validation proves that the manifest references both existing entry points, the panel exposes `open()` and `close()`, the bar exposes exact visibility-driven geometry and fixed pointer actions, process commands are structural arrays, remote text is not assigned to rich-text paths, image sources come only from helper-projected feed paths, and hard-coded colors/sizing do not replace Omarchy tokens.
 
 When `qmllint` and a selected Omarchy source are available, import paths and QML syntax must pass. Static grep is supporting evidence, not runtime proof.
 
@@ -99,17 +101,18 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 
 1. Source tests and manifest validation pass for the exact candidate.
 2. Plugin add, enable, discovery, and panel entry-point identity match the candidate.
-3. The shortcut helper reports `Super+Alt+N` as free, writes its exact managed bind-only block, reloads cleanly, exposes exactly one Radar action on that chord, and leaves the separate Editor action live.
-4. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
-5. Cached fixture content appears without waiting for the network, focus is visible, and the selected story fields match the validated fixture.
-6. `j`, `k`, section keys, search, save, refresh, and source opening use the public rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
-7. Installed-plugin matching places the fixture event in For You without transmitting installed IDs.
-8. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
-9. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
-10. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable.
-11. Escape closes the panel, no helper remains, and no shell/Hyprland/QML error occurs after the close boundary.
-12. A same-path plugin update replaces the loaded panel identity and behavior.
-13. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
+3. The default right-section newspaper renders at native cross-axis size with unread and health states; left click opens the panel, middle click refreshes, right click hides it with exact zero slot geometry, and Tune restores it.
+4. The shortcut helper reports `Super+Alt+N` as free, writes its exact managed bind-only block, reloads cleanly, exposes exactly one Radar action on that chord, and leaves the separate Editor action live.
+5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
+6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
+7. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
+8. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
+9. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
+10. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
+11. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable.
+12. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
+13. A same-path plugin update replaces the loaded panel and bar identities/behavior.
+14. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
 `public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
 
@@ -123,9 +126,9 @@ The release matrix includes maintained light and dark themes, 1366×768-equivale
 
 - Live feed is at most 2 MiB and 500 events.
 - Saved state is at most 250 items.
-- At most one refresh helper runs per panel instance.
+- At most one refresh helper runs per entry-point instance, with a cross-instance atomic lock.
 - Cached rendering does not wait for a network response.
-- Closing the panel leaves no owned process or timer.
+- Closing the panel leaves no panel-owned process or timer; hiding the bar stops its refresh timer while retaining only the bounded local status check needed to observe re-enable.
 - The UI uses a bounded or virtualized visible model rather than instantiating every story card simultaneously.
 
 Measure panel-open latency, parser time, idle resource use, dense-model navigation, and close teardown in a recorded VM context before publishing numeric performance claims. Do not turn an unmeasured target into README fact.

@@ -7,12 +7,16 @@ import html
 import os
 import shutil
 import tempfile
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from xml.etree import ElementTree as ET
 
 from .io import canonical_json_bytes
+from .errors import FetchError, ValidationError
+from .http import FetchPolicy, fetch_bytes
+from .images import MAX_IMAGE_BYTES, inspect_raster
 from .model import front_page
 from .validation import parse_timestamp, validate_feed
 
@@ -47,12 +51,21 @@ def _story(event: Mapping[str, Any], *, lead: bool = False) -> str:
     section = html.escape(str(event["classification"]["section"]))
     trust = html.escape(str(event["trust"]["marketplace"]))
     class_name = "story lead" if lead else "story"
+    image = event.get("image")
+    image_html = ""
+    if isinstance(image, dict) and isinstance(image.get("path"), str):
+        image_html = (
+            f'<img src="{html.escape(image["path"], quote=True)}" '
+            f'alt="{html.escape(str(image["alt"]), quote=True)}" '
+            f'width="{int(image["width"])}" height="{int(image["height"])}" loading="lazy">\n  '
+        )
     return f'''<article class="{class_name}">
+  {image_html}<div class="copy">
   <p class="kicker">{section} · {occurred}</p>
   <h2>{title}</h2>
   <p>{summary}</p>
   <p class="meta">Trust: {trust}</p>
-  <a href="{source_url}" rel="noopener noreferrer external">{source_label} →</a>
+  <a href="{source_url}" rel="noopener noreferrer external">{source_label} →</a></div>
 </article>'''
 
 
@@ -88,10 +101,62 @@ def render_html(feed: Mapping[str, Any]) -> bytes:
     return page.encode("utf-8")
 
 
-SITE_CSS = b'''*{box-sizing:border-box}body{margin:0 auto;max-width:1120px;padding:3rem 1.25rem;background:#101315;color:#e7e7e2;font:16px/1.6 ui-monospace,monospace}header{border-bottom:2px solid #e7e7e2;margin-bottom:2rem;padding-bottom:2rem}h1{font-size:clamp(2.5rem,8vw,5.5rem);letter-spacing:-.08em;line-height:.88;margin:.3rem 0 1rem}.eyebrow,.kicker,.meta,.health{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a3}.deck{font-size:1.25rem;max-width:46rem}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#4a5053}.story{background:#101315;padding:1.5rem}.story.lead{grid-column:1/-1;padding:2.5rem}.story h2{font-size:1.55rem;line-height:1.1}.lead h2{font-size:clamp(2rem,5vw,3.8rem)}a{color:#e7e7e2;text-underline-offset:.2em}footer{padding:2rem 0}.empty{background:#101315;padding:2rem}@media(max-width:700px){body{padding:2rem 1rem}main{display:block}.story{border-bottom:1px solid #4a5053}.story.lead{padding:1.5rem}}@media(prefers-color-scheme:light){body,.story,.empty{background:#f2f0e9;color:#181a1b}main{background:#aaa}.eyebrow,.kicker,.meta,.health{color:#596064}a{color:#181a1b}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}\n'''
+SITE_CSS = b'''*{box-sizing:border-box}body{margin:0 auto;max-width:1120px;padding:3rem 1.25rem;background:#101315;color:#e7e7e2;font:16px/1.6 ui-monospace,monospace}header{border-bottom:2px solid #e7e7e2;margin-bottom:2rem;padding-bottom:2rem}h1{font-size:clamp(2.5rem,8vw,5.5rem);letter-spacing:-.08em;line-height:.88;margin:.3rem 0 1rem}.eyebrow,.kicker,.meta,.health{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a3}.deck{font-size:1.25rem;max-width:46rem}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#4a5053}.story{background:#101315;padding:1.5rem}.story.lead{grid-column:1/-1;padding:2.5rem}.story img{display:block;width:100%;height:auto;max-height:18rem;object-fit:cover;margin:0 0 1rem}.story h2{font-size:1.55rem;line-height:1.1}.lead h2{font-size:clamp(2rem,5vw,3.8rem)}a{color:#e7e7e2;text-underline-offset:.2em}footer{padding:2rem 0}.empty{background:#101315;padding:2rem}@media(min-width:701px){.story.lead{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:2rem}.story.lead img{margin:0;max-height:26rem}}@media(max-width:700px){body{padding:2rem 1rem}main{display:block}.story{border-bottom:1px solid #4a5053}.story.lead{padding:1.5rem}}@media(prefers-color-scheme:light){body,.story,.empty{background:#f2f0e9;color:#181a1b}main{background:#aaa}.eyebrow,.kicker,.meta,.health{color:#596064}a{color:#181a1b}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}\n'''
 
 
-def publish(feed: Mapping[str, Any], destination: Path, *, source_revision: str = "unknown") -> dict[str, str]:
+ImageFetcher = Callable[[str], tuple[bytes, str]]
+
+
+def _fetch_image(url: str) -> tuple[bytes, str]:
+    data, headers, _ = fetch_bytes(
+        url,
+        policy=FetchPolicy(MAX_IMAGE_BYTES, 20.0, frozenset({"https://plugins.omarchy.org"})),
+        headers={"Accept": "image/webp,image/png,image/jpeg", "User-Agent": "omarchy-news-radar-publisher/0.1"},
+    )
+    return data, str(headers.get("Content-Type", ""))
+
+
+def materialize_images(
+    feed: Mapping[str, Any], asset_directory: Path, *, image_fetcher: ImageFetcher = _fetch_image
+) -> tuple[dict[str, Any], list[str]]:
+    """Mirror allowlisted source previews into same-origin content-addressed assets."""
+
+    candidate = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
+    public_feed = deepcopy(candidate)
+    failures: list[str] = []
+    for event in public_feed["events"]:
+        image = event.get("image")
+        if not isinstance(image, dict) or "sourceUrl" not in image:
+            continue
+        try:
+            data, content_type = image_fetcher(str(image["sourceUrl"]))
+            info = inspect_raster(data, content_type)
+            if (info.width, info.height) != (image["width"], image["height"]):
+                raise ValidationError("image dimensions differ from marketplace metadata")
+            digest = hashlib.sha256(data).hexdigest()
+            path = f"assets/images/{digest}.{info.extension}"
+            (asset_directory / "images").mkdir(exist_ok=True)
+            (asset_directory.parent / path).write_bytes(data)
+            event["image"] = {
+                "path": path,
+                "alt": image["alt"],
+                "credit": image["credit"],
+                "width": info.width,
+                "height": info.height,
+            }
+        except (FetchError, ValidationError, OSError) as exc:
+            failures.append(f"{event['id']}: {exc}")
+            del event["image"]
+    return validate_feed(public_feed, now=parse_timestamp(public_feed["generatedAt"]), public_only=True), failures
+
+
+def publish(
+    feed: Mapping[str, Any],
+    destination: Path,
+    *,
+    source_revision: str = "unknown",
+    image_fetcher: ImageFetcher = _fetch_image,
+) -> dict[str, Any]:
     validated = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
     parent = destination.parent
     parent.mkdir(parents=True, exist_ok=True)
@@ -99,6 +164,7 @@ def publish(feed: Mapping[str, Any], destination: Path, *, source_revision: str 
     try:
         (temporary / "assets").mkdir()
         (temporary / "archive").mkdir()
+        validated, image_failures = materialize_images(validated, temporary / "assets", image_fetcher=image_fetcher)
         events_bytes = canonical_json_bytes(validated)
         rss_bytes = render_rss(validated)
         html_bytes = render_html(validated)
@@ -127,7 +193,12 @@ def publish(feed: Mapping[str, Any], destination: Path, *, source_revision: str 
         else:
             os.replace(temporary, destination)
             temporary = Path()
-        return {"eventsSha256": digest, "sourceRevision": source_revision}
+        return {
+            "eventsSha256": digest,
+            "sourceRevision": source_revision,
+            "images": sum("image" in event for event in validated["events"]),
+            "imageFailures": image_failures,
+        }
     finally:
         if temporary and temporary.exists() and temporary != Path("."):
             shutil.rmtree(temporary)

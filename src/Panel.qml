@@ -17,7 +17,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-2"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -27,7 +27,12 @@ Item {
   property string sessionIdentity: ""
   property string sessionThrough: ""
   property var cachedFeed: null
-  property var userState: ({ schemaVersion: 1, seenThrough: "1970-01-01T00:00:00Z", saved: ({}) })
+  property var userState: ({
+    schemaVersion: 2,
+    seenThrough: "1970-01-01T00:00:00Z",
+    saved: ({}),
+    preferences: ({ barVisible: true, imagesVisible: true, interests: [] })
+  })
   property var installedPluginIds: []
   property var stories: []
   property var counts: ({})
@@ -39,6 +44,10 @@ Item {
   property string generatedAt: ""
   property bool refreshing: false
   property bool pendingProjection: false
+  property bool preferencesOpen: false
+
+  readonly property var preferences: userState && userState.preferences
+    ? userState.preferences : ({ barVisible: true, imagesVisible: true, interests: [] })
 
   readonly property var sections: [
     { id: "front-page", label: "Front Page" },
@@ -65,13 +74,15 @@ Item {
       section: currentSection,
       selectedIndex: selectedIndex,
       selectedTitle: selectedStory ? selectedStory.title : "",
+      selectedHasImage: selectedStory ? !!selectedStory.imageUrl : false,
       selectedIsNew: selectedStory ? selectedStory.isNew === true : false,
       storyCount: stories.length,
       status: feedStatus,
       refreshing: refreshing,
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
-      sessionThrough: sessionThrough
+      sessionThrough: sessionThrough,
+      preferencesOpen: preferencesOpen
     })
   }
 
@@ -92,6 +103,7 @@ Item {
     feedStatus = "Loading cache"
     statusDetail = "Reading the last-known-good local edition."
     opened = true
+    preferencesOpen = false
     selectedIndex = 0
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
@@ -117,6 +129,7 @@ Item {
   function close() {
     persistSeen()
     opened = false
+    preferencesOpen = false
     stopOwnedProcesses()
   }
 
@@ -128,6 +141,8 @@ Item {
   function handleRead(raw) {
     var result = RadarModel.parseResponse(raw)
     userState = result.state || userState
+    if (!interestField.activeFocus)
+      interestField.text = (userState.preferences && userState.preferences.interests || []).join(", ")
     if (result.feed) {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
@@ -242,6 +257,33 @@ Item {
     startProcess(stateProc, ["toggle-saved", "--event-id", String(selectedStory.id)])
   }
 
+  function setBooleanPreference(name, value) {
+    if (stateProc.running) return
+    var argument = name === "barVisible" ? "--bar-visible" : "--images-visible"
+    startProcess(stateProc, ["set-preferences", argument, value ? "true" : "false"])
+  }
+
+  function normalizedInterests() {
+    var raw = interestField.text.split(",")
+    var result = []
+    for (var index = 0; index < raw.length && result.length < 12; index++) {
+      var value = String(raw[index]).toLowerCase().trim().replace(/\s+/g, " ")
+      if (value && result.indexOf(value) === -1) result.push(value)
+    }
+    return result
+  }
+
+  function saveInterests() {
+    if (stateProc.running) return
+    startProcess(stateProc, ["set-preferences", "--interests-json", JSON.stringify(normalizedInterests())])
+  }
+
+  function showPreferences() {
+    interestField.text = (preferences.interests || []).join(", ")
+    preferencesOpen = true
+    Qt.callLater(function() { interestField.forceActiveFocus() })
+  }
+
   Process {
     id: readProc
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleRead(text) }
@@ -321,6 +363,14 @@ Item {
         focus: true
 
         Keys.onPressed: function(event) {
+          if (root.preferencesOpen) {
+            if (event.key === Qt.Key_Escape) {
+              root.preferencesOpen = false
+              navigationFocus.forceActiveFocus()
+              event.accepted = true
+            }
+            return
+          }
           if (event.key === Qt.Key_Escape || (event.text || "").toLowerCase() === "q") {
             root.dismiss(); event.accepted = true; return
           }
@@ -405,6 +455,11 @@ Item {
               label: root.refreshing ? "Refreshing…" : "Refresh"
               enabled: !root.refreshing
               onClicked: root.refreshFeed()
+            }
+
+            RadarButton {
+              label: "Tune"
+              onClicked: root.showPreferences()
             }
 
             RadarButton {
@@ -525,6 +580,7 @@ Item {
                   Accessible.role: Accessible.Heading
                   Accessible.name: text
                 }
+
                 RadarButton {
                   visible: keySurface.narrow
                   label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
@@ -604,6 +660,37 @@ Item {
                 width: parent.width
                 spacing: Style.spacing.panelGap
 
+                BorderSurface {
+                  visible: !!root.selectedStory && !!root.selectedStory.imageUrl
+                  width: parent.width
+                  height: visible ? Math.round(width * 0.58) : 0
+                  radius: Style.cornerRadius
+                  color: Color.background
+                  borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+                  clip: true
+
+                  Image {
+                    anchors.fill: parent
+                    source: root.selectedStory && root.selectedStory.imageUrl ? root.selectedStory.imageUrl : ""
+                    asynchronous: true
+                    cache: true
+                    fillMode: Image.PreserveAspectCrop
+                    sourceSize.width: 720
+                    sourceSize.height: 720
+                  }
+                }
+
+                Text {
+                  visible: !!root.selectedStory && !!root.selectedStory.image
+                  width: parent.width
+                  text: visible ? "IMAGE  " + root.selectedStory.image.credit : ""
+                  textFormat: Text.PlainText
+                  color: Color.muted
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                }
+
                 Text {
                   width: parent.width
                   text: root.selectedStory ? root.selectedStory.title : "Select a story"
@@ -681,6 +768,132 @@ Item {
             font.pixelSize: Style.font.caption
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignRight
+          }
+        }
+
+        Rectangle {
+          anchors.fill: parent
+          visible: root.preferencesOpen
+          z: 20
+          color: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.82)
+          MouseArea { anchors.fill: parent; onClicked: root.preferencesOpen = false }
+
+          BorderSurface {
+            anchors.centerIn: parent
+            width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(620))
+            height: Math.min(parent.height - Style.spacing.panelPadding * 2, Style.space(390))
+            color: Color.popups.background
+            radius: Style.cornerRadius
+            borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+
+            MouseArea { anchors.fill: parent }
+
+            ColumnLayout {
+              anchors.fill: parent
+              anchors.margins: Style.spacing.panelPadding
+              spacing: Style.spacing.panelGap
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  Layout.fillWidth: true
+                  text: "TUNE YOUR RADAR"
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.heading
+                  font.bold: true
+                }
+                RadarButton { label: "Done"; onClicked: root.preferencesOpen = false }
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: "Preferences stay on this machine and are never sent to the feed or its sources."
+                textFormat: Text.PlainText
+                color: Color.muted
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+                wrapMode: Text.WordWrap
+              }
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  Layout.fillWidth: true
+                  text: "Top-bar newspaper"
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.body
+                }
+                RadarButton {
+                  label: root.preferences.barVisible ? "On" : "Off"
+                  selected: root.preferences.barVisible
+                  onClicked: root.setBooleanPreference("barVisible", !root.preferences.barVisible)
+                }
+              }
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  Layout.fillWidth: true
+                  text: "Story images"
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.body
+                }
+                RadarButton {
+                  label: root.preferences.imagesVisible ? "On" : "Off"
+                  selected: root.preferences.imagesVisible
+                  onClicked: root.setBooleanPreference("imagesVisible", !root.preferences.imagesVisible)
+                }
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: "Interests · comma-separated words or phrases"
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+              }
+
+              TextField {
+                id: interestField
+                Layout.fillWidth: true
+                placeholderText: "themes, gaming, security, quickshell"
+                color: Color.popups.text
+                placeholderTextColor: Color.muted
+                selectionColor: Style.selectionFill
+                selectedTextColor: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+                Accessible.name: "Private news interests"
+                background: BorderSurface {
+                  color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
+                  radius: Style.cornerRadius
+                  borderSpec: Border.controlSpec(interestField.activeFocus ? "focus" : "normal", Color.foreground, Color.accent, Color.urgent)
+                }
+                Keys.onReturnPressed: root.saveInterests()
+                Keys.onEnterPressed: root.saveInterests()
+                Keys.onEscapePressed: {
+                  root.preferencesOpen = false
+                  navigationFocus.forceActiveFocus()
+                }
+              }
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  Layout.fillWidth: true
+                  text: "For You combines these interests with enabled plugin IDs."
+                  color: Color.muted
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                }
+                RadarButton { label: "Apply interests"; onClicked: root.saveInterests() }
+              }
+            }
           }
         }
       }

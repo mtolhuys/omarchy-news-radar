@@ -16,15 +16,17 @@ GitHub Actions
                         │
                         ▼
 Omarchy shell
-  └─ News Radar on-demand panel
+  └─ News Radar plugin
+       ├─ optional default-on bar newspaper
+       ├─ on-demand panel
        ├─ bundled Python client helper
        ├─ last-known-good cache
-       ├─ local seen/saved state
-       ├─ installed-plugin matching
+       ├─ local seen/saved/preferences state
+       ├─ installed-plugin + private-interest matching
        └─ explicit HTTPS source opening
 ```
 
-The static feed is the integration contract. The website and Omarchy panel are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API.
+The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API. The visible bar widget owns one due-checked refresh timer inside the existing shell process.
 
 ## Target repository layout
 
@@ -47,6 +49,7 @@ omarchy-news-radar/
 │   ├── validation.py
 │   ├── collector.py
 │   ├── publisher.py
+│   ├── images.py
 │   ├── state.py
 │   └── sources/
 │       ├── omarchy_releases.py
@@ -54,6 +57,7 @@ omarchy-news-radar/
 │       └── community.py
 ├── src/
 │   ├── Panel.qml
+│   ├── BarWidget.qml
 │   ├── Model.js
 │   └── components/
 ├── content/
@@ -66,7 +70,8 @@ omarchy-news-radar/
 │   └── static/
 ├── schemas/
 │   ├── feed-v1.schema.json
-│   └── state-v1.schema.json
+│   ├── state-v1.schema.json
+│   └── state-v2.schema.json
 ├── tests/
 │   ├── fixtures/
 │   ├── unit/
@@ -81,7 +86,7 @@ Generated deployment output belongs in `dist/` and stays untracked. The source s
 
 ## Plugin contract
 
-Version 1 uses a single third-party `panel` plugin:
+Version 1 uses one third-party plugin with paired panel and bar entry points:
 
 ```json
 {
@@ -91,14 +96,15 @@ Version 1 uses a single third-party `panel` plugin:
   "version": "0.1.0",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
-  "kinds": ["panel"],
-  "entryPoints": { "panel": "src/Panel.qml" }
+  "kinds": ["panel", "bar-widget"],
+  "entryPoints": { "panel": "src/Panel.qml", "barWidget": "src/BarWidget.qml" },
+  "barWidget": { "defaultSection": "right", "allowMultiple": false }
 }
 ```
 
 This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, and exposes `open(payloadJson)` and `close()`.
 
-Omit `keepLoaded` in version 1. The panel is loaded on summon and destroyed on hide. It must restore all durable user state from XDG files, terminate any owned helper on destruction, and never require a resident service merely to feel fast.
+Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar lifecycle, while the panel exposes the ordinary `open`/`close` contract. The bar widget loads only bounded local indicator state, runs a refresh only when the cache is due, and stops its refresh cadence while hidden. Neither entry point installs a service or daemon.
 
 ## Panel lifecycle
 
@@ -122,9 +128,12 @@ The bundled Python helper is the only component that reads or writes Radar cache
 ```text
 news-radar-client read
 news-radar-client refresh
-news-radar-client state mark-seen --through <UTC timestamp>
-news-radar-client state toggle-saved --event-id <id>
-news-radar-client state purge
+news-radar-client refresh-if-due --minimum-age <seconds>
+news-radar-client indicator
+news-radar-client mark-seen --through <UTC timestamp>
+news-radar-client toggle-saved --event-id <id>
+news-radar-client set-preferences [--bar-visible true|false] [--images-visible true|false] [--interests-json <array>]
+news-radar-client purge
 ```
 
 Exact flags may be refined during implementation, but each operation remains explicit, typed, non-interactive, bounded, and independently testable. `purge` is never invoked by disablement or ordinary removal; it is a deliberate user-data action.
@@ -138,7 +147,7 @@ Follow XDG ownership:
 | Path | Purpose |
 | --- | --- |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
-| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Seen-through timestamp, saved items, and schema version |
+| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Seen-through timestamp, saved items, local preferences/interests, and schema version |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/diagnostics.log` | Optional bounded local diagnostics without feed bodies or private paths |
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.
@@ -155,8 +164,9 @@ Collection is transactional:
 4. Diff only successful current sources against their last successful prior state.
 5. Create events deterministically and merge reviewed curation.
 6. Validate the complete candidate feed.
-7. Write generated artifacts to a temporary output tree.
-8. Publish the output tree and updated successful source states only after every global invariant passes.
+7. Fetch only declared marketplace preview thumbnails from `https://plugins.omarchy.org`, inspect bounded PNG/JPEG/WebP bytes and dimensions, and write successful images as SHA-256-addressed same-origin assets. Image failure omits that optional image, not its story.
+8. Write generated artifacts to a temporary output tree.
+9. Publish the output tree and updated successful source states only after every global invariant passes.
 
 A partial source outage may produce a feed with explicit source-health metadata, but the unavailable source retains its previous snapshot and produces no mass deletion or retirement events.
 
@@ -170,6 +180,7 @@ dist/
 ├── events.json
 ├── feed.xml
 ├── assets/
+│   └── images/<sha256>.<ext>
 └── archive/
 ```
 
@@ -181,11 +192,11 @@ The live feed contains a bounded rolling window. Monthly archives may retain old
 
 The panel calls the maintained shell IPC and treats the returned plugin IDs as local data. Matching is exact on canonical plugin ID. Do not send installed IDs to the feed host and do not infer installation from repository names or display names.
 
-“For You” includes events whose entity plugin ID is installed. It may also include explicitly declared compatibility events affecting all plugins, but version 1 does not guess related interests from browsing or saved history.
+“For You” includes events whose entity plugin ID is installed plus events matching up to twelve explicit local interest words or phrases. Interests are never derived from browsing or saved history and never leave the device.
 
 ## Optional bar indicator
 
-The version 1 repository does not declare `bar-widget`. If a later indicator is approved, implement it as a separate installable plugin and repository identity consuming the public feed and opening Radar through documented IPC. Do not turn a zero-width hidden widget into a lifecycle dependency for the main panel.
+The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, unread count, and current/partial health dot; left click toggles the panel, middle click refreshes, and right click persists `barVisible=false`. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
 
 ## Failure containment
 

@@ -20,14 +20,14 @@ omarchy-shell shell toggle io.github.mtolhuys.news-radar
 
 ## Surface
 
-Version 1 is an on-demand panel with no required top-bar icon. It opens centered on the active monitor, fits within current outer gaps, never exceeds the usable monitor rectangle, and becomes scrollable before content clips.
+Version 1 is an on-demand panel paired with a default-on, optional top-bar newspaper. The panel opens centered on the active monitor, fits within current outer gaps, never exceeds the usable monitor rectangle, and becomes scrollable before content clips.
 
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar, local date, edition freshness, source health, and close action.
 2. **Section rail:** Front Page, For You, Core, Plugins, Community, and Saved with bounded counts.
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
-4. **Story inspector:** source, event type, occurrence time, tags, compatibility, verification boundary, summary, save action, and open-source action.
+4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, save action, and open-source action.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow layouts collapse to one column without changing content or controls.
 
@@ -83,13 +83,13 @@ Opening an original source is not required to mark the edition seen. Saved state
 
 ## Source opening
 
-Titles, summaries, tags, and URLs are untrusted data. Display text is plain text. Source URLs appear as labels but open only through a dedicated button or keyboard action. The UI never renders remote HTML, Markdown, images, SVG, scripts, or embedded media.
+Titles, summaries, tags, image alternatives, credits, and URLs are untrusted data. Display text is plain text. Source URLs appear as labels but open only through a dedicated button or keyboard action. The UI never renders remote HTML, Markdown, SVG, scripts, or embedded media. It loads images only from content-addressed paths in the validated feed, resolved against that feed's fixed origin; the publisher has already mirrored and inspected those raster bytes. Missing or failed imagery leaves the complete text story intact.
 
-## Top-bar policy
+## Top-bar newspaper
 
-No bar widget ships in version 1. The current Omarchy plugin lifecycle places an enabled `bar-widget` in the bar, which makes “installed but hidden by default” an awkward hidden state. If usage proves an indicator valuable, build a separate optional companion plugin with its own manifest and lifecycle rather than coupling the core reader to a phantom bar slot.
+The main manifest declares both `panel` and `bar-widget`; normal enablement places one newspaper in the right section. The widget shows a bounded unread count and a source-health dot. Left click opens the same panel, middle click refreshes, and right click hides the widget after writing the local preference. Its hidden root is invisible, so Omarchy's module slot computes exact zero width and height rather than reserving a phantom gap.
 
-The future indicator may show only a restrained unread dot/count and open the same panel. It must default to no notifications, respect bar orientation and cross-axis sizing, and receive separate pointer and lifecycle acceptance.
+Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off control, so a hidden widget can be restored through the global shortcut or documented IPC. Hiding stops its due-checked network timer. It emits no desktop notification and keeps no separate companion lifecycle.
 
 ## Visual language
 

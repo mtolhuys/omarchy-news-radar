@@ -25,18 +25,18 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 2 — Build the collector and publisher
 
 1. Implement Omarchy release, marketplace catalog, and reviewed community adapters behind one interface.
-2. Implement explicit marketplace bootstrap, normalized tracked snapshot, two-generation diff, source-health handling, deterministic IDs, and no-event metadata churn.
+2. Implement explicit marketplace bootstrap with a bounded recent backfill, normalized tracked snapshot, two-generation diff, source-health handling, deterministic IDs, and no-event metadata churn.
 3. Implement curation overlay with restricted mutable fields.
-4. Implement bounded feed envelope, rolling live window, saved archive inputs, RSS, and escaped static HTML.
+4. Implement bounded feed envelope, rolling live window, saved archive inputs, RSS, escaped static HTML, and publisher-mirrored content-addressed marketplace preview rasters.
 5. Implement fixture mode and `make feed-fixture`.
 6. Implement an idempotent publish workflow that tests before generating a Pages artifact with least privileges.
 
-**Done when:** A fixed two-generation fixture produces byte-stable JSON/RSS/HTML, first bootstrap emits no plugin flood, partial sources cannot manufacture retirements, and generated output validates itself.
+**Done when:** A fixed two-generation fixture produces byte-stable JSON/RSS/HTML, first bootstrap emits no more than twelve recent listings, invalid images degrade to text, partial sources cannot manufacture retirements, and generated output validates itself.
 
 ## Phase 3 — Build the client helper
 
 1. Implement fixed-origin bounded HTTPS refresh, redirect policy, candidate validation, cache locking, and atomic last-known-good replacement.
-2. Implement state read, session cutoff, saved toggle, quarantine, and explicit purge.
+2. Implement state read, v1-to-v2 migration, session cutoff, saved toggle, private bar/image/interest preferences, indicator model, quarantine, and explicit purge.
 3. Return small versioned JSON responses designed for QML rather than exposing internal exceptions.
 4. Add loopback integration tests for success, timeout, redirect, oversize, truncation, invalid schema, concurrent refresh, and offline cache.
 
@@ -46,12 +46,21 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 
 1. Inspect and use the current host-owned panel/window, focus, token, border, scroll, and source-opening contracts.
 2. Create `src/Panel.qml` and supporting components with an explicit runtime build identity.
-3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin matching, deterministic front page, search, selection, save, source opening, and state labels.
+3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin and explicit-interest matching, deterministic front page, safe feed-image projection, search, selection, save, source opening, Tune preferences, and state labels.
 4. Implement the complete keyboard map and pointer equivalents.
 5. Implement responsive one/two-column presentation without changing semantic order.
-6. Add `manifest.json` only after the panel entry point exists and validation passes.
+6. Add `manifest.json` only after both entry points exist and validation passes.
 
-**Done when:** Source tests prove structure and a fixture-driven component can represent every UX state without remote HTML, hard-coded theme values, or network-blocked opening.
+**Done when:** Source tests prove structure and a fixture-driven component can represent every UX state without remote HTML, arbitrary image URLs, hard-coded theme values, or network-blocked opening.
+
+## Phase 4b — Add the optional newspaper indicator
+
+1. Implement one theme-native `bar-widget` with a code-native newspaper, unread count, and source-health dot.
+2. Route left click to panel toggle, middle click to bounded refresh, and right click to the local hide preference.
+3. Bind hidden state to exact invisible root geometry and watch local state so Tune in the panel can restore it.
+4. Use `refresh-if-due` on startup and every 30 minutes only while visible; use the shared atomic lock to contain multi-monitor overlap.
+
+**Done when:** Source tests and Plugin Lab geometry/pointer evidence prove default placement, zero-gap hiding, restoration, no hidden refresh cadence, and clean unload.
 
 ## Phase 5 — Build explicit shortcut setup
 
@@ -68,7 +77,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Create product-owned lab fixtures and `tests/lab/acceptance.sh` using lab helpers rather than another VM controller.
 2. Install the exact candidate, set deterministic guest-only feed/cache fixtures, and expose source/installed/runtime identities.
 3. Send `Super+Alt+N` through QMP and assert the rendered panel, not just IPC state; also prove the Editor binding remains live before, during, and after Radar setup.
-4. Drive keyboard and pointer journeys, installed relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, themes, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
+4. Drive keyboard and pointer journeys, bar hide/restore, image on/off, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, themes, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
 5. Inspect shell logs and every visual checkpoint.
 
 **Done when:** The full acceptance list in `TESTING.md` passes for one clean committed candidate and the timestamped evidence directory is recorded.

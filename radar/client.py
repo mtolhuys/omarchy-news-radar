@@ -8,7 +8,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 from .constants import FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
 from .errors import FetchError, RadarError, StorageError, ValidationError
@@ -24,8 +24,9 @@ from .state import (
     save_feed,
     save_state,
     toggle_saved,
+    update_preferences,
 )
-from .validation import validate_feed, validate_https_url
+from .validation import parse_timestamp, validate_feed, validate_https_url
 
 
 def response(status: str, **values: Any) -> dict[str, Any]:
@@ -93,7 +94,7 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
             candidate = _test_feed(env)
             if candidate is None:
                 candidate = _fetch_feed()
-            validated = validate_feed(candidate, now=clock)
+            validated = validate_feed(candidate, now=clock, public_only=True)
             saved = save_feed(validated, env, now=clock)
         return response("current", feed=saved, cachePreserved=False)
     except (RadarError, OSError) as exc:
@@ -127,6 +128,66 @@ def toggle_saved_state(event_id: str, environment: Mapping[str, str] | None = No
     updated, saved = toggle_saved(state, event, now=now)
     save_state(updated, environment)
     return response("ok", saved=saved, state=updated)
+
+
+def set_preferences(
+    *,
+    bar_visible: bool | None = None,
+    images_visible: bool | None = None,
+    interests: list[str] | None = None,
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    state, _ = load_state(environment)
+    updated = update_preferences(
+        state,
+        bar_visible=bar_visible,
+        images_visible=images_visible,
+        interests=interests,
+    )
+    return response("ok", state=save_state(updated, environment))
+
+
+def indicator_model(
+    environment: Mapping[str, str] | None = None, *, now: datetime | None = None
+) -> dict[str, Any]:
+    feed = load_feed(environment, now=now)
+    state, quarantined = load_state(environment)
+    preferences = state["preferences"]
+    if feed is None:
+        return response(
+            "first-use",
+            unread=0,
+            health="empty",
+            barVisible=preferences["barVisible"],
+            quarantine=quarantined,
+        )
+    unread = sum(event["occurredAt"] > state["seenThrough"] for event in feed["events"])
+    health = "partial" if any(source["status"] == "failed" for source in feed["sources"]) else "stale" if any(source["status"] == "stale" for source in feed["sources"]) else "current"
+    return response(
+        "ok",
+        unread=unread,
+        health=health,
+        generatedAt=feed["generatedAt"],
+        barVisible=preferences["barVisible"],
+        quarantine=quarantined,
+    )
+
+
+def refresh_if_due(
+    minimum_age: int,
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    if not 300 <= minimum_age <= 86400:
+        raise ValidationError("minimum refresh age is outside its bound")
+    clock = now or datetime.now(timezone.utc)
+    cached = load_feed(environment, now=clock)
+    if cached is not None:
+        age = (clock - parse_timestamp(cached["generatedAt"])).total_seconds()
+        if age < minimum_age:
+            return response("not-due", feed=cached, cachePreserved=True)
+    return refresh(environment, now=clock)
 
 
 def installed_plugins() -> dict[str, Any]:
@@ -177,9 +238,10 @@ def projection_model(
     if feed is None:
         return response("first-use", section=section, events=[], counts={name: 0 for name in ("front-page", "for-you", "core", "plugins", "community", "saved")})
     saved_ids = set(state["saved"])
+    interests = state["preferences"]["interests"]
     names = ("front-page", "for-you", "core", "plugins", "community", "saved")
     counts = {
-        name: len(project_section(feed, name, installed_plugin_ids=installed, saved_ids=saved_ids))
+        name: len(project_section(feed, name, installed_plugin_ids=installed, saved_ids=saved_ids, interests=interests))
         for name in names
     }
     events = project_section(
@@ -187,14 +249,22 @@ def projection_model(
         section,
         installed_plugin_ids=installed,
         saved_ids=saved_ids,
+        interests=interests,
         query=query,
     )
     seen = state["seenThrough"]
+    env = dict(environment or os.environ)
+    image_base = FEED_URL
+    if env.get("OMARCHY_NEWS_RADAR_TEST_MODE") == "1" and env.get("OMARCHY_NEWS_RADAR_TEST_FEED_URL"):
+        image_base = env["OMARCHY_NEWS_RADAR_TEST_FEED_URL"]
     decorated: list[dict[str, Any]] = []
     for event in events:
         item = dict(event)
         item["isNew"] = item["occurredAt"] > seen
         item["isSaved"] = item["id"] in saved_ids
+        image = item.get("image")
+        if state["preferences"]["imagesVisible"] and isinstance(image, dict) and "path" in image:
+            item["imageUrl"] = urljoin(image_base, image["path"])
         decorated.append(item)
     return response("ok", section=section, events=decorated, counts=counts, seenThrough=seen)
 

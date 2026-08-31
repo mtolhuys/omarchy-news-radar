@@ -1,0 +1,17 @@
+{
+  "author": "Fixture author",
+  "channels": [
+    "quattro"
+  ],
+  "id": "keyboard-first-plugin-workflow-2026",
+  "publishedAt": "2026-08-30T10:00:00Z",
+  "significance": "routine",
+  "sourceLabel": "Fixture guide",
+  "sourceUrl": "https://example.com/fixture-guide",
+  "summary": "A fixture-only walkthrough exercises the reviewed community adapter.",
+  "tags": [
+    "guide",
+    "plugins"
+  ],
+  "title": "A fixture keyboard-first plugin workflow"
+}

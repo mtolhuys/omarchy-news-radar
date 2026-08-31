@@ -13,14 +13,17 @@ from typing import Any, Sequence
 
 from .client import (
     installed_plugins,
+    indicator_model,
     mark_seen_state,
     open_source,
     projection_model,
     purge_state,
     read_model,
     refresh,
+    refresh_if_due,
     require_unprivileged,
     toggle_saved_state,
+    set_preferences,
 )
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
 from .errors import RadarError
@@ -40,12 +43,19 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("read")
     commands.add_parser("refresh")
+    due = commands.add_parser("refresh-if-due")
+    due.add_argument("--minimum-age", required=True, type=int)
+    commands.add_parser("indicator")
     commands.add_parser("installed")
     commands.add_parser("purge")
     seen = commands.add_parser("mark-seen")
     seen.add_argument("--through", required=True)
     saved = commands.add_parser("toggle-saved")
     saved.add_argument("--event-id", required=True)
+    preferences = commands.add_parser("set-preferences")
+    preferences.add_argument("--bar-visible", choices=("true", "false"))
+    preferences.add_argument("--images-visible", choices=("true", "false"))
+    preferences.add_argument("--interests-json")
     opening = commands.add_parser("open-source")
     opening.add_argument("--url", required=True)
     projection = commands.add_parser("project")
@@ -59,12 +69,30 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = read_model()
         elif args.command == "refresh":
             result = refresh()
+        elif args.command == "refresh-if-due":
+            result = refresh_if_due(args.minimum_age)
+        elif args.command == "indicator":
+            result = indicator_model()
         elif args.command == "installed":
             result = installed_plugins()
         elif args.command == "mark-seen":
             result = mark_seen_state(args.through)
         elif args.command == "toggle-saved":
             result = toggle_saved_state(args.event_id)
+        elif args.command == "set-preferences":
+            interests = None
+            if args.interests_json is not None:
+                try:
+                    interests = json.loads(args.interests_json)
+                except json.JSONDecodeError as exc:
+                    raise RadarError("interests must be a JSON array") from exc
+                if not isinstance(interests, list):
+                    raise RadarError("interests must be a JSON array")
+            result = set_preferences(
+                bar_visible=None if args.bar_visible is None else args.bar_visible == "true",
+                images_visible=None if args.images_visible is None else args.images_visible == "true",
+                interests=interests,
+            )
         elif args.command == "open-source":
             result = open_source(args.url)
         elif args.command == "project":
@@ -85,7 +113,7 @@ def build_fixture(*, second_generation: bool, output: Path, snapshot_output: Pat
     inputs = FixtureInputs(
         releases=ROOT / f"tests/fixtures/releases-{suffix}.json",
         marketplace=ROOT / f"tests/fixtures/catalog-{suffix}.json",
-        community=ROOT / "content/community",
+        community=ROOT / "tests/fixtures/community",
         curation=ROOT / "content/curation",
     )
     clock = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
@@ -143,7 +171,7 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             _print({"status": "ok", "events": len(feed["events"]), **result})
         else:
             value = json.loads(args.path.read_text(encoding="utf-8"))
-            validate_feed(value, now=parse_timestamp(value["generatedAt"]))
+            validate_feed(value, now=parse_timestamp(value["generatedAt"]), public_only=True)
             _print({"status": "ok"})
         return 0
     except (RadarError, OSError, json.JSONDecodeError) as exc:

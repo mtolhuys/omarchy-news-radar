@@ -4,14 +4,38 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import struct
 import sys
+import zlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
 def write(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+
+
+def fixture_png(width: int = 720, height: int = 405) -> bytes:
+    def chunk(kind: bytes, payload: bytes) -> bytes:
+        return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF)
+
+    rows = []
+    for y in range(height):
+        row = bytearray([0])
+        for x in range(width):
+            paper = 238 if 34 < x < width - 34 and 28 < y < height - 28 else 24
+            if paper == 238 and (48 < y < 70 or (90 < y < 340 and (x // 32) % 3 == 0)):
+                color = (40, 50, 54)
+            elif paper == 238 and x < width // 2 and 92 < y < 238:
+                color = (63, 146, 166)
+            else:
+                color = (paper, paper, paper - 4 if paper > 40 else paper)
+            row.extend(color)
+        rows.append(bytes(row))
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(b"".join(rows), 9)) + chunk(b"IEND", b"")
 
 
 def event_clone(base: dict, index: int, when: datetime) -> dict:
@@ -37,6 +61,22 @@ def main() -> int:
     output = Path(sys.argv[2])
     output.mkdir(parents=True, exist_ok=True)
     feed = json.loads(source.read_text(encoding="utf-8"))
+    image_bytes = fixture_png()
+    image_digest = hashlib.sha256(image_bytes).hexdigest()
+    image_path = f"assets/images/{image_digest}.png"
+    (output / "assets" / "images").mkdir(parents=True, exist_ok=True)
+    (output / image_path).write_bytes(image_bytes)
+    # Front Page deterministically promotes the newest Omarchy release ahead
+    # of routine plugin events. Put the visual on that actual lead rather than
+    # relying on raw source-array order.
+    pictured = next(event for event in feed["events"] if event["type"] == "omarchy-released")
+    pictured["image"] = {
+        "path": image_path,
+        "alt": "Synthetic newspaper preview for Plugin Lab acceptance",
+        "credit": "News Radar test fixture",
+        "width": 720,
+        "height": 405,
+    }
     write(output / "valid.json", feed)
 
     later = copy.deepcopy(feed)

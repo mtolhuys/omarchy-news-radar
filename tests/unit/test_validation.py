@@ -74,6 +74,26 @@ class ValidationTests(unittest.TestCase):
                 validate_https_url(value)
         self.assertEqual("https://github.com/example/project", validate_https_url("https://github.com/example/project"))
 
+    def test_public_feed_accepts_only_content_addressed_same_origin_image_paths(self) -> None:
+        internal = copy.deepcopy(self.feed)
+        internal["events"][0]["image"] = {
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/fixture.webp",
+            "alt": "Fixture preview",
+            "credit": "Marketplace",
+            "width": 720,
+            "height": 405,
+        }
+        self.assertIn("image", validate_feed(internal, now=NOW)["events"][0])
+        with self.assertRaises(ValidationError):
+            validate_feed(internal, now=NOW, public_only=True)
+        unsafe_path = copy.deepcopy(internal)
+        unsafe_path["events"][0]["image"]["sourceUrl"] = "https://plugins.omarchy.org/unrelated/fixture.webp"
+        with self.assertRaises(ValidationError):
+            validate_feed(unsafe_path, now=NOW)
+        internal["events"][0]["image"].pop("sourceUrl")
+        internal["events"][0]["image"]["path"] = "assets/images/" + "a" * 64 + ".webp"
+        self.assertIn("image", validate_feed(internal, now=NOW, public_only=True)["events"][0])
+
     def test_front_page_and_private_projections_are_deterministic(self) -> None:
         validated = validate_feed(self.feed, now=NOW)
         front = front_page(validated["events"], installed_plugin_ids=["io.github.mtolhuys.disk-lens"])

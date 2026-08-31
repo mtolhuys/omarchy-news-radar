@@ -19,6 +19,7 @@ from radar.state import (
     save_feed,
     save_state,
     toggle_saved,
+    update_preferences,
     user_state_path,
 )
 
@@ -67,6 +68,27 @@ class StateTests(unittest.TestCase):
         self.assertEqual("2026-08-31T10:00:00Z", updated["seenThrough"])
         updated, saved = toggle_saved(updated, self.feed["events"][0], now=CLOCK)
         self.assertFalse(saved)
+
+    def test_v1_migrates_and_private_preferences_are_strict(self) -> None:
+        path = user_state_path(self.environment)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"schemaVersion": 1, "seenThrough": "2026-08-30T10:00:00Z", "saved": {}}),
+            encoding="utf-8",
+        )
+        state, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(2, state["schemaVersion"])
+        self.assertTrue(state["preferences"]["barVisible"])
+        tuned = update_preferences(
+            state,
+            bar_visible=False,
+            images_visible=False,
+            interests=["security", "quick shell"],
+        )
+        self.assertEqual(["security", "quick shell"], tuned["preferences"]["interests"])
+        with self.assertRaises(ValidationError):
+            update_preferences(state, interests=["bad!"])
 
     def test_symlink_targets_and_concurrent_refresh_are_refused(self) -> None:
         path = feed_path(self.environment)

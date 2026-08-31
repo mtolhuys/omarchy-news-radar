@@ -75,6 +75,13 @@ Source `status` values are `current`, `not-modified`, `stale`, or `failed`. A fa
   "compatibility": {
     "channels": ["quattro"],
     "basis": "declared"
+  },
+  "image": {
+    "path": "assets/images/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp",
+    "alt": "Omarchy Disk Lens plugin preview",
+    "credit": "Omarchy Plugin Marketplace",
+    "width": 720,
+    "height": 405
   }
 }
 ```
@@ -110,6 +117,7 @@ Compatibility basis is `declared`, `inferred-from-source`, or `unknown`. Version
 - Tags: at most 12 unique normalized lowercase tags, each 1–32 characters.
 - Channels: at most 8 values from a closed vocabulary.
 - All timestamps: canonical UTC RFC 3339 with `Z`.
+- Public image paths: optional relative `assets/images/<sha256>.(jpg|png|webp)` only, with 1–4,096 pixel dimensions, at most 12 million pixels, bounded plain-text alt/credit, and no upstream URL in the public feed.
 
 Replace C0/DEL control characters in display strings, normalize line breaks and repeated whitespace, and preserve Unicode without converting user content into markup. Do not silently repair structural IDs or URLs; reject them.
 
@@ -137,18 +145,23 @@ Normalized marketplace state is keyed by canonical plugin ID and retains only fi
     "tags": ["storage"],
     "addedAt": "2026-08-31T00:00:00Z",
     "verification": "verified",
-    "retired": false
+    "retired": false,
+    "preview": {
+      "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/example-card.webp",
+      "width": 720,
+      "height": 405
+    }
   }
 }
 ```
 
-Stars, views, hearts, copy counts, repository update timestamps, observed commits, preview paths, and source fingerprints may help the marketplace operate but are not news identities in version 1.
+Stars, views, hearts, copy counts, repository update timestamps, observed commits, preview paths, and source fingerprints are not news identities. Valid preview metadata is retained only so the publisher can mirror an optional image for an event created by another supported fact.
 
 ## Local state
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "seenThrough": "2026-08-31T14:00:00Z",
   "saved": {
     "evt_8cb067f9ef7da216bcab4781": {
@@ -158,6 +171,11 @@ Stars, views, hearts, copy counts, repository update timestamps, observed commit
       "occurredAt": "2026-08-31T09:00:00Z",
       "type": "plugin-released"
     }
+  },
+  "preferences": {
+    "barVisible": true,
+    "imagesVisible": true,
+    "interests": ["security", "quickshell"]
   }
 }
 ```
@@ -165,6 +183,8 @@ Stars, views, hearts, copy counts, repository update timestamps, observed commit
 Saved records intentionally duplicate a small bounded subset so a bookmark survives the rolling feed window. Cap saved items at 250 with explicit UI before refusing another; never silently discard a saved item.
 
 `seenThrough` is monotonic. It advances only to the greatest event timestamp captured in a successfully rendered session and never to wall-clock “now.” Corrupt state is quarantined and replaced by defaults without modifying feed cache.
+
+State v2 adds three local preferences. `barVisible` and `imagesVisible` default true. `interests` contains at most twelve unique normalized lowercase words or phrases of at most 32 characters. A valid v1 state migrates atomically to v2 with saved and seen data preserved and default preferences; no migration data is sent over the network.
 
 ## Schema evolution
 

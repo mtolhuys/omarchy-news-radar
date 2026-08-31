@@ -17,12 +17,14 @@ from .constants import (
     MARKETPLACE_TRUST,
     MAX_EVENTS,
     MAX_SAVED,
-    SCHEMA_VERSION,
+    FEED_SCHEMA_VERSION,
+    MAX_INTERESTS,
     SECTIONS,
     SIGNIFICANCE,
     SOURCE_IDS,
     SOURCE_REASON_CODES,
     SOURCE_STATUSES,
+    STATE_SCHEMA_VERSION,
 )
 from .errors import ValidationError
 
@@ -30,6 +32,9 @@ TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 EVENT_ID_RE = re.compile(r"^evt_[0-9a-f]{24}$")
 ENTITY_ID_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._:+-]{0,159})$")
 TAG_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,31})$")
+INTEREST_RE = re.compile(r"^[a-z0-9](?:[a-z0-9 -]{0,30}[a-z0-9])?$")
+IMAGE_PATH_RE = re.compile(r"^assets/images/[0-9a-f]{64}\.(?:jpg|png|webp)$")
+IMAGE_SOURCE_PATH_RE = re.compile(r"^/assets/img/plugins/[A-Za-z0-9._-]+\.(?:webp|png|jpg|jpeg)$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
 
 
@@ -121,7 +126,41 @@ def validate_tags(value: Any) -> list[str]:
     return result
 
 
-def validate_event(value: Any) -> dict[str, Any]:
+def validate_image(value: Any, *, public_only: bool) -> dict[str, Any]:
+    image = require_mapping(value, "event.image")
+    alt = normalize_text(image.get("alt"), 180)
+    credit = normalize_text(image.get("credit"), 120)
+    width = image.get("width")
+    height = image.get("height")
+    if not isinstance(width, int) or isinstance(width, bool) or not 1 <= width <= 4096:
+        raise ValidationError("event.image.width is invalid")
+    if not isinstance(height, int) or isinstance(height, bool) or not 1 <= height <= 4096:
+        raise ValidationError("event.image.height is invalid")
+    if width * height > 12_000_000:
+        raise ValidationError("event.image pixel count exceeds its bound")
+    normalized = {"alt": alt, "credit": credit, "width": width, "height": height}
+    if "path" in image:
+        path = require_string(image["path"], "event.image.path", 1, 128)
+        if not IMAGE_PATH_RE.fullmatch(path):
+            raise ValidationError("event.image.path is not a content-addressed feed asset")
+        normalized["path"] = path
+        return normalized
+    if public_only:
+        raise ValidationError("public feed images must be same-origin content-addressed assets")
+    source_url = validate_https_url(image.get("sourceUrl"), "event.image.sourceUrl")
+    parsed = urlsplit(source_url)
+    if (
+        parsed.netloc.lower() != "plugins.omarchy.org"
+        or not IMAGE_SOURCE_PATH_RE.fullmatch(parsed.path)
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValidationError("event.image.sourceUrl is outside the marketplace image path boundary")
+    normalized["sourceUrl"] = source_url
+    return normalized
+
+
+def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
     event = require_mapping(value, "event")
     event_id = require_string(event.get("id"), "event.id", 28, 28)
     if not EVENT_ID_RE.fullmatch(event_id):
@@ -200,6 +239,8 @@ def validate_event(value: Any) -> dict[str, Any]:
     if "correctedAt" in event:
         normalized["correctedAt"] = require_string(event["correctedAt"], "event.correctedAt", 20, 20)
         parse_timestamp(normalized["correctedAt"], "event.correctedAt")
+    if "image" in event:
+        normalized["image"] = validate_image(event["image"], public_only=public_only)
     return normalized
 
 
@@ -209,9 +250,9 @@ def _event_sort_key(event: Mapping[str, Any]) -> tuple[float, float, str]:
     return (-occurred, -discovered, str(event["id"]))
 
 
-def validate_feed(value: Any, *, now: datetime | None = None) -> dict[str, Any]:
+def validate_feed(value: Any, *, now: datetime | None = None, public_only: bool = False) -> dict[str, Any]:
     feed = require_mapping(value, "feed")
-    if feed.get("schemaVersion") != SCHEMA_VERSION:
+    if feed.get("schemaVersion") != FEED_SCHEMA_VERSION:
         raise ValidationError("unsupported feed schemaVersion")
     generated_at = require_string(feed.get("generatedAt"), "generatedAt", 20, 20)
     generated = parse_timestamp(generated_at, "generatedAt")
@@ -252,7 +293,7 @@ def validate_feed(value: Any, *, now: datetime | None = None) -> dict[str, Any]:
     events_raw = require_list(feed.get("events"), "events")
     if len(events_raw) > MAX_EVENTS:
         raise ValidationError("feed exceeds event bound")
-    events = [validate_event(event) for event in events_raw]
+    events = [validate_event(event, public_only=public_only) for event in events_raw]
     ids = [event["id"] for event in events]
     if len(set(ids)) != len(ids):
         raise ValidationError("feed contains duplicate event IDs")
@@ -260,7 +301,7 @@ def validate_feed(value: Any, *, now: datetime | None = None) -> dict[str, Any]:
         raise ValidationError("feed events are not in canonical order")
 
     normalized = {
-        "schemaVersion": SCHEMA_VERSION,
+        "schemaVersion": FEED_SCHEMA_VERSION,
         "generatedAt": generated_at,
         "window": {"from": from_text, "through": through_text},
         "sources": sources,
@@ -296,7 +337,7 @@ def validate_saved_record(value: Any, event_id: str) -> dict[str, Any]:
 
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
-    if state.get("schemaVersion") != SCHEMA_VERSION:
+    if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
         raise ValidationError("unsupported state schemaVersion")
     seen = require_string(state.get("seenThrough"), "seenThrough", 20, 20)
     parse_timestamp(seen, "seenThrough")
@@ -304,7 +345,29 @@ def validate_state(value: Any) -> dict[str, Any]:
     if len(saved_raw) > MAX_SAVED:
         raise ValidationError("saved state exceeds item bound")
     saved = {event_id: validate_saved_record(record, event_id) for event_id, record in sorted(saved_raw.items())}
-    return {"schemaVersion": SCHEMA_VERSION, "seenThrough": seen, "saved": saved}
+    preferences = require_mapping(state.get("preferences"), "preferences")
+    bar_visible = require_bool(preferences.get("barVisible"), "preferences.barVisible")
+    images_visible = require_bool(preferences.get("imagesVisible"), "preferences.imagesVisible")
+    interests_raw = require_list(preferences.get("interests"), "preferences.interests")
+    if len(interests_raw) > MAX_INTERESTS:
+        raise ValidationError("preferences.interests exceeds its bound")
+    interests: list[str] = []
+    for raw in interests_raw:
+        value = require_string(raw, "interest", 1, 32).lower()
+        value = " ".join(value.split())
+        if not INTEREST_RE.fullmatch(value) or value in interests:
+            raise ValidationError("interests must be unique normalized words or phrases")
+        interests.append(value)
+    return {
+        "schemaVersion": STATE_SCHEMA_VERSION,
+        "seenThrough": seen,
+        "saved": saved,
+        "preferences": {
+            "barVisible": bar_visible,
+            "imagesVisible": images_visible,
+            "interests": interests,
+        },
+    }
 
 
 def require_unique(values: Iterable[str], name: str) -> None:

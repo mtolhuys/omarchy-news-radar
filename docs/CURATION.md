@@ -17,7 +17,8 @@ The front page is composed deterministically from the live window:
 2. Explicit `notable` items ordered by occurrence time.
 3. The newest official Omarchy release when not already included.
 4. Installed-plugin events for the local “For You” projection.
-5. A bounded mix of routine plugin and community activity, preventing one category from consuming the entire edition.
+5. Up to six events matching explicit local interests.
+6. A bounded mix of routine plugin and community activity, preventing one category from consuming the entire edition.
 
 Server output may nominate a lead item, but the client verifies that the referenced event exists. Without an explicit lead, the first highest-significance event becomes the visual lead. Popularity counters never decide the lead.
 

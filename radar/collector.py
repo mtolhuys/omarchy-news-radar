@@ -95,7 +95,13 @@ def collect_from_fixtures(
         marketplace_payload = read_json_bounded(inputs.marketplace, 8 * 1024 * 1024)
         marketplace = parse_marketplace(marketplace_payload)
         old_marketplace = previous_sources.get("marketplace") if isinstance(previous_sources.get("marketplace"), dict) else None
-        marketplace_events, marketplace_snapshot = diff_marketplace(old_marketplace, marketplace, discovered_at=clock, bootstrap=bootstrap_marketplace)
+        marketplace_events, marketplace_snapshot = diff_marketplace(
+            old_marketplace,
+            marketplace,
+            discovered_at=clock,
+            bootstrap=bootstrap_marketplace,
+            bootstrap_window_from=clock - timedelta(days=14),
+        )
         events.extend(marketplace_events)
         next_sources["marketplace"] = marketplace_snapshot
         health.append({"id": "marketplace", "status": "current", "checkedAt": checked_at, "sourceUrl": CATALOG_URL})

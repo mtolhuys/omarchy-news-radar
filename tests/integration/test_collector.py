@@ -21,18 +21,21 @@ class CollectorIntegrationTests(unittest.TestCase):
         return FixtureInputs(
             ROOT / f"tests/fixtures/releases-{generation}.json",
             ROOT / f"tests/fixtures/catalog-{generation}.json",
-            ROOT / "content/community",
+            ROOT / "tests/fixtures/community",
             ROOT / "content/curation",
         )
 
-    def test_bootstrap_is_silent_for_marketplace_and_second_generation_is_stable(self) -> None:
+    def test_bootstrap_backfill_is_bounded_and_second_generation_is_stable(self) -> None:
         baseline_feed, baseline_snapshot = collect_from_fixtures(
             self.inputs("baseline"),
             previous_snapshot=None,
             now=CLOCK,
             bootstrap_marketplace=True,
         )
-        self.assertFalse(any(event["type"].startswith("plugin-") for event in baseline_feed["events"]))
+        self.assertLessEqual(
+            len([event for event in baseline_feed["events"] if event["type"] == "plugin-added"]),
+            12,
+        )
         next_feed, next_snapshot = collect_from_fixtures(
             self.inputs("next"),
             previous_snapshot=baseline_snapshot,
@@ -95,7 +98,7 @@ class CollectorIntegrationTests(unittest.TestCase):
         with mock.patch("radar.collector.fetch_bytes", side_effect=fixture_fetch):
             feed, snapshot = collect_production(
                 previous_snapshot=empty_snapshot(),
-                community_directory=ROOT / "content/community",
+                community_directory=ROOT / "tests/fixtures/community",
                 curation_directory=ROOT / "content/curation",
                 now=CLOCK,
                 bootstrap_marketplace=True,

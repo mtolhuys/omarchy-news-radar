@@ -11,7 +11,11 @@ FocusScope {
   signal activated()
   signal hovered()
 
-  implicitHeight: storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2
+  readonly property bool hasImage: !!story && !!story.imageUrl
+  implicitHeight: Math.max(
+    storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2,
+    hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0
+  )
   activeFocusOnTab: true
 
   Accessible.role: Accessible.ListItem
@@ -42,7 +46,7 @@ FocusScope {
     Column {
       id: storyColumn
       anchors.left: parent.left
-      anchors.right: parent.right
+      anchors.right: storyImageBox.visible ? storyImageBox.left : parent.right
       anchors.verticalCenter: parent.verticalCenter
       anchors.leftMargin: Style.spacing.rowPaddingX
       anchors.rightMargin: Style.spacing.rowPaddingX
@@ -79,6 +83,30 @@ FocusScope {
         wrapMode: Text.WordWrap
         maximumLineCount: root.lead ? 4 : 2
         elide: Text.ElideRight
+      }
+    }
+
+    BorderSurface {
+      id: storyImageBox
+      visible: root.hasImage
+      anchors.right: parent.right
+      anchors.rightMargin: Style.spacing.rowPaddingX
+      anchors.verticalCenter: parent.verticalCenter
+      width: root.lead ? Style.space(180) : Style.space(104)
+      height: root.lead ? Style.space(102) : Style.space(66)
+      radius: Style.cornerRadius
+      color: Color.background
+      borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+      clip: true
+
+      Image {
+        anchors.fill: parent
+        source: root.hasImage ? root.story.imageUrl : ""
+        asynchronous: true
+        cache: true
+        fillMode: Image.PreserveAspectCrop
+        sourceSize.width: 360
+        sourceSize.height: 360
       }
     }
   }

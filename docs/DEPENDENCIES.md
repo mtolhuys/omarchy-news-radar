@@ -2,7 +2,7 @@
 
 ## Runtime platform
 
-Radar targets the maintained Omarchy Quattro third-party plugin contract selected by the disposable Plugin Lab: `schemaVersion: 1`, an on-demand `panel` entry point, current shell-injected properties, current `Color`/`Style`/`Border` UI tokens, shell IPC, Hyprland, and Quickshell/QML modules shipped by Omarchy.
+Radar targets the maintained Omarchy Quattro third-party plugin contract selected by the disposable Plugin Lab: `schemaVersion: 1`, paired `panel` and `bar-widget` entry points, current shell-injected properties, current `Color`/`Style`/`Border` UI tokens, shell IPC, Hyprland, and Quickshell/QML modules shipped by Omarchy.
 
 A public minimum Omarchy release must not be claimed until clean-clone installation and runtime acceptance pass against that exact release.
 
@@ -32,7 +32,7 @@ Inspect the current Omarchy source selected by Plugin Lab before importing shell
 
 ## Collector and CI
 
-Production collection uses GitHub’s REST API and raw marketplace catalog over HTTPS. GitHub Actions may use the repository-provided `GITHUB_TOKEN` with least privilege. No personal access token is required for ordinary operation.
+Production collection uses GitHub’s REST API, the raw marketplace catalog, and catalog-declared thumbnails at the official marketplace origin over HTTPS. Image inspection is implemented with Python standard-library byte parsing and hashing; Pillow/ImageMagick are not required. GitHub Actions may use the repository-provided `GITHUB_TOKEN` with least privilege. No personal access token is required for ordinary operation.
 
 Build and tests require only:
 

@@ -24,21 +24,21 @@
 
 **Consequence:** Public installation has a separate shortcut step. The managed block contains no `hl.unbind`; deleting the exact block releases only Radar's chord. Plugin removal instructions remove the block first. Symlinked, personal, modified, conflicting, ambiguous, or invalid configuration is refused and falls back to documented manual guidance.
 
-## D004 — Ship an on-demand panel without a resident service
+## D004 — Ship an on-demand panel without a daemon
 
-**Decision:** Version 1 manifest declares only `panel` and omits `keepLoaded`.
+**Decision:** Version 1 omits `keepLoaded` and installs no service or daemon. The panel remains on-demand; the approved bar widget uses only the existing shell lifecycle.
 
-**Why:** The shortcut can summon a panel directly. Cached-first loading provides speed without background CPU, timers, network activity, or another singleton in the long-running shell.
+**Why:** Cached-first loading provides speed without another singleton or system service. The visible status indicator needs a bounded due-checked timer, which can live in the bar widget already hosted by Omarchy.
 
-**Consequence:** Durable state lives in XDG files, every open restores it, and every close terminates owned work.
+**Consequence:** Durable state lives in XDG files, every panel open restores it, and every panel close terminates panel-owned work. A visible newspaper checks locally every 30 seconds and requests a refresh only when at least 30 minutes old; hiding it stops refresh polling.
 
-## D005 — Do not ship a top-bar widget in version 1
+## D005 — Pair the panel with an optional default-on bar newspaper
 
-**Decision:** No `bar-widget` kind or invisible bar placeholder belongs in the main plugin.
+**Decision:** The main manifest declares one non-multiple `bar-widget` in the right section. It is visible by default, opens the panel on left click, refreshes on middle click, and hides on right click. Tune Your Radar restores it.
 
-**Why:** Many Omarchy bars are already crowded. The current enable contract places a bar widget into the layout, so a supposedly optional same-manifest indicator would create awkward lifecycle and hidden-state coupling.
+**Why:** The owner explicitly chose a small visual news-status affordance. Current Omarchy `ModuleSlot` sizing maps an invisible widget to exact zero geometry, and XDG state plus a file watch gives the panel and widget one reversible preference without a phantom slot.
 
-**Consequence:** If demand is proven, build a separate optional companion plugin with independent installation, geometry, pointer, and lifecycle evidence.
+**Consequence:** The earlier separate-companion boundary is superseded. Acceptance must prove default placement, orientation, unread/health states, left/middle/right pointer behavior, zero-gap hiding, panel re-enable, and no refresh cadence while hidden.
 
 ## D006 — Own a versioned static feed
 
@@ -74,7 +74,7 @@
 
 ## D010 — Keep personalization local
 
-**Decision:** Installed-plugin matching, seen state, saves, filters, and preferences stay on the device.
+**Decision:** Installed-plugin matching, up to twelve explicit interests, seen state, saves, filters, and preferences stay on the device.
 
 **Why:** Server personalization is unnecessary for a generic public feed and would create accounts, identifiers, storage, and trust obligations.
 
@@ -88,13 +88,13 @@
 
 **Consequence:** Implement small focused utilities rather than importing web, feed, HTTP, schema, or UI frameworks. Any exception needs a recorded review.
 
-## D012 — Establish a silent baseline before publishing marketplace diffs
+## D012 — Establish a baseline with a bounded recent backfill
 
-**Decision:** The first successful marketplace collection records state and emits no historical plugin events.
+**Decision:** The first successful marketplace collection records the complete state and may emit only the twelve newest listings with valid timestamps inside the prior fourteen days.
 
-**Why:** Treating an existing catalog of roughly two thousand items as new would destroy trust immediately.
+**Why:** Treating an existing catalog of roughly two thousand items as new would destroy trust, while a completely empty marketplace section makes a real first run look mocked and hides the ecosystem's current activity.
 
-**Consequence:** Bootstrap is explicit and auditable. A baseline reset is a maintenance operation and cannot happen silently in CI.
+**Consequence:** Bootstrap is explicit and auditable. Invalid or missing listing timestamps are excluded, historical version/verification/retirement changes never backfill, and the twelve-item cap is tested. A baseline reset remains a maintenance operation.
 
 ## D013 — Advance seen state to the rendered session cutoff
 
@@ -119,3 +119,11 @@
 **Why:** Atomic schema changes and one test suite matter more than premature repository boundaries.
 
 **Consequence:** Modules remain independently testable. A future consumer or hosted feed can split out without rewriting the event contract.
+
+## D016 — Mirror only official marketplace preview rasters
+
+**Decision:** An event caused by a supported marketplace fact may include the catalog's preview thumbnail after publication mirrors it to a same-origin SHA-256 path. No arbitrary or direct remote image URL reaches clients.
+
+**Why:** Images make ecosystem activity immediately legible, but direct third-party loads create privacy, availability, tracking, and decoder boundaries. The official marketplace already provides bounded thumbnails and dimensions.
+
+**Consequence:** The publisher uses a closed origin/path family, 1.5 MiB body limit, PNG/JPEG/WebP magic and structure checks, static-only enforcement, 4,096-pixel side/12-million-pixel bounds, and exact metadata dimension matching. SVG is forbidden. Image failures are visible build warnings and degrade to a complete text-only story.

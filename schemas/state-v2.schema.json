@@ -1,0 +1,56 @@
+{
+  "$id": "https://mtolhuys.github.io/omarchy-news-radar/schemas/state-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "barVisible": { "type": "boolean" },
+        "imagesVisible": { "type": "boolean" },
+        "interests": {
+          "items": {
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^[a-z0-9](?:[a-z0-9 -]{0,30}[a-z0-9])?$",
+            "type": "string"
+          },
+          "maxItems": 12,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": ["barVisible", "imagesVisible", "interests"],
+      "type": "object"
+    },
+    "saved": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "occurredAt": { "$ref": "#/$defs/timestamp" },
+          "savedAt": { "$ref": "#/$defs/timestamp" },
+          "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+          "title": { "maxLength": 160, "minLength": 1, "type": "string" },
+          "type": { "type": "string" }
+        },
+        "required": ["savedAt", "title", "sourceUrl", "occurredAt", "type"],
+        "type": "object"
+      },
+      "maxProperties": 250,
+      "propertyNames": { "pattern": "^evt_[0-9a-f]{24}$" },
+      "type": "object"
+    },
+    "schemaVersion": { "const": 2 },
+    "seenThrough": { "$ref": "#/$defs/timestamp" }
+  },
+  "required": ["schemaVersion", "seenThrough", "saved", "preferences"],
+  "title": "Omarchy News Radar local state v2",
+  "type": "object",
+  "$defs": {
+    "httpsUrl": { "maxLength": 2048, "pattern": "^https://", "type": "string" },
+    "timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  }
+}

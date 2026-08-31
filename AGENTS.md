@@ -29,15 +29,15 @@ For Omarchy runtime work, also read the maintained Plugin Lab `AGENTS.md`, `READ
 ## Product invariants
 
 - `Super+Alt+N` is the recommended primary interaction. The current Omarchy source and disposable live session leave it free; install it only after confirming that both the personal configuration and live binding table are conflict-free, and never replace another action.
-- The main plugin is an on-demand `panel`. Version 1 does not require or secretly occupy a top-bar slot.
+- The main plugin pairs an on-demand `panel` with one default-on `bar-widget`. The newspaper shows unread/source health, right-click hides it by setting local state, hidden geometry is exactly zero, and the panel can restore it. It is not a separate companion plugin.
 - Opening the panel shows a validated cached edition immediately when one exists, then refreshes without blocking the cached reading experience.
-- Remote feed content, marketplace metadata, release notes, repository text, and community submissions are untrusted data. Render them as bounded plain text and never execute them.
+- Remote feed content, marketplace metadata, release notes, repository text, and community submissions are untrusted data. Render textual fields as bounded plain text and never execute them. Images are optional publisher-mirrored marketplace rasters: accept only validated PNG/JPEG/WebP from the fixed official image origin, publish them as content-addressed same-origin assets, and never render remote HTML, Markdown, SVG, or arbitrary image URLs.
 - Every visible claim links to its original source. Radar summarizes and organizes; it does not become the source of truth.
 - The plugin has no telemetry, accounts, tracking identifiers, remote read state, cookies, or personalized server requests.
-- Read state, saved items, and preferences remain local. Generic feed retrieval is the only normal client network request.
+- Read state, saved items, installed plugin IDs, interests, and preferences remain local. Generic feed and same-origin mirrored-image retrieval are the only normal client network requests.
 - No arbitrary web scraping, X scraping, AI-generated summaries, engagement bait, notification spam, or automatic “best plugin” claims belong in version 1.
-- A first collector run establishes a baseline and must not publish the entire existing marketplace as thousands of new events.
-- Closing or disabling the panel leaves no accidental helper process, fetch, timer, or background daemon running.
+- A first collector run establishes a baseline and may backfill only the twelve newest marketplace listings from the previous fourteen days; it must not publish the whole catalog as new.
+- Closing the panel stops its processes. A visible bar indicator may perform one due-checked refresh at startup and every 30 minutes; hiding the indicator stops that network cadence. No daemon is installed.
 - Every state has visible feedback and deterministic recovery: first use, cached, refreshing, current, offline, empty, invalid feed, source-partial, and failed.
 
 ## Repository rules
@@ -68,6 +68,7 @@ make test
 make validate
 make feed-fixture
 make site
+make collect-live
 ```
 
 `make test` must be offline and deterministic. `make validate` must cover the plugin manifest when present, tracked-English policy, generated-file drift, Python syntax/types available without network installation, shell lint when available, and QML validation against the selected Omarchy source when available.

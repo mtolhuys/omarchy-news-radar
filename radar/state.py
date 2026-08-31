@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from .constants import FEED_MAX_BYTES, MAX_SAVED, SCHEMA_VERSION
+from .constants import FEED_MAX_BYTES, MAX_SAVED, STATE_SCHEMA_VERSION
 from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
 from .validation import format_timestamp, parse_timestamp, validate_feed, validate_state
@@ -33,7 +33,12 @@ def state_root(environment: Mapping[str, str] | None = None) -> Path:
 
 
 def default_state() -> dict[str, Any]:
-    return {"schemaVersion": SCHEMA_VERSION, "seenThrough": EPOCH, "saved": {}}
+    return {
+        "schemaVersion": STATE_SCHEMA_VERSION,
+        "seenThrough": EPOCH,
+        "saved": {},
+        "preferences": {"barVisible": True, "imagesVisible": True, "interests": []},
+    }
 
 
 def feed_path(environment: Mapping[str, str] | None = None) -> Path:
@@ -55,11 +60,11 @@ def load_feed(environment: Mapping[str, str] | None = None, *, now: datetime | N
         raw = read_json_bounded(path, FEED_MAX_BYTES)
     except FileNotFoundError:
         return None
-    return validate_feed(raw, now=now)
+    return validate_feed(raw, now=now, public_only=True)
 
 
 def save_feed(feed: Mapping[str, Any], environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
-    validated = validate_feed(dict(feed), now=now)
+    validated = validate_feed(dict(feed), now=now, public_only=True)
     atomic_write_json(feed_path(environment), validated)
     return validated
 
@@ -83,6 +88,16 @@ def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, 
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
+        if isinstance(raw, dict) and raw.get("schemaVersion") == 1:
+            raw = {
+                "schemaVersion": STATE_SCHEMA_VERSION,
+                "seenThrough": raw.get("seenThrough"),
+                "saved": raw.get("saved"),
+                "preferences": default_state()["preferences"],
+            }
+            migrated = validate_state(raw)
+            atomic_write_json(path, migrated)
+            return migrated, None
         return validate_state(raw), None
     except FileNotFoundError:
         return default_state(), None
@@ -133,6 +148,25 @@ def toggle_saved(
     current["saved"][event_id] = saved_record(event, now or datetime.now(timezone.utc))
     current["saved"] = dict(sorted(current["saved"].items()))
     return validate_state(current), True
+
+
+def update_preferences(
+    state: Mapping[str, Any],
+    *,
+    bar_visible: bool | None = None,
+    images_visible: bool | None = None,
+    interests: list[str] | None = None,
+) -> dict[str, Any]:
+    current = validate_state(dict(state))
+    preferences = dict(current["preferences"])
+    if bar_visible is not None:
+        preferences["barVisible"] = bar_visible
+    if images_visible is not None:
+        preferences["imagesVisible"] = images_visible
+    if interests is not None:
+        preferences["interests"] = interests
+    current["preferences"] = preferences
+    return validate_state(current)
 
 
 class RefreshLock:

@@ -8,12 +8,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class QmlContractTests(unittest.TestCase):
-    def test_manifest_is_panel_only_and_entry_exists(self) -> None:
+    def test_manifest_pairs_panel_with_optional_collapsible_bar_widget(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(["panel"], manifest["kinds"])
+        self.assertEqual(["panel", "bar-widget"], manifest["kinds"])
         self.assertNotIn("keepLoaded", manifest)
-        self.assertNotIn("barWidget", manifest)
         self.assertTrue((ROOT / manifest["entryPoints"]["panel"]).is_file())
+        self.assertTrue((ROOT / manifest["entryPoints"]["barWidget"]).is_file())
+        self.assertEqual("right", manifest["barWidget"]["defaultSection"])
+
+        widget = (ROOT / "src/BarWidget.qml").read_text(encoding="utf-8")
+        self.assertIn("visible: barVisible", widget)
+        self.assertIn("implicitWidth: button.implicitWidth", widget)
+        self.assertIn('"--bar-visible", "false"', widget)
+        self.assertIn("Qt.RightButton", widget)
+        self.assertIn("refresh-if-due", widget)
 
     def test_panel_uses_plain_text_and_structural_process_arguments(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")
@@ -24,8 +32,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("textFormat: Text.PlainText", qml)
         self.assertNotIn("Text.RichText", qml)
         self.assertNotIn("Qt.openUrlExternally", qml)
-        self.assertNotIn("bar-widget", qml)
         self.assertNotIn("shell -c", qml)
+        self.assertIn("TUNE YOUR RADAR", qml)
+        self.assertIn("Story images", qml)
+        self.assertIn("Top-bar newspaper", qml)
 
     def test_complete_keyboard_and_visible_state_labels_exist(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

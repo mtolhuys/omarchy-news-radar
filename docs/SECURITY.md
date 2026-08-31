@@ -4,7 +4,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 
 ## Trust boundaries
 
-- GitHub API responses, marketplace catalogs, release notes, repository metadata, community records, generated feeds, titles, summaries, tags, author names, and URLs are untrusted.
+- GitHub API responses, marketplace catalogs, preview rasters, release notes, repository metadata, community records, generated feeds, titles, summaries, tags, author names, and URLs are untrusted.
 - The published feed is owned by this project but remains untrusted at the client boundary because hosting, transport endpoints, build pipelines, or stored artifacts can fail.
 - Installed plugin IDs and local reading state are private local data.
 - `~/.config/hypr/bindings.lua` is user-owned configuration and may contain arbitrary valid Lua, comments, custom formatting, or symlinks.
@@ -12,7 +12,8 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 
 ## Remote-content invariants
 
-- Render remote strings as plain text only. Do not interpret HTML, Markdown, SVG, image URLs, ANSI escapes, QML, JavaScript, terminal sequences, or link markup.
+- Render remote strings as plain text only. Do not interpret HTML, Markdown, SVG, upstream image URLs, ANSI escapes, QML, JavaScript, terminal sequences, or link markup.
+- Render optional images only from validated content-addressed paths in the feed's fixed origin. The publisher accepts only bounded static PNG/JPEG/WebP from the exact marketplace image origin, verifies Content-Type/magic/structure/dimensions, rejects SVG and animation, and omits failures.
 - Enforce feed size, event count, string length, tag count, URL length, nesting, and timestamp bounds before a candidate reaches QML.
 - Accept source links only when they parse as public HTTPS URLs without credentials or control characters.
 - Opening a source requires an explicit user action and passes the validated URL as one structural process argument to the maintained desktop launcher and `xdg-open`.
@@ -21,7 +22,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 
 ## Client fetch
 
-The production feed origin is fixed in one module. Normal UI settings do not accept arbitrary feed URLs. The helper:
+The production feed origin is fixed in one module. Normal UI settings do not accept arbitrary feed or image URLs. The helper:
 
 - uses HTTPS with certificate verification;
 - uses explicit connect and total timeouts;
@@ -45,7 +46,7 @@ Saved items and cache are preserved on plugin disable or normal removal. A separ
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
 
-At most one refresh helper belongs to one panel instance. Closing, disabling, updating, or unloading the plugin terminates it with a bounded graceful period and no orphan. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+At most one refresh helper belongs to one panel or bar instance, and the atomic refresh lock rejects cross-monitor overlap. Closing the panel terminates its helper. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
 ## Shortcut installer
 
@@ -78,7 +79,7 @@ RSS/XML generation escapes every remote value and uses canonical HTTPS links. XM
 
 ## Privacy
 
-The feed host receives an ordinary generic GET request and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, filters, saves, and seen state never leave the machine.
+The feed host receives ordinary generic feed and same-origin image GET requests and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, explicit interests, filters, saves, and seen state never leave the machine.
 
 The project must not claim perfect anonymity, sandboxing, or security auditing.
 
@@ -89,7 +90,7 @@ The project must not claim perfect anonymity, sandboxing, or security auditing.
 - Workflow permissions are least privilege: read source by default and grant Pages/deployment permission only to the publish job.
 - Production publication runs only after source tests and artifact validation.
 - Generated artifacts record source revision and a SHA-256 digest; clients do not treat a digest from the same origin as an independent signature.
-- No remote code, package, font, image, or binary is downloaded during build or runtime.
+- No remote code, package, or font is downloaded. The publication build downloads only allowlisted marketplace preview rasters under the strict mirroring policy; runtime downloads only the project feed and its same-origin content-addressed raster assets.
 
 ## Vulnerability reporting
 

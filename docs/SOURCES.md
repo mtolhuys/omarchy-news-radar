@@ -4,7 +4,7 @@
 
 Version 1 ingests only sources with a stable machine-readable contract or a reviewed repository-owned record. Every adapter is allowlisted, independently testable, bounded, and responsible for turning an upstream payload into a small normalized snapshot before any global diff occurs.
 
-The collector does not follow instructions found in upstream content, execute repository code, clone plugin repositories, download preview assets, resolve arbitrary submitted URLs, or authenticate as a personal GitHub user.
+The collector does not follow instructions found in upstream content, execute repository code, clone plugin repositories, resolve arbitrary submitted URLs, or authenticate as a personal GitHub user. The publisher may download only catalog-declared preview thumbnails from the exact official marketplace image origin under the bounded raster policy below.
 
 ## Omarchy releases
 
@@ -30,11 +30,11 @@ https://raw.githubusercontent.com/omacom/omarchy-plugin-marketplace/main/site/ca
 
 The catalog is currently a versioned object containing `generatedAt`, `stateSchemaVersion`, `plugins`, and warnings. Treat this shape as dated research, revalidate it before implementation, and isolate all upstream-specific parsing inside the marketplace adapter.
 
-The adapter flattens catalog entries by canonical plugin ID and normalizes name, description, version, repository, category, tags, listing times, release URL when public, and verification fields.
+The adapter flattens catalog entries by canonical plugin ID and normalizes name, a safely truncated description, version, repository, category, tags, listing times, release URL when public, verification fields, and optional preview-thumbnail metadata.
 
 ### Bootstrap
 
-When no prior marketplace snapshot exists, a successful run writes the baseline and emits no `plugin-added`, `plugin-released`, `plugin-retired`, or verification-change events. The command must require an explicit bootstrap mode locally and make the first CI run visibly distinguishable from an ordinary update.
+When no prior marketplace snapshot exists, explicit bootstrap writes the complete baseline and emits at most the twelve newest listings whose valid listing time falls in the previous fourteen days. It emits no historical version, retirement, or verification-change events. Missing or invalid listing times are ineligible. This gives a real first edition without presenting roughly two thousand existing plugins as new.
 
 ### Supported diffs
 
@@ -44,6 +44,10 @@ When no prior marketplace snapshot exists, a successful run writes the baseline 
 - **Retired:** the source explicitly lists the plugin as retired, or the ID is absent in two consecutive complete successful catalog snapshots. A single absence never retires a plugin.
 
 Changes to description, tags, category, stars, views, hearts, copy counts, repository update time, observed commit, validation timestamp, preview image, or source fingerprint update the snapshot but do not create default news events.
+
+### Preview mirroring
+
+An event created by a supported marketplace diff may carry its catalog preview thumbnail. Publication fetches only `https://plugins.omarchy.org/assets/img/plugins/...` through the closed redirect policy, caps each response at 1.5 MiB, requires matching PNG/JPEG/WebP Content-Type and magic, validates static image structure and declared dimensions up to 4,096 per side/12 million pixels, rejects SVG and animation, then names the asset by SHA-256. A fetch or validation failure removes only the optional image. Clients never receive the upstream preview URL.
 
 One repository-level validated commit may represent multiple plugins and may change for reasons unrelated to a specific plugin. It is not a plugin-release signal.
 

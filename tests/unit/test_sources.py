@@ -78,12 +78,21 @@ class SourceTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             parse_releases(paginated)
 
-    def test_marketplace_bootstrap_is_explicit_and_silent(self) -> None:
+    def test_marketplace_bootstrap_is_explicit_and_bounded(self) -> None:
         current = parse_marketplace(self.payload("catalog-baseline.json"))
         with self.assertRaises(ValidationError):
             diff_marketplace(None, current, discovered_at=CLOCK)
         events, snapshot = diff_marketplace(None, current, discovered_at=CLOCK, bootstrap=True)
         self.assertEqual([], events)
+        events, _ = diff_marketplace(
+            None,
+            current,
+            discovered_at=CLOCK,
+            bootstrap=True,
+            bootstrap_window_from=datetime(2026, 8, 1, tzinfo=timezone.utc),
+        )
+        self.assertEqual(1, len(events))
+        self.assertTrue(all(event["type"] == "plugin-added" for event in events))
         self.assertEqual(2, len(snapshot["plugins"]))
 
     def test_supported_marketplace_diffs_and_metadata_noise(self) -> None:
@@ -137,7 +146,8 @@ class SourceTests(unittest.TestCase):
         self.assertEqual([], restored_events)
 
     def test_community_records_are_reviewed_bounded_json(self) -> None:
-        events = community_events(ROOT / "content/community", discovered_at=CLOCK)
+        self.assertEqual([], community_events(ROOT / "content/community", discovered_at=CLOCK))
+        events = community_events(ROOT / "tests/fixtures/community", discovered_at=CLOCK)
         self.assertEqual(["community-link"], [event["type"] for event in events])
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "future.json"

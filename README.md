@@ -2,21 +2,22 @@
 
 > Press one key and catch up with what changed across Omarchy.
 
-Omarchy News Radar is a keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with a panel-only Omarchy plugin, a deterministic Python collector and publisher, a bounded static JSON/RSS/HTML edition, and a cached local reader that remains useful offline.
+Omarchy News Radar is a visual, keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with an optional newspaper status widget, a full panel, a deterministic Python collector/publisher, a bounded static JSON/RSS/HTML edition with safe mirrored previews, and a cached local reader that remains useful offline.
 
 ## Project status
 
 Version `0.1.0` is a complete local release candidate, not a public release. The source, tests, workflows, and disposable Plugin Lab scenario are implemented. The intended GitHub repository and Pages feed do not exist yet, so the public URL, public clean-clone proof, tag, release, and marketplace submission remain deliberately pending owner authorization.
 
-The main plugin declares only `panel`. Version 1 has no top-bar widget, hidden bar slot, daemon, notification, telemetry, account, analytics, AI summary, or plugin-management action. A future indicator remains a separate companion-plugin decision.
+The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
 ## What is included
 
 - A standard-library Python collector for published Omarchy releases, bounded marketplace catalog diffs, and reviewed repository-owned community records.
-- A tracked normalized source snapshot with a rolling 90-day event ledger, silent first marketplace bootstrap, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
-- Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, a bounded archive projection, and build digest metadata.
+- A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
+- Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
-- A theme-native QML panel with Front Page, For You, Core, Plugins, Community, Saved, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
+- A theme-native QML panel with images, Front Page, For You, Core, Plugins, Community, Saved, private interests, local image/bar preferences, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
+- A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
 - A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free; it never displaces Editor or another action.
 - Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and eventual public-clone acceptance.
 
@@ -43,26 +44,7 @@ cd ~/Projects/omarchy/plugin-lab
 ./bin/lab plugin ~/Projects/plugins/omarchy-news-radar/tests/lab/acceptance.sh
 ```
 
-For an owner-driven smoke test on the current desktop, first run the four source gates above, then explicitly install the local Git checkout and seed its cache with the synthetic fixture:
-
-```bash
-cd ~/Projects/plugins/omarchy-news-radar
-omarchy plugin add "$PWD" --enable --yes
-OMARCHY_NEWS_RADAR_TEST_MODE=1 \
-  OMARCHY_NEWS_RADAR_TEST_FEED="$PWD/tests/fixtures/feed-valid.json" \
-  ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-client refresh
-~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut status
-~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut install
-```
-
-Press `Super+Alt+N`. Because the public feed is not published yet, the seeded edition remains visible as last-known-good content while a normal background refresh reports offline. Finish the reversible smoke test in this order:
-
-```bash
-~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut remove
-omarchy plugin remove io.github.mtolhuys.news-radar --yes
-```
-
-The assistant-run verification never executes those owner desktop commands; all automated desktop mutation remains in the disposable guest.
+The Lab scenario seeds a deterministic guest-only feed, installs the conflict-free `Super+Alt+N` binding, drives the real bar and panel, captures screenshots, checks zero-gap hide/restore and local interests, then removes the owned shortcut and plugin. Do not install or activate the development checkout on the daily desktop; use the disposable VM for integration and visual acceptance.
 
 ## Install after publication
 
@@ -110,8 +92,18 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `s`: save or unsave the selected story locally.
 - `r`: refresh once while preserving the last-known-good edition.
 - `Escape` or `q`: close the panel.
+- `Tune`: enable/disable the top-bar newspaper and images, and save up to twelve comma-separated private interests.
 
-Installed plugin IDs are read locally through Omarchy shell IPC and used only for exact `For You` matching. They are never sent to the feed host.
+Installed plugin IDs and explicit interests are used only for local `For You` matching. They are never sent to the feed host.
+
+## Newspaper controls
+
+- Left click: open or close the News Radar panel.
+- Middle click: request one bounded refresh.
+- Right click: hide the newspaper immediately; its bar slot collapses to zero.
+- Restore: press `Super+Alt+N` (or use shell IPC), choose Tune, then set “Top-bar newspaper” to On.
+
+The visible widget requests a refresh only when the cache is at least 30 minutes old. Hiding it stops that cadence. There are no desktop notifications.
 
 ## Local data and removal
 
@@ -146,9 +138,9 @@ python3 -m radar collect --bootstrap-marketplace  # first successful baseline on
 python3 -m radar collect                          # later editions
 ```
 
-The first successful marketplace run is intentionally silent for historical plugin listings. A failed adapter retains its prior normalized state and cannot manufacture additions, releases, or mass retirements.
+The first successful marketplace run publishes at most twelve genuinely recent listings from the previous fourteen days, then records the complete baseline. It never treats the historical catalog as new. A failed adapter retains its prior normalized state and cannot manufacture additions, releases, or mass retirements.
 
-The Pages workflow keeps repository permissions read-only. Each manual publication uploads the updated `state/source-snapshot.json` as a separate run artifact. The owner must review, validate, and commit that artifact before the next publication; otherwise the next run is intentionally not considered an advanced source baseline. Exact first-publication steps are in [`docs/RELEASE.md`](docs/RELEASE.md) and the local evidence record.
+The Pages workflow runs hourly at minute 17 and also supports manual dispatch. It keeps repository permissions read-only and uploads the updated `state/source-snapshot.json` as a run artifact. The owner must periodically review, validate, and commit that artifact so multi-run retirement confirmation and baseline advancement remain explicit. Exact first-publication steps are in [`docs/RELEASE.md`](docs/RELEASE.md) and the local evidence record.
 
 ## Documentation
 

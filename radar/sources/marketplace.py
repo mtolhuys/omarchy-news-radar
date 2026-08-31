@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import re
 from typing import Any, Mapping
 
 from ..errors import ValidationError
@@ -12,6 +13,15 @@ from ..validation import format_timestamp, normalize_text, parse_timestamp, vali
 CATALOG_URL = "https://raw.githubusercontent.com/omacom/omarchy-plugin-marketplace/main/site/catalog.json"
 MARKETPLACE_URL = "https://plugins.omarchy.org/"
 VERIFICATION = {"verified", "reviewed", "unverified", "unknown"}
+PREVIEW_RE = re.compile(r"^assets/img/plugins/[A-Za-z0-9._-]+\.(?:webp|png|jpg|jpeg)$")
+MAX_BOOTSTRAP_EVENTS = 12
+
+
+def _bounded_description(value: Any, fallback: str) -> str:
+    text = normalize_text(value or fallback, 10_000)
+    if len(text) > 400:
+        text = text[:397].rstrip() + "…"
+    return normalize_text(text, 400)
 
 
 def _plugin_url(plugin: Mapping[str, Any]) -> str:
@@ -36,6 +46,40 @@ def _listing_time(plugin: Mapping[str, Any], generated_at: str) -> str:
         except (ValueError, ValidationError):
             pass
     return generated_at
+
+
+def _has_listing_time(plugin: Mapping[str, Any]) -> bool:
+    for key, suffix in (("listedAt", ""), ("addedAt", "T00:00:00+00:00")):
+        value = plugin.get(key)
+        if not isinstance(value, str):
+            continue
+        try:
+            datetime.fromisoformat(value.replace("Z", "+00:00") + suffix)
+            return True
+        except ValueError:
+            continue
+    return False
+
+
+def _preview(plugin: Mapping[str, Any]) -> dict[str, Any] | None:
+    path = plugin.get("previewThumbnail")
+    width = plugin.get("previewThumbnailWidth")
+    height = plugin.get("previewThumbnailHeight")
+    if path is None and width is None and height is None:
+        return None
+    if not isinstance(path, str) or not PREVIEW_RE.fullmatch(path):
+        raise ValidationError("marketplace preview path is invalid")
+    if not isinstance(width, int) or isinstance(width, bool) or not 1 <= width <= 4096:
+        raise ValidationError("marketplace preview width is invalid")
+    if not isinstance(height, int) or isinstance(height, bool) or not 1 <= height <= 4096:
+        raise ValidationError("marketplace preview height is invalid")
+    if width * height > 12_000_000:
+        raise ValidationError("marketplace preview pixel count exceeds its bound")
+    return {
+        "sourceUrl": "https://plugins.omarchy.org/" + path,
+        "width": width,
+        "height": height,
+    }
 
 
 def parse_marketplace(payload: Any) -> dict[str, Any]:
@@ -76,19 +120,30 @@ def parse_marketplace(payload: Any) -> dict[str, Any]:
         status = str(raw.get("status") or "").lower()
         retired = bool(raw.get("retired")) or status in {"retired", "removed", "deprecated"}
         version = str(raw.get("version") or "").strip()[:80]
+        category = normalize_text(raw.get("category") or "Uncategorized", 60)
+        category_tag = re.sub(r"[^a-z0-9]+", "-", category.lower()).strip("-")[:32]
+        if category_tag and category_tag not in tags:
+            tags = sorted(tags + [category_tag])[:12]
         plugins[plugin_id] = {
             "name": normalize_text(raw.get("name"), 120),
-            "description": normalize_text(raw.get("description") or f"{raw.get('name')} is listed in the Omarchy plugin marketplace.", 400),
+            "description": _bounded_description(
+                raw.get("description"),
+                f"{raw.get('name')} is listed in the Omarchy plugin marketplace.",
+            ),
             "version": version,
             "repository": validate_https_url(raw.get("repo"), "plugin.repo"),
             "sourceUrl": _plugin_url(raw),
-            "category": normalize_text(raw.get("category") or "Uncategorized", 60),
+            "category": category,
             "tags": tags,
             "addedAt": _listing_time(raw, generated_at),
+            "listingDated": _has_listing_time(raw),
             "verification": verification,
             "retired": retired,
             "absenceCount": 0,
         }
+        preview = _preview(raw)
+        if preview:
+            plugins[plugin_id]["preview"] = preview
     return {"generatedAt": generated_at, "plugins": dict(sorted(plugins.items()))}
 
 
@@ -112,7 +167,7 @@ def _base_event(
     }
     if plugin.get("version"):
         entity["version"] = plugin["version"]
-    return {
+    event = {
         "id": event_id(event_type, "plugin", plugin_id, occurrence_key, source_url),
         "type": event_type,
         "occurredAt": occurred_at,
@@ -130,6 +185,16 @@ def _base_event(
         "trust": {"marketplace": plugin["verification"], "securityAudit": False},
         "compatibility": {"channels": [], "basis": "unknown"},
     }
+    preview = plugin.get("preview")
+    if isinstance(preview, dict):
+        event["image"] = {
+            "sourceUrl": preview["sourceUrl"],
+            "alt": f"{plugin['name']} plugin preview",
+            "credit": "Omarchy Plugin Marketplace",
+            "width": preview["width"],
+            "height": preview["height"],
+        }
+    return event
 
 
 def diff_marketplace(
@@ -138,16 +203,41 @@ def diff_marketplace(
     *,
     discovered_at: datetime,
     bootstrap: bool = False,
+    bootstrap_window_from: datetime | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Return supported events and the next snapshot.
 
-    A missing prior snapshot requires explicit bootstrap and emits no events.
+    A missing prior snapshot requires explicit bootstrap. It emits at most a
+    small recent backfill so a first real edition is useful without presenting
+    the whole catalog as new.
     """
 
     if previous is None:
         if not bootstrap:
             raise ValidationError("marketplace snapshot is absent; rerun with explicit bootstrap")
-        return [], {"generatedAt": current["generatedAt"], "plugins": dict(current["plugins"])}
+        events: list[dict[str, Any]] = []
+        if bootstrap_window_from is not None:
+            recent = [
+                (plugin_id, plugin)
+                for plugin_id, plugin in current["plugins"].items()
+                if plugin.get("listingDated") is True
+                and parse_timestamp(plugin["addedAt"]) >= bootstrap_window_from
+            ]
+            recent.sort(key=lambda pair: (pair[1]["addedAt"], pair[0]), reverse=True)
+            for plugin_id, plugin in recent[:MAX_BOOTSTRAP_EVENTS]:
+                events.append(
+                    _base_event(
+                        plugin_id,
+                        plugin,
+                        event_type="plugin-added",
+                        occurrence_key=f"listing:{plugin['addedAt']}",
+                        occurred_at=plugin["addedAt"],
+                        discovered_at=discovered_at,
+                        title=f"{plugin['name']} joined the marketplace",
+                        summary=plugin["description"],
+                    )
+                )
+        return events, {"generatedAt": current["generatedAt"], "plugins": dict(current["plugins"])}
 
     prior_plugins = previous.get("plugins")
     if not isinstance(prior_plugins, dict):

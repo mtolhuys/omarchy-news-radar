@@ -19,9 +19,7 @@ The implementation agent must inspect the exact source revision selected by Plug
 
 ## Plugin lifecycle findings
 
-Current `PluginRegistry.setEnabled` places any enabled plugin declaring `bar-widget` into the bar layout, even when that manifest also has a non-widget kind. This makes a same-manifest “optional but absent” bar indicator an awkward hidden lifecycle state.
-
-The version 1 decision is therefore a `panel`-only main plugin and no top-bar slot. A future indicator is a separate installable companion.
+Current `PluginRegistry.setEnabled` places any enabled plugin declaring `bar-widget` into the bar layout, even when that manifest also has a non-widget kind. Current `Bar.qml` `ModuleSlot` geometry, however, computes zero implicit width and height whenever the active widget root is invisible. The owner explicitly approved a default-on main-plugin newspaper after the initial panel-only candidate, so local `barVisible=false` now provides a proven no-gap hidden state while the panel remains reachable through shortcut/IPC.
 
 Current third-party plugin installation clones a Git repository, validates the manifest, and enables through shell configuration. It intentionally does not run plugin install hooks or provide a declarative global-shortcut manifest field. Shortcut configuration must be a separate explicit user action.
 
@@ -111,3 +109,10 @@ The lab requires product-owned scenarios for visible pointer/keyboard behavior, 
 - The default source still binds `SUPER + SHIFT + N` to `Editor` and contains no `SUPER + ALT + N` binding. Disposable-guest audit run `20260831-180214` proved that the new chord was absent from the live table, one temporary `SUPER + ALT + N` binding loaded cleanly, the Editor binding remained live throughout, and removing the temporary line released only the new chord. Run `20260831-162400` proved the earlier Editor-replacement design but is superseded; the earlier run `20260831-162231` failed before mutation because its host scenario resolved the wrong home directory and its overlay was discarded.
 - The live marketplace catalog remained a production object with top-level `generatedAt`, `mode`, `plugins`, `stateSchemaVersion`, and `warnings`; `stateSchemaVersion` was `2`, and entries retained the fields needed by the documented adapter. It contained 1,988 entries and was 4,882,620 bytes, so the collector uses a bounded source-specific catalog limit larger than the public feed's 2 MiB client limit.
 - The GitHub releases endpoint retained the required release identity, draft/prerelease, publication timestamp, tag, body, and HTTPS source fields. The historical `basecamp/omarchy` API endpoint currently resolves to the `omacom/omarchy` repository identity, so redirect validation must allow only that specific GitHub API transition while published event links remain validated HTTPS URLs.
+
+## Visual/current-news revalidation — 31 August 2026
+
+- The owner intentionally superseded the panel-only/no-image decisions and requested a default-on optional newspaper, visual stories, real current collection, and local interest tuning. `DECISIONS.md` D004/D005/D010/D012/D016 record the new contract.
+- Omarchy source commit `83881e979b35468c3e7d60b171e319ede61a88fd` confirms `ModuleSlot.implicitWidth` becomes zero when `activeItem.visible` is false. `WidgetButton` accepts left/right/middle buttons, and third-party widget metadata exposes the plugin source directory through the bar registry. No Omarchy source file was changed.
+- The marketplace catalog observed at `2026-08-31T16:35:53Z` contained 1,995 entries. Entries expose optional `previewThumbnail`, width, and height; 1,674 current thumbnails use WebP. The exact marketplace origin returned matching `image/webp` bytes. The publisher now mirrors only that fixed origin/path family after structural inspection.
+- The final pre-candidate live collection at `2026-08-31T17:12:06Z` produced five current official Omarchy releases plus twelve bounded recent marketplace listings; ten listings had valid mirrored previews and no image validation failure. Production `content/community/` is intentionally empty until a genuinely reviewed source record exists; the earlier synthetic wiki item moved to test fixtures.

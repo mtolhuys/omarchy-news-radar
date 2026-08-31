@@ -8,7 +8,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
-from .constants import MAX_EVENTS, SCHEMA_VERSION
+from .constants import FEED_SCHEMA_VERSION, MAX_EVENTS
 from .errors import ValidationError
 from .validation import format_timestamp, parse_timestamp, validate_event, validate_feed
 
@@ -55,7 +55,7 @@ def make_feed(
     ordered = canonical_events(events)
     through = generated_at.astimezone(timezone.utc)
     value: dict[str, Any] = {
-        "schemaVersion": SCHEMA_VERSION,
+        "schemaVersion": FEED_SCHEMA_VERSION,
         "generatedAt": format_timestamp(through),
         "window": {
             "from": format_timestamp(window_from),
@@ -75,23 +75,26 @@ def project_section(
     *,
     installed_plugin_ids: Iterable[str] = (),
     saved_ids: Iterable[str] = (),
+    interests: Iterable[str] = (),
     query: str = "",
 ) -> list[dict[str, Any]]:
     events = [deepcopy(event) for event in feed.get("events", [])]
     installed = set(installed_plugin_ids)
     saved = set(saved_ids)
+    interest_terms = tuple(sorted(set(interests)))
     if section in {"core", "plugins", "community"}:
         events = [event for event in events if event["classification"]["section"] == section]
     elif section == "for-you":
         events = [
             event
             for event in events
-            if event["entity"]["kind"] == "plugin" and event["entity"]["id"] in installed
+            if (event["entity"]["kind"] == "plugin" and event["entity"]["id"] in installed)
+            or matches_interests(event, interest_terms)
         ]
     elif section == "saved":
         events = [event for event in events if event["id"] in saved]
     elif section == "front-page":
-        events = front_page(events, installed_plugin_ids=installed)
+        events = front_page(events, installed_plugin_ids=installed, interests=interest_terms)
     else:
         raise ValidationError("unknown client section")
     needle = " ".join(query.lower().split())
@@ -113,12 +116,13 @@ def project_section(
 
 
 def front_page(
-    events: Iterable[Mapping[str, Any]], *, installed_plugin_ids: Iterable[str] = ()
+    events: Iterable[Mapping[str, Any]], *, installed_plugin_ids: Iterable[str] = (), interests: Iterable[str] = ()
 ) -> list[dict[str, Any]]:
     """Compose a finite deterministic edition without popularity signals."""
 
     ordered = canonical_events(events)
     installed = set(installed_plugin_ids)
+    interest_terms = tuple(sorted(set(interests)))
     selected: list[dict[str, Any]] = []
     selected_ids: set[str] = set()
 
@@ -144,6 +148,7 @@ def front_page(
         ),
         maximum=3,
     )
+    add((event for event in ordered if matches_interests(event, interest_terms)), maximum=6)
     for section in ("plugins", "community", "core"):
         add(
             (event for event in ordered if event["classification"]["section"] == section),
@@ -151,6 +156,24 @@ def front_page(
         )
     add(ordered, maximum=max(0, 18 - len(selected)))
     return selected[:18]
+
+
+def matches_interests(event: Mapping[str, Any], interests: Iterable[str]) -> bool:
+    """Match private local interests against normalized event text and tags."""
+
+    terms = tuple(interests)
+    if not terms:
+        return False
+    searchable = " ".join(
+        (
+            str(event["title"]),
+            str(event["summary"]),
+            str(event["entity"]["id"]),
+            str(event["entity"]["name"]),
+            " ".join(event["classification"]["tags"]),
+        )
+    ).lower().replace("_", "-")
+    return any(term in searchable for term in terms)
 
 
 def greatest_event_timestamp(events: Iterable[Mapping[str, Any]]) -> str | None:

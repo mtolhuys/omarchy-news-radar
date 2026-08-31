@@ -26,9 +26,9 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 
 ## Version 1 journey
 
-1. The user installs and enables the panel plugin through the normal Omarchy plugin flow.
+1. The user installs and enables the plugin through the normal Omarchy plugin flow. A small newspaper appears in the right bar section by default.
 2. The user runs the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change.
-3. Pressing `Super+Alt+N` opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
+3. Pressing `Super+Alt+N` or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
 4. Radar refreshes one bounded static feed without blocking the cached edition.
 5. The front page explains how many core, plugin, and community changes occurred since the last completed reading session.
 6. The user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved.
@@ -36,6 +36,7 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 8. Opening a source launches the default browser only after explicit activation.
 9. Closing the panel records the newest event timestamp that was actually present in that session. Events arriving later remain new.
 10. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
+11. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
 
 ## Version 1 capabilities
 
@@ -47,10 +48,11 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 - Plugin retirement only after an explicit retirement signal or repeated confirmed absence.
 - Marketplace verification status changes.
 - Manually reviewed community tutorials, showcases, and project announcements.
+- Publisher-mirrored marketplace preview images when an official preview passes the fixed format, size, dimension, and origin checks.
 
 ### Relevance
 
-- “For You” matches plugin events against locally installed plugin IDs.
+- “For You” matches events against locally installed plugin IDs and up to twelve explicit local interest words or phrases.
 - Category and tag filters operate locally.
 - Saved items and seen-through state remain local.
 - Front Page ordering is deterministic and auditable.
@@ -63,6 +65,8 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 - Plain-text summaries with source attribution.
 - Light and dark theme support using current Omarchy tokens.
 - Useful empty, offline, partial-source, and invalid-feed states.
+- Optional source imagery with plain-text alternatives and graceful image-free fallback.
+- A restrained bar newspaper with unread count and source-health dot.
 
 ## What “interesting” means
 
@@ -89,10 +93,10 @@ Automated activity and editorial significance are separate facts. The collector 
 - Automatic scraping of X, Reddit, arbitrary websites, or GitHub discussions.
 - AI-written summaries, autonomous editorial judgment, sentiment analysis, or generated safety conclusions.
 - Installing, updating, enabling, disabling, ranking, or removing third-party plugins from a news item.
-- Mandatory top-bar presence, desktop notifications, background polling, or a resident daemon.
+- Mandatory top-bar presence, desktop notifications, polling while the newspaper is hidden, or a resident daemon.
 - Claiming that marketplace verification is a complete security audit.
-- Mirroring entire articles, release notes, screenshots, or repository content.
+- Mirroring entire articles, release notes, arbitrary screenshots, or repository content. Only bounded official marketplace preview thumbnails are mirrored.
 
 ## Milestone success criterion
 
-The first release succeeds when a clean Omarchy Quattro guest can install the plugin, confirm that `Super+Alt+N` is free, install Radar's exact managed binding without changing the Editor shortcut, open a polished cached front page with `Super+Alt+N`, refresh from a deterministic fixture, identify an update for an installed plugin, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its managed binding so the chord is free again, and uninstall without shell or Hyprland errors.
+The first release succeeds when a clean Omarchy Quattro guest can install the plugin, see a correctly sized newspaper indicator, hide it without a gap, restore it from the panel, confirm that `Super+Alt+N` is free, install Radar's exact managed binding without changing the Editor shortcut, open a polished image-capable cached front page, tune local interests, refresh from a deterministic fixture, identify a relevant item, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its managed binding so the chord is free again, and uninstall without shell or Hyprland errors.

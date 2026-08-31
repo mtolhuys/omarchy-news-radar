@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from radar.client import projection_model, read_model, refresh, toggle_saved_state
+from radar.client import indicator_model, projection_model, read_model, refresh, set_preferences, toggle_saved_state
 from radar.io import atomic_write_json
 from radar.state import feed_path, load_feed
 
@@ -75,6 +75,21 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertTrue(saved["saved"])
         projected = projection_model("saved", "[]", "", self.environment, now=CLOCK)
         self.assertEqual([event_id], [event["id"] for event in projected["events"]])
+
+    def test_indicator_and_interests_stay_in_local_state(self) -> None:
+        refresh(self.environment, now=CLOCK)
+        indicator = indicator_model(self.environment, now=CLOCK)
+        self.assertGreater(indicator["unread"], 0)
+        tuned = set_preferences(
+            bar_visible=False,
+            images_visible=False,
+            interests=["notes"],
+            environment=self.environment,
+        )
+        self.assertFalse(tuned["state"]["preferences"]["barVisible"])
+        projected = projection_model("for-you", "[]", "", self.environment, now=CLOCK)
+        self.assertTrue(any("notes" in event["classification"]["tags"] for event in projected["events"]))
+        self.assertFalse(indicator_model(self.environment, now=CLOCK)["barVisible"])
 
 
 if __name__ == "__main__":

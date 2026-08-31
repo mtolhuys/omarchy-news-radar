@@ -1,10 +1,12 @@
 name: Build and publish static edition
 
 on:
+  schedule:
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       bootstrap_marketplace:
-        description: Establish the first silent marketplace baseline
+        description: Establish a baseline plus the bounded 12-story recent marketplace backfill
         required: true
         default: false
         type: boolean
@@ -37,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bootstrap=()
-          if [[ "${{ inputs.bootstrap_marketplace }}" == "true" ]]; then
+          if [[ "${{ inputs.bootstrap_marketplace || false }}" == "true" ]]; then
             bootstrap=(--bootstrap-marketplace)
           fi
           python3 -m radar collect "${bootstrap[@]}"

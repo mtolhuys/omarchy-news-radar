@@ -20,16 +20,16 @@
       "entity": {
         "id": "keyboard-first-plugin-workflow-2026",
         "kind": "community",
-        "name": "Omarchy community"
+        "name": "Fixture author"
       },
-      "id": "evt_9c9e361197cc2dcf1c80f360",
+      "id": "evt_947109d38b8da5d43ca3512b",
       "occurredAt": "2026-08-30T10:00:00Z",
       "source": {
-        "label": "Community guide",
-        "url": "https://github.com/omacom/omarchy/wiki"
+        "label": "Fixture guide",
+        "url": "https://example.com/fixture-guide"
       },
-      "summary": "A source-linked walkthrough shows how keyboard-first Omarchy plugin workflows fit the current shell lifecycle.",
-      "title": "A keyboard-first plugin workflow",
+      "summary": "A fixture-only walkthrough exercises the reviewed community adapter.",
+      "title": "A fixture keyboard-first plugin workflow",
       "trust": {
         "marketplace": "not-applicable",
         "securityAudit": false
@@ -110,6 +110,7 @@
           "retired": false,
           "sourceUrl": "https://github.com/example/omarchy-focus",
           "tags": [
+            "desktop",
             "focus"
           ],
           "verification": "unverified",

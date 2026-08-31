@@ -28,9 +28,9 @@ omarchy_host_test() {
     printf 'public clone resolved %s, expected %s\n' "$actual_commit" "$expected_commit" >&2
     return 1
   }
-  wait_for_guest_state "public clone is enabled as the panel-only release commit" 20 ssh_session \
+  wait_for_guest_state "public clone is enabled with paired panel and newspaper entry points" 20 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && \
-     jq -e '.version == \"0.1.0\" and .kinds == [\"panel\"] and (.entryPoints | keys == [\"panel\"])' $plugin_dir/manifest.json" || return 1
+     jq -e '.version == \"0.1.0\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
 
   log "Proving documented public shortcut setup and rendered launch"
   ssh_session "$shortcut status" >"$RUN_DIR/news-radar-public-shortcut-status.json" || return 1
