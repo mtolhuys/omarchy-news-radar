@@ -25,3 +25,7 @@ class FetchError(RadarError):
 
 class ShortcutError(RadarError):
     """Shortcut inspection or mutation failed closed."""
+
+
+class LauncherError(RadarError):
+    """Application launcher inspection or mutation failed closed."""

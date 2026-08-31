@@ -167,7 +167,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "seenThrough": "2026-08-31T14:00:00Z",
   "saved": {
     "evt_8cb067f9ef7da216bcab4781": {
@@ -191,12 +191,12 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
       "saved": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]}
     },
     "sectionProfiles": {
-      "front-page": {"name":"Front Page","icon":"newspaper","tone":"clear"},
-      "for-you": {"name":"For You","icon":"spark","tone":"clear"},
-      "core": {"name":"Core","icon":"core","tone":"clear"},
-      "plugins": {"name":"My Extensions","icon":"spark","tone":"accent"},
-      "community": {"name":"Community","icon":"community","tone":"clear"},
-      "saved": {"name":"Saved","icon":"saved","tone":"clear"}
+      "front-page": {"name":"Front Page"},
+      "for-you": {"name":"For You"},
+      "core": {"name":"Core"},
+      "plugins": {"name":"My Extensions"},
+      "community": {"name":"Community"},
+      "saved": {"name":"Saved"}
     }
   }
 }
@@ -206,9 +206,9 @@ Saved records intentionally duplicate a small bounded subset so a bookmark survi
 
 `seenThrough` is monotonic. It advances only to the greatest event timestamp captured in a successfully rendered session and never to wall-clock “now.” Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v4 retains v3 filters and adds one strict presentation profile for each client section. A profile contains a normalized 1–32-character plain-text name, an icon from `newspaper`, `spark`, `core`, `plugins`, `community`, or `saved`, and a tone from `clear`, `soft`, `accent`, or `ink`. Tone IDs map to current Omarchy tokens in QML; no arbitrary color or markup enters state. Valid v1, v2, and v3 states migrate atomically with saved, seen, existing v2 preferences, and v3 filters preserved; profiles receive defaults and no migration data is sent over the network.
+State v5 retains the strict filters and one normalized 1–32-character plain-text display name for each client section. Valid v1, v2, and v3 states migrate atomically with saved, seen, existing preferences, and filters preserved. Valid v4 state also migrates atomically: each display name survives, while the retired configurable icon and tone fields are validated and then discarded. Canonical icons and backgrounds remain code-owned rather than hidden mutable state, and no migration data is sent over the network.
 
-Source membership is not part of the profile. Stable section IDs continue to own the fixed projection and are always shown in settings; changing a name, icon, or tone has no effect on collection, ranking, filtering semantics, or network requests.
+Source membership is not part of the profile. Stable section IDs continue to own the fixed projection, icon, order, source summary, filtering semantics, and network behavior; changing a display name cannot make one section assume another section's scope.
 
 ## Schema evolution
 

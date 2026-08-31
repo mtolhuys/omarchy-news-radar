@@ -144,11 +144,11 @@ class ClientIntegrationTests(unittest.TestCase):
 
         profiled = set_section_profile(
             "plugins",
-            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            {"name": "My Extensions"},
             self.environment,
         )
         self.assertEqual(
-            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            {"name": "My Extensions"},
             profiled["state"]["preferences"]["sectionProfiles"]["plugins"],
         )
         self.assertEqual(

@@ -18,6 +18,8 @@ The plugin must remain openable through documented shell IPC even without the sh
 omarchy-shell shell toggle io.github.mtolhuys.news-radar
 ```
 
+An optional XDG application entry exposes **Omarchy News Radar** with its bundled newspaper mark in Omarchy's normal Apps menu. Its action summons the same panel through shell IPC. Installation and removal are explicit because the current third-party plugin lifecycle runs no hooks; the helper may mutate only its receipt-backed desktop entry and icon.
+
 ## Surface
 
 Version 1 is an on-demand normal desktop window paired with a default-on, optional top-bar newspaper. The panel entry point creates a compositor-managed `FloatingWindow` with a bounded minimum size. It is movable, resizable, maximizable, and participates in ordinary `Alt+Tab`; closing it through window management follows the same state/process teardown as `Escape`. Radar does not expose a minimize button because that action is unreliable in the supported hosted-window lifecycle.
@@ -63,7 +65,7 @@ Shortcuts must not fire while a text field is actively editing, except `Escape` 
 
 ## Section settings, filters, and pagination
 
-Each section exposes a cogwheel named **Settings**. Its options screen permits a bounded plain-text display name, one large semantic icon from a closed six-item palette, and one background from a closed four-tone palette derived from current Omarchy colors. Appearance applies only to that section, persists privately, and has an exact per-section reset.
+Each section exposes a cogwheel named **Settings**. Its options screen permits only a bounded plain-text display name with an exact per-section reset. The canonical icon, order, and visual background remain fixed so two sections cannot be made to look interchangeable or imply that their scope moved.
 
 The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Community into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 
@@ -85,7 +87,7 @@ Opening an original source is not required to mark the edition seen. Saved state
 | Current | Shows successful generation time and complete available sources | Read normally |
 | Offline | Keeps cache, labels failed refresh and cache age | Retry |
 | Source partial | Keeps valid events and names unavailable source adapters | Retry later |
-| Empty | Valid feed contains no events in the selected section; Community explains that it contains only manually reviewed work and may legitimately have no accepted records | Change section or filters |
+| Empty | Valid feed contains no events in the selected section; Community explains that every reader of the edition receives the same manually reviewed selection and that none may have been accepted yet | Change section or filters |
 | Filtered empty | Current filters match nothing | Clear filters |
 | Invalid feed | Rejects candidate, preserves cache, explains validation failure | Retry or inspect diagnostics |
 | No cache and failed | Gives a concise failure and direct retry action | Retry when online |

@@ -6,7 +6,7 @@
 
 omarchy_host_test() {
   local product_root lab_root alttab_root omadock_root start_epoch before_hash after_hash before_change_count
-  local helper shortcut plugin_dir viewport_width viewport_height monitor_name bar_x bar_y tune_x tune_y
+  local helper shortcut launcher plugin_dir viewport_width viewport_height monitor_name bar_x bar_y tune_x tune_y
   local control_x control_y window_before_width window_after_width window_x window_y window_width window_height window_initial_maximized
   local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
@@ -130,6 +130,7 @@ omarchy_host_test() {
   plugin_dir='$HOME/.config/omarchy/plugins/io.github.mtolhuys.news-radar'
   helper="$plugin_dir/bin/news-radar-client"
   shortcut="$plugin_dir/bin/news-radar-shortcut"
+  launcher="$plugin_dir/bin/news-radar-launcher"
 
   log "Installing the inert source-opening shim and isolated loopback fixture boundary"
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json && \
@@ -148,6 +149,25 @@ omarchy_host_test() {
     hyprctl reload >/dev/null && test -z \"\$(hyprctl configerrors)\" && omarchy-restart-shell"
   wait_for_guest_state "restarted shell uses the exact candidate" 30 ssh_session \
     "omarchy-shell shell ping >/dev/null && omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)'" || return 1
+
+  log "Installing and launching the receipt-backed Apps-menu entry"
+  ssh_session "$launcher install" >"$RUN_DIR/news-radar-launcher-installed.json" || return 1
+  wait_for_guest_state "launcher entry and newspaper icon are managed exact files" 15 ssh_session \
+    "$launcher status | jq -e '.state == \"installed\" and .installed == true' && \
+     grep -Fx 'Exec=omarchy-shell shell summon io.github.mtolhuys.news-radar' \"\${XDG_DATA_HOME:-\$HOME/.local/share}/applications/io.github.mtolhuys.news-radar.desktop\" && \
+     test -f \"\${XDG_DATA_HOME:-\$HOME/.local/share}/icons/hicolor/scalable/apps/io.github.mtolhuys.news-radar.svg\"" || return 1
+  press meta_l-spc
+  wait_for_guest_state "Omarchy menu opens for the application search journey" 10 ssh_session \
+    "hyprctl -j layers | jq -e '[.. | objects | select(.namespace? == \"omarchy-menu\")] | length >= 1'" || return 1
+  type_text "omarchy news radar"
+  sleep 1
+  capture_console "success-news-radar-00-app-launcher"
+  press enter
+  wait_for_guest_state "visible Apps-menu selection summons Radar" 15 ssh_session \
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
+  press esc
+  wait_for_guest_state "Apps-launched Radar closes through the normal lifecycle" 15 ssh_session \
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
 
   log "Proving the default newspaper placement and native geometry"
   wait_for_guest_state "newspaper occupies one visible right-section slot" 20 ssh_session \
@@ -363,20 +383,13 @@ omarchy_host_test() {
   radar_control_geometry sectionNameApplyGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered section name persists locally" 10 ssh_session \
-    "jq -e '.schemaVersion == 4 and .preferences.sectionProfiles.plugins.name == \"Extensions\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
-  radar_control_geometry sectionIconSparkGeometry || return 1
-  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
-  wait_for_guest_state "rendered icon choice persists from the closed palette" 10 ssh_session \
-    "jq -e '.preferences.sectionProfiles.plugins.icon == \"spark\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
-  radar_control_geometry sectionToneAccentGeometry || return 1
-  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
-  wait_for_guest_state "theme-derived section tone is visible and persistent" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionName == \"Extensions\" and .sectionIcon == \"spark\" and .sectionTone == \"accent\"'" || return 1
-  capture_console "success-news-radar-03-section-appearance"
+    "jq -e '.schemaVersion == 5 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+     ! grep -q 'BACKGROUND · THEME-DERIVED\|sectionIconSparkButton\|sectionToneAccentButton' $plugin_dir/src/Panel.qml" || return 1
+  capture_console "success-news-radar-03-section-identity-fixed"
   radar_control_geometry sectionAppearanceResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
-  wait_for_guest_state "appearance reset restores only the selected section defaults" 10 ssh_session \
-    "jq -e '.preferences.sectionProfiles.plugins == {name:\"Plugins\",icon:\"plugins\",tone:\"clear\"} and .preferences.sectionProfiles.core.name == \"Core\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  wait_for_guest_state "name reset restores only the selected section default" 10 ssh_session \
+    "jq -e '.preferences.sectionProfiles.plugins == {name:\"Plugins\"} and .preferences.sectionProfiles.core == {name:\"Core\"}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
 
   window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[0]'")" || return 1
   window_y="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[1]'")" || return 1
@@ -388,7 +401,7 @@ omarchy_host_test() {
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
-    "jq -e '.schemaVersion == 4 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "jq -e '.schemaVersion == 5 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   radar_control_geometry filterResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered reset restores the exact section defaults" 10 ssh_session \
@@ -477,7 +490,7 @@ omarchy_host_test() {
   press r
   press 5
   wait_for_guest_state "empty valid edition has a visible empty state" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .section == \"community\" and .storyCount == 0 and (.emptyStateMessage | contains(\"manually reviewed Omarchy tutorials\"))'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .section == \"community\" and .storyCount == 0 and (.emptyStateMessage | contains(\"Everyone reading this edition gets the same selection\"))'" || return 1
   capture_console "success-news-radar-07-community-empty-explained"
   ssh_guest "cp /tmp/news-radar-fixtures/dense.json /tmp/news-radar-fixtures/current.json"
   press r
@@ -556,6 +569,21 @@ omarchy_host_test() {
   ssh_session "omarchy-plugin-enable io.github.mtolhuys.news-radar"
   wait_for_guest_state "re-enable restores candidate discovery" 15 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)'" || return 1
+  ssh_session "$launcher remove" >"$RUN_DIR/news-radar-launcher-removed.json" || return 1
+  wait_for_guest_state "launcher helper removes only its receipt-backed files" 15 ssh_session \
+    "$launcher status | jq -e '.state == \"absent\" and .installed == false' && \
+     test ! -e \"\${XDG_DATA_HOME:-\$HOME/.local/share}/applications/io.github.mtolhuys.news-radar.desktop\" && \
+     test ! -e \"\${XDG_DATA_HOME:-\$HOME/.local/share}/icons/hicolor/scalable/apps/io.github.mtolhuys.news-radar.svg\"" || return 1
+  press meta_l-spc
+  wait_for_guest_state "Omarchy menu reopens after launcher removal" 10 ssh_session \
+    "hyprctl -j layers | jq -e '[.. | objects | select(.namespace? == \"omarchy-menu\")] | length >= 1'" || return 1
+  type_text "omarchy news radar"
+  sleep 1
+  capture_console "success-news-radar-14-app-launcher-removed"
+  press enter
+  sleep 1
+  ssh_session "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
+  press esc
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.news-radar --yes"
   wait_for_guest_state "plugin removal unloads files and preserves user state" 15 ssh_session \
     "test ! -e \"\$HOME/.config/omarchy/plugins/io.github.mtolhuys.news-radar\" && test -f \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && omarchy-plugin-list --json | jq -e 'all(.[]; .id != \"io.github.mtolhuys.news-radar\")'" || return 1
@@ -571,5 +599,5 @@ omarchy_host_test() {
   ssh_guest "systemctl --user stop omarchy-news-radar-fixture.service 2>/dev/null || true"
   capture_console "success-news-radar-14-shortcut-removed-editor-intact"
 
-  printf 'ok - exact candidate passed newspaper, images, interests, shortcut, cached-first, keyboard, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
+  printf 'ok - exact candidate passed app launcher, newspaper, images, interests, shortcut, cached-first, keyboard, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
 }

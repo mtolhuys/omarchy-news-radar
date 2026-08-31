@@ -65,6 +65,11 @@ INSTALLED_COMMIT=$(git -C "$TARGET" rev-parse --verify HEAD)
 [[ -z $(git -C "$TARGET" status --porcelain --untracked-files=normal) ]] ||
   fail "installed plugin is not clean after synchronization"
 
+LAUNCHER_RESULT=$("$TARGET/bin/news-radar-launcher" install) ||
+  fail "application launcher entry could not be installed safely"
+[[ $(jq -r '.state // empty' <<<"$LAUNCHER_RESULT") == "installed" ]] ||
+  fail "application launcher helper did not confirm the installed state"
+
 # The early panel-only preview was stored in plugins[]. Omarchy correctly
 # stores the paired panel/bar-widget in bar.layout.*, but updating a manifest
 # cannot infer that one-time location migration. Move only the exact unmodified
@@ -115,6 +120,7 @@ IMPORT_RESULT=$(PYTHONPATH="$SOURCE_ROOT" python3 -B -m radar import-local-editi
   fail "local edition revision does not match the synchronized source commit"
 
 printf 'News Radar local plugin is current at %s.\n' "$SOURCE_COMMIT"
+printf 'The managed Omarchy News Radar entry is current in the Apps menu.\n'
 printf 'Imported %s validated stories with %s validated images.\n' \
   "$(jq -r '.events' <<<"$IMPORT_RESULT")" "$(jq -r '.images' <<<"$IMPORT_RESULT")"
 printf 'Rerun make local-latest whenever you want a newly collected local edition.\n'

@@ -5,7 +5,7 @@ from __future__ import annotations
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
 BUILD_ID = "news-radar-0.1.0"
 FEED_SCHEMA_VERSION = 1
-STATE_SCHEMA_VERSION = 4
+STATE_SCHEMA_VERSION = 5
 HELPER_PROTOCOL_VERSION = 1
 
 FEED_URL = "https://mtolhuys.github.io/omarchy-news-radar/events.json"

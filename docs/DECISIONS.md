@@ -168,13 +168,13 @@
 
 **Consequence:** The options screen always exposes the immutable built-in rule and exact reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections; Load more expands the current bounded projection by twelve up to the feed's 500-event bound.
 
-## D022 — Personalize section presentation without changing editorial identity
+## D022 — Personalize section presentation without changing editorial identity (superseded by D025)
 
 **Decision:** State v4 lets each stable client section store a bounded display name, one icon from a closed palette, and one theme-derived background tone. Source membership remains fixed and read-only in version 1.
 
 **Why:** Names, icons, and restrained color make a personal reader easier to scan, but arbitrary colors, markup, or source reassignment would weaken theme compatibility, validation, and the documented meaning of Core, Plugins, and Community.
 
-**Consequence:** The cogwheel is named Settings and shows large semantic icon choices, appearance controls, exact appearance reset, the dictated source summary, built-in rule, and filters together. Stable section IDs continue to drive projection, counts, keys, source membership, and filter storage. Profiles are local-only, strictly validated, independently resettable, and migrated atomically from v1–v3 state.
+**Consequence:** This state-v4 design shipped in the local preview and remains documented for migration. D025 removes its icon and tone controls after owner testing found that interchangeable visual identities damaged section clarity.
 
 ## D023 — Declare an exact hosted-window identity for companion UIs
 
@@ -182,4 +182,20 @@
 
 **Why:** Quickshell exposes only the shared process app ID for hosted `FloatingWindow` instances. Resolving `org.quickshell` through the desktop database produces a generic file/gear icon, while globally replacing that desktop entry would mislabel unrelated shell windows.
 
-**Consequence:** Companion resolution is opt-in and fail-closed. A missing, disabled, malformed, or ambiguous declaration uses the ordinary desktop fallback. Radar does not change the process-wide app ID, write a desktop file, inspect arbitrary titles, or claim ownership of other Quickshell windows.
+**Consequence:** Companion resolution is opt-in and fail-closed. A missing, disabled, malformed, or ambiguous declaration uses the ordinary desktop fallback. Radar does not change the process-wide app ID, inspect arbitrary titles, or claim ownership of other Quickshell windows. The separately consented Apps-menu entry in D024 does not participate in companion resolution.
+
+## D024 — Offer one explicit receipt-backed Apps-menu entry
+
+**Decision:** Radar ships one standard XDG desktop entry and an explicit `news-radar-launcher status|install|remove` helper. `make local-latest` installs or updates it because that make target is already an intentional owner-run desktop mutation; a public Omarchy plugin install documents the helper as a separate opt-in step.
+
+**Why:** Omarchy's Apps provider reads standard desktop entries and provides the desired launcher icon, search, and launch feedback. The current third-party plugin lifecycle intentionally executes no repository hooks, so silently writing an entry on plugin enable or pretending normal plugin removal can clean it would be dishonest.
+
+**Consequence:** The helper owns only `io.github.mtolhuys.news-radar.desktop`, the same-named SVG under the user icon theme, and a private path/digest receipt. Installation uses bounded source assets and atomic replacements, updates only files matching the prior receipt, and refuses symlinked, unowned, modified, unmanaged, or ambiguous targets. Removal deletes only receipt-matching files and preserves user edits. Public removal instructions run the launcher helper before deleting the plugin checkout.
+
+## D025 — Keep section icon, order, background, and scope fixed
+
+**Decision:** State v5 retains only a bounded local display name for each stable client section. Section icons, order, backgrounds, source membership, and projection rules are canonical code-owned identity and are not configurable.
+
+**Why:** Owner testing found that assigning the same visual identity to multiple sections or making one section resemble another damaged scanability and suggested that editorial scope had moved. A customizable background added more state without improving the reader's factual utility.
+
+**Consequence:** Settings offers name editing/reset, fixed-source disclosure, the immutable built-in rule, and local filters. Valid v4 state migrates atomically: names survive, while old icon and tone values are validated and discarded. Valid v1–v3 state receives canonical names as before. No hidden appearance state remains that the user cannot control.

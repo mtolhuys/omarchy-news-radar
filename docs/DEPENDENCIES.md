@@ -41,6 +41,7 @@ Build and tests require only:
 - Git;
 - Bash for test harnesses and Plugin Lab scenarios;
 - optional ShellCheck when present;
+- optional `desktop-file-validate` when present;
 - optional `qmllint` and a selected Omarchy source checkout for development validation.
 
 Unit and integration tests must not require internet access. Network adapters use committed fixtures and an in-process loopback HTTP server.

@@ -12,10 +12,11 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 
 - `Super+Alt+N` is re-audited as free, installed only after conflict checks, reversible, and accurately documented; the separate Editor shortcut remains intact.
 - A documented IPC route keeps the panel reachable without the shortcut.
+- The explicit XDG launcher helper adds one searchable Apps-menu row with the newspaper icon, refuses modified/unrelated targets, and removes only receipt-matching files.
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
 - Front Page, For You, Core, Plugins, Community, and Saved match the implemented model.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
-- `Tab`/`Shift+Tab`, bounded per-section names/icons/theme-derived backgrounds, fixed-source disclosure, independent filters, exact resets, and finite Load more behavior match the local projection model.
+- `Tab`/`Shift+Tab`, bounded per-section names, canonical icons/order/backgrounds, fixed-source disclosure, independent filters, exact resets, and finite Load more behavior match the local projection model.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
 - The default-on newspaper indicator, zero-gap hiding, Tune re-enable, unread/health states, and no-notification boundary match the implementation.
@@ -36,6 +37,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Manifest and every declared entry point validate.
 - Remote text remains plain data, image decoding is limited to validated same-origin rasters, and source opening is explicit.
 - Cache/state writes are private, bounded, symlink-safe, atomic, and recoverable.
+- Application launcher/icon writes are bounded, receipt-backed, symlink-safe, atomic, reversible, and never overwrite user-modified or unrelated files.
 - One refresh process maximum per entry point plus a cross-instance lock; the panel tears down on close and bar refresh polling stops when hidden.
 - Shortcut install/remove preserves unrelated Lua exactly and rolls back on reload or config error.
 - Disable and removal preserve user state; explicit purge removes only validated Radar-owned paths.
@@ -65,11 +67,12 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 
 Document removal in this order:
 
-1. Run the shortcut helper’s `remove` command while the plugin checkout still exists.
-2. Remove the plugin through `omarchy plugin remove io.github.mtolhuys.news-radar`.
-3. Optionally run the explicit purge command before removal when the user wants local cache, seen state, and saved items deleted.
+1. Run the shortcut helper's `remove` command while the plugin checkout still exists.
+2. Run the launcher helper's `remove` command while the plugin checkout still exists.
+3. Remove the plugin through `omarchy plugin remove io.github.mtolhuys.news-radar`.
+4. Optionally run the explicit purge command before removal when the user wants local cache, seen state, and saved items deleted.
 
-Normal plugin removal does not delete local state. Removing the plugin before its binding leaves a harmless unresolved shell IPC binding that the user must remove manually from its clearly marked block.
+Normal plugin removal does not delete local state or run repository cleanup hooks. Removing the plugin before its binding leaves a harmless unresolved shell IPC binding; removing it before launcher cleanup leaves a stale XDG row. Reinstall the exact checkout to run the corresponding helper, or remove only the documented owned files after verifying them manually.
 
 ## Owner-authorized publication procedure
 

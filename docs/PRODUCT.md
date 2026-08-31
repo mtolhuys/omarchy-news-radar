@@ -27,17 +27,18 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 ## Version 1 journey
 
 1. The user installs and enables the plugin through the normal Omarchy plugin flow. A small newspaper appears in the right bar section by default.
-2. The user runs the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change.
-3. Pressing `Super+Alt+N` or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
-4. Radar refreshes one bounded static feed without blocking the cached edition.
-5. The front page explains how many core, plugin, and community changes occurred since the last completed reading session.
-6. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved, with `Tab` and `Shift+Tab` cycling sections.
-7. Selecting an item exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics.
-8. Opening a source launches the default browser only after explicit activation.
-9. Closing the panel records the newest event timestamp that was actually present in that session. Events arriving later remain new.
-10. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
-11. The user can inspect the immutable built-in rule for each section, add local filters, and reveal further matching stories in finite twelve-item steps.
-12. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
+2. The user may install Radar's explicit XDG launcher entry, which adds **Omarchy News Radar** with its newspaper mark to Omarchy's normal Apps menu without touching unrelated entries.
+3. The user may run the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change.
+4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
+5. Radar refreshes one bounded static feed without blocking the cached edition.
+6. The front page explains how many core, plugin, and community changes occurred since the last completed reading session.
+7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved, with `Tab` and `Shift+Tab` cycling sections.
+8. Selecting an item exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics.
+9. Opening a source launches the default browser only after explicit activation.
+10. Closing the panel records the newest event timestamp that was actually present in that session. Events arriving later remain new.
+11. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
+12. The user can inspect the immutable built-in rule for each section, add local filters, and reveal further matching stories in finite twelve-item steps.
+13. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
 
 Before the public static feed is authorized and published, an owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts, imports the complete validated edition and mirrored images into private cache, and labels the result “Local live edition.” Test fixtures must never masquerade as this mode.
 
@@ -59,7 +60,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Category and tag filters operate locally.
 - Saved items and seen-through state remain local.
 - Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
-- Display names, vetted icons, and theme-derived background tones are independently stored per section and remain local; fixed source membership is always disclosed and is not user-editable in version 1.
+- Bounded display names are independently stored per section and remain local; icons, order, and fixed source membership retain their canonical section identity and are not user-editable in version 1.
 - Front Page ordering is deterministic and auditable.
 - Manually notable items are visibly distinguished from routine activity.
 

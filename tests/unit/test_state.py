@@ -80,7 +80,7 @@ class StateTests(unittest.TestCase):
         )
         state, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(4, state["schemaVersion"])
+        self.assertEqual(5, state["schemaVersion"])
         self.assertTrue(state["preferences"]["barVisible"])
         self.assertEqual(
             {"period": "all", "significance": "all", "unreadOnly": False, "imagesOnly": False, "types": []},
@@ -114,15 +114,15 @@ class StateTests(unittest.TestCase):
         profiled = update_section_profile(
             filtered,
             "plugins",
-            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            {"name": "My Extensions"},
         )
         self.assertEqual(
-            {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            {"name": "My Extensions"},
             profiled["preferences"]["sectionProfiles"]["plugins"],
         )
         self.assertEqual("Core", profiled["preferences"]["sectionProfiles"]["core"]["name"])
         with self.assertRaises(ValidationError):
-            update_section_profile(state, "plugins", {"name": "Bad", "icon": "remote", "tone": "accent"})
+            update_section_profile(state, "plugins", {"name": "Bad", "icon": "remote"})
 
         path.write_text(
             json.dumps({
@@ -152,9 +152,33 @@ class StateTests(unittest.TestCase):
         )
         v3, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(4, v3["schemaVersion"])
+        self.assertEqual(5, v3["schemaVersion"])
         self.assertEqual("30d", v3["preferences"]["sectionFilters"]["plugins"]["period"])
         self.assertEqual("Plugins", v3["preferences"]["sectionProfiles"]["plugins"]["name"])
+
+        v4_preferences = default_state()["preferences"]
+        v4_preferences["sectionProfiles"] = {
+            "front-page": {"name": "Front Page", "icon": "newspaper", "tone": "clear"},
+            "for-you": {"name": "For You", "icon": "spark", "tone": "clear"},
+            "core": {"name": "Core", "icon": "core", "tone": "clear"},
+            "plugins": {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+            "community": {"name": "Community", "icon": "community", "tone": "ink"},
+            "saved": {"name": "Saved", "icon": "saved", "tone": "soft"},
+        }
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 4,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": v4_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v4, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(5, v4["schemaVersion"])
+        self.assertEqual({"name": "My Extensions"}, v4["preferences"]["sectionProfiles"]["plugins"])
+        self.assertEqual({"name": "Community"}, v4["preferences"]["sectionProfiles"]["community"])
 
     def test_symlink_targets_and_concurrent_refresh_are_refused(self) -> None:
         path = feed_path(self.environment)

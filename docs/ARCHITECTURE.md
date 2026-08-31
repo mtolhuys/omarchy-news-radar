@@ -45,7 +45,8 @@ omarchy-news-radar/
 ├── CONTRIBUTING.md
 ├── bin/
 │   ├── news-radar-client
-│   └── news-radar-shortcut
+│   ├── news-radar-shortcut
+│   └── news-radar-launcher
 ├── radar/
 │   ├── __init__.py
 │   ├── model.py
@@ -57,6 +58,7 @@ omarchy-news-radar/
 │   ├── publisher.py
 │   ├── images.py
 │   ├── state.py
+│   ├── launcher.py
 │   └── sources/
 │       ├── omarchy_releases.py
 │       ├── marketplace.py
@@ -80,7 +82,11 @@ omarchy-news-radar/
 │   ├── state-v1.schema.json
 │   ├── state-v2.schema.json
 │   ├── state-v3.schema.json
-│   └── state-v4.schema.json
+│   ├── state-v4.schema.json
+│   └── state-v5.schema.json
+├── share/
+│   └── applications/
+│       └── io.github.mtolhuys.news-radar.desktop
 ├── tests/
 │   ├── fixtures/
 │   ├── unit/
@@ -116,6 +122,8 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
 This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, exposes `open(payloadJson)` and `close()`, and owns a normal `FloatingWindow`. The window is compositor-managed, resizable/maximizable, and follows ordinary task switching; it is not a `PanelWindow` or layer-shell overlay. Radar omits an unreliable minimize control.
 
 `windowIdentity` is a narrow companion-integration declaration for hosted normal windows. The app ID and full title must both equal the compositor values before a companion switcher or dock may use the existing local manifest name/icon. Unknown, disabled, malformed, missing, or ambiguous declarations fall back to normal desktop-entry resolution; the declaration does not alter Quickshell's process-wide app ID.
+
+The optional Apps-menu integration is a standard XDG desktop entry, not another plugin entry point. `news-radar-launcher install` copies that fixed entry and the existing SVG mark into their user XDG data locations and stores a private digest/path receipt. `make local-latest` invokes it as part of the owner's explicit desktop synchronization. Public plugin installation documents the same explicit command because current Omarchy plugin add/remove deliberately runs no repository hooks. Removal is therefore performed through the helper while the checkout still exists.
 
 Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar lifecycle, while the panel exposes the ordinary `open`/`close` contract. The bar widget loads only bounded local indicator state, runs a refresh only when the cache is due, and stops its refresh cadence while hidden. Neither entry point installs a service or daemon.
 

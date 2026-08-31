@@ -71,6 +71,8 @@ The endpoint is optional enrichment. A successful response replaces its metric g
 
 Community activity lives as one reviewed JSON or YAML-equivalent record per item under `content/community/`; choose one format and enforce it consistently. Records are ordinary pull-request-reviewed source files, not remote form submissions.
 
+The resulting community selection is edition-wide, not personalized: every client reading the same edition receives the same accepted records. An empty production directory therefore means Community is empty for every such client until a reviewed record is committed and published.
+
 A record contains a stable ID, publication time, title, plain-text summary, original HTTPS source URL, author/display source, tags, and optional explicit significance. The collector validates it through the same public event bounds.
 
 Version 1 accepts tutorials, workflow explanations, substantial showcases, ecosystem infrastructure, and community announcements. It rejects copied articles, generic Linux news, pure self-promotion without an Omarchy-specific contribution, referral links, opaque downloads, and items whose original source cannot be established.

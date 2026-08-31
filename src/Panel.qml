@@ -29,7 +29,7 @@ Item {
   property string sessionThrough: ""
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 4,
+    schemaVersion: 5,
     seenThrough: "1970-01-01T00:00:00Z",
     saved: ({}),
     preferences: ({
@@ -38,12 +38,12 @@ Item {
       interests: [],
       sectionFilters: ({}),
       sectionProfiles: ({
-        "front-page": ({ name: "Front Page", icon: "newspaper", tone: "clear" }),
-        "for-you": ({ name: "For You", icon: "spark", tone: "clear" }),
-        "core": ({ name: "Core", icon: "core", tone: "clear" }),
-        "plugins": ({ name: "Plugins", icon: "plugins", tone: "clear" }),
-        "community": ({ name: "Community", icon: "community", tone: "clear" }),
-        "saved": ({ name: "Saved", icon: "saved", tone: "clear" })
+        "front-page": ({ name: "Front Page" }),
+        "for-you": ({ name: "For You" }),
+        "core": ({ name: "Core" }),
+        "plugins": ({ name: "Plugins" }),
+        "community": ({ name: "Community" }),
+        "saved": ({ name: "Saved" })
       })
     })
   })
@@ -113,7 +113,7 @@ Item {
     if (!cachedFeed)
       return "No cached edition is available yet. Retry when online."
     if (currentSection === "community" && filterSummary === "No extra filters")
-      return "Community is reserved for manually reviewed Omarchy tutorials, workflows, substantial showcases, ecosystem infrastructure, and announcements. No reviewed community stories are in this edition yet."
+      return "Community contains project-reviewed Omarchy tutorials, workflows, substantial showcases, ecosystem infrastructure, and announcements. Everyone reading this edition gets the same selection; none have been reviewed into it yet."
     if (filterSummary !== "No extra filters")
       return "No stories match this section's local settings. Reset its filters or choose another section."
     return "This section is empty in the current bounded edition."
@@ -145,8 +145,6 @@ Item {
       hasMoreStories: hasMoreStories,
       filterSummary: filterSummary,
       sectionName: currentProfile.name,
-      sectionIcon: currentProfile.icon,
-      sectionTone: currentProfile.tone,
       sectionSources: sectionSources,
       windowVisible: panelWindow.visible,
       windowWidth: panelWindow.width,
@@ -180,8 +178,6 @@ Item {
   function pluginPageGeometry() { return itemGeometry(pluginPageButton, pluginPageButton.visible) }
   function sectionNameGeometry() { return itemGeometry(sectionNameField, sectionNameField.visible) }
   function sectionNameApplyGeometry() { return itemGeometry(sectionNameApplyButton, sectionNameApplyButton.visible) }
-  function sectionIconSparkGeometry() { return itemGeometry(sectionIconSparkButton, sectionIconSparkButton.visible) }
-  function sectionToneAccentGeometry() { return itemGeometry(sectionToneAccentButton, sectionToneAccentButton.visible) }
   function sectionAppearanceResetGeometry() { return itemGeometry(sectionAppearanceResetButton, sectionAppearanceResetButton.visible) }
 
   function tuneNewspaperGeometry() {
@@ -493,18 +489,12 @@ Item {
     Qt.callLater(function() { sectionNameField.forceActiveFocus() })
   }
 
-  function updateSectionProfile(name, value) {
+  function updateSectionName(value) {
     if (stateProc.running) return
-    var next = {
-      name: String(currentProfile.name || defaultSectionProfile(currentSection).name),
-      icon: String(currentProfile.icon || defaultSectionProfile(currentSection).icon),
-      tone: String(currentProfile.tone || defaultSectionProfile(currentSection).tone)
-    }
-    next[name] = value
     startProcess(stateProc, [
       "set-section-profile",
       "--section", currentSection,
-      "--profile-json", JSON.stringify(next)
+      "--profile-json", JSON.stringify({ name: value })
     ])
   }
 
@@ -514,17 +504,17 @@ Item {
       sectionNameField.text = String(currentProfile.name || "")
       return
     }
-    updateSectionProfile("name", name)
+    updateSectionName(name)
   }
 
   function resetSectionProfile() {
     if (stateProc.running) return
-    var defaults = defaultSectionProfile(currentSection)
-    sectionNameField.text = defaults.name
+    var defaultName = defaultSectionProfile(currentSection).name
+    sectionNameField.text = defaultName
     startProcess(stateProc, [
       "set-section-profile",
       "--section", currentSection,
-      "--profile-json", JSON.stringify(defaults)
+      "--profile-json", JSON.stringify({ name: defaultName })
     ])
   }
 
@@ -1480,7 +1470,7 @@ Item {
                   spacing: Style.spacing.panelGap
 
                   Text {
-                    text: "APPEARANCE"
+                    text: "SECTION NAME"
                     textFormat: Text.PlainText
                     color: Color.popups.text
                     font.family: Style.font.family
@@ -1519,98 +1509,11 @@ Item {
                     }
                   }
 
-                  Text {
-                    text: "ICON"
-                    textFormat: Text.PlainText
-                    color: Color.muted
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                  }
-
-                  Flow {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: childrenRect.height
-                    spacing: Style.spacing.controlGap
-
-                    SectionIconChoice {
-                      iconText: root.sectionIcon("newspaper")
-                      label: "Newspaper"
-                      selected: root.currentProfile.icon === "newspaper"
-                      onClicked: root.updateSectionProfile("icon", "newspaper")
-                    }
-                    SectionIconChoice {
-                      id: sectionIconSparkButton
-                      iconText: root.sectionIcon("spark")
-                      label: "Target"
-                      selected: root.currentProfile.icon === "spark"
-                      onClicked: root.updateSectionProfile("icon", "spark")
-                    }
-                    SectionIconChoice {
-                      iconText: root.sectionIcon("core")
-                      label: "Core"
-                      selected: root.currentProfile.icon === "core"
-                      onClicked: root.updateSectionProfile("icon", "core")
-                    }
-                    SectionIconChoice {
-                      iconText: root.sectionIcon("plugins")
-                      label: "Plugin"
-                      selected: root.currentProfile.icon === "plugins"
-                      onClicked: root.updateSectionProfile("icon", "plugins")
-                    }
-                    SectionIconChoice {
-                      iconText: root.sectionIcon("community")
-                      label: "Community"
-                      selected: root.currentProfile.icon === "community"
-                      onClicked: root.updateSectionProfile("icon", "community")
-                    }
-                    SectionIconChoice {
-                      iconText: root.sectionIcon("saved")
-                      label: "Saved"
-                      selected: root.currentProfile.icon === "saved"
-                      onClicked: root.updateSectionProfile("icon", "saved")
-                    }
-                  }
-
-                  Text {
-                    text: "BACKGROUND · THEME-DERIVED"
-                    textFormat: Text.PlainText
-                    color: Color.muted
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                  }
-
-                  RowLayout {
-                    spacing: Style.spacing.controlGap
-                    RadarButton {
-                      label: "Clear"
-                      selected: root.currentProfile.tone === "clear"
-                      onClicked: root.updateSectionProfile("tone", "clear")
-                    }
-                    RadarButton {
-                      label: "Soft"
-                      selected: root.currentProfile.tone === "soft"
-                      onClicked: root.updateSectionProfile("tone", "soft")
-                    }
-                    RadarButton {
-                      id: sectionToneAccentButton
-                      label: "Accent"
-                      selected: root.currentProfile.tone === "accent"
-                      onClicked: root.updateSectionProfile("tone", "accent")
-                    }
-                    RadarButton {
-                      label: "Ink"
-                      selected: root.currentProfile.tone === "ink"
-                      onClicked: root.updateSectionProfile("tone", "ink")
-                    }
-                  }
-
                   RowLayout {
                     Layout.fillWidth: true
                     Text {
                       Layout.fillWidth: true
-                      text: "Names are bounded plain text. Icons and tones come from a vetted local palette."
+                      text: "The display name is bounded local text. Icon, order, and source scope stay fixed."
                       textFormat: Text.PlainText
                       color: Color.muted
                       font.family: Style.font.family
@@ -1619,7 +1522,7 @@ Item {
                     }
                     RadarButton {
                       id: sectionAppearanceResetButton
-                      label: "Reset appearance"
+                      label: "Reset name"
                       onClicked: root.resetSectionProfile()
                     }
                   }
@@ -1644,7 +1547,7 @@ Item {
 
                   Text {
                     Layout.fillWidth: true
-                    text: "Source membership is dictated by the edition contract for now; appearance and filters remain local."
+                    text: "Source membership, icon, order, and background are fixed; the display name and filters remain local."
                     textFormat: Text.PlainText
                     color: Color.muted
                     font.family: Style.font.family

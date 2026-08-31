@@ -123,7 +123,7 @@ def validate_manifest() -> None:
     for value in forbidden:
         if value in qml:
             fail(f"panel contains forbidden runtime path: {value}")
-    for helper_name in ("news-radar-client", "news-radar-shortcut"):
+    for helper_name in ("news-radar-client", "news-radar-shortcut", "news-radar-launcher"):
         helper = (ROOT / "bin" / helper_name).read_text(encoding="utf-8")
         if "exec python3 -B -m " not in helper:
             fail(f"{helper_name} must disable bytecode writes in the watched plugin directory")
@@ -144,6 +144,7 @@ def validate_manifest() -> None:
         "status --porcelain --untracked-files=normal",
         "installed plugin tracks a non-local origin",
         'omarchy-plugin-update "$PLUGIN_ID" --yes',
+        '"$TARGET/bin/news-radar-launcher" install',
         "import-local-edition",
         "Migrated the panel-only preview",
     ):
@@ -152,6 +153,17 @@ def validate_manifest() -> None:
     for forbidden_text in ("git pull", "git reset", "news-radar-shortcut install"):
         if forbidden_text in local_sync:
             fail(f"local-latest sync contains forbidden mutation: {forbidden_text}")
+
+    desktop_entry = ROOT / "share/applications/io.github.mtolhuys.news-radar.desktop"
+    desktop_text = desktop_entry.read_text(encoding="utf-8")
+    for required_text in (
+        "Name=Omarchy News Radar",
+        "Exec=omarchy-shell shell summon io.github.mtolhuys.news-radar",
+        "Icon=io.github.mtolhuys.news-radar",
+        "X-Omarchy-News-Radar-Managed=true",
+    ):
+        if required_text not in desktop_text:
+            fail(f"application launcher lacks required contract: {required_text}")
 
     local_edition = (ROOT / "radar" / "local_edition.py").read_text(encoding="utf-8")
     for required_text in (
@@ -187,6 +199,13 @@ def optional_tools() -> None:
         scripts = [path for path in tracked_files() if path.suffix == ".sh" or path.parent.name == "bin"]
         if scripts:
             subprocess.run([shellcheck, *map(str, scripts)], cwd=ROOT, check=True)
+    desktop_validator = shutil.which("desktop-file-validate")
+    if desktop_validator:
+        subprocess.run(
+            [desktop_validator, str(ROOT / "share/applications/io.github.mtolhuys.news-radar.desktop")],
+            cwd=ROOT,
+            check=True,
+        )
     omarchy_source = os.environ.get("OMARCHY_SOURCE")
     qmllint = shutil.which("qmllint")
     if qmllint and omarchy_source:

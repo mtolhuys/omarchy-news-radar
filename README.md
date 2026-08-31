@@ -16,11 +16,12 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
-- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, For You, Core, Plugins, Community, Saved, private interests, configurable section names/icons/theme-derived backgrounds, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
+- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, For You, Core, Plugins, Community, Saved, private interests, bounded section display names, fixed section identity, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
 - A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free; it never displaces Editor or another action.
+- An explicit XDG application-launcher helper that exposes Radar in Omarchy's Apps menu, updates only its receipt-backed desktop entry and icon, and preserves modified or unrelated files.
 - Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and eventual public-clone acceptance.
 
 ## Review the local candidate
@@ -56,9 +57,9 @@ When you deliberately want to run this checkout on your daily desktop, use:
 make local-latest
 ```
 
-The first run validates, clones, and enables the current committed checkout. It then collects a real edition from the live allowlisted Omarchy release and marketplace sources, validates and mirrors eligible marketplace images, and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, rescan it, and collect a new local edition. The panel labels this mode “Local live edition” because the public Pages feed does not exist yet; rerun the command whenever you want newer news.
+The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and collect a new local edition. The panel labels this mode “Local live edition” because the public Pages feed does not exist yet; rerun the command whenever you want newer news.
 
-“Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the new visual defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
+“Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
 ## Install after publication
 
@@ -66,6 +67,7 @@ These commands become usable only after the owner creates and publishes the inte
 
 ```bash
 omarchy plugin add https://github.com/mtolhuys/omarchy-news-radar --enable --yes
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-launcher install
 ```
 
 The panel is always reachable without changing a shortcut:
@@ -73,6 +75,8 @@ The panel is always reachable without changing a shortcut:
 ```bash
 omarchy-shell shell toggle io.github.mtolhuys.news-radar
 ```
+
+The explicit launcher command creates the **Omarchy News Radar** row in the normal Apps menu with the bundled newspaper mark. Omarchy's third-party plugin lifecycle intentionally runs no install hooks, so a public plugin add cannot create that XDG entry implicitly. `status`, `install`, and `remove` are idempotent and refuse symlinked, modified, unowned, or unrelated targets.
 
 ### Explicit shortcut setup
 
@@ -108,7 +112,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `r`: refresh the published feed once while preserving the last-known-good edition; an unpublished local edition instead explains that `make local-latest` collects the next update.
 - `Escape` or `q`: close the panel.
 - `Tune`: enable/disable the top-bar newspaper and images, and save up to twelve comma-separated private interests.
-- `⚙ Settings`: customize the section's bounded plain-text name, large semantic icon, and theme-derived background, inspect its fixed sources and built-in rule, then locally refine time, significance, unread/image state, and story types.
+- `⚙ Settings`: customize only the section's bounded plain-text display name, inspect its fixed icon, order, sources, and built-in rule, then locally refine time, significance, unread/image state, and story types.
 - `Load more`: reveal the next twelve matching stories from the already validated bounded edition.
 
 The window uses the normal desktop window model: drag the masthead to move it, resize from an edge, use Maximize/Restore, and switch to or from it with `Alt+Tab`. Radar intentionally omits its unreliable minimize control.
@@ -116,6 +120,10 @@ The window uses the normal desktop window model: drag the masthead to move it, r
 Marketplace views, hearts, command copies, repository stars, and GitHub release-asset download counts appear as compact colored icons with accessible labels and an observation time. Raw metric endpoint links stay in feed provenance but are intentionally absent from the reader; plugin stories instead link to their human-facing `plugins.omarchy.org` detail page. Marketplace aggregates are anonymous interactions—not installs, downloads, unique people, rankings, votes, or security signals—and metrics never influence Front Page ordering.
 
 Installed plugin IDs and explicit interests are used only for local `For You` matching. They are never sent to the feed host.
+
+## Why Community can be empty
+
+Community is not an automatically scraped social feed. It accepts only project-reviewed Omarchy tutorials, reusable workflows, substantial showcases, ecosystem infrastructure, and announcements committed under `content/community/`. Everyone reading the same edition receives the same selection. Production currently has no accepted records, so Community is empty for every user of this edition; its present value is a reserved editorial lane, not hidden personalized content.
 
 ## Newspaper controls
 
@@ -135,16 +143,18 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json
 ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json
+${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/launcher.json
 ```
 
 Normal disablement and removal preserve the cache, seen cutoff, and saved items. Remove in this order while the helper still exists:
 
 ```bash
 ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut remove
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-launcher remove
 omarchy plugin remove io.github.mtolhuys.news-radar --yes
 ```
 
-Removing the exact owned block releases `Super+Alt+N`; Editor was never changed. If you also want to delete Radar-owned cache, state, diagnostics, and quarantined state, run the explicit purge before removing the plugin:
+Removing the exact owned binding releases `Super+Alt+N`; Editor was never changed. Removing the receipt-backed launcher deletes only Radar's unmodified desktop entry and icon. If you also want to delete Radar-owned cache, state, diagnostics, and quarantined state, run the explicit purge before removing the plugin:
 
 ```bash
 ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-client purge

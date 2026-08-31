@@ -15,7 +15,7 @@ make site
 
 `make test` is offline, deterministic, creates only temporary synthetic state, and covers all Python, publisher, helper, shortcut, and pure presentation-model tests. `make validate` checks repository and plugin contracts without enabling the plugin.
 
-`make local-latest` is not a source gate: it installs or updates the plugin, may migrate the old preview placement, and performs live network collection. It therefore belongs only in a disposable Plugin Lab run during development. The deterministic local-sync scenario injects a fully generated test edition through the explicit test boundary and must prove first install/enable, exact origin and revision, pictured local import, file-URL projection, default preferences, fast-forward update, idempotence, dirty-source refusal, exact panel-only placement migration, and clean removal.
+`make local-latest` is not a source gate: it installs or updates the plugin and its receipt-backed Apps-menu entry, may migrate the old preview placement, and performs live network collection. It therefore belongs only in a disposable Plugin Lab run during development. The deterministic local-sync scenario injects a fully generated test edition through the explicit test boundary and must prove first install/enable, exact origin and revision, launcher discovery/action/icon, pictured local import, file-URL projection, default preferences, fast-forward update, idempotence, dirty-source refusal, exact panel-only placement migration, explicit launcher removal, and clean plugin removal.
 
 ## Unit coverage
 
@@ -25,7 +25,7 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1/v2/v3-to-v4 migration, preference/interest/filter/profile bounds, closed icon/tone vocabularies, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
+- State-v1/v2/v3/v4-to-v5 migration, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
@@ -79,6 +79,10 @@ Use a temporary fake home and stub `hyprctl` executable to prove:
 - refusal to remove an edited or ambiguous block;
 - no force-overwrite or action-replacement path.
 
+### Application-launcher helper
+
+Use temporary XDG data/state roots to prove absent/installed/modified status, bounded template validation, exact desktop action and icon identity, atomic idempotent install/update, private digest receipt, symlink/unowned/unmanaged/modified target refusal, receipt-matching removal, and preservation of user-modified files.
+
 ## Integration tests
 
 Run the real client helper against a bounded in-process loopback server and temporary XDG roots. Assert request method, headers, redirect policy, body streaming limit, cache/state output, concurrency behavior, and absence of outbound requests beyond the fixture server.
@@ -112,7 +116,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
-8. `Tab` and `Shift+Tab` cycle sections; the Settings cogwheel renames one section, selects a large semantic icon and theme-derived background, displays its fixed sources and built-in rule, independently resets appearance and filters, and Load more expands a dense local projection without another feed request.
+8. `Tab` and `Shift+Tab` cycle sections; the Settings cogwheel renames one section while its icon, background, order, and scope remain canonical, displays its fixed sources and built-in rule, independently resets the name and filters, and Load more expands a dense local projection without another feed request.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
 10. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
@@ -122,9 +126,10 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 15. AltTab and Omadock companion candidates resolve Radar's exact enabled `windowIdentity` to its local manifest name/icon, render the newspaper asset in their visible UI, and fall back for disabled, malformed, missing, or ambiguous declarations without relabeling unrelated Quickshell windows.
 16. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
 17. A same-path plugin update replaces the loaded panel and bar identities/behavior.
-18. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
+18. Installing the receipt-backed XDG launcher makes **Omarchy News Radar** searchable with its newspaper icon in the real Apps menu; selecting that visible row summons Radar, and explicit launcher removal makes the row disappear without touching another application.
+19. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
-`public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
+`public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented launcher and shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
 
 ## Visual review
 

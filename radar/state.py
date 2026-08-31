@@ -12,7 +12,13 @@ from typing import Any, Mapping
 from .constants import FEED_MAX_BYTES, MAX_SAVED, STATE_SCHEMA_VERSION
 from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
-from .validation import format_timestamp, parse_timestamp, validate_feed, validate_state
+from .validation import (
+    format_timestamp,
+    migrate_section_profile_v4,
+    parse_timestamp,
+    validate_feed,
+    validate_state,
+)
 from .filters import default_section_filters
 from .sections import default_section_profiles
 
@@ -97,16 +103,32 @@ def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, 
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3}:
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4}:
             old_version = raw.get("schemaVersion")
-            old_preferences = raw.get("preferences") if old_version in {2, 3} else None
+            old_preferences = raw.get("preferences") if old_version in {2, 3, 4} else None
             preferences = default_state()["preferences"]
             if isinstance(old_preferences, dict):
                 for key in ("barVisible", "imagesVisible", "interests"):
                     if key in old_preferences:
                         preferences[key] = old_preferences[key]
-                if old_version == 3 and "sectionFilters" in old_preferences:
+                if old_version in {3, 4} and "sectionFilters" in old_preferences:
                     preferences["sectionFilters"] = old_preferences["sectionFilters"]
+                if old_version == 4:
+                    if set(old_preferences) != {
+                        "barVisible",
+                        "imagesVisible",
+                        "interests",
+                        "sectionFilters",
+                        "sectionProfiles",
+                    }:
+                        raise ValidationError("state v4 preferences have an unknown shape")
+                    old_profiles = old_preferences.get("sectionProfiles")
+                    if not isinstance(old_profiles, dict) or set(old_profiles) != set(preferences["sectionProfiles"]):
+                        raise ValidationError("state v4 section profiles must define every section")
+                    preferences["sectionProfiles"] = {
+                        section: migrate_section_profile_v4(old_profiles[section])
+                        for section in preferences["sectionProfiles"]
+                    }
             raw = {
                 "schemaVersion": STATE_SCHEMA_VERSION,
                 "seenThrough": raw.get("seenThrough"),

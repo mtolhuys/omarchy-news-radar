@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Omarchy News Radar
+GenericName=Omarchy ecosystem news
+Comment=Read current Omarchy releases, plugin activity, and reviewed community work
+Exec=omarchy-shell shell summon io.github.mtolhuys.news-radar
+Icon=io.github.mtolhuys.news-radar
+Terminal=false
+Categories=Utility;
+Keywords=Omarchy;News;Plugins;Releases;Community;
+StartupNotify=false
+X-Omarchy-News-Radar-Managed=true

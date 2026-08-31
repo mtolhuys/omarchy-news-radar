@@ -74,12 +74,14 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("SOURCES · FIXED FOR THIS SECTION", qml)
         self.assertIn("set-section-profile", qml)
         self.assertIn("sectionNameField", qml)
-        self.assertIn("sectionIconSparkButton", qml)
-        self.assertIn("sectionToneAccentButton", qml)
-        self.assertIn("Reset appearance", qml)
+        self.assertNotIn("sectionIconSparkButton", qml)
+        self.assertNotIn("sectionToneAccentButton", qml)
+        self.assertNotIn("BACKGROUND · THEME-DERIVED", qml)
+        self.assertIn("Icon, order, and source scope stay fixed.", qml)
+        self.assertIn("Reset name", qml)
         self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
         self.assertIn("function emptyStateMessage()", qml)
-        self.assertIn("No reviewed community stories are in this edition yet.", qml)
+        self.assertIn("Everyone reading this edition gets the same selection", qml)
         self.assertIn('readonly property string compositorWindowTitle: "📰 Omarchy News Radar"', qml)
 
         story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
@@ -95,10 +97,6 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Color.foreground", section)
         self.assertIn("Style.font.iconLarge", section)
         self.assertIn("id: iconText", section)
-
-        icon_choice = (ROOT / "src/components/SectionIconChoice.qml").read_text(encoding="utf-8")
-        self.assertIn("Style.font.iconLarge", icon_choice)
-        self.assertIn("Accessible.RadioButton", icon_choice)
 
         metrics = (ROOT / "src/components/MetricStrip.qml").read_text(encoding="utf-8")
         for metric_id in (

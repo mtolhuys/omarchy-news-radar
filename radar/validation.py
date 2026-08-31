@@ -31,7 +31,10 @@ from .constants import (
     STATE_SCHEMA_VERSION,
 )
 from .errors import ValidationError
-from .sections import SECTION_ICON_IDS, SECTION_TONES
+LEGACY_SECTION_ICON_IDS = frozenset(
+    {"newspaper", "spark", "core", "plugins", "community", "saved"}
+)
+LEGACY_SECTION_TONES = frozenset({"clear", "soft", "accent", "ink"})
 
 TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 EVENT_ID_RE = re.compile(r"^evt_[0-9a-f]{24}$")
@@ -400,16 +403,26 @@ def validate_section_filter(value: Any) -> dict[str, Any]:
 
 def validate_section_profile(value: Any) -> dict[str, str]:
     current = require_mapping(value, "section profile")
+    if set(current) != {"name"}:
+        raise ValidationError("section profile must contain exactly name")
+    name = normalize_text(current.get("name"), 32)
+    return {"name": name}
+
+
+def migrate_section_profile_v4(value: Any) -> dict[str, str]:
+    """Validate a v4 profile and retain only its harmless display name."""
+
+    current = require_mapping(value, "state v4 section profile")
     if set(current) != {"name", "icon", "tone"}:
-        raise ValidationError("section profile must contain exactly name, icon, and tone")
+        raise ValidationError("state v4 section profile has an unknown shape")
     name = normalize_text(current.get("name"), 32)
     icon = require_string(current.get("icon"), "section profile icon", 1, 24)
     tone = require_string(current.get("tone"), "section profile tone", 1, 16)
-    if icon not in SECTION_ICON_IDS:
+    if icon not in LEGACY_SECTION_ICON_IDS:
         raise ValidationError("section profile icon is unsupported")
-    if tone not in SECTION_TONES:
+    if tone not in LEGACY_SECTION_TONES:
         raise ValidationError("section profile tone is unsupported")
-    return {"name": name, "icon": icon, "tone": tone}
+    return {"name": name}
 
 
 def validate_state(value: Any) -> dict[str, Any]:

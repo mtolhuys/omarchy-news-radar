@@ -20,7 +20,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 - The collector fetches only allowlisted machine sources. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
 - Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
 - Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS provenance URLs. They cannot create events or drive ranking. The QML projection strips raw metric URLs, renders only icon/value/accessible-label facts plus the marketplace caveat, and constructs human plugin pages from the fixed marketplace route and validated entity ID.
-- Section display names are normalized bounded plain text. Icon and background choices are closed IDs mapped to code-native glyphs and current theme tokens; profiles cannot introduce markup, arbitrary colors, URLs, source membership, or network requests.
+- Section display names are normalized bounded plain text. Icons, order, backgrounds, and source membership are code-owned canonical identities; profiles cannot introduce markup, arbitrary colors, URLs, scope changes, or network requests.
 
 ## Client fetch
 
@@ -46,6 +46,8 @@ Section filters are validated local state. They select only from closed enums an
 
 Saved items and cache are preserved on plugin disable or normal removal. A separate explicit purge action may remove only paths owned by Radar after resolving and validating their exact XDG locations.
 
+The optional application launcher uses one fixed desktop-entry name and one fixed icon name under `XDG_DATA_HOME`. Installation records the exact target paths and SHA-256 digests in a private receipt, writes the icon before the desktop entry through same-directory atomic replacements, and refuses symlinked, unowned, modified, ambiguous, or unrelated targets. Removal deletes only files that still match the receipt and preserves any user-modified target. The helper is explicit because Omarchy's third-party plugin lifecycle does not execute install or removal hooks.
+
 ## Process execution
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
@@ -54,7 +56,7 @@ At most one refresh helper belongs to one panel or bar instance, and the atomic 
 
 ## Local checkout synchronization
 
-`make local-latest` is an explicit owner action, not an automatic updater. It validates a clean source checkout and then uses Omarchy's Git-managed plugin lifecycle to install or fast-forward only an installation whose local origin resolves to that exact checkout. It refuses dirty source or installed trees, symlinks, non-Git installs, missing origins, public origins, and different local origins. It never pulls or rewrites the source branch, repoints an installation, installs the optional shortcut, enables a deliberately disabled modern installation, or creates a background process.
+`make local-latest` is an explicit owner action, not an automatic updater. It validates a clean source checkout and then uses Omarchy's Git-managed plugin lifecycle to install or fast-forward only an installation whose local origin resolves to that exact checkout. It refuses dirty source or installed trees, symlinks, non-Git installs, missing origins, public origins, different local origins, or a modified/unrelated application launcher target. It never pulls or rewrites the source branch, repoints an installation, installs the optional shortcut, enables a deliberately disabled modern installation, or creates a background process. It does install or update the exact receipt-backed Apps-menu entry because the owner explicitly invoked the local desktop synchronization command.
 
 The same command collects one edition into a private temporary directory using only the ordinary allowlisted publisher sources. Import requires canonical validated feed bytes, exact build digest and source revision, and complete byte/format/dimension/hash validation for every referenced raster before the cached feed changes. The one-time panel-only preview migration acts only on one exact unmodified owned `plugins[]` entry with no bar entry; it uses Omarchy disable/enable commands, restores the newly introduced bar/image defaults once, and refuses custom, duplicate, or ambiguous placement.
 
