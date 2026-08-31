@@ -1,4 +1,4 @@
-"""Explicit, reversible ownership of the audited default Editor chord."""
+"""Explicit, reversible ownership of Radar's conflict-free shortcut."""
 
 from __future__ import annotations
 
@@ -15,15 +15,14 @@ from typing import Any, Mapping, Sequence
 
 from .errors import ShortcutError
 
-CHORD = "SUPER + SHIFT + N"
-DEFAULT_LINE = 'o.bind("SUPER + SHIFT + N", "Editor", { omarchy = "editor" })'
+CHORD = "SUPER + ALT + N"
+MODMASK = 72
 RADAR_DESCRIPTION = "Omarchy News Radar"
 RADAR_COMMAND = "omarchy-shell shell toggle io.github.mtolhuys.news-radar"
 BEGIN = "-- BEGIN OMARCHY NEWS RADAR MANAGED SHORTCUT"
 END = "-- END OMARCHY NEWS RADAR MANAGED SHORTCUT"
 MANAGED_BLOCK = (
     f"\n{BEGIN}\n"
-    f'hl.unbind("{CHORD}")\n'
     f'o.bind("{CHORD}", "{RADAR_DESCRIPTION}", "{RADAR_COMMAND}")\n'
     f"{END}\n"
 )
@@ -53,13 +52,12 @@ class ShortcutStatus:
         }
 
 
-def _paths(environment: Mapping[str, str]) -> tuple[Path, Path]:
+def _bindings_path(environment: Mapping[str, str]) -> Path:
     home = environment.get("HOME")
-    omarchy = environment.get("OMARCHY_PATH")
-    if not home or not omarchy:
-        raise ShortcutError("HOME and OMARCHY_PATH must be set")
+    if not home:
+        raise ShortcutError("HOME must be set")
     config_root = Path(environment.get("XDG_CONFIG_HOME", str(Path(home) / ".config")))
-    return config_root / "hypr" / "bindings.lua", Path(omarchy) / "default" / "hypr" / "bindings" / "applications.lua"
+    return config_root / "hypr" / "bindings.lua"
 
 
 def _owned_regular_file(path: Path) -> os.stat_result:
@@ -95,8 +93,8 @@ def _active_personal_mentions(text: str) -> list[str]:
     mentions: list[str] = []
     for line in text.splitlines():
         code = line.split("--", 1)[0]
-        compact = re.sub(r"\s+", " ", code).strip().upper()
-        if "SUPER + SHIFT + N" in compact or "SUPER+SHIFT+N" in compact:
+        compact = re.sub(r"\s+", "", code).upper()
+        if "SUPER+ALT+N" in compact or "ALT+SUPER+N" in compact:
             mentions.append(line)
     return mentions
 
@@ -133,21 +131,18 @@ def _is_chord(item: Mapping[str, Any]) -> bool:
         modmask = int(item.get("modmask"))
     except (TypeError, ValueError):
         return False
-    return key == "N" and modmask == 65
+    return key == "N" and modmask == MODMASK
 
 
 def inspect(environment: Mapping[str, str] | None = None) -> ShortcutStatus:
     env = dict(environment or os.environ)
-    bindings_file, default_source = _paths(env)
+    bindings_file = _bindings_path(env)
     personal = _read_text(bindings_file)
-    default = _read_text(default_source, require_owner=False)
     live = tuple(item for item in _live_bindings() if _is_chord(item))
     begin_count = personal.count(BEGIN)
     end_count = personal.count(END)
     block_count = personal.count(MANAGED_BLOCK)
     mentions = _active_personal_mentions(personal)
-    default_exact = sum(1 for line in default.splitlines() if line.strip() == DEFAULT_LINE) == 1
-
     if block_count == 1 and begin_count == 1 and end_count == 1 and len(live) == 1:
         item = live[0]
         # Omarchy compiles o.bind commands into a Lua dispatcher; hyprctl then
@@ -160,15 +155,12 @@ def inspect(environment: Mapping[str, str] | None = None) -> ShortcutStatus:
     if begin_count or end_count:
         return ShortcutStatus("ambiguous", bindings_file, live, "A partial or edited Radar managed block exists; restore it manually.")
     if len(live) > 1:
-        return ShortcutStatus("ambiguous", bindings_file, live, "More than one live action uses Super+Shift+N.")
+        return ShortcutStatus("ambiguous", bindings_file, live, "More than one live action uses Super+Alt+N.")
     if mentions:
-        return ShortcutStatus("personal-conflict", bindings_file, live, "Personal bindings mention Super+Shift+N; Radar will not replace them.")
+        return ShortcutStatus("personal-conflict", bindings_file, live, "Personal bindings mention Super+Alt+N; Radar will not replace them.")
     if not live:
-        return ShortcutStatus("free", bindings_file, live, "Super+Shift+N is free; Radar may add its managed binding.")
-    item = live[0]
-    if default_exact and str(item.get("description") or "") == "Editor":
-        return ShortcutStatus("default-editor", bindings_file, live, "The exact Omarchy Editor default is live; explicit replacement authorization is required.")
-    return ShortcutStatus("personal-conflict", bindings_file, live, "Super+Shift+N has a non-default live action; Radar will not replace it.")
+        return ShortcutStatus("free", bindings_file, live, "Super+Alt+N is free; Radar may add its managed binding.")
+    return ShortcutStatus("personal-conflict", bindings_file, live, "Super+Alt+N already has a live action; Radar will not replace it.")
 
 
 def _atomic_preserving(path: Path, data: bytes, mode: int) -> None:
@@ -210,9 +202,11 @@ def _reload_expect(*, radar: bool) -> None:
     if errors.returncode != 0 or errors.stdout.strip():
         raise ShortcutError("Hyprland reported configuration errors")
     matches = [item for item in _live_bindings() if _is_chord(item)]
-    expected = RADAR_DESCRIPTION if radar else "Editor"
-    if len(matches) != 1 or str(matches[0].get("description") or "") != expected:
-        raise ShortcutError(f"live shortcut validation did not restore exactly one {expected} action")
+    if radar:
+        if len(matches) != 1 or str(matches[0].get("description") or "") != RADAR_DESCRIPTION:
+            raise ShortcutError("live shortcut validation did not find exactly one Radar action")
+    elif matches:
+        raise ShortcutError("live shortcut validation did not release Super+Alt+N")
 
 
 def _backup(path: Path, original: bytes) -> Path:
@@ -233,23 +227,14 @@ def _backup(path: Path, original: bytes) -> Path:
     return backup
 
 
-def install(*, replace_default_editor: bool, environment: Mapping[str, str] | None = None) -> dict[str, Any]:
+def install(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     if os.geteuid() == 0:
         raise ShortcutError("shortcut setup refuses to run as root")
     status = inspect(environment)
     if status.classification == "owned":
         return {"status": "unchanged", **status.public()}
-    if status.classification == "default-editor" and not replace_default_editor:
-        return {
-            "status": "authorization-required",
-            **status.public(),
-            "authorizationCommand": "news-radar-shortcut install --replace-default-editor",
-            "displacedAction": "Editor",
-        }
-    if status.classification not in {"free", "default-editor"}:
+    if status.classification != "free":
         raise ShortcutError(status.message)
-    if replace_default_editor and status.classification != "default-editor":
-        raise ShortcutError("--replace-default-editor applies only to the exact live Editor default")
 
     info = _owned_regular_file(status.bindings_file)
     original = status.bindings_file.read_bytes()
@@ -268,7 +253,6 @@ def install(*, replace_default_editor: bool, environment: Mapping[str, str] | No
     return {
         "status": "installed",
         **inspect(environment).public(),
-        "displacedAction": "Editor" if status.classification == "default-editor" else None,
         "backup": str(backup),
     }
 
@@ -277,7 +261,7 @@ def remove(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     if os.geteuid() == 0:
         raise ShortcutError("shortcut setup refuses to run as root")
     status = inspect(environment)
-    if status.classification == "default-editor":
+    if status.classification == "free":
         return {"status": "unchanged", **status.public()}
     if status.classification != "owned":
         raise ShortcutError("Radar does not own one exact unmodified managed block; removal refused")
@@ -298,4 +282,4 @@ def remove(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
         except ShortcutError as recovery:
             raise ShortcutError(f"shortcut removal failed and recovery validation failed: {recovery}") from exc
         raise ShortcutError("shortcut removal failed; managed block was restored") from exc
-    return {"status": "removed", **inspect(environment).public(), "restoredAction": "Editor", "backup": str(backup)}
+    return {"status": "removed", **inspect(environment).public(), "releasedBinding": CHORD, "backup": str(backup)}

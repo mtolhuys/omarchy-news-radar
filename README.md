@@ -17,7 +17,7 @@ The main plugin declares only `panel`. Version 1 has no top-bar widget, hidden b
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, a bounded archive projection, and build digest metadata.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
 - A theme-native QML panel with Front Page, For You, Core, Plugins, Community, Saved, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
-- A narrowly scoped shortcut helper that can replace only the exact audited default Omarchy Editor binding on `Super+Shift+N`, and only after the named authorization flag.
+- A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free; it never displaces Editor or another action.
 - Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and eventual public-clone acceptance.
 
 ## Review the local candidate
@@ -33,6 +33,37 @@ make site
 
 Generated site output is written to ignored `dist/`. Desktop installation, enabling, shortcut changes, Hyprland reloads, rendered interaction, hot updates, and removal belong only in the disposable Omarchy Plugin Lab during development; see [`docs/TESTING.md`](docs/TESTING.md).
 
+### Test the unpublished checkout locally
+
+The safest complete test uses the disposable Omarchy Plugin Lab and does not touch the daily desktop:
+
+```bash
+cd ~/Projects/omarchy/plugin-lab
+./bin/lab doctor
+./bin/lab plugin ~/Projects/plugins/omarchy-news-radar/tests/lab/acceptance.sh
+```
+
+For an owner-driven smoke test on the current desktop, first run the four source gates above, then explicitly install the local Git checkout and seed its cache with the synthetic fixture:
+
+```bash
+cd ~/Projects/plugins/omarchy-news-radar
+omarchy plugin add "$PWD" --enable --yes
+OMARCHY_NEWS_RADAR_TEST_MODE=1 \
+  OMARCHY_NEWS_RADAR_TEST_FEED="$PWD/tests/fixtures/feed-valid.json" \
+  ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-client refresh
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut status
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut install
+```
+
+Press `Super+Alt+N`. Because the public feed is not published yet, the seeded edition remains visible as last-known-good content while a normal background refresh reports offline. Finish the reversible smoke test in this order:
+
+```bash
+~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut remove
+omarchy plugin remove io.github.mtolhuys.news-radar --yes
+```
+
+The assistant-run verification never executes those owner desktop commands; all automated desktop mutation remains in the disposable guest.
+
 ## Install after publication
 
 These commands become usable only after the owner creates and publishes the intended repository:
@@ -47,24 +78,23 @@ The panel is always reachable without changing a shortcut:
 omarchy-shell shell toggle io.github.mtolhuys.news-radar
 ```
 
-### Explicit shortcut reassignment
+### Explicit shortcut setup
 
-Omarchy Quattro currently assigns `Super+Shift+N` to Editor. Radar does not silently take it. First inspect the exact source, personal configuration, and live action:
+Radar uses `Super+Alt+N`; Omarchy's `Super+Shift+N` Editor/Neovim shortcut remains unchanged. First inspect the personal configuration and live binding table without mutation:
 
 ```bash
 ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut status
+```
+
+If `status` reports `classification: free`, install the owned Radar binding:
+
+```bash
 ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut install
 ```
 
-The plain install is a read-only preview and exits with status `3` when it finds the unmodified Editor default. If the reported displacement is exactly Editor and you want that deliberate reassignment, run:
+The helper refuses personal, multiple, unknown, symlinked, unowned, or ambiguous configuration. It creates a timestamped backup, writes one clearly marked bind-only Radar block, reloads Hyprland, validates the live action and config errors, and rolls back on failure. There is no unbind, Editor replacement, or force flag.
 
-```bash
-~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut install --replace-default-editor
-```
-
-The helper refuses personal, modified, multiple, unknown, symlinked, unowned, or ambiguous configuration. It creates a timestamped backup, writes one clearly marked `hl.unbind`/Radar binding block, reloads Hyprland, validates the live action and config errors, and rolls back on failure. There is no general force flag.
-
-To choose another free chord, do not use the replacement option. Add your own reviewed line to `~/.config/hypr/bindings.lua`, for example:
+To choose another free chord, skip the helper and add your own reviewed line to `~/.config/hypr/bindings.lua`, for example:
 
 ```lua
 o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io.github.mtolhuys.news-radar")
@@ -99,7 +129,7 @@ Normal disablement and removal preserve the cache, seen cutoff, and saved items.
 omarchy plugin remove io.github.mtolhuys.news-radar --yes
 ```
 
-Removing the exact owned block reveals Omarchy’s upstream Editor action again. If you also want to delete Radar-owned cache, state, diagnostics, and quarantined state, run the explicit purge before removing the plugin:
+Removing the exact owned block releases `Super+Alt+N`; Editor was never changed. If you also want to delete Radar-owned cache, state, diagnostics, and quarantined state, run the explicit purge before removing the plugin:
 
 ```bash
 ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-client purge

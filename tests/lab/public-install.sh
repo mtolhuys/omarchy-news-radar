@@ -33,14 +33,11 @@ omarchy_host_test() {
      jq -e '.version == \"0.1.0\" and .kinds == [\"panel\"] and (.entryPoints | keys == [\"panel\"])' $plugin_dir/manifest.json" || return 1
 
   log "Proving documented public shortcut setup and rendered launch"
-  if ssh_session "$shortcut install" >"$RUN_DIR/news-radar-public-shortcut-preview.json" 2>&1; then
-    printf 'plain shortcut install unexpectedly succeeded\n' >&2
-    return 1
-  else
-    [[ $? -eq 3 ]] || return 1
-  fi
-  ssh_session "$shortcut install --replace-default-editor" >"$RUN_DIR/news-radar-public-shortcut-installed.json" || return 1
-  press meta_l-shift-n
+  ssh_session "$shortcut status" >"$RUN_DIR/news-radar-public-shortcut-status.json" || return 1
+  jq -e '.status == "ok" and .classification == "free" and .binding == "SUPER + ALT + N"' \
+    "$RUN_DIR/news-radar-public-shortcut-status.json" >/dev/null || return 1
+  ssh_session "$shortcut install" >"$RUN_DIR/news-radar-public-shortcut-installed.json" || return 1
+  press meta_l-alt-n
   wait_for_guest_state "public shortcut opens the installed panel" 20 ssh_session \
     "hyprctl -j layers | jq -e '[.. | objects | select(.namespace? == \"omarchy-news-radar\")] | length >= 1'" || return 1
   capture_console "success-news-radar-public-install"
@@ -50,7 +47,8 @@ omarchy_host_test() {
 
   log "Removing the shortcut before the public plugin"
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-public-shortcut-removed.json" || return 1
-  ssh_session "hyprctl binds -j | jq -e '[.[] | select((.description // \"\") == \"Editor\" and ((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 65)] | length == 1'" || return 1
+  ssh_session "hyprctl binds -j | jq -e '[.[] | select(((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 72)] | length == 0' && \
+    hyprctl binds -j | jq -e '[.[] | select((.description // \"\") == \"Editor\" and ((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 65)] | length == 1'" || return 1
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.news-radar --yes" || return 1
   wait_for_guest_state "public plugin removal unloads the exact clone" 15 ssh_session \
     "test ! -e $plugin_dir && omarchy-plugin-list --json | jq -e 'all(.[]; .id != \"io.github.mtolhuys.news-radar\")'" || return 1

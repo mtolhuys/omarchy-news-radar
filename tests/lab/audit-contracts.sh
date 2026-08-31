@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Revalidates the live default shortcut and the documented personal-override
-# order inside a disposable Omarchy guest. This never runs on the host.
+# Revalidates that Radar's proposed chord is free while the Editor shortcut
+# remains intact inside a disposable Omarchy guest. This never runs on the host.
 
 omarchy_host_test() {
   local guest_home
@@ -15,16 +15,18 @@ omarchy_host_test() {
   ssh_session "hyprctl binds -j" >"$RUN_DIR/news-radar-binds-before.json" || return 1
   jq -e '[.[] | select((.description // "") == "Editor" and ((.key // "") | ascii_upcase) == "N" and .modmask == 65)] | length == 1' \
     "$RUN_DIR/news-radar-binds-before.json" >/dev/null || return 1
+  jq -e '[.[] | select(((.key // "") | ascii_upcase) == "N" and .modmask == 72)] | length == 0' \
+    "$RUN_DIR/news-radar-binds-before.json" >/dev/null || return 1
 
   ssh_session "cp --preserve=all '$guest_bindings' '$guest_backup'" || return 1
   trap 'ssh_session "mv -- \"'"'$guest_backup'"'\" \"'"'$guest_bindings'"'\"; hyprctl reload >/dev/null" >/dev/null 2>&1 || true' RETURN
 
-  ssh_session "printf '\n-- Omarchy News Radar contract audit --\nhl.unbind(\"SUPER + SHIFT + N\")\no.bind(\"SUPER + SHIFT + N\", \"News Radar contract audit\", \"true\")\n' >>'$guest_bindings'; hyprctl reload >/dev/null" || return 1
+  ssh_session "printf '\n-- Omarchy News Radar contract audit --\no.bind(\"SUPER + ALT + N\", \"News Radar contract audit\", \"true\")\n' >>'$guest_bindings'; hyprctl reload >/dev/null" || return 1
   ssh_session "[[ -z \$(hyprctl configerrors) ]]" || return 1
   ssh_session "hyprctl binds -j" >"$RUN_DIR/news-radar-binds-audit.json" || return 1
-  jq -e '[.[] | select((.description // "") == "News Radar contract audit" and ((.key // "") | ascii_upcase) == "N" and .modmask == 65)] | length == 1' \
+  jq -e '[.[] | select((.description // "") == "News Radar contract audit" and ((.key // "") | ascii_upcase) == "N" and .modmask == 72)] | length == 1' \
     "$RUN_DIR/news-radar-binds-audit.json" >/dev/null || return 1
-  jq -e '[.[] | select((.description // "") == "Editor" and ((.key // "") | ascii_upcase) == "N" and .modmask == 65)] | length == 0' \
+  jq -e '[.[] | select((.description // "") == "Editor" and ((.key // "") | ascii_upcase) == "N" and .modmask == 65)] | length == 1' \
     "$RUN_DIR/news-radar-binds-audit.json" >/dev/null || return 1
 
   ssh_session "mv -- '$guest_backup' '$guest_bindings'; hyprctl reload >/dev/null" || return 1
@@ -33,8 +35,10 @@ omarchy_host_test() {
   ssh_session "hyprctl binds -j" >"$RUN_DIR/news-radar-binds-restored.json" || return 1
   jq -e '[.[] | select((.description // "") == "Editor" and ((.key // "") | ascii_upcase) == "N" and .modmask == 65)] | length == 1' \
     "$RUN_DIR/news-radar-binds-restored.json" >/dev/null || return 1
+  jq -e '[.[] | select(((.key // "") | ascii_upcase) == "N" and .modmask == 72)] | length == 0' \
+    "$RUN_DIR/news-radar-binds-restored.json" >/dev/null || return 1
 
   capture_console "news-radar-contract-audit-restored"
-  printf 'ok - exact Super+Shift+N Editor default is live\n'
-  printf 'ok - personal override hl.unbind replaces it once and restores cleanly\n'
+  printf 'ok - Super+Alt+N is free in the live default binding table\n'
+  printf 'ok - adding and removing Radar on Super+Alt+N leaves Super+Shift+N Editor intact\n'
 }

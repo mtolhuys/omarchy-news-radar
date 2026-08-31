@@ -8,21 +8,21 @@
 
 **Consequence:** Use one name consistently in manifest, UI, generated site, feeds, documentation, and release artifacts. Include an independent-community disclaimer until official status is explicitly granted.
 
-## D002 — Make `Super+Shift+N` the recommended primary interaction
+## D002 — Make `Super+Alt+N` the recommended primary interaction
 
-**Decision:** Offer `Super+Shift+N` as an explicit opt-in global shortcut that deliberately replaces Omarchy's audited default Editor chord.
+**Decision:** Offer `Super+Alt+N` as an explicit opt-in global shortcut only while the personal configuration and live binding table prove that it is free.
 
-**Why:** It is memorable, quick, and visually communicates a more deliberate action than a single-modifier chord. The owner accepts that this changes the default Editor shortcut; Radar must disclose that trade-off honestly.
+**Why:** It remains memorable and quick without competing with Omarchy's `Super+Shift+N` Editor/Neovim action. The selected Omarchy source and disposable live audit currently leave the new chord unused.
 
-**Consequence:** Re-audit before implementation and release. A plain install previews and refuses the existing Editor action. A separately named replacement option may proceed only when source, live binding, and personal configuration prove the exact unmodified default. Every other conflict is refused.
+**Consequence:** Re-audit before release because defaults can change. `status` is read-only, `install` succeeds only for a free chord, every conflict is refused, and no force or action-replacement path exists.
 
 ## D003 — Manage the shortcut explicitly, never through hidden installation side effects
 
-**Decision:** Ship a dedicated `install`, `status`, and `remove` helper that owns one delimited block in the user’s `bindings.lua`; the replacement path requires an explicit `--replace-default-editor` authorization.
+**Decision:** Ship a dedicated `install`, `status`, and `remove` helper that owns one delimited Radar binding block in the user’s `bindings.lua`.
 
 **Why:** The current third-party manifest has no declarative global-shortcut contract, and normal plugin installation intentionally does not execute install hooks. User configuration deserves explicit consent and reversible mutation.
 
-**Consequence:** Public installation has a separate shortcut step and names the lost Editor chord before mutation. The managed block unbinds the default and binds Radar; deleting that exact block restores the upstream Editor behavior automatically. Plugin removal instructions remove the block first. Symlinked, personal, modified, conflicting, ambiguous, or invalid configuration is refused and falls back to documented manual guidance.
+**Consequence:** Public installation has a separate shortcut step. The managed block contains no `hl.unbind`; deleting the exact block releases only Radar's chord. Plugin removal instructions remove the block first. Symlinked, personal, modified, conflicting, ambiguous, or invalid configuration is refused and falls back to documented manual guidance.
 
 ## D004 — Ship an on-demand panel without a resident service
 

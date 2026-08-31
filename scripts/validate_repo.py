@@ -114,6 +114,14 @@ def validate_manifest() -> None:
         if "exec python3 -B -m " not in helper:
             fail(f"{helper_name} must disable bytecode writes in the watched plugin directory")
 
+    shortcut_source = (ROOT / "radar" / "shortcut.py").read_text(encoding="utf-8")
+    shortcut_cli = (ROOT / "radar" / "shortcut_cli.py").read_text(encoding="utf-8")
+    if 'CHORD = "SUPER + ALT + N"' not in shortcut_source or "MODMASK = 72" not in shortcut_source:
+        fail("shortcut helper must own the audited Super+Alt+N chord")
+    for forbidden_shortcut_path in ("replace-default-editor", 'hl.unbind("{CHORD}")'):
+        if forbidden_shortcut_path in shortcut_source or forbidden_shortcut_path in shortcut_cli:
+            fail(f"shortcut helper contains a forbidden action-replacement path: {forbidden_shortcut_path}")
+
 
 def validate_workflows() -> None:
     workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))

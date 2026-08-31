@@ -8,9 +8,9 @@ The newspaper metaphor is visual and organizational, not nostalgic decoration. A
 
 ## Primary invocation
 
-The recommended global shortcut is `Super+Shift+N` for “news.” Audited Omarchy Quattro defaults and the live binding set currently use that chord for Editor. Radar deliberately reassigns it only when the user invokes the dedicated replacement option and the helper proves the live binding is the exact unmodified Omarchy default. A personal, modified, ambiguous, or unknown binding is never replaced.
+The recommended global shortcut is `Super+Alt+N` for “news.” Audited Omarchy Quattro defaults and the disposable live binding set leave that chord free, while `Super+Shift+N` remains the Editor launcher. Radar never displaces Editor or any other action.
 
-Shortcut installation is a separate, explicit setup action after plugin enablement. A plain install attempt previews the detected Editor conflict and the consequence. The documented replacement option adds one managed `hl.unbind()` plus Radar binding only after exact-default recognition and explicit authorization. The setup tool must inspect the live binding table and personal override file, refuse every unrecognized conflict, write only its owned managed block, validate a Hyprland reload, and support status and removal. Removing the block makes the upstream Editor default effective again.
+Shortcut installation is a separate, explicit setup action after plugin enablement. `status` performs a read-only inspection. `install` may add one managed Radar binding only when the live binding table and personal override file both show that `Super+Alt+N` is free. The setup tool refuses every conflict, writes only its owned managed block, validates a Hyprland reload, and supports exact removal. Removing the block releases `Super+Alt+N`; the Editor binding is unchanged throughout.
 
 The plugin must remain openable through documented shell IPC even without the shortcut:
 
@@ -47,7 +47,7 @@ All behavior must remain reachable without a pointer:
 
 | Key | Action |
 | --- | --- |
-| `Super+Shift+N` | Toggle Radar globally after explicit reassignment of the default Editor chord |
+| `Super+Alt+N` | Toggle Radar globally after explicit conflict-free setup |
 | `Escape` or `q` | Close Radar |
 | `j` / `Down` | Select next story |
 | `k` / `Up` | Select previous story |

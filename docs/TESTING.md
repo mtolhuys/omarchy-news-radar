@@ -60,17 +60,17 @@ make site
 Use a temporary fake home and stub `hyprctl` executable to prove:
 
 - status without mutation;
-- exact default Editor detection and read-only plain-install preview;
-- explicit `Super+Shift+N` reassignment with `--replace-default-editor`;
-- personal, modified, multiple, unknown, and ambiguous conflict refusal;
+- read-only status and exact free-chord detection for `Super+Alt+N`;
+- explicit installation without an unbind or action replacement;
+- personal, multiple, unknown, and ambiguous conflict refusal;
 - exact idempotence;
 - preservation of arbitrary surrounding Lua bytes;
 - symlink and ownership refusal;
 - successful reload and empty config errors;
 - rollback after reload/config error;
-- exact owned-block removal and restoration of the live default Editor action;
+- exact owned-block removal and release of `Super+Alt+N`, while the live Editor action remains intact;
 - refusal to remove an edited or ambiguous block;
-- no general force-overwrite path and strict scoping of the one named default-replacement option.
+- no force-overwrite or action-replacement path.
 
 ## Integration tests
 
@@ -99,8 +99,8 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 
 1. Source tests and manifest validation pass for the exact candidate.
 2. Plugin add, enable, discovery, and panel entry-point identity match the candidate.
-3. The shortcut helper detects the exact default Editor binding, makes plain install a read-only preview, accepts the dedicated replacement authorization, writes its exact managed unbind-and-bind block, reloads cleanly, and exposes only Radar on `Super+Shift+N` in the live bind table.
-4. QMP `press meta_l-shift-n` opens the rendered Radar surface through the real global shortcut route.
+3. The shortcut helper reports `Super+Alt+N` as free, writes its exact managed bind-only block, reloads cleanly, exposes exactly one Radar action on that chord, and leaves the separate Editor action live.
+4. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 5. Cached fixture content appears without waiting for the network, focus is visible, and the selected story fields match the validated fixture.
 6. `j`, `k`, section keys, search, save, refresh, and source opening use the public rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
 7. Installed-plugin matching places the fixture event in For You without transmitting installed IDs.
@@ -109,7 +109,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 10. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable.
 11. Escape closes the panel, no helper remains, and no shell/Hyprland/QML error occurs after the close boundary.
 12. A same-path plugin update replaces the loaded panel identity and behavior.
-13. Shortcut removal deletes only the owned block and restores the live default Editor action; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
+13. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
 `public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
 

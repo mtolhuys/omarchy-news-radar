@@ -5,7 +5,7 @@
 # retain evidence.
 
 omarchy_host_test() {
-  local product_root lab_root start_epoch before_hash after_hash plain_status before_change_count
+  local product_root lab_root start_epoch before_hash after_hash before_change_count
   local helper shortcut plugin_dir viewport_width viewport_height monitor_name
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds
@@ -60,30 +60,25 @@ omarchy_host_test() {
   wait_for_guest_state "restarted shell uses the exact candidate" 30 ssh_session \
     "omarchy-shell shell ping >/dev/null && omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)'" || return 1
 
-  log "Proving shortcut preview, explicit replacement, and live identity"
+  log "Proving free-chord inspection, installation, and live identity"
   before_hash="$(ssh_session "sha256sum \"\$HOME/.config/hypr/bindings.lua\" | cut -d' ' -f1")"
-  if ssh_session "$shortcut install" >"$RUN_DIR/news-radar-shortcut-preview.json" 2>&1; then
-    echo "plain shortcut install unexpectedly mutated or succeeded" >&2
-    return 1
-  else
-    plain_status=$?
-  fi
-  [[ $plain_status -eq 3 ]] || return 1
+  ssh_session "$shortcut status" >"$RUN_DIR/news-radar-shortcut-status.json" || return 1
   after_hash="$(ssh_session "sha256sum \"\$HOME/.config/hypr/bindings.lua\" | cut -d' ' -f1")"
   [[ $before_hash == "$after_hash" ]] || return 1
-  jq -e '.status == "authorization-required" and .classification == "default-editor" and .displacedAction == "Editor"' \
-    "$RUN_DIR/news-radar-shortcut-preview.json" >/dev/null || return 1
-  ssh_session "$shortcut install --replace-default-editor" >"$RUN_DIR/news-radar-shortcut-installed.json" || return 1
+  jq -e '.status == "ok" and .classification == "free" and .binding == "SUPER + ALT + N"' \
+    "$RUN_DIR/news-radar-shortcut-status.json" >/dev/null || return 1
+  ssh_session "$shortcut install" >"$RUN_DIR/news-radar-shortcut-installed.json" || return 1
   ssh_session "grep -F -- '-- BEGIN OMARCHY NEWS RADAR MANAGED SHORTCUT' \"\$HOME/.config/hypr/bindings.lua\" && \
-    grep -F -- 'hl.unbind(\"SUPER + SHIFT + N\")' \"\$HOME/.config/hypr/bindings.lua\" && \
+    grep -F -- 'o.bind(\"SUPER + ALT + N\", \"Omarchy News Radar\"' \"\$HOME/.config/hypr/bindings.lua\" && \
     test -z \"\$(hyprctl configerrors)\" && \
-    hyprctl binds -j | jq -e '[.[] | select((.description // \"\") == \"Omarchy News Radar\" and ((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 65)] | length == 1'" || return 1
+    hyprctl binds -j | jq -e '[.[] | select((.description // \"\") == \"Omarchy News Radar\" and ((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 72)] | length == 1' && \
+    hyprctl binds -j | jq -e '[.[] | select((.description // \"\") == \"Editor\" and ((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 65)] | length == 1'" || return 1
 
   log "Proving first use and the real QMP global shortcut route"
   ssh_session "rm -f /tmp/news-radar-feed.json; rm -rf \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar\" \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\""
   open_started_ms="$(date +%s%3N)"
-  press meta_l-shift-n
-  wait_for_guest_state "QMP Super+Shift+N opens the rendered Radar layer" 20 ssh_session \
+  press meta_l-alt-n
+  wait_for_guest_state "QMP Super+Alt+N opens the rendered Radar layer" 20 ssh_session \
     "hyprctl -j layers | jq -e '[.. | objects | select(.namespace? == \"omarchy-news-radar\")] | length >= 1'" || return 1
   wait_for_guest_state "first-use failure has visible deterministic recovery" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No cache and failed\" and .storyCount == 0'" || {
@@ -103,7 +98,7 @@ omarchy_host_test() {
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED=/tmp/news-radar-feed.json $helper refresh" \
     >"$RUN_DIR/news-radar-seed-cache.json" || return 1
   ssh_guest "rm -f /tmp/news-radar-feed.json"
-  press meta_l-shift-n
+  press meta_l-alt-n
   wait_for_guest_state "cached fixture remains visible after offline refresh" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"Offline\" and .storyCount > 0 and (.selectedTitle | length > 0)'" || return 1
   capture_console "success-news-radar-02-cached-offline"
@@ -118,7 +113,7 @@ omarchy_host_test() {
 
   log "Driving sections, search, save, source opening, and local relevance"
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-feed.json"
-  press meta_l-shift-n
+  press meta_l-alt-n
   wait_for_guest_state "valid refresh reaches current" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .storyCount > 0'" || return 1
   press 2
@@ -158,7 +153,7 @@ omarchy_host_test() {
   press esc
   wait_for_guest_state "normal close advances seen state only to the captured cutoff" 15 ssh_session \
     "jq -e '.seenThrough == \"2026-08-31T14:00:00Z\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
-  press meta_l-shift-n
+  press meta_l-alt-n
   wait_for_guest_state "the next panel session is current and ready for navigation" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"Current\" and .searchFocused == false'" || return 1
   press 2
@@ -251,6 +246,7 @@ omarchy_host_test() {
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1
   ssh_session "! grep -F -- '-- BEGIN OMARCHY NEWS RADAR MANAGED SHORTCUT' \"\$HOME/.config/hypr/bindings.lua\" && \
     test -z \"\$(hyprctl configerrors)\" && \
+    hyprctl binds -j | jq -e '[.[] | select(((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 72)] | length == 0' && \
     hyprctl binds -j | jq -e '[.[] | select((.description // \"\") == \"Editor\" and ((.key // \"\") | ascii_upcase) == \"N\" and .modmask == 65)] | length == 1'" || return 1
   ssh_session "omarchy-plugin-disable io.github.mtolhuys.news-radar"
   wait_for_guest_state "disable unloads runtime but preserves local state" 15 ssh_session \
@@ -269,7 +265,7 @@ omarchy_host_test() {
     return 1
   fi
   ssh_session "test -z \"\$(hyprctl configerrors)\" && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
-  capture_console "success-news-radar-14-removed-editor-restored"
+  capture_console "success-news-radar-14-shortcut-removed-editor-intact"
 
   printf 'ok - exact candidate passed shortcut, cached-first, keyboard, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
 }

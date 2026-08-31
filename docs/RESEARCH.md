@@ -38,10 +38,11 @@ Audited default sources:
 Audited live bindings through `hyprctl binds -j`:
 
 - `Super+N`: unused.
+- `Super+Alt+N`: unused.
 - `Super+Shift+N`: Editor.
 - `Super+Ctrl+N`: Toggle nightlight.
 
-The owner selected `Super+Shift+N` as Radar's recommended opt-in binding despite the known Editor default. This is an intentional reassignment, not an unused shortcut. Recheck the default source, personal override file, and disposable guest's live binding table before shipping. Plain install must preview and refuse the displacement; only the narrowly scoped explicit default-replacement option may proceed, and the helper must refuse personal or ambiguous conflicts.
+The original specification selected `Super+Shift+N` despite the known Editor default. During implementation review, the owner rejected that conflict and selected `Super+Alt+N` instead. Recheck the default source, personal override file, and disposable guest's live binding table before shipping. The helper must install only when the new chord is free, refuse personal or ambiguous conflicts, and never replace Editor or another action.
 
 ## Marketplace
 
@@ -107,6 +108,6 @@ The lab requires product-owned scenarios for visible pointer/keyboard behavior, 
 - The selected Plugin Lab was branch `fix/quiet-host-test-screenshots` at commit `259ef26e9909bd74323177d2d29e2007cf8c73db`, with its maintained local integration changes. The ISO harness was branch `plugin-lab` at commit `268bac16d351a21d867e37565738f458b11cb06c`.
 - The selected image and reusable base identify as `omarchy-2026.08.27-x86_64-local`. `./bin/lab doctor` passed the ISO checksum, English/path audits, KVM check, and required source/harness/tool checks.
 - Current third-party panels are still `schemaVersion: 1` `Item` entry points with `open(payloadJson)` and `close()`. The shell injects the documented properties, loads enabled panels on demand, destroys them when hidden unless `keepLoaded` is true, and loads each third-party scan from a new runtime snapshot.
-- The default source still binds `SUPER + SHIFT + N` to `Editor`, while personal `hypr/bindings.lua` loads after defaults. Disposable-guest audit run `20260831-162400` proved exactly one live Editor binding at that chord, one replacement after `hl.unbind()`, an empty Hyprland error set, and clean restoration of the Editor default. The earlier run `20260831-162231` failed before mutation because its host scenario resolved the wrong home directory; its overlay was discarded.
+- The default source still binds `SUPER + SHIFT + N` to `Editor` and contains no `SUPER + ALT + N` binding. Disposable-guest audit run `20260831-180214` proved that the new chord was absent from the live table, one temporary `SUPER + ALT + N` binding loaded cleanly, the Editor binding remained live throughout, and removing the temporary line released only the new chord. Run `20260831-162400` proved the earlier Editor-replacement design but is superseded; the earlier run `20260831-162231` failed before mutation because its host scenario resolved the wrong home directory and its overlay was discarded.
 - The live marketplace catalog remained a production object with top-level `generatedAt`, `mode`, `plugins`, `stateSchemaVersion`, and `warnings`; `stateSchemaVersion` was `2`, and entries retained the fields needed by the documented adapter. It contained 1,988 entries and was 4,882,620 bytes, so the collector uses a bounded source-specific catalog limit larger than the public feed's 2 MiB client limit.
 - The GitHub releases endpoint retained the required release identity, draft/prerelease, publication timestamp, tag, body, and HTTPS source fields. The historical `basecamp/omarchy` API endpoint currently resolves to the `omacom/omarchy` repository identity, so redirect validation must allow only that specific GitHub API transition while published event links remain validated HTTPS URLs.
