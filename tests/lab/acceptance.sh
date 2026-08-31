@@ -164,7 +164,15 @@ omarchy_host_test() {
   capture_console "success-news-radar-00-app-launcher"
   press enter
   wait_for_guest_state "visible Apps-menu selection summons Radar" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || {
+      ssh_session "hyprctl -j clients" >"$RUN_DIR/news-radar-app-launcher-failure-clients.json" 2>&1 || true
+      ssh_session "journalctl --user --since '@$start_epoch' --no-pager" \
+        >"$RUN_DIR/news-radar-app-launcher-failure-journal.log" 2>&1 || true
+      ssh_session "systemctl --user --no-pager --all --type=service --type=scope" \
+        >"$RUN_DIR/news-radar-app-launcher-failure-units.log" 2>&1 || true
+      capture_console "failure-news-radar-app-launcher"
+      return 1
+    }
   press esc
   wait_for_guest_state "Apps-launched Radar closes through the normal lifecycle" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
