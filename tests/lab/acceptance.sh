@@ -56,6 +56,16 @@ omarchy_host_test() {
     sleep 0.5
   }
 
+  qmp_pointer_move() {
+    local width="$1" height="$2" x="$3" y="$4"
+    local qx qy response
+    qx=$((x * 32767 / (width - 1)))
+    qy=$((y * 32767 / (height - 1)))
+    response=$(qmp "\"input-send-event\", \"arguments\": {\"events\": [{\"type\":\"abs\",\"data\":{\"axis\":\"x\",\"value\":$qx}},{\"type\":\"abs\",\"data\":{\"axis\":\"y\",\"value\":$qy}}]}")
+    grep -q '"error"' <<<"$response" && return 1
+    sleep 0.2
+  }
+
   radar_control_geometry() {
     local method="$1" geometry geometry_raw window_position local_x local_y
     geometry_raw="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar '$method' ''")" || return 1
@@ -309,7 +319,7 @@ omarchy_host_test() {
     "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = 'https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.disk-lens'" || return 1
   radar_control_geometry settingsGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
-  wait_for_guest_state "cogwheel opens the current section options" 10 ssh_session \
+  wait_for_guest_state "Settings opens the current section options" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true and (.sectionSources | startswith(\"Omarchy Plugin Marketplace\"))'" || return 1
   capture_console "success-news-radar-03-settings-options"
 
@@ -451,6 +461,10 @@ omarchy_host_test() {
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 24 and .totalStories == 120 and .hasMoreStories == true'" || return 1
   dense_ready_ms="$(date +%s%3N)"
   capture_console "success-news-radar-08-dense"
+  # The load-more click leaves the synthetic pointer over the story list. Move
+  # it off the Radar before replacing the model so hover selection cannot race
+  # the keyboard's explicit Home selection.
+  qmp_pointer_move "$viewport_width" "$viewport_height" 4 4 || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/long.json /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "long-content edition refresh completes" 15 ssh_session \
