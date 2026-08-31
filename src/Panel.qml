@@ -786,10 +786,9 @@ Item {
               }
             }
 
-            Flow {
+            RowLayout {
               Layout.fillWidth: keySurface.narrow
               Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
-              Layout.preferredHeight: childrenRect.height
               spacing: Style.spacing.controlGap
 
               RadarButton {
