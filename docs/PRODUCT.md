@@ -31,8 +31,8 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 3. The user may run the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change.
 4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
 5. Radar refreshes one bounded static feed without blocking the cached edition.
-6. The front page explains how many core, plugin, and community changes occurred since the last completed reading session.
-7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved, with `Tab` and `Shift+Tab` cycling sections.
+6. The front page explains how many core and plugin changes occurred since the last completed reading session; any accepted reviewed link joins that finite edition without creating a separate empty lane.
+7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, and Saved, with `Tab` and `Shift+Tab` cycling sections.
 8. Selecting an item exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics.
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel records the newest event timestamp that was actually present in that session. Events arriving later remain new.

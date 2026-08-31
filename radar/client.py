@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlencode, urljoin, urlsplit
 
-from .constants import FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
+from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import SECTION_RULES, apply_section_filter, filter_options, filter_summary
 from .sections import SECTION_SOURCE_SUMMARIES
@@ -286,7 +286,7 @@ def projection_model(
         installed.append(item)
     feed = load_feed(environment, now=now)
     state, _ = load_state(environment)
-    names = ("front-page", "for-you", "core", "plugins", "community", "saved")
+    names = CLIENT_SECTIONS
     if section not in names:
         raise ValidationError("unknown projection section")
     filters = state["preferences"]["sectionFilters"]

@@ -82,7 +82,7 @@ def project_section(
     installed = set(installed_plugin_ids)
     saved = set(saved_ids)
     interest_terms = tuple(sorted(set(interests)))
-    if section in {"core", "plugins", "community"}:
+    if section in {"core", "plugins"}:
         events = [event for event in events if event["classification"]["section"] == section]
     elif section == "for-you":
         events = [

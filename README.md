@@ -16,7 +16,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
-- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, For You, Core, Plugins, Community, Saved, private interests, bounded section display names, fixed section identity, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
+- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, For You, Core, Plugins, and Saved, private interests, bounded section display names, fixed section identity, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
@@ -102,7 +102,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 
 ## Panel controls
 
-- `1`–`6`: Front Page, For You, Core, Plugins, Community, Saved.
+- `1`–`5`: Front Page, For You, Core, Plugins, Saved.
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections.
 - `j` / `k` or arrow keys: move the selected story.
 - `Home` / `End`: first or last story.
@@ -121,9 +121,7 @@ Marketplace views, hearts, command copies, repository stars, and GitHub release-
 
 Installed plugin IDs and explicit interests are used only for local `For You` matching. They are never sent to the feed host.
 
-## Why Community can be empty
-
-Community is not an automatically scraped social feed. It accepts only project-reviewed Omarchy tutorials, reusable workflows, substantial showcases, ecosystem infrastructure, and announcements committed under `content/community/`. Everyone reading the same edition receives the same selection. Production currently has no accepted records, so Community is empty for every user of this edition; its present value is a reserved editorial lane, not hidden personalized content.
+Reviewed community links are an optional edition input, not a dedicated reader section. If the project later accepts a source record under `content/community/`, the validated story may appear in Front Page or For You; an empty input never creates an empty navigation destination.
 
 ## Newspaper controls
 

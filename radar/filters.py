@@ -13,7 +13,6 @@ SECTION_RULES = {
     "for-you": "Matches enabled plugin IDs or the private interest phrases stored on this machine.",
     "core": "Official published Omarchy release events.",
     "plugins": "Marketplace additions, releases, retirements, and verification changes.",
-    "community": "Repository-reviewed community links.",
     "saved": "Stories saved on this machine that remain in the current edition.",
 }
 
@@ -41,7 +40,6 @@ SECTION_EVENT_TYPES = {
         "plugin-retired",
         "plugin-verification-changed",
     ),
-    "community": ("community-link",),
     "saved": (
         "omarchy-released",
         "plugin-added",

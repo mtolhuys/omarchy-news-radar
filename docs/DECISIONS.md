@@ -199,3 +199,11 @@
 **Why:** Owner testing found that assigning the same visual identity to multiple sections or making one section resemble another damaged scanability and suggested that editorial scope had moved. A customizable background added more state without improving the reader's factual utility.
 
 **Consequence:** Settings offers name editing/reset, fixed-source disclosure, the immutable built-in rule, and local filters. Valid v4 state migrates atomically: names survive, while old icon and tone values are validated and discarded. Valid v1–v3 state receives canonical names as before. No hidden appearance state remains that the user cannot control.
+
+## D026 — Remove the empty Community reader section
+
+**Decision:** The client has five sections: Front Page, For You, Core, Plugins, and Saved. The reviewed `community-link` source/event contract remains valid, but it has no dedicated navigation destination.
+
+**Why:** Production has no accepted reviewed records, so the Community tab was permanently empty and consumed navigation, settings, keyboard numbering, and explanation space without helping the reader. Keeping an empty placeholder is not useful product behavior.
+
+**Consequence:** State v6 validates and atomically migrates v5, preserving saved items, seen state, global preferences, and every remaining section's name/filter while discarding only Community's profile/filter. A future reviewed record may still enter Front Page and local For You through the existing deterministic rules. Numeric navigation is `1`–`5`, Saved is `5`, and no empty Community state or settings surface remains.

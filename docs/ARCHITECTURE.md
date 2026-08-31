@@ -83,7 +83,8 @@ omarchy-news-radar/
 │   ├── state-v2.schema.json
 │   ├── state-v3.schema.json
 │   ├── state-v4.schema.json
-│   └── state-v5.schema.json
+│   ├── state-v5.schema.json
+│   └── state-v6.schema.json
 ├── share/
 │   └── applications/
 │       └── io.github.mtolhuys.news-radar.desktop

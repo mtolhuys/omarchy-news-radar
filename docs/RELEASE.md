@@ -14,7 +14,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - A documented IPC route keeps the panel reachable without the shortcut.
 - The explicit XDG launcher helper adds one searchable Apps-menu row with the newspaper icon, refuses modified/unrelated targets, and removes only receipt-matching files.
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
-- Front Page, For You, Core, Plugins, Community, and Saved match the implemented model.
+- Front Page, For You, Core, Plugins, and Saved match the implemented model; reviewed community records remain an optional feed input rather than an empty dedicated section.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
 - `Tab`/`Shift+Tab`, bounded per-section names, canonical icons/order/backgrounds, fixed-source disclosure, independent filters, exact resets, and finite Load more behavior match the local projection model.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.

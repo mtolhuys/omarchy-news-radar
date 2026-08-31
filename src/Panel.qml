@@ -29,7 +29,7 @@ Item {
   property string sessionThrough: ""
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 5,
+    schemaVersion: 6,
     seenThrough: "1970-01-01T00:00:00Z",
     saved: ({}),
     preferences: ({
@@ -42,7 +42,6 @@ Item {
         "for-you": ({ name: "For You" }),
         "core": ({ name: "Core" }),
         "plugins": ({ name: "Plugins" }),
-        "community": ({ name: "Community" }),
         "saved": ({ name: "Saved" })
       })
     })
@@ -74,7 +73,6 @@ Item {
     "for-you": 12,
     "core": 12,
     "plugins": 12,
-    "community": 12,
     "saved": 12
   })
 
@@ -88,7 +86,6 @@ Item {
     Object.assign({ id: "for-you" }, root.defaultSectionProfile("for-you"), sectionProfiles["for-you"] || ({})),
     Object.assign({ id: "core" }, root.defaultSectionProfile("core"), sectionProfiles["core"] || ({})),
     Object.assign({ id: "plugins" }, root.defaultSectionProfile("plugins"), sectionProfiles["plugins"] || ({})),
-    Object.assign({ id: "community" }, root.defaultSectionProfile("community"), sectionProfiles["community"] || ({})),
     Object.assign({ id: "saved" }, root.defaultSectionProfile("saved"), sectionProfiles["saved"] || ({}))
   ]
   readonly property string currentSection: sections[sectionIndex].id
@@ -112,8 +109,6 @@ Item {
       return "No stories match the current filter. Clear search to recover."
     if (!cachedFeed)
       return "No cached edition is available yet. Retry when online."
-    if (currentSection === "community" && filterSummary === "No extra filters")
-      return "Community contains project-reviewed Omarchy tutorials, workflows, substantial showcases, ecosystem infrastructure, and announcements. Everyone reading this edition gets the same selection; none have been reviewed into it yet."
     if (filterSummary !== "No extra filters")
       return "No stories match this section's local settings. Reset its filters or choose another section."
     return "This section is empty in the current bounded edition."
@@ -209,7 +204,6 @@ Item {
       "for-you": { name: "For You", icon: "spark", tone: "clear" },
       "core": { name: "Core", icon: "core", tone: "clear" },
       "plugins": { name: "Plugins", icon: "plugins", tone: "clear" },
-      "community": { name: "Community", icon: "community", tone: "clear" },
       "saved": { name: "Saved", icon: "saved", tone: "clear" }
     }
     return values[section]
@@ -221,7 +215,6 @@ Item {
       spark: "",
       core: "",
       plugins: "",
-      community: "",
       saved: ""
     }
     return icons[iconId] || ""
@@ -698,7 +691,7 @@ Item {
           return
         }
         var numeric = Number(event.text)
-        if (numeric >= 1 && numeric <= 6) {
+        if (numeric >= 1 && numeric <= root.sections.length) {
           root.selectSection(numeric - 1); event.accepted = true
         }
       }
@@ -924,7 +917,7 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: "Tab/Shift+Tab sections\n1–6 sections\nj/k stories\no source\ns save\nr refresh"
+                text: "Tab/Shift+Tab sections\n1–5 sections\nj/k stories\no source\ns save\nr refresh"
                 textFormat: Text.PlainText
                 color: Color.muted
                 font.family: Style.font.family

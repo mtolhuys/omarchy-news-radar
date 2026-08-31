@@ -11,7 +11,6 @@ DEFAULT_SECTION_PROFILES: dict[str, dict[str, str]] = {
     "for-you": {"name": "For You"},
     "core": {"name": "Core"},
     "plugins": {"name": "Plugins"},
-    "community": {"name": "Community"},
     "saved": {"name": "Saved"},
 }
 
@@ -22,7 +21,6 @@ SECTION_SOURCE_SUMMARIES = {
     "for-you": "The same fixed sources, narrowed locally by enabled plugin IDs and private interests",
     "core": "Official Omarchy GitHub releases",
     "plugins": "Omarchy Plugin Marketplace and linked public repositories",
-    "community": "Repository-reviewed community links",
     "saved": "Stories you saved locally from the fixed sources above",
 }
 

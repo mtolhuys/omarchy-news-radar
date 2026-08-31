@@ -5,7 +5,7 @@ from __future__ import annotations
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
 BUILD_ID = "news-radar-0.1.0"
 FEED_SCHEMA_VERSION = 1
-STATE_SCHEMA_VERSION = 5
+STATE_SCHEMA_VERSION = 6
 HELPER_PROTOCOL_VERSION = 1
 
 FEED_URL = "https://mtolhuys.github.io/omarchy-news-radar/events.json"
@@ -59,7 +59,6 @@ CLIENT_SECTIONS = (
     "for-you",
     "core",
     "plugins",
-    "community",
     "saved",
 )
 FILTER_PERIODS = frozenset({"all", "24h", "7d", "30d"})

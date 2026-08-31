@@ -59,6 +59,11 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertEqual(2, len(projected["events"]))
         self.assertNotIn("installedPluginIds", result)
 
+        front_page = projection_model("front-page", "[]", "", self.environment, now=CLOCK)
+        self.assertIn("community-link", {event["type"] for event in front_page["events"]})
+        with self.assertRaisesRegex(ValidationError, "unknown projection section"):
+            projection_model("community", "[]", "", self.environment, now=CLOCK)
+
     def test_invalid_candidate_preserves_last_known_good(self) -> None:
         self.assertEqual("current", refresh(self.environment, now=CLOCK)["status"])
         good = feed_path(self.environment).read_bytes()

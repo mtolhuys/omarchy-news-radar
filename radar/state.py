@@ -17,12 +17,22 @@ from .validation import (
     migrate_section_profile_v4,
     parse_timestamp,
     validate_feed,
+    validate_section_filter,
+    validate_section_profile,
     validate_state,
 )
 from .filters import default_section_filters
 from .sections import default_section_profiles
 
 EPOCH = "1970-01-01T00:00:00Z"
+LEGACY_CLIENT_SECTIONS = (
+    "front-page",
+    "for-you",
+    "core",
+    "plugins",
+    "community",
+    "saved",
+)
 
 
 def cache_root(environment: Mapping[str, str] | None = None) -> Path:
@@ -103,16 +113,24 @@ def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, 
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4}:
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5}:
             old_version = raw.get("schemaVersion")
-            old_preferences = raw.get("preferences") if old_version in {2, 3, 4} else None
+            old_preferences = raw.get("preferences") if old_version in {2, 3, 4, 5} else None
             preferences = default_state()["preferences"]
+            if old_version == 5 and not isinstance(old_preferences, dict):
+                raise ValidationError("state v5 preferences must be an object")
             if isinstance(old_preferences, dict):
                 for key in ("barVisible", "imagesVisible", "interests"):
                     if key in old_preferences:
                         preferences[key] = old_preferences[key]
-                if old_version in {3, 4} and "sectionFilters" in old_preferences:
-                    preferences["sectionFilters"] = old_preferences["sectionFilters"]
+                if old_version in {3, 4, 5} and "sectionFilters" in old_preferences:
+                    old_filters = old_preferences["sectionFilters"]
+                    if not isinstance(old_filters, dict) or set(old_filters) != set(LEGACY_CLIENT_SECTIONS):
+                        raise ValidationError(f"state v{old_version} section filters must define every legacy section")
+                    preferences["sectionFilters"] = {
+                        section: validate_section_filter(old_filters[section])
+                        for section in preferences["sectionFilters"]
+                    }
                 if old_version == 4:
                     if set(old_preferences) != {
                         "barVisible",
@@ -123,10 +141,26 @@ def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, 
                     }:
                         raise ValidationError("state v4 preferences have an unknown shape")
                     old_profiles = old_preferences.get("sectionProfiles")
-                    if not isinstance(old_profiles, dict) or set(old_profiles) != set(preferences["sectionProfiles"]):
+                    if not isinstance(old_profiles, dict) or set(old_profiles) != set(LEGACY_CLIENT_SECTIONS):
                         raise ValidationError("state v4 section profiles must define every section")
                     preferences["sectionProfiles"] = {
                         section: migrate_section_profile_v4(old_profiles[section])
+                        for section in preferences["sectionProfiles"]
+                    }
+                if old_version == 5:
+                    if set(old_preferences) != {
+                        "barVisible",
+                        "imagesVisible",
+                        "interests",
+                        "sectionFilters",
+                        "sectionProfiles",
+                    }:
+                        raise ValidationError("state v5 preferences have an unknown shape")
+                    old_profiles = old_preferences.get("sectionProfiles")
+                    if not isinstance(old_profiles, dict) or set(old_profiles) != set(LEGACY_CLIENT_SECTIONS):
+                        raise ValidationError("state v5 section profiles must define every legacy section")
+                    preferences["sectionProfiles"] = {
+                        section: validate_section_profile(old_profiles[section])
                         for section in preferences["sectionProfiles"]
                     }
             raw = {

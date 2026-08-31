@@ -80,7 +80,7 @@ class StateTests(unittest.TestCase):
         )
         state, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(5, state["schemaVersion"])
+        self.assertEqual(6, state["schemaVersion"])
         self.assertTrue(state["preferences"]["barVisible"])
         self.assertEqual(
             {"period": "all", "significance": "all", "unreadOnly": False, "imagesOnly": False, "types": []},
@@ -140,6 +140,13 @@ class StateTests(unittest.TestCase):
 
         v3_preferences = default_state()["preferences"]
         del v3_preferences["sectionProfiles"]
+        v3_preferences["sectionFilters"]["community"] = {
+            "period": "all",
+            "significance": "all",
+            "unreadOnly": False,
+            "imagesOnly": False,
+            "types": [],
+        }
         v3_preferences["sectionFilters"]["plugins"]["period"] = "30d"
         path.write_text(
             json.dumps({
@@ -152,11 +159,18 @@ class StateTests(unittest.TestCase):
         )
         v3, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(5, v3["schemaVersion"])
+        self.assertEqual(6, v3["schemaVersion"])
         self.assertEqual("30d", v3["preferences"]["sectionFilters"]["plugins"]["period"])
         self.assertEqual("Plugins", v3["preferences"]["sectionProfiles"]["plugins"]["name"])
 
         v4_preferences = default_state()["preferences"]
+        v4_preferences["sectionFilters"]["community"] = {
+            "period": "all",
+            "significance": "all",
+            "unreadOnly": False,
+            "imagesOnly": False,
+            "types": [],
+        }
         v4_preferences["sectionProfiles"] = {
             "front-page": {"name": "Front Page", "icon": "newspaper", "tone": "clear"},
             "for-you": {"name": "For You", "icon": "spark", "tone": "clear"},
@@ -176,9 +190,44 @@ class StateTests(unittest.TestCase):
         )
         v4, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(5, v4["schemaVersion"])
+        self.assertEqual(6, v4["schemaVersion"])
         self.assertEqual({"name": "My Extensions"}, v4["preferences"]["sectionProfiles"]["plugins"])
-        self.assertEqual({"name": "Community"}, v4["preferences"]["sectionProfiles"]["community"])
+        self.assertNotIn("community", v4["preferences"]["sectionProfiles"])
+        self.assertNotIn("community", v4["preferences"]["sectionFilters"])
+
+        v5_preferences = default_state()["preferences"]
+        v5_preferences["barVisible"] = False
+        v5_preferences["imagesVisible"] = False
+        v5_preferences["interests"] = ["security"]
+        v5_preferences["sectionFilters"]["community"] = {
+            "period": "30d",
+            "significance": "notable",
+            "unreadOnly": True,
+            "imagesOnly": True,
+            "types": ["community-link"],
+        }
+        v5_preferences["sectionProfiles"]["community"] = {"name": "People"}
+        v5_preferences["sectionProfiles"]["plugins"] = {"name": "Extensions"}
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 5,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": toggle_saved(default_state(), self.feed["events"][0], now=CLOCK)[0]["saved"],
+                "preferences": v5_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v5, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(6, v5["schemaVersion"])
+        self.assertEqual("2026-08-30T10:00:00Z", v5["seenThrough"])
+        self.assertEqual(1, len(v5["saved"]))
+        self.assertFalse(v5["preferences"]["barVisible"])
+        self.assertFalse(v5["preferences"]["imagesVisible"])
+        self.assertEqual(["security"], v5["preferences"]["interests"])
+        self.assertEqual({"name": "Extensions"}, v5["preferences"]["sectionProfiles"]["plugins"])
+        self.assertNotIn("community", v5["preferences"]["sectionProfiles"])
+        self.assertNotIn("community", v5["preferences"]["sectionFilters"])
 
     def test_symlink_targets_and_concurrent_refresh_are_refused(self) -> None:
         path = feed_path(self.environment)

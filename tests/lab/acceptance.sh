@@ -391,7 +391,7 @@ omarchy_host_test() {
   radar_control_geometry sectionNameApplyGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered section name persists locally" 10 ssh_session \
-    "jq -e '.schemaVersion == 5 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+    "jq -e '.schemaVersion == 6 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"} and (.preferences.sectionProfiles | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
      ! grep -q 'BACKGROUND · THEME-DERIVED\|sectionIconSparkButton\|sectionToneAccentButton' $plugin_dir/src/Panel.qml" || return 1
   capture_console "success-news-radar-03-section-identity-fixed"
   radar_control_geometry sectionAppearanceResetGeometry || return 1
@@ -409,7 +409,7 @@ omarchy_host_test() {
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
-    "jq -e '.schemaVersion == 5 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "jq -e '.schemaVersion == 6 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   radar_control_geometry filterResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered reset restores the exact section defaults" 10 ssh_session \
@@ -450,6 +450,10 @@ omarchy_host_test() {
   press s
   wait_for_guest_state "save writes bounded local metadata" 10 ssh_session \
     "jq -e '.saved | has(\"evt_53642b4d3e0e59c943494606\")' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  press 5
+  wait_for_guest_state "numeric key five opens Saved with no Community destination" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"saved\" and .storyCount == 1' && \
+     ! grep -q 'Object.assign({ id: \"community\" }\|1–6 sections\|currentSection === \"community\"' $plugin_dir/src/Panel.qml" || return 1
   press o
   wait_for_guest_state "source opening reaches the inert shim with the exact HTTPS URL" 10 ssh_session \
     "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = https://github.com/example/omarchy-notes" || return 1
@@ -496,10 +500,10 @@ omarchy_host_test() {
   capture_console "success-news-radar-06-offline"
   ssh_guest "cp /tmp/news-radar-fixtures/empty.json /tmp/news-radar-fixtures/current.json"
   press r
-  press 5
+  press 3
   wait_for_guest_state "empty valid edition has a visible empty state" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .section == \"community\" and .storyCount == 0 and (.emptyStateMessage | contains(\"Everyone reading this edition gets the same selection\"))'" || return 1
-  capture_console "success-news-radar-07-community-empty-explained"
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .section == \"core\" and .storyCount == 0 and .emptyStateMessage == \"This section is empty in the current bounded edition.\"'" || return 1
+  capture_console "success-news-radar-07-empty-section"
   ssh_guest "cp /tmp/news-radar-fixtures/dense.json /tmp/news-radar-fixtures/current.json"
   press r
   press 4

@@ -36,7 +36,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 3 — Build the client helper
 
 1. Implement fixed-origin bounded HTTPS refresh, redirect policy, candidate validation, cache locking, and atomic last-known-good replacement.
-2. Implement state read, v1/v2/v3/v4-to-v5 migration, session cutoff, saved toggle, private bar/image/interest preferences, strict per-section filters and bounded display names, canonical section identities, indicator model, quarantine, and explicit purge.
+2. Implement state read, v1/v2/v3/v4/v5-to-v6 migration, session cutoff, saved toggle, private bar/image/interest preferences, strict per-section filters and bounded display names, canonical section identities, indicator model, quarantine, and explicit purge.
 3. Return small versioned JSON responses designed for QML rather than exposing internal exceptions.
 4. Add loopback integration tests for success, timeout, redirect, oversize, truncation, invalid schema, concurrent refresh, and offline cache.
 

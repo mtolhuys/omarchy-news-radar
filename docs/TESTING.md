@@ -25,7 +25,7 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1/v2/v3/v4-to-v5 migration, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
+- State-v1/v2/v3/v4/v5-to-v6 migration, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
@@ -116,13 +116,13 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
-8. `Tab` and `Shift+Tab` cycle sections; the Settings cogwheel renames one section while its icon, background, order, and scope remain canonical, displays its fixed sources and built-in rule, independently resets the name and filters, and Load more expands a dense local projection without another feed request.
+8. `Tab` and `Shift+Tab` cycle the five sections; the Settings cogwheel renames one section while its icon, background, order, and scope remain canonical, displays its fixed sources and built-in rule, independently resets the name and filters, and Load more expands a dense local projection without another feed request.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
 10. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
 12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
 13. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
-14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable; Community's empty state explains its reviewed-record boundary, and selected headlines, summaries, metadata, and metrics remain readable in both themes.
+14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable; selected headlines, summaries, metadata, and metrics remain readable in both themes, and no empty Community destination is present.
 15. AltTab and Omadock companion candidates resolve Radar's exact enabled `windowIdentity` to its local manifest name/icon, render the newspaper asset in their visible UI, and fall back for disabled, malformed, missing, or ambiguous declarations without relabeling unrelated Quickshell windows.
 16. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
 17. A same-path plugin update replaces the loaded panel and bar identities/behavior.

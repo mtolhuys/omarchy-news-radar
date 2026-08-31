@@ -71,7 +71,7 @@ The endpoint is optional enrichment. A successful response replaces its metric g
 
 Community activity lives as one reviewed JSON or YAML-equivalent record per item under `content/community/`; choose one format and enforce it consistently. Records are ordinary pull-request-reviewed source files, not remote form submissions.
 
-The resulting community selection is edition-wide, not personalized: every client reading the same edition receives the same accepted records. An empty production directory therefore means Community is empty for every such client until a reviewed record is committed and published.
+The resulting reviewed selection is edition-wide, not personalized: every client reading the same edition receives the same accepted records. Accepted records remain eligible for Front Page and local For You matching, but there is no dedicated Community reader section. An empty production directory therefore creates no empty navigation destination.
 
 A record contains a stable ID, publication time, title, plain-text summary, original HTTPS source URL, author/display source, tags, and optional explicit significance. The collector validates it through the same public event bounds.
 

@@ -27,7 +27,7 @@ Version 1 is an on-demand normal desktop window paired with a default-on, option
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar, local date, edition freshness, source health, and close action.
-2. **Section rail:** Front Page, For You, Core, Plugins, Community, and Saved with bounded counts.
+2. **Section rail:** Front Page, For You, Core, Plugins, and Saved with bounded counts.
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
 4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action.
 
@@ -58,7 +58,7 @@ All behavior must remain reachable without a pointer:
 | `/` | Focus search/filter input |
 | `r` | Refresh the feed |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
-| `1`–`6` | Switch between the six primary sections |
+| `1`–`5` | Switch between the five primary sections |
 | `Home` / `End` | Select first or last story in the current section |
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
@@ -67,7 +67,7 @@ Shortcuts must not fire while a text field is actively editing, except `Escape` 
 
 Each section exposes a cogwheel named **Settings**. Its options screen permits only a bounded plain-text display name with an exact per-section reset. The canonical icon, order, and visual background remain fixed so two sections cannot be made to look interchangeable or imply that their scope moved.
 
-The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Community into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
+The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Plugins into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 
 The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded.
 
@@ -87,7 +87,7 @@ Opening an original source is not required to mark the edition seen. Saved state
 | Current | Shows successful generation time and complete available sources | Read normally |
 | Offline | Keeps cache, labels failed refresh and cache age | Retry |
 | Source partial | Keeps valid events and names unavailable source adapters | Retry later |
-| Empty | Valid feed contains no events in the selected section; Community explains that every reader of the edition receives the same manually reviewed selection and that none may have been accepted yet | Change section or filters |
+| Empty | Valid feed contains no events in the selected section | Change section or filters |
 | Filtered empty | Current filters match nothing | Clear filters |
 | Invalid feed | Rejects candidate, preserves cache, explains validation failure | Retry or inspect diagnostics |
 | No cache and failed | Gives a concise failure and direct retry action | Retry when online |

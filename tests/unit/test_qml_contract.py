@@ -81,7 +81,9 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Reset name", qml)
         self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
         self.assertIn("function emptyStateMessage()", qml)
-        self.assertIn("Everyone reading this edition gets the same selection", qml)
+        self.assertNotIn('id: "community"', qml)
+        self.assertNotIn('currentSection === "community"', qml)
+        self.assertIn("1–5 sections", qml)
         self.assertIn('readonly property string compositorWindowTitle: "📰 Omarchy News Radar"', qml)
 
         story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
