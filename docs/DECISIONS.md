@@ -175,3 +175,11 @@
 **Why:** Names, icons, and restrained color make a personal reader easier to scan, but arbitrary colors, markup, or source reassignment would weaken theme compatibility, validation, and the documented meaning of Core, Plugins, and Community.
 
 **Consequence:** The cogwheel is named Settings and shows large semantic icon choices, appearance controls, exact appearance reset, the dictated source summary, built-in rule, and filters together. Stable section IDs continue to drive projection, counts, keys, source membership, and filter storage. Profiles are local-only, strictly validated, independently resettable, and migrated atomically from v1–v3 state.
+
+## D023 — Declare an exact hosted-window identity for companion UIs
+
+**Decision:** Radar's manifest declares the exact compositor pair `org.quickshell` and `📰 Omarchy News Radar`. Compatible AltTab and Omadock companions may use Radar's existing local manifest name/icon only when one enabled plugin matches both fields exactly.
+
+**Why:** Quickshell exposes only the shared process app ID for hosted `FloatingWindow` instances. Resolving `org.quickshell` through the desktop database produces a generic file/gear icon, while globally replacing that desktop entry would mislabel unrelated shell windows.
+
+**Consequence:** Companion resolution is opt-in and fail-closed. A missing, disabled, malformed, or ambiguous declaration uses the ordinary desktop fallback. Radar does not change the process-wide app ID, write a desktop file, inspect arbitrary titles, or claim ownership of other Quickshell windows.

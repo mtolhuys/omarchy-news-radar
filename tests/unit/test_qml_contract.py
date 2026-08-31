@@ -17,6 +17,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertEqual("right", manifest["barWidget"]["defaultSection"])
         self.assertEqual("assets/io.github.mtolhuys.news-radar.svg", manifest["icon"])
         self.assertTrue((ROOT / manifest["icon"]).is_file())
+        self.assertEqual(
+            {"appId": "org.quickshell", "title": "📰 Omarchy News Radar"},
+            manifest["windowIdentity"],
+        )
 
         widget = (ROOT / "src/BarWidget.qml").read_text(encoding="utf-8")
         self.assertIn("visible: barVisible", widget)
@@ -74,6 +78,9 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("sectionToneAccentButton", qml)
         self.assertIn("Reset appearance", qml)
         self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
+        self.assertIn("function emptyStateMessage()", qml)
+        self.assertIn("No reviewed community stories are in this edition yet.", qml)
+        self.assertIn('readonly property string compositorWindowTitle: "📰 Omarchy News Radar"', qml)
 
         story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
         self.assertIn("secondaryTextColor: selected", story)

@@ -5,7 +5,7 @@
 # retain evidence.
 
 omarchy_host_test() {
-  local product_root lab_root start_epoch before_hash after_hash before_change_count
+  local product_root lab_root alttab_root omadock_root start_epoch before_hash after_hash before_change_count
   local helper shortcut plugin_dir viewport_width viewport_height monitor_name bar_x bar_y tune_x tune_y
   local control_x control_y window_before_width window_after_width window_x window_y window_width window_height window_initial_maximized
   local settings_center_x settings_center_y
@@ -13,6 +13,8 @@ omarchy_host_test() {
   local shell_rss_open shell_rss_closed projection_seconds
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
+  alttab_root="$(cd -- "$product_root/../hyprland-alttab" && pwd)"
+  omadock_root="$(cd -- "$product_root/../omadock" && pwd)"
   # shellcheck source=/dev/null
   source "$lab_root/host-tests/helpers/pointer.sh"
 
@@ -88,12 +90,26 @@ omarchy_host_test() {
   ssh_guest "git -C /tmp/omarchy-news-radar-candidate init -q && \
     git -C /tmp/omarchy-news-radar-candidate add . && \
     git -C /tmp/omarchy-news-radar-candidate -c user.name=PluginLab -c user.email=lab@invalid commit -qm candidate"
+  tar -C "$alttab_root" --exclude=.git -cf - . | ssh_guest \
+    "rm -rf /tmp/hyprland-alttab-candidate && mkdir -p /tmp/hyprland-alttab-candidate && tar -C /tmp/hyprland-alttab-candidate -xf -"
+  tar -C "$omadock_root" --exclude=.git -cf - . | ssh_guest \
+    "rm -rf /tmp/omadock-candidate && mkdir -p /tmp/omadock-candidate && tar -C /tmp/omadock-candidate -xf -"
+  ssh_guest "git -C /tmp/hyprland-alttab-candidate init -q && git -C /tmp/hyprland-alttab-candidate add . && \
+    git -C /tmp/hyprland-alttab-candidate -c user.name=PluginLab -c user.email=lab@invalid commit -qm candidate && \
+    git -C /tmp/omadock-candidate init -q && git -C /tmp/omadock-candidate add . && \
+    git -C /tmp/omadock-candidate -c user.name=PluginLab -c user.email=lab@invalid commit -qm candidate"
   ssh_guest "cd /tmp/omarchy-news-radar-candidate && make test && make validate" \
     >"$RUN_DIR/news-radar-source-tests.log" || return 1
+  ssh_guest "make -C /tmp/hyprland-alttab-candidate test && \
+    make -C /tmp/omadock-candidate test" \
+    >"$RUN_DIR/news-radar-companion-source-tests.log" || return 1
   ssh_guest "python3 /tmp/omarchy-news-radar-candidate/tests/lab/prepare_fixtures.py \
     /tmp/omarchy-news-radar-candidate/tests/fixtures/feed-valid.json /tmp/news-radar-fixtures" || return 1
 
-  log "Installing the candidate and a synthetic locally installed plugin"
+  log "Installing Radar, its exact companion candidates, and a synthetic relevance plugin"
+  ssh_session "omarchy-plugin-add /tmp/hyprland-alttab-candidate --enable --yes && \
+    omarchy-plugin-add /tmp/omadock-candidate --enable --yes" \
+    >"$RUN_DIR/news-radar-companion-install.log" || return 1
   ssh_session "omarchy-plugin-add /tmp/omarchy-news-radar-candidate --enable --yes" \
     >"$RUN_DIR/news-radar-install.log" || return 1
   ssh_guest "rm -rf /tmp/news-radar-installed-plugin && mkdir -p /tmp/news-radar-installed-plugin && \
@@ -103,8 +119,8 @@ omarchy_host_test() {
     git -C /tmp/news-radar-installed-plugin -c user.name=PluginLab -c user.email=lab@invalid commit -qm fixture"
   ssh_session "omarchy-plugin-add /tmp/news-radar-installed-plugin --enable --yes" >/dev/null || return 1
 
-  wait_for_guest_state "candidate and relevance fixture are installed and enabled" 20 ssh_session \
-    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true) and any(.[]; .id == \"io.github.mtolhuys.disk-lens\" and .enabled == true)'" || return 1
+  wait_for_guest_state "candidate, companions, and relevance fixture are installed and enabled" 20 ssh_session \
+    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true) and any(.[]; .id == \"io.github.mtolhuys.disk-lens\" and .enabled == true) and any(.[]; .id == \"vbrosseau.alttab\" and .enabled == true) and any(.[]; .id == \"omadock\" and .enabled == true)'" || return 1
   ssh_session "omarchy-shell shell listPlugins" >"$RUN_DIR/news-radar-plugin-list.json" || return 1
   jq -e 'any(.[]; .id == "io.github.mtolhuys.news-radar" and .kinds == ["panel", "bar-widget"] and .enabled == true)' \
     "$RUN_DIR/news-radar-plugin-list.json" >/dev/null || return 1
@@ -123,10 +139,12 @@ omarchy_host_test() {
     "curl -fsS http://127.0.0.1:18765/current.json >/dev/null" || return 1
   ssh_session "mkdir -p \"\$HOME/.local/bin\" \"\$HOME/.local/state/omarchy-news-radar\" && \
     cp $plugin_dir/tests/lab/fixtures/xdg-open \"\$HOME/.local/bin/xdg-open\" && chmod +x \"\$HOME/.local/bin/xdg-open\" && \
+    printf '%s\n' '{\"autohide\":false}' >\"\$HOME/.config/omarchy/omadock.json\" && \
     printf '%s\n' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_MODE\", \"1\")' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_FEED_URL\", \"http://127.0.0.1:18765/current.json\")' \
       'hl.env(\"PATH\", os.getenv(\"HOME\") .. \"/.local/bin:\" .. (os.getenv(\"PATH\") or \"/usr/bin\"))' \
+      'dofile(os.getenv(\"HOME\") .. \"/.config/omarchy/plugins/vbrosseau.alttab/omarchy-plugin/alttab-bindings.lua\")' \
       >>\"\$HOME/.config/hypr/bindings.lua\" && \
     hyprctl reload >/dev/null && test -z \"\$(hyprctl configerrors)\" && omarchy-restart-shell"
   wait_for_guest_state "restarted shell uses the exact candidate" 30 ssh_session \
@@ -163,6 +181,13 @@ omarchy_host_test() {
       capture_console "failure-news-radar-panel-load"
       return 1
     }
+  wait_for_guest_state "AltTab resolves the exact enabled Radar window identity" 15 ssh_session \
+    "qs -p /usr/share/omarchy/shell ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .label == \"Omarchy News Radar\" and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
+  wait_for_guest_state "Omadock renders the same exact manifest identity in its live model" 15 ssh_session \
+    "qs -p /usr/share/omarchy/shell ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .modelMatched == true and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
+  ssh_session "qs -p /usr/share/omarchy/shell ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0' && \
+    qs -p /usr/share/omarchy/shell ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0'" || return 1
+  capture_console "success-news-radar-00-companion-dock-icon"
   press esc
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" right
   wait_for_guest_state "right click persists hidden state with exact zero slot geometry" 15 ssh_session \
@@ -260,6 +285,11 @@ omarchy_host_test() {
         >"$RUN_DIR/news-radar-window-debug-failure.json" 2>&1 || true
       return 1
     }
+  qmp '"send-key", "arguments": {"keys": [{"type":"qcode","data":"alt"},{"type":"qcode","data":"tab"}],"hold-time":3000}' >/dev/null
+  wait_for_guest_state "the visible AltTab companion is presenting Radar" 5 ssh_session \
+    "test \"\$(qs -p /usr/share/omarchy/shell ipc call omarchy-alttab openState)\" = true" || return 1
+  capture_console "success-news-radar-03-companion-alttab-icon"
+  sleep 3
   window_initial_maximized="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.maximized'")" || return 1
   if [[ $window_initial_maximized == true ]]; then
     radar_control_geometry maximizeGeometry || return 1
@@ -442,10 +472,10 @@ omarchy_host_test() {
   capture_console "success-news-radar-06-offline"
   ssh_guest "cp /tmp/news-radar-fixtures/empty.json /tmp/news-radar-fixtures/current.json"
   press r
-  press 1
+  press 5
   wait_for_guest_state "empty valid edition has a visible empty state" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .storyCount == 0'" || return 1
-  capture_console "success-news-radar-07-empty"
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .section == \"community\" and .storyCount == 0 and (.emptyStateMessage | contains(\"manually reviewed Omarchy tutorials\"))'" || return 1
+  capture_console "success-news-radar-07-community-empty-explained"
   ssh_guest "cp /tmp/news-radar-fixtures/dense.json /tmp/news-radar-fixtures/current.json"
   press r
   press 4
@@ -527,6 +557,7 @@ omarchy_host_test() {
   wait_for_guest_state "plugin removal unloads files and preserves user state" 15 ssh_session \
     "test ! -e \"\$HOME/.config/omarchy/plugins/io.github.mtolhuys.news-radar\" && test -f \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && omarchy-plugin-list --json | jq -e 'all(.[]; .id != \"io.github.mtolhuys.news-radar\")'" || return 1
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.disk-lens --yes" >/dev/null || return 1
+  ssh_session "omarchy-plugin-remove vbrosseau.alttab --yes && omarchy-plugin-remove omadock --yes" >/dev/null || return 1
   ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/news-radar-user-journal.log" || true
   if grep -E 'io\.github\.mtolhuys\.news-radar.*(failed to load|ReferenceError|TypeError)|(Panel|BarWidget)\.qml.*(error|Error)' \
     "$RUN_DIR/news-radar-user-journal.log"; then

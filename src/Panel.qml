@@ -107,6 +107,18 @@ Item {
     return runtimeBuildIdentity
   }
 
+  function emptyStateMessage() {
+    if (searchField.text)
+      return "No stories match the current filter. Clear search to recover."
+    if (!cachedFeed)
+      return "No cached edition is available yet. Retry when online."
+    if (currentSection === "community" && filterSummary === "No extra filters")
+      return "Community is reserved for manually reviewed Omarchy tutorials, workflows, substantial showcases, ecosystem infrastructure, and announcements. No reviewed community stories are in this edition yet."
+    if (filterSummary !== "No extra filters")
+      return "No stories match this section's local settings. Reset its filters or choose another section."
+    return "This section is empty in the current bounded edition."
+  }
+
   function debugState() {
     return JSON.stringify({
       build: runtimeBuildIdentity,
@@ -140,7 +152,8 @@ Item {
       windowWidth: panelWindow.width,
       windowHeight: panelWindow.height,
       maximized: panelWindow.maximized,
-      windowIntegrationStatus: windowIntegrationStatus
+      windowIntegrationStatus: windowIntegrationStatus,
+      emptyStateMessage: emptyStateMessage()
     })
   }
 
@@ -1070,11 +1083,7 @@ Item {
                   anchors.centerIn: parent
                   visible: root.stories.length === 0
                   width: parent.width - Style.spacing.panelPadding * 2
-                  text: searchField.text
-                    ? "No stories match the current filter. Clear search to recover."
-                    : root.cachedFeed
-                      ? "This section is empty in the current bounded edition."
-                      : "No cached edition is available yet. Retry when online."
+                  text: root.emptyStateMessage()
                   textFormat: Text.PlainText
                   color: Color.muted
                   font.family: Style.font.family

@@ -85,7 +85,7 @@ Opening an original source is not required to mark the edition seen. Saved state
 | Current | Shows successful generation time and complete available sources | Read normally |
 | Offline | Keeps cache, labels failed refresh and cache age | Retry |
 | Source partial | Keeps valid events and names unavailable source adapters | Retry later |
-| Empty | Valid feed contains no events in the selected section | Change section or filters |
+| Empty | Valid feed contains no events in the selected section; Community explains that it contains only manually reviewed work and may legitimately have no accepted records | Change section or filters |
 | Filtered empty | Current filters match nothing | Clear filters |
 | Invalid feed | Rejects candidate, preserves cache, explains validation failure | Retry or inspect diagnostics |
 | No cache and failed | Gives a concise failure and direct retry action | Retry when online |

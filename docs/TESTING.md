@@ -118,10 +118,11 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
 12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
 13. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
-14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable; selected headlines, summaries, metadata, and metrics remain readable in both themes.
-15. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
-16. A same-path plugin update replaces the loaded panel and bar identities/behavior.
-17. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
+14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable; Community's empty state explains its reviewed-record boundary, and selected headlines, summaries, metadata, and metrics remain readable in both themes.
+15. AltTab and Omadock companion candidates resolve Radar's exact enabled `windowIdentity` to its local manifest name/icon, render the newspaper asset in their visible UI, and fall back for disabled, malformed, missing, or ambiguous declarations without relabeling unrelated Quickshell windows.
+16. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
+17. A same-path plugin update replaces the loaded panel and bar identities/behavior.
+18. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
 `public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
 

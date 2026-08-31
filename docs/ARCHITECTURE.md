@@ -106,6 +106,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
+  "windowIdentity": { "appId": "org.quickshell", "title": "📰 Omarchy News Radar" },
   "kinds": ["panel", "bar-widget"],
   "entryPoints": { "panel": "src/Panel.qml", "barWidget": "src/BarWidget.qml" },
   "barWidget": { "defaultSection": "right", "allowMultiple": false }
@@ -113,6 +114,8 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
 ```
 
 This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, exposes `open(payloadJson)` and `close()`, and owns a normal `FloatingWindow`. The window is compositor-managed, resizable/maximizable, and follows ordinary task switching; it is not a `PanelWindow` or layer-shell overlay. Radar omits an unreliable minimize control.
+
+`windowIdentity` is a narrow companion-integration declaration for hosted normal windows. The app ID and full title must both equal the compositor values before a companion switcher or dock may use the existing local manifest name/icon. Unknown, disabled, malformed, missing, or ambiguous declarations fall back to normal desktop-entry resolution; the declaration does not alter Quickshell's process-wide app ID.
 
 Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar lifecycle, while the panel exposes the ordinary `open`/`close` contract. The bar widget loads only bounded local indicator state, runs a refresh only when the cache is due, and stops its refresh cadence while hidden. Neither entry point installs a service or daemon.
 
