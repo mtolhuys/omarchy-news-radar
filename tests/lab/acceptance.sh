@@ -453,9 +453,12 @@ omarchy_host_test() {
   capture_console "success-news-radar-08-dense"
   ssh_guest "cp /tmp/news-radar-fixtures/long.json /tmp/news-radar-fixtures/current.json"
   press r
+  wait_for_guest_state "long-content edition refresh completes" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .storyCount > 0'" || return 1
   press 2
+  press home
   wait_for_guest_state "long Unicode story renders as plain text" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and (.selectedTitle | startswith(\"長い見出し\"))'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedIndex == 0 and (.selectedTitle | startswith(\"長い見出し\"))'" || return 1
 
   log "Reviewing light, dark, narrow, 200 percent text, and reduced-motion checkpoints"
   ssh_session "omarchy-theme-set catppuccin-latte >/dev/null"
