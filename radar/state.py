@@ -16,6 +16,8 @@ from .validation import (
     format_timestamp,
     migrate_section_profile_v4,
     parse_timestamp,
+    require_exact_keys,
+    require_mapping,
     validate_feed,
     validate_section_filter,
     validate_section_profile,
@@ -33,6 +35,13 @@ LEGACY_CLIENT_SECTIONS = (
     "community",
     "saved",
 )
+LEGACY_STATE_KEYS = {"schemaVersion", "seenThrough", "saved", "preferences"}
+LEGACY_PREFERENCE_KEYS = {
+    2: {"barVisible", "imagesVisible", "interests"},
+    3: {"barVisible", "imagesVisible", "interests", "sectionFilters"},
+    4: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+    5: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+}
 
 
 def cache_root(environment: Mapping[str, str] | None = None) -> Path:
@@ -108,68 +117,74 @@ def _quarantine(path: Path) -> Path:
     return candidate
 
 
+def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate one published legacy shape before converting it to v6."""
+
+    old_version = raw.get("schemaVersion")
+    if old_version not in {1, 2, 3, 4, 5}:
+        raise ValidationError("unsupported legacy state schemaVersion")
+    expected_state_keys = LEGACY_STATE_KEYS if old_version >= 2 else LEGACY_STATE_KEYS - {"preferences"}
+    require_exact_keys(raw, expected_state_keys, f"state v{old_version}")
+
+    preferences = default_state()["preferences"]
+    if old_version >= 2:
+        old_preferences = require_mapping(raw.get("preferences"), f"state v{old_version} preferences")
+        require_exact_keys(
+            old_preferences,
+            LEGACY_PREFERENCE_KEYS[old_version],
+            f"state v{old_version} preferences",
+        )
+        for key in ("barVisible", "imagesVisible", "interests"):
+            preferences[key] = old_preferences[key]
+
+        if old_version >= 3:
+            old_filters = require_mapping(
+                old_preferences.get("sectionFilters"),
+                f"state v{old_version} section filters",
+            )
+            require_exact_keys(
+                old_filters,
+                LEGACY_CLIENT_SECTIONS,
+                f"state v{old_version} section filters",
+            )
+            preferences["sectionFilters"] = {
+                section: validate_section_filter(old_filters[section])
+                for section in preferences["sectionFilters"]
+            }
+
+        if old_version >= 4:
+            old_profiles = require_mapping(
+                old_preferences.get("sectionProfiles"),
+                f"state v{old_version} section profiles",
+            )
+            require_exact_keys(
+                old_profiles,
+                LEGACY_CLIENT_SECTIONS,
+                f"state v{old_version} section profiles",
+            )
+            profile_validator = migrate_section_profile_v4 if old_version == 4 else validate_section_profile
+            preferences["sectionProfiles"] = {
+                section: profile_validator(old_profiles[section])
+                for section in preferences["sectionProfiles"]
+            }
+
+    return validate_state(
+        {
+            "schemaVersion": STATE_SCHEMA_VERSION,
+            "seenThrough": raw.get("seenThrough"),
+            "saved": raw.get("saved"),
+            "preferences": preferences,
+        }
+    )
+
+
 def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, Any], str | None]:
     refuse_symlink(state_root(environment))
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
         if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5}:
-            old_version = raw.get("schemaVersion")
-            old_preferences = raw.get("preferences") if old_version in {2, 3, 4, 5} else None
-            preferences = default_state()["preferences"]
-            if old_version == 5 and not isinstance(old_preferences, dict):
-                raise ValidationError("state v5 preferences must be an object")
-            if isinstance(old_preferences, dict):
-                for key in ("barVisible", "imagesVisible", "interests"):
-                    if key in old_preferences:
-                        preferences[key] = old_preferences[key]
-                if old_version in {3, 4, 5} and "sectionFilters" in old_preferences:
-                    old_filters = old_preferences["sectionFilters"]
-                    if not isinstance(old_filters, dict) or set(old_filters) != set(LEGACY_CLIENT_SECTIONS):
-                        raise ValidationError(f"state v{old_version} section filters must define every legacy section")
-                    preferences["sectionFilters"] = {
-                        section: validate_section_filter(old_filters[section])
-                        for section in preferences["sectionFilters"]
-                    }
-                if old_version == 4:
-                    if set(old_preferences) != {
-                        "barVisible",
-                        "imagesVisible",
-                        "interests",
-                        "sectionFilters",
-                        "sectionProfiles",
-                    }:
-                        raise ValidationError("state v4 preferences have an unknown shape")
-                    old_profiles = old_preferences.get("sectionProfiles")
-                    if not isinstance(old_profiles, dict) or set(old_profiles) != set(LEGACY_CLIENT_SECTIONS):
-                        raise ValidationError("state v4 section profiles must define every section")
-                    preferences["sectionProfiles"] = {
-                        section: migrate_section_profile_v4(old_profiles[section])
-                        for section in preferences["sectionProfiles"]
-                    }
-                if old_version == 5:
-                    if set(old_preferences) != {
-                        "barVisible",
-                        "imagesVisible",
-                        "interests",
-                        "sectionFilters",
-                        "sectionProfiles",
-                    }:
-                        raise ValidationError("state v5 preferences have an unknown shape")
-                    old_profiles = old_preferences.get("sectionProfiles")
-                    if not isinstance(old_profiles, dict) or set(old_profiles) != set(LEGACY_CLIENT_SECTIONS):
-                        raise ValidationError("state v5 section profiles must define every legacy section")
-                    preferences["sectionProfiles"] = {
-                        section: validate_section_profile(old_profiles[section])
-                        for section in preferences["sectionProfiles"]
-                    }
-            raw = {
-                "schemaVersion": STATE_SCHEMA_VERSION,
-                "seenThrough": raw.get("seenThrough"),
-                "saved": raw.get("saved"),
-                "preferences": preferences,
-            }
-            migrated = validate_state(raw)
+            migrated = _migrate_legacy_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
         return validate_state(raw), None
@@ -279,13 +294,24 @@ class RefreshLock:
         refuse_symlink(self.path)
         try:
             self.descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.write(self.descriptor, f"{os.getpid()} {int(time.time())}\n".encode("ascii"))
+            payload = f"{os.getpid()} {int(time.time())}\n".encode("ascii")
+            if os.write(self.descriptor, payload) != len(payload):
+                raise OSError("short refresh-lock write")
             os.fsync(self.descriptor)
         except FileExistsError as exc:
             raise StorageError("a refresh is already running") from exc
+        except OSError as exc:
+            if self.descriptor is not None:
+                os.close(self.descriptor)
+                self.descriptor = None
+                try:
+                    self.path.unlink()
+                except FileNotFoundError:
+                    pass
+            raise StorageError("cannot create refresh lock") from exc
         return self
 
-    def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
+    def __exit__(self, _exc_type: object, _exc: object, _traceback: object) -> None:
         if self.descriptor is not None:
             os.close(self.descriptor)
             self.descriptor = None

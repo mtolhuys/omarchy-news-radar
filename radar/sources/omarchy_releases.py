@@ -5,7 +5,7 @@ from __future__ import annotations
 import html
 import re
 from datetime import datetime
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 from ..errors import ValidationError
 from ..model import event_id

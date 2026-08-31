@@ -79,6 +79,39 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_feed(unordered, now=NOW)
 
+    def test_schema_objects_marked_strict_reject_unknown_members(self) -> None:
+        candidates = []
+        for path in (
+            ("window",),
+            ("sources", 0),
+            ("events", 0, "source"),
+        ):
+            candidate = copy.deepcopy(self.feed)
+            target = candidate
+            for key in path:
+                target = target[key]
+            target["unexpected"] = True
+            candidates.append(candidate)
+
+        image_candidate = copy.deepcopy(self.feed)
+        image_candidate["events"][0]["image"] = {
+            "path": "assets/images/" + "a" * 64 + ".webp",
+            "alt": "Fixture preview",
+            "credit": "Marketplace",
+            "width": 720,
+            "height": 405,
+            "unexpected": True,
+        }
+        candidates.append(image_candidate)
+
+        metric_candidate = copy.deepcopy(self.feed)
+        next(event for event in metric_candidate["events"] if event.get("metrics"))["metrics"][0]["unexpected"] = True
+        candidates.append(metric_candidate)
+
+        for candidate in candidates:
+            with self.assertRaises(ValidationError):
+                validate_feed(candidate, now=NOW)
+
     def test_url_boundary(self) -> None:
         for value in (
             "http://github.com/example/project",

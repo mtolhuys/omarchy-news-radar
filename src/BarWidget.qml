@@ -84,7 +84,7 @@ BarWidget {
   Process {
     id: refreshProc
     stdout: StdioCollector { waitForEnd: true }
-    onExited: root.updateIndicator()
+    onExited: function() { root.updateIndicator() }
   }
 
   FileView {

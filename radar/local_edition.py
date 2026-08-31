@@ -23,7 +23,7 @@ from .io import (
     refuse_symlink,
 )
 from .state import cache_root, save_feed
-from .validation import parse_timestamp, validate_feed
+from .validation import validate_feed
 
 LOCAL_EDITION_SCHEMA_VERSION = 1
 BUILD_INFO_PATTERN = re.compile(

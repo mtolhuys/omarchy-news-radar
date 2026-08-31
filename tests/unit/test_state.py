@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import copy
 import json
-import os
 import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from radar.errors import StorageError, ValidationError
 from radar.state import (
@@ -229,6 +230,109 @@ class StateTests(unittest.TestCase):
         self.assertNotIn("community", v5["preferences"]["sectionProfiles"])
         self.assertNotIn("community", v5["preferences"]["sectionFilters"])
 
+    def test_current_state_rejects_unknown_members_instead_of_normalizing_them_away(self) -> None:
+        cases = []
+
+        extra_state = default_state()
+        extra_state["unexpected"] = True
+        cases.append(extra_state)
+
+        extra_preferences = default_state()
+        extra_preferences["preferences"]["unexpected"] = True
+        cases.append(extra_preferences)
+
+        extra_filter = default_state()
+        extra_filter["preferences"]["sectionFilters"]["plugins"]["unexpected"] = True
+        cases.append(extra_filter)
+
+        saved_state, _ = toggle_saved(default_state(), self.feed["events"][0], now=CLOCK)
+        saved_record = next(iter(saved_state["saved"].values()))
+        saved_record["unexpected"] = True
+        cases.append(saved_state)
+
+        for candidate in cases:
+            with self.subTest(keys=sorted(candidate)):
+                with self.assertRaises(ValidationError):
+                    save_state(candidate, self.environment)
+
+    def test_malformed_legacy_states_are_quarantined_instead_of_partially_migrated(self) -> None:
+        path = user_state_path(self.environment)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        filters = default_state()["preferences"]["sectionFilters"]
+        filters["community"] = {
+            "period": "all",
+            "significance": "all",
+            "unreadOnly": False,
+            "imagesOnly": False,
+            "types": [],
+        }
+        valid_v2_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "interests": [],
+        }
+        malformed = [
+            {
+                "schemaVersion": 1,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": {},
+            },
+            {
+                "schemaVersion": 2,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+            },
+            {
+                "schemaVersion": 2,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": {**valid_v2_preferences, "unexpected": True},
+            },
+            {
+                "schemaVersion": 3,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": valid_v2_preferences,
+            },
+            {
+                "schemaVersion": 3,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": {
+                    **valid_v2_preferences,
+                    "sectionFilters": {
+                        **copy.deepcopy(filters),
+                        "plugins": {
+                            **filters["plugins"],
+                            "unexpected": True,
+                        },
+                    },
+                },
+            },
+            {
+                "schemaVersion": 4,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": None,
+            },
+            {
+                "schemaVersion": 5,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": {},
+                "unexpected": True,
+            },
+        ]
+
+        for candidate in malformed:
+            with self.subTest(version=candidate["schemaVersion"], keys=sorted(candidate)):
+                path.write_text(json.dumps(candidate), encoding="utf-8")
+                state, quarantine = load_state(self.environment)
+                self.assertEqual(default_state(), state)
+                self.assertIsNotNone(quarantine)
+                self.assertTrue((path.parent / str(quarantine)).is_file())
+
     def test_symlink_targets_and_concurrent_refresh_are_refused(self) -> None:
         path = feed_path(self.environment)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -255,6 +359,16 @@ class StateTests(unittest.TestCase):
             load_feed(symlink_environment, now=CLOCK)
         with self.assertRaises(StorageError):
             purge(symlink_environment)
+
+    def test_refresh_lock_write_failure_cleans_up_descriptor_and_lock_file(self) -> None:
+        lock = RefreshLock(self.environment)
+        with mock.patch("radar.state.os.write", side_effect=OSError("disk failure")):
+            with self.assertRaisesRegex(StorageError, "cannot create refresh lock"):
+                lock.__enter__()
+        self.assertIsNone(lock.descriptor)
+        self.assertFalse(lock.path.exists())
+        with RefreshLock(self.environment):
+            self.assertTrue(lock.path.exists())
 
 
 if __name__ == "__main__":

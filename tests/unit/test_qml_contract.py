@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from pathlib import Path
+
+from radar.constants import CLIENT_SECTIONS
+from radar.filters import SECTION_EVENT_TYPES, SECTION_RULES
+from radar.sections import DEFAULT_SECTION_PROFILES, SECTION_SOURCE_SUMMARIES
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -85,6 +90,17 @@ class QmlContractTests(unittest.TestCase):
         self.assertNotIn('currentSection === "community"', qml)
         self.assertIn("1–5 sections", qml)
         self.assertIn('readonly property string compositorWindowTitle: "📰 Omarchy News Radar"', qml)
+
+    def test_every_section_boundary_uses_the_same_canonical_five_ids(self) -> None:
+        expected = list(CLIENT_SECTIONS)
+        qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")
+        qml_navigation = re.findall(r'Object\.assign\(\{ id: "([a-z-]+)" \}', qml)
+
+        self.assertEqual(expected, qml_navigation)
+        self.assertEqual(set(expected), set(DEFAULT_SECTION_PROFILES))
+        self.assertEqual(set(expected), set(SECTION_SOURCE_SUMMARIES))
+        self.assertEqual(set(expected), set(SECTION_RULES))
+        self.assertEqual(set(expected), set(SECTION_EVENT_TYPES))
 
         story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
         self.assertIn("secondaryTextColor: selected", story)

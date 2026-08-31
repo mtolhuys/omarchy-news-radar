@@ -52,6 +52,13 @@ def require_mapping(value: Any, name: str) -> Mapping[str, Any]:
     return value
 
 
+def require_exact_keys(value: Mapping[str, Any], expected: Iterable[str], name: str) -> None:
+    """Reject missing and unknown object members at a schema boundary."""
+
+    if set(value) != set(expected):
+        raise ValidationError(f"{name} has an unknown or incomplete shape")
+
+
 def require_list(value: Any, name: str) -> list[Any]:
     if not isinstance(value, list):
         raise ValidationError(f"{name} must be an array")
@@ -136,6 +143,12 @@ def validate_tags(value: Any) -> list[str]:
 
 def validate_image(value: Any, *, public_only: bool) -> dict[str, Any]:
     image = require_mapping(value, "event.image")
+    locator = "path" if "path" in image else "sourceUrl"
+    require_exact_keys(
+        image,
+        {"alt", "credit", "width", "height", locator},
+        "event.image",
+    )
     alt = normalize_text(image.get("alt"), 180)
     credit = normalize_text(image.get("credit"), 120)
     width = image.get("width")
@@ -176,6 +189,11 @@ def validate_metrics(value: Any) -> list[dict[str, Any]]:
     seen: set[str] = set()
     for raw in metrics:
         metric = require_mapping(raw, "event metric")
+        require_exact_keys(
+            metric,
+            {"id", "value", "observedAt", "sourceUrl"},
+            "event metric",
+        )
         metric_id = require_string(metric.get("id"), "event metric id", 1, 48)
         count = metric.get("value")
         if metric_id not in METRIC_IDS or metric_id in seen:
@@ -214,6 +232,7 @@ def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
         raise ValidationError("event occurs after discovery")
 
     source = require_mapping(event.get("source"), "event.source")
+    require_exact_keys(source, {"label", "url"}, "event.source")
     entity = require_mapping(event.get("entity"), "event.entity")
     classification = require_mapping(event.get("classification"), "event.classification")
     trust = require_mapping(event.get("trust"), "event.trust")
@@ -300,6 +319,7 @@ def validate_feed(value: Any, *, now: datetime | None = None, public_only: bool 
     if generated > comparison + timedelta(seconds=FUTURE_SKEW_SECONDS):
         raise ValidationError("feed generation time is materially in the future")
     window = require_mapping(feed.get("window"), "window")
+    require_exact_keys(window, {"from", "through"}, "window")
     from_text = require_string(window.get("from"), "window.from", 20, 20)
     through_text = require_string(window.get("through"), "window.through", 20, 20)
     if parse_timestamp(from_text, "window.from") > parse_timestamp(through_text, "window.through"):
@@ -310,6 +330,10 @@ def validate_feed(value: Any, *, now: datetime | None = None, public_only: bool 
     source_ids: set[str] = set()
     for raw in sources_raw:
         source = require_mapping(raw, "source health")
+        source_keys = {"id", "status", "checkedAt", "sourceUrl"}
+        if "reason" in source:
+            source_keys.add("reason")
+        require_exact_keys(source, source_keys, "source health")
         source_id = require_string(source.get("id"), "source.id", 1, 64)
         status = require_string(source.get("status"), "source.status", 1, 32)
         if source_id not in SOURCE_IDS or source_id in source_ids or status not in SOURCE_STATUSES:
@@ -357,6 +381,11 @@ def validate_feed(value: Any, *, now: datetime | None = None, public_only: bool 
 
 def validate_saved_record(value: Any, event_id: str) -> dict[str, Any]:
     record = require_mapping(value, "saved record")
+    require_exact_keys(
+        record,
+        {"savedAt", "title", "sourceUrl", "occurredAt", "type"},
+        "saved record",
+    )
     if not EVENT_ID_RE.fullmatch(event_id):
         raise ValidationError("saved event ID is invalid")
     saved_at = require_string(record.get("savedAt"), "savedAt", 20, 20)
@@ -377,6 +406,11 @@ def validate_saved_record(value: Any, event_id: str) -> dict[str, Any]:
 
 def validate_section_filter(value: Any) -> dict[str, Any]:
     current = require_mapping(value, "section filter")
+    require_exact_keys(
+        current,
+        {"period", "significance", "unreadOnly", "imagesOnly", "types"},
+        "section filter",
+    )
     period = require_string(current.get("period"), "section filter period", 1, 8)
     significance = require_string(current.get("significance"), "section filter significance", 1, 16)
     if period not in FILTER_PERIODS or significance not in FILTER_SIGNIFICANCE:
@@ -427,6 +461,11 @@ def migrate_section_profile_v4(value: Any) -> dict[str, str]:
 
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
+    require_exact_keys(
+        state,
+        {"schemaVersion", "seenThrough", "saved", "preferences"},
+        "state",
+    )
     if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
         raise ValidationError("unsupported state schemaVersion")
     seen = require_string(state.get("seenThrough"), "seenThrough", 20, 20)
@@ -436,6 +475,11 @@ def validate_state(value: Any) -> dict[str, Any]:
         raise ValidationError("saved state exceeds item bound")
     saved = {event_id: validate_saved_record(record, event_id) for event_id, record in sorted(saved_raw.items())}
     preferences = require_mapping(state.get("preferences"), "preferences")
+    require_exact_keys(
+        preferences,
+        {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+        "preferences",
+    )
     bar_visible = require_bool(preferences.get("barVisible"), "preferences.barVisible")
     images_visible = require_bool(preferences.get("imagesVisible"), "preferences.imagesVisible")
     interests_raw = require_list(preferences.get("interests"), "preferences.interests")

@@ -6,9 +6,11 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from radar.client import (
     indicator_model,
+    installed_plugins,
     projection_model,
     read_model,
     refresh,
@@ -163,6 +165,38 @@ class ClientIntegrationTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValidationError, "limit"):
             projection_model("plugins", "[]", "", self.environment, now=CLOCK, limit=0)
+
+    def test_installed_plugin_discovery_fails_closed_on_unexpected_shell_shapes(self) -> None:
+        invalid_shapes = [None, {}, {"plugins": None}, {"plugins": {}}, "plugins"]
+        for payload in invalid_shapes:
+            completed = mock.Mock(returncode=0, stdout=json.dumps(payload))
+            with self.subTest(payload=payload), mock.patch(
+                "radar.client.subprocess.run",
+                return_value=completed,
+            ):
+                self.assertEqual([], installed_plugins()["pluginIds"])
+
+        with mock.patch(
+            "radar.client.subprocess.run",
+            side_effect=TimeoutError("shell did not respond"),
+        ):
+            self.assertEqual([], installed_plugins()["pluginIds"])
+
+        completed = mock.Mock(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "plugins": [
+                        {"id": "z.plugin", "enabled": True},
+                        {"id": "a.plugin", "enabled": True},
+                        {"id": "ignored", "enabled": False},
+                        {"id": "x" * 161, "enabled": True},
+                    ]
+                }
+            ),
+        )
+        with mock.patch("radar.client.subprocess.run", return_value=completed):
+            self.assertEqual(["a.plugin", "z.plugin"], installed_plugins()["pluginIds"])
 
 
 if __name__ == "__main__":

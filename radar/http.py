@@ -44,7 +44,7 @@ class ClosedRedirectHandler(urllib.request.HTTPRedirectHandler):
         self.policy = policy
         self.redirects = 0
 
-    def redirect_request(self, request: urllib.request.Request, response: Any, code: int, message: str, headers: Any, new_url: str) -> urllib.request.Request:
+    def redirect_request(self, request: urllib.request.Request, response: Any, code: int, message: str, headers: Any, new_url: str) -> urllib.request.Request | None:
         self.redirects += 1
         resolved = urljoin(request.full_url, new_url)
         if self.redirects > self.policy.maximum_redirects or not _allowed_url(resolved, self.policy):

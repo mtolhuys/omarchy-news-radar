@@ -562,7 +562,9 @@ Item {
   Process {
     id: refreshProc
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleRefresh(text) }
-    onExited: if (root.refreshing && exitCode !== 0) root.refreshing = false
+    onExited: function(exitCode) {
+      if (root.refreshing && exitCode !== 0) root.refreshing = false
+    }
   }
 
   Process {
@@ -573,7 +575,9 @@ Item {
   Process {
     id: projectProc
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleProjection(text) }
-    onExited: if (root.pendingProjection) Qt.callLater(root.requestProjection)
+    onExited: function() {
+      if (root.pendingProjection) Qt.callLater(root.requestProjection)
+    }
   }
 
   Process {

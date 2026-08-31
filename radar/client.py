@@ -239,24 +239,38 @@ def refresh_if_due(
 
 
 def installed_plugins() -> dict[str, Any]:
-    completed = subprocess.run(
-        ["omarchy-shell", "shell", "listPlugins"],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=5,
-    )
+    try:
+        completed = subprocess.run(
+            ["omarchy-shell", "shell", "listPlugins"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return response("unavailable", pluginIds=[])
     if completed.returncode != 0 or len(completed.stdout) > 1024 * 1024:
         return response("unavailable", pluginIds=[])
     try:
         payload = json.loads(completed.stdout)
     except json.JSONDecodeError:
         return response("unavailable", pluginIds=[])
-    ids: list[str] = []
-    values = payload if isinstance(payload, list) else payload.get("plugins", []) if isinstance(payload, dict) else []
-    for item in values:
-        if isinstance(item, dict) and item.get("enabled") is True and isinstance(item.get("id"), str):
-            ids.append(item["id"])
+    if isinstance(payload, list):
+        values = payload
+    elif isinstance(payload, dict) and isinstance(payload.get("plugins"), list):
+        values = payload["plugins"]
+    else:
+        return response("unavailable", pluginIds=[])
+    if len(values) > 5000:
+        return response("unavailable", pluginIds=[])
+    ids = [
+        item["id"]
+        for item in values
+        if isinstance(item, dict)
+        and item.get("enabled") is True
+        and isinstance(item.get("id"), str)
+        and 1 <= len(item["id"]) <= 160
+    ]
     return response("ok", pluginIds=sorted(set(ids))[:500])
 
 

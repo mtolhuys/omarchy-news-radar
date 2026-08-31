@@ -48,7 +48,7 @@ def make_feed(
     *,
     generated_at: datetime,
     window_from: datetime,
-    sources: list[Mapping[str, Any]],
+    sources: Iterable[Mapping[str, Any]],
     events: Iterable[Mapping[str, Any]],
     lead_event_id: str | None = None,
 ) -> dict[str, Any]:

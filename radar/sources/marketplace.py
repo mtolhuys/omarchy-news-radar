@@ -118,7 +118,8 @@ def parse_marketplace(payload: Any) -> dict[str, Any]:
         verification = str(raw.get("verificationStatus") or "unknown").lower()
         if verification not in VERIFICATION:
             verification = "unknown"
-        tags_raw = raw.get("tags") if isinstance(raw.get("tags"), list) else []
+        tags_value = raw.get("tags")
+        tags_raw = tags_value if isinstance(tags_value, list) else []
         tags = sorted(
             {
                 str(tag).strip().lower().replace("_", "-")
@@ -227,7 +228,7 @@ def diff_marketplace(
     if previous is None:
         if not bootstrap:
             raise ValidationError("marketplace snapshot is absent; rerun with explicit bootstrap")
-        events: list[dict[str, Any]] = []
+        bootstrap_events: list[dict[str, Any]] = []
         if bootstrap_window_from is not None:
             recent = [
                 (plugin_id, plugin)
@@ -237,7 +238,7 @@ def diff_marketplace(
             ]
             recent.sort(key=lambda pair: (pair[1]["addedAt"], pair[0]), reverse=True)
             for plugin_id, plugin in recent[:MAX_BOOTSTRAP_EVENTS]:
-                events.append(
+                bootstrap_events.append(
                     _base_event(
                         plugin_id,
                         plugin,
@@ -249,7 +250,7 @@ def diff_marketplace(
                         summary=plugin["description"],
                     )
                 )
-        return events, {"generatedAt": current["generatedAt"], "plugins": dict(current["plugins"])}
+        return bootstrap_events, {"generatedAt": current["generatedAt"], "plugins": dict(current["plugins"])}
 
     prior_plugins = previous.get("plugins")
     if not isinstance(prior_plugins, dict):

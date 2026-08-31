@@ -25,7 +25,7 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1/v2/v3/v4/v5-to-v6 migration, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
+- State-v1/v2/v3/v4/v5-to-v6 migration, exact legacy/current object shapes, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, refresh-lock cleanup after write failure, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
@@ -59,7 +59,7 @@ make site
 
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, and no-cache failure.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
-- Indicator unread/health output, due-check age bounds, local bar/image preferences, interests, and no preference data in network requests.
+- Indicator unread/health output, due-check age bounds, local bar/image preferences, interests, fail-closed installed-plugin discovery, and no preference data in network requests.
 - Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, no public refresh while local mode is active, and purge of imported assets.
 
 ### Shortcut helper
@@ -93,7 +93,7 @@ Run a two-generation collector scenario: bootstrap a marketplace fixture, then a
 
 Source validation proves that the manifest references both existing entry points, the panel exposes `open()` and `close()`, owns a `FloatingWindow` rather than a layer-shell `PanelWindow`, the bar exposes exact visibility-driven geometry and fixed pointer actions, process commands are structural arrays, remote text is not assigned to rich-text paths, image sources come only from helper-projected feed paths, selected secondary text uses an explicit selection foreground, and hard-coded colors/sizing do not replace Omarchy tokens.
 
-When `qmllint` and a selected Omarchy source are available, import paths and QML syntax must pass. Static grep is supporting evidence, not runtime proof.
+When `qmllint` and a selected Omarchy source are available, every QML file is checked through a temporary `qs` import namespace that resolves the selected source's `Commons` and `Ui` modules. Omarchy singleton members and host-injected context properties do not ship compiler type descriptions, so only their resulting `missing-property`, `unqualified`, and `signal-handler-parameters` categories are excluded; every other warning category is fatal. Static grep is supporting evidence, not runtime proof.
 
 ## Product-owned Plugin Lab acceptance
 

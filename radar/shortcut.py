@@ -127,8 +127,11 @@ def _live_bindings() -> list[Mapping[str, Any]]:
 
 def _is_chord(item: Mapping[str, Any]) -> bool:
     key = str(item.get("key") or "").upper()
+    raw_modmask = item.get("modmask")
+    if not isinstance(raw_modmask, (int, str)) or isinstance(raw_modmask, bool):
+        return False
     try:
-        modmask = int(item.get("modmask"))
+        modmask = int(raw_modmask)
     except (TypeError, ValueError):
         return False
     return key == "N" and modmask == MODMASK

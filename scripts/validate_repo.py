@@ -14,7 +14,6 @@ import tempfile
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -193,12 +192,16 @@ def validate_workflows() -> None:
             fail(f"publish workflow lacks required least-privilege/state contract: {required}")
 
 
-def optional_tools() -> None:
+def optional_tools() -> list[str]:
+    results: list[str] = []
     shellcheck = shutil.which("shellcheck")
     if shellcheck:
         scripts = [path for path in tracked_files() if path.suffix == ".sh" or path.parent.name == "bin"]
         if scripts:
             subprocess.run([shellcheck, *map(str, scripts)], cwd=ROOT, check=True)
+            results.append(f"ok - ShellCheck validated {len(scripts)} scripts")
+    else:
+        results.append("skip - ShellCheck is not installed")
     desktop_validator = shutil.which("desktop-file-validate")
     if desktop_validator:
         subprocess.run(
@@ -206,17 +209,52 @@ def optional_tools() -> None:
             cwd=ROOT,
             check=True,
         )
+        results.append("ok - desktop-file-validate checked the launcher")
+    else:
+        results.append("skip - desktop-file-validate is not installed")
     omarchy_source = os.environ.get("OMARCHY_SOURCE")
     qmllint = shutil.which("qmllint")
+    fallback_qmllint = Path("/usr/lib/qt6/bin/qmllint")
+    if qmllint is None and fallback_qmllint.is_file() and os.access(fallback_qmllint, os.X_OK):
+        qmllint = str(fallback_qmllint)
     if qmllint and omarchy_source:
         source = Path(omarchy_source)
         if not (source / "shell/services/PluginRegistry.qml").is_file():
             fail("OMARCHY_SOURCE is not a selected Omarchy checkout")
-        subprocess.run(
-            [qmllint, "-I", str(source / "shell"), str(ROOT / "src/Panel.qml"), str(ROOT / "src/BarWidget.qml")],
-            cwd=ROOT,
-            check=True,
+        with tempfile.TemporaryDirectory(prefix="omarchy-news-radar-qml-") as temporary:
+            import_root = Path(temporary)
+            namespace = import_root / "qs"
+            namespace.mkdir()
+            for module in ("Commons", "Ui"):
+                (namespace / module).symlink_to(source / "shell" / module, target_is_directory=True)
+            qml_files = sorted((ROOT / "src").rglob("*.qml"))
+            subprocess.run(
+                [
+                    qmllint,
+                    "-W",
+                    "0",
+                    "--missing-property",
+                    "disable",
+                    "--unqualified",
+                    "disable",
+                    "--signal-handler-parameters",
+                    "disable",
+                    "-I",
+                    str(import_root),
+                    *map(str, qml_files),
+                ],
+                cwd=ROOT,
+                check=True,
+            )
+        results.append(
+            "ok - qmllint checked all QML against OMARCHY_SOURCE "
+            "(Omarchy singleton/context-only diagnostics excluded)"
         )
+    elif not qmllint:
+        results.append("skip - qmllint is not available on PATH or at the Qt 6 system path")
+    else:
+        results.append("skip - qmllint needs OMARCHY_SOURCE")
+    return results
 
 
 def main() -> int:
@@ -227,11 +265,12 @@ def main() -> int:
     validate_generated_fixture()
     validate_manifest()
     validate_workflows()
-    optional_tools()
+    optional_results = optional_tools()
     print("ok - Python source compiles")
     print("ok - tracked text is UTF-8 English-ready and free of placeholders")
     print("ok - JSON, schemas, generated feed, paired panel/bar manifest, and pinned workflows validate")
-    print("ok - optional shell/QML validators passed when available and configured")
+    for result in optional_results:
+        print(result)
     return 0
 
 
