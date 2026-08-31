@@ -48,6 +48,10 @@ QML launches only fixed bundled helpers and maintained Omarchy desktop commands.
 
 At most one refresh helper belongs to one panel or bar instance, and the atomic refresh lock rejects cross-monitor overlap. Closing the panel terminates its helper. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
+## Local checkout synchronization
+
+`make local-latest` is an explicit owner action, not an automatic updater. It validates a clean source checkout and then uses Omarchy's Git-managed plugin lifecycle to install or fast-forward only an installation whose local origin resolves to that exact checkout. It refuses dirty source or installed trees, symlinks, non-Git installs, missing origins, public origins, and different local origins. It never pulls or rewrites the source branch, repoints an installation, installs the optional shortcut, enables a deliberately disabled existing plugin, or creates a background process.
+
 ## Shortcut installer
 
 Global shortcut setup is an explicit user action and is not run by plugin installation, enablement, panel opening, refresh, or update.

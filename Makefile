@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: test validate feed-fixture site collect-live clean
+.PHONY: test validate feed-fixture site collect-live local-latest clean
 
 test:
 	PYTHONPATH=. $(PYTHON) -m unittest discover -s tests -p 'test_*.py' -v
@@ -16,6 +16,9 @@ site:
 
 collect-live:
 	PYTHONPATH=. SOURCE_REVISION=$$(git rev-parse --verify HEAD) $(PYTHON) -m radar collect
+
+local-latest: validate
+	@bash scripts/sync_local_plugin.sh
 
 clean:
 	@echo "Remove the untracked dist/ directory manually when its generated artifacts are no longer needed."

@@ -15,6 +15,8 @@ make site
 
 `make test` is offline, deterministic, creates only temporary synthetic state, and covers all Python, publisher, helper, shortcut, and pure presentation-model tests. `make validate` checks repository and plugin contracts without enabling the plugin.
 
+`make local-latest` is not a source gate: it installs or updates the plugin and therefore belongs only in a disposable Plugin Lab run during development. The local-sync scenario must prove first install/enable, exact origin and revision, fast-forward update, idempotence, dirty-source refusal, preservation of an installed checkout, and clean removal.
+
 ## Unit coverage
 
 ### Feed and model
@@ -94,6 +96,7 @@ Run only inside the disposable lab:
 cd "$OMARCHY_PLUGIN_LAB_ROOT"
 ./bin/lab doctor
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/acceptance.sh
+./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/local-latest.sh
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/public-install.sh
 ```
 

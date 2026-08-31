@@ -44,7 +44,17 @@ cd ~/Projects/omarchy/plugin-lab
 ./bin/lab plugin ~/Projects/plugins/omarchy-news-radar/tests/lab/acceptance.sh
 ```
 
-The Lab scenario seeds a deterministic guest-only feed, installs the conflict-free `Super+Alt+N` binding, drives the real bar and panel, captures screenshots, checks zero-gap hide/restore and local interests, then removes the owned shortcut and plugin. Do not install or activate the development checkout on the daily desktop; use the disposable VM for integration and visual acceptance.
+The Lab scenario seeds a deterministic guest-only feed, installs the conflict-free `Super+Alt+N` binding, drives the real bar and panel, captures screenshots, checks zero-gap hide/restore and local interests, then removes the owned shortcut and plugin. Keep automated development and acceptance in the disposable VM; the command below is an explicit owner-run opt-in for intentional daily use, not a test route.
+
+### Keep an intentional local installation current
+
+When you deliberately want to run this checkout on your daily desktop, use:
+
+```bash
+make local-latest
+```
+
+The first run validates, clones, and enables the current committed checkout. Later runs fast-forward that installed clone and ask Omarchy to rescan it. “Latest” means this repository's current committed `HEAD`: the command never runs `git pull`, ignores uncommitted work by refusing to continue, preserves a deliberately disabled plugin, leaves `Super+Alt+N` untouched, and refuses to repoint an installation that came from another local checkout or public URL. Run it again after each commit; it is intentionally not a background updater.
 
 ## Install after publication
 

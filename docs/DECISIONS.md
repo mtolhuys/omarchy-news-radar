@@ -127,3 +127,11 @@
 **Why:** Images make ecosystem activity immediately legible, but direct third-party loads create privacy, availability, tracking, and decoder boundaries. The official marketplace already provides bounded thumbnails and dimensions.
 
 **Consequence:** The publisher uses a closed origin/path family, 1.5 MiB body limit, PNG/JPEG/WebP magic and structure checks, static-only enforcement, 4,096-pixel side/12-million-pixel bounds, and exact metadata dimension matching. SVG is forbidden. Image failures are visible build warnings and degrade to a complete text-only story.
+
+## D017 — Make local checkout synchronization explicit and commit-based
+
+**Decision:** `make local-latest` installs or fast-forwards the local Omarchy plugin clone to the invoking repository's exact clean committed `HEAD`.
+
+**Why:** A development installation should be easy to keep current without an invisible updater, a symlink outside the validated plugin contract, or an automatic pull that changes the owner's source branch.
+
+**Consequence:** First use clones and enables this checkout; later uses preserve enablement state and update through Omarchy's official Git-managed lifecycle. Dirty source or installed trees, symlinks, missing origins, public origins, and different local origins are refused. The command never installs the optional shortcut, pulls the source repository, or runs in the background.

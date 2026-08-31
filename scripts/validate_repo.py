@@ -122,6 +122,21 @@ def validate_manifest() -> None:
         if forbidden_shortcut_path in shortcut_source or forbidden_shortcut_path in shortcut_cli:
             fail(f"shortcut helper contains a forbidden action-replacement path: {forbidden_shortcut_path}")
 
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    local_sync = (ROOT / "scripts" / "sync_local_plugin.sh").read_text(encoding="utf-8")
+    if "local-latest: validate" not in makefile or "scripts/sync_local_plugin.sh" not in makefile:
+        fail("Makefile must expose the validated local-latest sync target")
+    for required_text in (
+        "status --porcelain --untracked-files=normal",
+        "installed plugin tracks a non-local origin",
+        'omarchy-plugin-update "$PLUGIN_ID" --yes',
+    ):
+        if required_text not in local_sync:
+            fail(f"local-latest sync lacks required safety contract: {required_text}")
+    for forbidden_text in ("git pull", "git reset", "news-radar-shortcut install"):
+        if forbidden_text in local_sync:
+            fail(f"local-latest sync contains forbidden mutation: {forbidden_text}")
+
 
 def validate_workflows() -> None:
     workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))

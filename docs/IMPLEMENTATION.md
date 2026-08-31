@@ -79,8 +79,9 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 3. Send `Super+Alt+N` through QMP and assert the rendered panel, not just IPC state; also prove the Editor binding remains live before, during, and after Radar setup.
 4. Drive keyboard and pointer journeys, bar hide/restore, image on/off, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, themes, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
 5. Inspect shell logs and every visual checkpoint.
+6. Prove `make local-latest` in a separate guest scenario: clean first install, exact source origin/revision, committed fast-forward, idempotence, dirty-source refusal without installed-state change, and removal.
 
-**Done when:** The full acceptance list in `TESTING.md` passes for one clean committed candidate and the timestamped evidence directory is recorded.
+**Done when:** The full acceptance list in `TESTING.md` and the local-checkout synchronization lifecycle pass for one clean committed candidate and the timestamped evidence directories are recorded.
 
 ## Phase 7 — Release hardening
 
