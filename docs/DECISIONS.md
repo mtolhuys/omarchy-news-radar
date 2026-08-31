@@ -8,21 +8,21 @@
 
 **Consequence:** Use one name consistently in manifest, UI, generated site, feeds, documentation, and release artifacts. Include an independent-community disclaimer until official status is explicitly granted.
 
-## D002 — Make `Super+N` the recommended primary interaction
+## D002 — Make `Super+Shift+N` the recommended primary interaction
 
-**Decision:** Offer `Super+N` as an explicit opt-in global shortcut.
+**Decision:** Offer `Super+Shift+N` as an explicit opt-in global shortcut that deliberately replaces Omarchy's audited default Editor chord.
 
-**Why:** It is memorable, quick, and currently unused in the audited Quattro defaults and live bind table. A newspaper should be one habitual action away.
+**Why:** It is memorable, quick, and visually communicates a more deliberate action than a single-modifier chord. The owner accepts that this changes the default Editor shortcut; Radar must disclose that trade-off honestly.
 
-**Consequence:** Re-audit before implementation and release. The installer refuses conflicts and supplies a manual alternative rather than overriding anything.
+**Consequence:** Re-audit before implementation and release. A plain install previews and refuses the existing Editor action. A separately named replacement option may proceed only when source, live binding, and personal configuration prove the exact unmodified default. Every other conflict is refused.
 
 ## D003 — Manage the shortcut explicitly, never through hidden installation side effects
 
-**Decision:** Ship a dedicated `install`, `status`, and `remove` helper that owns one delimited block in the user’s `bindings.lua`.
+**Decision:** Ship a dedicated `install`, `status`, and `remove` helper that owns one delimited block in the user’s `bindings.lua`; the replacement path requires an explicit `--replace-default-editor` authorization.
 
 **Why:** The current third-party manifest has no declarative global-shortcut contract, and normal plugin installation intentionally does not execute install hooks. User configuration deserves explicit consent and reversible mutation.
 
-**Consequence:** Public installation has a separate shortcut step. Plugin removal instructions remove the binding first. Symlinked, conflicting, ambiguous, or invalid configuration falls back to a documented manual line.
+**Consequence:** Public installation has a separate shortcut step and names the lost Editor chord before mutation. The managed block unbinds the default and binds Radar; deleting that exact block restores the upstream Editor behavior automatically. Plugin removal instructions remove the block first. Symlinked, personal, modified, conflicting, ambiguous, or invalid configuration is refused and falls back to documented manual guidance.
 
 ## D004 — Ship an on-demand panel without a resident service
 

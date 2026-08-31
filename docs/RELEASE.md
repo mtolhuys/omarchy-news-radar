@@ -10,7 +10,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 
 ### Product
 
-- `Super+N` is re-audited, conflict-safe, explicit, reversible, and accurately documented.
+- `Super+Shift+N` and its default Editor displacement are re-audited, explicitly authorized, narrowly scoped, reversible, and accurately documented.
 - A documented IPC route keeps the panel reachable without the shortcut.
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
 - Front Page, For You, Core, Plugins, Community, and Saved match the implemented model.

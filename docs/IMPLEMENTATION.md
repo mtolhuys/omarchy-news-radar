@@ -7,7 +7,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Read `AGENTS.md` and every required document.
 2. Read the current Plugin Lab contracts and run `./bin/lab doctor` before any runtime session.
 3. Inspect the exact Omarchy source selected by the lab, including root `AGENTS.md`, shell development guidance, `docs/omarchy-shell.md`, `shell/services/PluginRegistry.qml`, panel loaders, current theme/UI tokens, and current default bindings.
-4. Reconfirm that `Super+N` is unused in defaults and the disposable guest. If it is no longer free, stop and update the decision rather than silently choosing another binding.
+4. Reconfirm the source and live identity of Omarchy's `Super+Shift+N` Editor default in the disposable guest, including the personal-override load order and `hl.unbind()` behavior. If the chord or replacement contract changed, stop and update the decision rather than guessing.
 5. Revalidate the marketplace `site/catalog.json` top-level and plugin-entry schema. Update only the source adapter and dated research unless a product contract truly changed.
 
 **Done when:** The implementation agent records current source/lab revisions and any contract drift in `docs/RESEARCH.md` without changing the intended product silently.
@@ -56,9 +56,10 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 5 — Build explicit shortcut setup
 
 1. Implement `news-radar-shortcut status|install|remove` exactly within the security contract.
-2. Use semantic live conflict detection and an exact managed Lua block.
-3. Implement backup, atomic write, reload, config-error validation, rollback, idempotence, and manual fallback text.
-4. Document install, custom binding, shortcut removal, plugin removal, and stale-binding behavior accurately.
+2. Use semantic live conflict detection, personal-override inspection, exact default Editor recognition, and an exact managed Lua unbind-and-bind block.
+3. Make plain install a read-only preview for the default conflict and require the narrowly scoped `--replace-default-editor` option; never provide a general force path.
+4. Implement backup, atomic write, reload, live-action/config-error validation, rollback, idempotence, default restoration, and manual fallback text.
+5. Document the displaced Editor action, install, custom binding, shortcut removal, restored Editor behavior, plugin removal, and stale-binding behavior accurately.
 
 **Done when:** Temporary-home tests cover every mutation and rollback case, and the disposable guest can install and remove the live binding without touching unrelated configuration.
 
@@ -66,7 +67,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 
 1. Create product-owned lab fixtures and `tests/lab/acceptance.sh` using lab helpers rather than another VM controller.
 2. Install the exact candidate, set deterministic guest-only feed/cache fixtures, and expose source/installed/runtime identities.
-3. Send `Super+N` through QMP and assert the rendered panel, not just IPC state.
+3. Send `Super+Shift+N` through QMP and assert the rendered panel, not just IPC state.
 4. Drive keyboard and pointer journeys, installed relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, themes, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
 5. Inspect shell logs and every visual checkpoint.
 

@@ -28,7 +28,7 @@ For Omarchy runtime work, also read the maintained Plugin Lab `AGENTS.md`, `READ
 
 ## Product invariants
 
-- `Super+N` is the recommended primary interaction, installed only through an explicit, conflict-safe user action. Never overwrite an existing binding.
+- `Super+Shift+N` is the recommended primary interaction. It intentionally replaces Omarchy's exact audited default Editor binding only after a dedicated explicit authorization; never replace a personal, modified, ambiguous, or otherwise unrecognized binding.
 - The main plugin is an on-demand `panel`. Version 1 does not require or secretly occupy a top-bar slot.
 - Opening the panel shows a validated cached edition immediately when one exists, then refreshes without blocking the cached reading experience.
 - Remote feed content, marketplace metadata, release notes, repository text, and community submissions are untrusted data. Render them as bounded plain text and never execute them.

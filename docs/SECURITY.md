@@ -55,19 +55,21 @@ Global shortcut setup is an explicit user action and is not run by plugin instal
 
 1. Refuse UID `0`.
 2. Resolve the expected user config path without following a symlink; if the file is symlinked or unusually owned, stop and provide the manual binding line.
-3. Query the live binding table through `hyprctl binds -j` and detect `Super+N` semantically, not by fragile source grep alone.
-4. Refuse when another action owns the binding.
-5. Be idempotent when its exact managed binding already exists.
-6. Add one clearly delimited managed block without reformatting any other byte of the file.
-7. Create a private timestamped backup before change.
-8. Write atomically.
-9. Run `hyprctl reload`, then require empty `hyprctl configerrors`.
-10. Restore the backup and reload again when validation fails.
-11. Report the exact changed file, binding, backup, and recovery result.
+3. Query the live binding table through `hyprctl binds -j` and detect `Super+Shift+N` semantically, not by fragile source grep alone.
+4. Inspect the maintained Omarchy default source and the user's personal override file. Classify the chord as `free`, `default-editor`, `owned`, `personal-conflict`, or `ambiguous`; fail closed when classification is uncertain.
+5. Make plain `install` read-only when the chord is `default-editor`: explain that Editor will lose this shortcut and print the exact `install --replace-default-editor` authorization command.
+6. Accept `--replace-default-editor` only for the exact audited, unmodified Omarchy default Editor case. It is not a general force flag and must refuse personal, modified, unknown, multiple, or ambiguous bindings.
+7. Be idempotent when its exact managed binding already exists.
+8. Add one clearly delimited managed block containing the required `hl.unbind("SUPER + SHIFT + N")` and Radar `o.bind(...)` statements without reformatting any other byte of the file.
+9. Create a private timestamped backup before change.
+10. Write atomically.
+11. Run `hyprctl reload`, then require empty `hyprctl configerrors` and exactly one live Radar action for the chord.
+12. Restore the backup and reload again when validation fails.
+13. Report the exact changed file, displaced default action, binding, backup, and recovery result.
 
-`status` is read-only. `remove` deletes only an exact unmodified managed block, uses the same backup/atomic/reload/rollback process, and refuses ambiguous or user-edited blocks. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
+`status` is read-only. `remove` deletes only an exact unmodified managed block, uses the same backup/atomic/reload/rollback process, refuses ambiguous or user-edited blocks, and verifies that the maintained Editor binding becomes live again. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
 
-Never expose a force-overwrite flag in version 1. Users with conflicts receive the exact manual Lua line needed to choose their own key.
+Never expose a general force-overwrite flag in version 1. The narrowly named `--replace-default-editor` option authorizes only the exact known default transition. Users with any other conflict receive manual guidance for choosing and configuring a different key.
 
 ## Static site
 

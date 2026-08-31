@@ -2,7 +2,7 @@
 
 ## Promise
 
-Omarchy News Radar gives a typical Omarchy user one memorable action—`Super+N`—to understand what changed, why it may matter, and where the original information lives.
+Omarchy News Radar gives a typical Omarchy user one memorable action—`Super+Shift+N`—to understand what changed, why it may matter, and where the original information lives.
 
 The product converts scattered public activity into a compact edition. It does not ask users to follow repository notifications, social accounts, discussions, release pages, and a marketplace independently.
 
@@ -27,8 +27,8 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 ## Version 1 journey
 
 1. The user installs and enables the panel plugin through the normal Omarchy plugin flow.
-2. The user explicitly installs the recommended `Super+N` binding. The installer refuses conflicts and reports exactly what it changed.
-3. Pressing `Super+N` opens the latest cached edition immediately when available.
+2. The user explicitly authorizes Radar to reassign `Super+Shift+N` from Omarchy's audited default Editor action. The installer refuses personal, modified, ambiguous, or otherwise unrecognized bindings and reports exactly what it changed.
+3. Pressing `Super+Shift+N` opens the latest cached edition immediately when available.
 4. Radar refreshes one bounded static feed without blocking the cached edition.
 5. The front page explains how many core, plugin, and community changes occurred since the last completed reading session.
 6. The user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved.
@@ -95,4 +95,4 @@ Automated activity and editorial significance are separate facts. The collector 
 
 ## Milestone success criterion
 
-The first release succeeds when a clean Omarchy Quattro guest can install the plugin, opt into a conflict-free `Super+N` shortcut, open a polished cached front page, refresh from a deterministic fixture, identify an update for an installed plugin, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its shortcut, and uninstall without shell or Hyprland errors.
+The first release succeeds when a clean Omarchy Quattro guest can install the plugin, explicitly reassign the exact default Editor chord to Radar, open a polished cached front page with `Super+Shift+N`, refresh from a deterministic fixture, identify an update for an installed plugin, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its managed override so Editor works again, and uninstall without shell or Hyprland errors.

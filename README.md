@@ -10,7 +10,7 @@ This repository currently contains the complete product and engineering specific
 
 ## Intended experience
 
-The recommended shortcut is `Super+N`, which is currently unused in the audited Omarchy Quattro defaults. Shortcut installation is explicit and conflict-safe; Radar must never replace an existing user binding.
+The recommended shortcut is `Super+Shift+N`. Omarchy Quattro currently assigns that chord to Editor, so Radar treats setup as a deliberate reassignment rather than pretending the key is free. The helper requires explicit authorization, accepts only the exact audited default Editor case, refuses personal or ambiguous conflicts, and makes removal reveal the original default again.
 
 Pressing the shortcut opens a theme-native front page:
 

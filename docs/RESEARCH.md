@@ -41,7 +41,7 @@ Audited live bindings through `hyprctl binds -j`:
 - `Super+Shift+N`: Editor.
 - `Super+Ctrl+N`: Toggle nightlight.
 
-`Super+N` is the recommended opt-in binding. Recheck both default source and the disposable guest’s live binding table before shipping. The helper must refuse personal conflicts regardless of defaults.
+The owner selected `Super+Shift+N` as Radar's recommended opt-in binding despite the known Editor default. This is an intentional reassignment, not an unused shortcut. Recheck the default source, personal override file, and disposable guest's live binding table before shipping. Plain install must preview and refuse the displacement; only the narrowly scoped explicit default-replacement option may proceed, and the helper must refuse personal or ambiguous conflicts.
 
 ## Marketplace
 
