@@ -29,7 +29,7 @@ The panel has four stable visual zones:
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
 4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action.
 
-Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow layouts collapse to one column without changing content or controls.
+Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow layouts collapse to one column and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
 ## Front page composition
 

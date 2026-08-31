@@ -5,7 +5,7 @@
 - Implement the deterministic release, marketplace, and reviewed-community collector.
 - Publish a bounded JSON feed, RSS projection, archive, and framework-free static site.
 - Add the cached-first image-capable Omarchy window and state-v4 local preferences/interests/per-section-filter/presentation helper with atomic v1/v2/v3 migration.
-- Make the window movable, resizable, maximizable, and available through normal `Alt+Tab`; remove its unreliable minimize control, add a bundled application mark and newspaper-prefixed compositor title, and add `Tab` section cycling, finite Load more controls, and contrast-safe selected text.
+- Make the window movable, resizable, maximizable, monitor-bounded at large text sizes, and available through normal `Alt+Tab`; remove its unreliable minimize control, add a bundled application mark and newspaper-prefixed compositor title, and add `Tab` section cycling, wrapping narrow actions, finite Load more controls, and contrast-safe selected text.
 - Add strictly validated icon-based marketplace interaction, repository-star, and release-asset-download metrics without changing event identity or ranking; keep raw metric endpoints out of the reader and link plugin stories to human marketplace pages.
 - Add bounded per-section names, large semantic icons, theme-derived background tones, exact appearance reset, visible read-only source membership, and a clearly named Settings control.
 - Add the default-on optional newspaper bar indicator with unread/health state, zero-gap hiding, panel restoration, and due-checked refresh.

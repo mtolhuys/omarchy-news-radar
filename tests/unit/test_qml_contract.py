@@ -45,6 +45,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("FloatingWindow", qml)
         self.assertNotIn("PanelWindow", qml)
         self.assertIn("minimumSize:", qml)
+        self.assertIn("screen.width - Style.gapsOut * 2", qml)
+        self.assertIn("screen.height - Style.gapsOut * 2", qml)
         self.assertIn("panelWindow.maximized", qml)
         self.assertIn("startSystemResize", qml)
         self.assertIn("Load more", qml)

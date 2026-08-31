@@ -624,9 +624,20 @@ Item {
     visible: false
     title: root.compositorWindowTitle
     color: Color.popups.background
-    implicitWidth: Style.space(1120)
-    implicitHeight: Style.space(720)
-    minimumSize: Qt.size(Style.space(720), Style.space(480))
+    implicitWidth: screen && screen.width > 0
+      ? Math.min(Style.space(1120), screen.width - Style.gapsOut * 2)
+      : Style.space(1120)
+    implicitHeight: screen && screen.height > 0
+      ? Math.min(Style.space(720), screen.height - Style.gapsOut * 2)
+      : Style.space(720)
+    minimumSize: Qt.size(
+      screen && screen.width > 0
+        ? Math.min(Style.space(720), screen.width - Style.gapsOut * 2)
+        : Style.space(720),
+      screen && screen.height > 0
+        ? Math.min(Style.space(480), screen.height - Style.gapsOut * 2)
+        : Style.space(480)
+    )
 
     onVisibleChanged: {
       if (!visible && root.opened && !root.closingFromHost) root.dismiss()
@@ -949,24 +960,6 @@ Item {
                   onClicked: root.showSectionSettings()
                 }
 
-                RadarButton {
-                  visible: keySurface.narrow
-                  label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
-                  enabled: !!root.selectedStory
-                  onClicked: root.toggleSaved()
-                }
-                RadarButton {
-                  visible: keySurface.narrow
-                  label: "Plugin page"
-                  enabled: !!root.selectedStory && !!root.selectedStory.marketplaceUrl
-                  onClicked: root.openMarketplacePage()
-                }
-                RadarButton {
-                  visible: keySurface.narrow
-                  label: "Open source"
-                  enabled: !!root.selectedStory
-                  onClicked: root.openSelected()
-                }
               }
 
               Text {
@@ -979,6 +972,29 @@ Item {
                 elide: Text.ElideRight
                 Accessible.role: Accessible.StaticText
                 Accessible.name: "Active section filters: " + text
+              }
+
+              Flow {
+                visible: keySurface.narrow
+                Layout.fillWidth: true
+                Layout.preferredHeight: visible ? childrenRect.height : 0
+                spacing: Style.spacing.controlGap
+
+                RadarButton {
+                  label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
+                  enabled: !!root.selectedStory
+                  onClicked: root.toggleSaved()
+                }
+                RadarButton {
+                  label: "Plugin page"
+                  enabled: !!root.selectedStory && !!root.selectedStory.marketplaceUrl
+                  onClicked: root.openMarketplacePage()
+                }
+                RadarButton {
+                  label: "Open source"
+                  enabled: !!root.selectedStory
+                  onClicked: root.openSelected()
+                }
               }
 
               ListView {
