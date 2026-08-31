@@ -1,0 +1,95 @@
+# Security model
+
+Omarchy News Radar ingests public remote metadata and renders it inside a long-running desktop shell. Its main security job is to ensure that remote text remains inert data, network failure cannot destroy good local state, and optional shortcut setup cannot damage user configuration.
+
+## Trust boundaries
+
+- GitHub API responses, marketplace catalogs, release notes, repository metadata, community records, generated feeds, titles, summaries, tags, author names, and URLs are untrusted.
+- The published feed is owned by this project but remains untrusted at the client boundary because hosting, transport endpoints, build pipelines, or stored artifacts can fail.
+- Installed plugin IDs and local reading state are private local data.
+- `~/.config/hypr/bindings.lua` is user-owned configuration and may contain arbitrary valid Lua, comments, custom formatting, or symlinks.
+- The Omarchy shell is an unsandboxed user process. Radar must keep remote content away from code, QML source, shell evaluation, rich text, and file paths.
+
+## Remote-content invariants
+
+- Render remote strings as plain text only. Do not interpret HTML, Markdown, SVG, image URLs, ANSI escapes, QML, JavaScript, terminal sequences, or link markup.
+- Enforce feed size, event count, string length, tag count, URL length, nesting, and timestamp bounds before a candidate reaches QML.
+- Accept source links only when they parse as public HTTPS URLs without credentials or control characters.
+- Opening a source requires an explicit user action and passes the validated URL as one structural process argument to the maintained desktop launcher and `xdg-open`.
+- The collector fetches only allowlisted machine sources. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
+- Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
+
+## Client fetch
+
+The production feed origin is fixed in one module. Normal UI settings do not accept arbitrary feed URLs. The helper:
+
+- uses HTTPS with certificate verification;
+- uses explicit connect and total timeouts;
+- constrains redirects to the expected production origin family;
+- sends no cookies, authorization, installed-plugin IDs, saved IDs, read timestamps, machine identifiers, or custom tracking values;
+- streams into a bounded temporary file and aborts before exceeding 2 MiB;
+- validates the complete candidate before same-directory atomic replacement;
+- preserves the last-known-good cache on every failure.
+
+Tests may inject a fixture file or loopback endpoint through an explicit test boundary unavailable to ordinary production calls.
+
+## Local files
+
+Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename.
+
+The state parser accepts only its own bounded schema. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
+
+Saved items and cache are preserved on plugin disable or normal removal. A separate explicit purge action may remove only paths owned by Radar after resolving and validating their exact XDG locations.
+
+## Process execution
+
+QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
+
+At most one refresh helper belongs to one panel instance. Closing, disabling, updating, or unloading the plugin terminates it with a bounded graceful period and no orphan. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+
+## Shortcut installer
+
+Global shortcut setup is an explicit user action and is not run by plugin installation, enablement, panel opening, refresh, or update.
+
+`news-radar-shortcut install` must:
+
+1. Refuse UID `0`.
+2. Resolve the expected user config path without following a symlink; if the file is symlinked or unusually owned, stop and provide the manual binding line.
+3. Query the live binding table through `hyprctl binds -j` and detect `Super+N` semantically, not by fragile source grep alone.
+4. Refuse when another action owns the binding.
+5. Be idempotent when its exact managed binding already exists.
+6. Add one clearly delimited managed block without reformatting any other byte of the file.
+7. Create a private timestamped backup before change.
+8. Write atomically.
+9. Run `hyprctl reload`, then require empty `hyprctl configerrors`.
+10. Restore the backup and reload again when validation fails.
+11. Report the exact changed file, binding, backup, and recovery result.
+
+`status` is read-only. `remove` deletes only an exact unmodified managed block, uses the same backup/atomic/reload/rollback process, and refuses ambiguous or user-edited blocks. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
+
+Never expose a force-overwrite flag in version 1. Users with conflicts receive the exact manual Lua line needed to choose their own key.
+
+## Static site
+
+Publisher output contextually escapes all strings. Generated HTML contains no raw remote HTML and no inline event handlers. Use a restrictive Content Security Policy, local static assets, safe `rel` attributes for external links, no forms, no analytics, no third-party script, and no service worker.
+
+RSS/XML generation escapes every remote value and uses canonical HTTPS links. XML parsers used in tests must disable external entity resolution where relevant.
+
+## Privacy
+
+The feed host receives an ordinary generic GET request and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, filters, saves, and seen state never leave the machine.
+
+The project must not claim perfect anonymity, sandboxing, or security auditing.
+
+## Supply chain
+
+- Runtime uses the current Omarchy/Arch environment and Python standard library only.
+- GitHub Actions are pinned to immutable commit SHAs before public release.
+- Workflow permissions are least privilege: read source by default and grant Pages/deployment permission only to the publish job.
+- Production publication runs only after source tests and artifact validation.
+- Generated artifacts record source revision and a SHA-256 digest; clients do not treat a digest from the same origin as an independent signature.
+- No remote code, package, font, image, or binary is downloaded during build or runtime.
+
+## Vulnerability reporting
+
+Before public release, add a root `SECURITY.md` with private reporting instructions. Reports must not include real user binding files, tokens, browsing data, private plugins, or host diagnostics in public issues.
