@@ -139,7 +139,6 @@ omarchy_host_test() {
     "curl -fsS http://127.0.0.1:18765/current.json >/dev/null" || return 1
   ssh_session "mkdir -p \"\$HOME/.local/bin\" \"\$HOME/.local/state/omarchy-news-radar\" && \
     cp $plugin_dir/tests/lab/fixtures/xdg-open \"\$HOME/.local/bin/xdg-open\" && chmod +x \"\$HOME/.local/bin/xdg-open\" && \
-    printf '%s\n' '{\"autohide\":false}' >\"\$HOME/.config/omarchy/omadock.json\" && \
     printf '%s\n' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_MODE\", \"1\")' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_FEED_URL\", \"http://127.0.0.1:18765/current.json\")' \
@@ -187,7 +186,10 @@ omarchy_host_test() {
     "qs -p \"\$OMARCHY_PATH/shell\" ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"📰 Omarchy News Radar\"}' | jq -e '.pluginId == \"io.github.mtolhuys.news-radar\" and .name == \"Omarchy News Radar\" and .modelMatched == true and (.icon | endswith(\"/assets/io.github.mtolhuys.news-radar.svg\"))'" || return 1
   ssh_session "qs -p \"\$OMARCHY_PATH/shell\" ipc call omarchy-alttab resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0' && \
     qs -p \"\$OMARCHY_PATH/shell\" ipc call omadock resolvedWindowIdentity '{\"appId\":\"org.quickshell\",\"title\":\"Unrelated Quickshell window\"}' | jq -e 'length == 0'" || return 1
+  qmp_pointer_move "$viewport_width" "$viewport_height" "$((viewport_width / 2))" "$((viewport_height - 1))" || return 1
+  sleep 1
   capture_console "success-news-radar-00-companion-dock-icon"
+  qmp_pointer_move "$viewport_width" "$viewport_height" 4 4 || return 1
   press esc
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" right
   wait_for_guest_state "right click persists hidden state with exact zero slot geometry" 15 ssh_session \
