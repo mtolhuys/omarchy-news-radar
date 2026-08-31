@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
 import "Model.js" as RadarModel
@@ -17,21 +16,28 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+panel-4"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+window-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
     ? String(manifest.id) : "io.github.mtolhuys.news-radar"
 
   property bool opened: false
+  property bool closingFromHost: false
+  readonly property string compositorWindowTitle: "Omarchy News Radar"
   property string sessionIdentity: ""
   property string sessionThrough: ""
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 2,
+    schemaVersion: 3,
     seenThrough: "1970-01-01T00:00:00Z",
     saved: ({}),
-    preferences: ({ barVisible: true, imagesVisible: true, interests: [] })
+    preferences: ({
+      barVisible: true,
+      imagesVisible: true,
+      interests: [],
+      sectionFilters: ({})
+    })
   })
   property var installedPluginIds: []
   property var stories: []
@@ -46,6 +52,22 @@ Item {
   property bool refreshing: false
   property bool pendingProjection: false
   property bool preferencesOpen: false
+  property bool filtersOpen: false
+  property string windowIntegrationStatus: "idle"
+  property int totalStories: 0
+  property bool hasMoreStories: false
+  property string filterSummary: "No extra filters"
+  property string sectionRule: ""
+  property var filterOptions: []
+  property int pageSize: 12
+  property var sectionLimits: ({
+    "front-page": 12,
+    "for-you": 12,
+    "core": 12,
+    "plugins": 12,
+    "community": 12,
+    "saved": 12
+  })
 
   readonly property var preferences: userState && userState.preferences
     ? userState.preferences : ({ barVisible: true, imagesVisible: true, interests: [] })
@@ -61,9 +83,13 @@ Item {
   readonly property string currentSection: sections[sectionIndex].id
   readonly property var selectedStory: selectedIndex >= 0 && selectedIndex < stories.length
     ? stories[selectedIndex] : null
+  readonly property var currentFilter: preferences.sectionFilters
+    && preferences.sectionFilters[currentSection]
+      ? preferences.sectionFilters[currentSection]
+      : ({ period: "all", significance: "all", unreadOnly: false, imagesOnly: false, types: [] })
   readonly property int availableImageCount: countEditionImages(cachedFeed)
   readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
-    || installedProc.running || stateProc.running || openSourceProc.running
+    || installedProc.running || stateProc.running || openSourceProc.running || windowProc.running
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
@@ -77,6 +103,7 @@ Item {
       selectedIndex: selectedIndex,
       selectedTitle: selectedStory ? selectedStory.title : "",
       selectedHasImage: selectedStory ? !!selectedStory.imageUrl : false,
+      selectedMetricsText: selectedStory ? String(selectedStory.metricsText || "") : "",
       selectedIsNew: selectedStory ? selectedStory.isNew === true : false,
       storyCount: stories.length,
       status: feedStatus,
@@ -86,19 +113,43 @@ Item {
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
       sessionThrough: sessionThrough,
-      preferencesOpen: preferencesOpen
+      preferencesOpen: preferencesOpen,
+      filtersOpen: filtersOpen,
+      totalStories: totalStories,
+      hasMoreStories: hasMoreStories,
+      filterSummary: filterSummary,
+      windowVisible: panelWindow.visible,
+      windowWidth: panelWindow.width,
+      windowHeight: panelWindow.height,
+      maximized: panelWindow.maximized,
+      minimized: panelWindow.minimized,
+      windowIntegrationStatus: windowIntegrationStatus
     })
   }
 
-  function tuneNewspaperGeometry() {
-    var point = barPreferenceButton.mapToItem(null, 0, 0)
+  function itemGeometry(item, visible) {
+    if (!item) return JSON.stringify({ visible: false })
+    var point = item.mapToItem(null, 0, 0)
     return JSON.stringify({
       x: point.x,
       y: point.y,
-      width: barPreferenceButton.width,
-      height: barPreferenceButton.height,
-      visible: preferencesOpen && barPreferenceButton.visible
+      width: item.width,
+      height: item.height,
+      visible: visible === undefined ? item.visible : visible
     })
+  }
+
+  function maximizeGeometry() { return itemGeometry(maximizeButton, maximizeButton.visible) }
+  function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
+  function filterGeometry() { return itemGeometry(filterButton, filterButton.visible) }
+  function loadMoreGeometry() {
+    return itemGeometry(storyList.footerItem, !!storyList.footerItem && hasMoreStories)
+  }
+  function filterUnreadGeometry() { return itemGeometry(unreadFilterButton, unreadFilterButton.visible) }
+  function filterResetGeometry() { return itemGeometry(filterResetButton, filterResetButton.visible) }
+
+  function tuneNewspaperGeometry() {
+    return itemGeometry(barPreferenceButton, preferencesOpen && barPreferenceButton.visible)
   }
 
   function startProcess(process, argumentsList) {
@@ -121,16 +172,25 @@ Item {
   }
 
   function open(payloadJson) {
+    closingFromHost = false
     sessionIdentity = String(Date.now()) + "-" + String(Math.random()).slice(2)
     sessionThrough = ""
     feedStatus = "Loading cache"
     statusDetail = "Reading the last-known-good local edition."
     opened = true
+    windowIntegrationStatus = "waiting"
     preferencesOpen = false
+    filtersOpen = false
+    panelWindow.visible = true
     selectedIndex = 0
+    startProcess(windowProc, ["ensure-window-floating"])
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
-    Qt.callLater(function() { if (root.opened) navigationFocus.forceActiveFocus() })
+    Qt.callLater(function() {
+      if (root.opened) {
+        navigationFocus.forceActiveFocus()
+      }
+    })
   }
 
   function persistSeen() {
@@ -146,19 +206,36 @@ Item {
     installedProc.running = false
     stateProc.running = false
     openSourceProc.running = false
+    windowProc.running = false
     refreshing = false
   }
 
   function close() {
+    closingFromHost = true
     persistSeen()
     opened = false
     preferencesOpen = false
+    filtersOpen = false
     stopOwnedProcesses()
+    panelWindow.visible = false
+    closingFromHost = false
   }
 
   function dismiss() {
     if (shell && typeof shell.hide === "function") shell.hide(pluginId)
     else close()
+  }
+
+  function handleEscape() {
+    if (filtersOpen) {
+      filtersOpen = false
+      navigationFocus.forceActiveFocus()
+    } else if (preferencesOpen) {
+      preferencesOpen = false
+      navigationFocus.forceActiveFocus()
+    } else if (searchField.activeFocus) {
+      navigationFocus.forceActiveFocus()
+    } else dismiss()
   }
 
   function handleRead(raw) {
@@ -234,7 +311,8 @@ Item {
       "project",
       "--section", currentSection,
       "--installed-json", JSON.stringify(installedPluginIds),
-      "--query", searchField.text
+      "--query", searchField.text,
+      "--limit", String(Number(sectionLimits[currentSection] || pageSize))
     ])
   }
 
@@ -243,9 +321,16 @@ Item {
     if (result.status === "ok" || result.status === "first-use") {
       stories = result.events || []
       counts = result.counts || ({})
+      totalStories = Number(result.totalEvents || 0)
+      hasMoreStories = result.hasMore === true
+      filterSummary = String(result.filterSummary || "No extra filters")
+      sectionRule = String(result.sectionRule || "")
+      filterOptions = result.filterOptions || []
       selectedIndex = stories.length ? Math.min(Math.max(0, selectedIndex), stories.length - 1) : -1
     } else {
       stories = []
+      totalStories = 0
+      hasMoreStories = false
       selectedIndex = -1
       feedStatus = "Failed"
       statusDetail = result.message || "The local reading model could not be built."
@@ -269,6 +354,26 @@ Item {
     requestProjection()
   }
 
+  function cycleSection(delta) {
+    var next = (sectionIndex + delta) % sections.length
+    if (next < 0) next += sections.length
+    selectSection(next)
+  }
+
+  function resetSectionLimit(section) {
+    var limits = Object.assign({}, sectionLimits)
+    limits[section] = pageSize
+    sectionLimits = limits
+  }
+
+  function loadMore() {
+    if (!hasMoreStories || projectProc.running) return
+    var limits = Object.assign({}, sectionLimits)
+    limits[currentSection] = Math.min(500, Number(limits[currentSection] || pageSize) + pageSize)
+    sectionLimits = limits
+    requestProjection()
+  }
+
   function moveSelection(delta) {
     if (!stories.length) return
     selectedIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
@@ -277,7 +382,11 @@ Item {
 
   function openSelected() {
     if (!selectedStory) return
-    startProcess(openSourceProc, ["open-source", "--url", String(selectedStory.source.url)])
+    openUrl(String(selectedStory.source.url))
+  }
+
+  function openUrl(url) {
+    startProcess(openSourceProc, ["open-source", "--url", String(url)])
   }
 
   function toggleSaved() {
@@ -310,6 +419,54 @@ Item {
     interestField.text = (preferences.interests || []).join(", ")
     preferencesOpen = true
     Qt.callLater(function() { interestField.forceActiveFocus() })
+  }
+
+  function showFilters() {
+    filtersOpen = true
+    Qt.callLater(function() { filterDoneButton.forceActiveFocus() })
+  }
+
+  function updateFilter(name, value) {
+    if (stateProc.running) return
+    var next = {
+      period: currentFilter.period,
+      significance: currentFilter.significance,
+      unreadOnly: currentFilter.unreadOnly,
+      imagesOnly: currentFilter.imagesOnly,
+      types: (currentFilter.types || []).slice()
+    }
+    next[name] = value
+    resetSectionLimit(currentSection)
+    startProcess(stateProc, [
+      "set-section-filter",
+      "--section", currentSection,
+      "--filter-json", JSON.stringify(next)
+    ])
+  }
+
+  function toggleFilterType(typeId) {
+    var types = (currentFilter.types || []).slice()
+    var at = types.indexOf(typeId)
+    if (at === -1) types.push(typeId)
+    else types.splice(at, 1)
+    types.sort()
+    updateFilter("types", types)
+  }
+
+  function resetFilter() {
+    if (stateProc.running) return
+    resetSectionLimit(currentSection)
+    startProcess(stateProc, [
+      "set-section-filter",
+      "--section", currentSection,
+      "--filter-json", JSON.stringify({
+        period: "all",
+        significance: "all",
+        unreadOnly: false,
+        imagesOnly: false,
+        types: []
+      })
+    ])
   }
 
   Process {
@@ -353,6 +510,19 @@ Item {
 
   Process { id: openSourceProc; stdout: StdioCollector { waitForEnd: true } }
 
+  Process {
+    id: windowProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        root.windowIntegrationStatus = result.status === "ok"
+          ? String(result.outcome || "ok")
+          : String(result.message || result.status || "failed")
+      }
+    }
+  }
+
   Timer {
     id: searchTimer
     interval: 160
@@ -360,28 +530,75 @@ Item {
     onTriggered: root.requestProjection()
   }
 
-  PanelWindow {
+  FloatingWindow {
     id: panelWindow
-    visible: root.opened
-    anchors { top: true; bottom: true; left: true; right: true }
-    color: "transparent"
-    exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.namespace: "omarchy-news-radar"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    visible: false
+    title: root.compositorWindowTitle
+    color: Color.popups.background
+    implicitWidth: Style.space(1120)
+    implicitHeight: Style.space(720)
+    minimumSize: Qt.size(Style.space(720), Style.space(480))
 
-    Rectangle {
-      anchors.fill: parent
-      color: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.74)
-      MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
+    onVisibleChanged: {
+      if (!visible && root.opened && !root.closingFromHost) root.dismiss()
     }
 
     FocusScope {
       id: keySurface
-      anchors.centerIn: parent
-      width: Math.max(Style.space(320), Math.min(panelWindow.width - Style.gapsOut * 2, Style.space(1120)))
-      height: Math.max(Style.space(420), Math.min(panelWindow.height - Style.gapsOut * 2, Style.space(720)))
+      anchors.fill: parent
       focus: true
+      Keys.onEscapePressed: root.handleEscape()
+      Keys.onPressed: function(event) {
+        if (root.filtersOpen || root.preferencesOpen) return
+        if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+          var backwards = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier)
+          root.cycleSection(backwards ? -1 : 1)
+          event.accepted = true
+          return
+        }
+        if (event.key === Qt.Key_Escape || (event.text || "").toLowerCase() === "q") {
+          root.handleEscape(); event.accepted = true; return
+        }
+        if (event.key === Qt.Key_Down || (event.text || "").toLowerCase() === "j") {
+          root.moveSelection(1); event.accepted = true; return
+        }
+        if (event.key === Qt.Key_Up || (event.text || "").toLowerCase() === "k") {
+          root.moveSelection(-1); event.accepted = true; return
+        }
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || (event.text || "").toLowerCase() === "o") {
+          root.openSelected(); event.accepted = true; return
+        }
+        if ((event.text || "").toLowerCase() === "s") {
+          root.toggleSaved(); event.accepted = true; return
+        }
+        if ((event.text || "").toLowerCase() === "r") {
+          root.refreshFeed(); event.accepted = true; return
+        }
+        if (event.text === "/") {
+          searchField.forceActiveFocus(); event.accepted = true; return
+        }
+        if (event.key === Qt.Key_Home) {
+          root.selectedIndex = root.stories.length ? 0 : -1; event.accepted = true; return
+        }
+        if (event.key === Qt.Key_End) {
+          root.selectedIndex = root.stories.length - 1
+          storyList.positionViewAtEnd()
+          Qt.callLater(function() {
+            var footer = storyList.footerItem
+            storyList.contentY = Math.max(
+              storyList.originY,
+              footer ? footer.y + footer.height - storyList.height
+                : storyList.contentHeight - storyList.height
+            )
+          })
+          event.accepted = true
+          return
+        }
+        var numeric = Number(event.text)
+        if (numeric >= 1 && numeric <= 6) {
+          root.selectSection(numeric - 1); event.accepted = true
+        }
+      }
 
       readonly property bool narrow: width < Style.space(860)
 
@@ -389,48 +606,6 @@ Item {
         id: navigationFocus
         anchors.fill: parent
         focus: true
-
-        Keys.onPressed: function(event) {
-          if (root.preferencesOpen) {
-            if (event.key === Qt.Key_Escape) {
-              root.preferencesOpen = false
-              navigationFocus.forceActiveFocus()
-              event.accepted = true
-            }
-            return
-          }
-          if (event.key === Qt.Key_Escape || (event.text || "").toLowerCase() === "q") {
-            root.dismiss(); event.accepted = true; return
-          }
-          if (event.key === Qt.Key_Down || (event.text || "").toLowerCase() === "j") {
-            root.moveSelection(1); event.accepted = true; return
-          }
-          if (event.key === Qt.Key_Up || (event.text || "").toLowerCase() === "k") {
-            root.moveSelection(-1); event.accepted = true; return
-          }
-          if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || (event.text || "").toLowerCase() === "o") {
-            root.openSelected(); event.accepted = true; return
-          }
-          if ((event.text || "").toLowerCase() === "s") {
-            root.toggleSaved(); event.accepted = true; return
-          }
-          if ((event.text || "").toLowerCase() === "r") {
-            root.refreshFeed(); event.accepted = true; return
-          }
-          if (event.text === "/") {
-            searchField.forceActiveFocus(); event.accepted = true; return
-          }
-          if (event.key === Qt.Key_Home) {
-            root.selectedIndex = root.stories.length ? 0 : -1; event.accepted = true; return
-          }
-          if (event.key === Qt.Key_End) {
-            root.selectedIndex = root.stories.length - 1; event.accepted = true; return
-          }
-          var numeric = Number(event.text)
-          if (numeric >= 1 && numeric <= 6) {
-            root.selectSection(numeric - 1); event.accepted = true
-          }
-        }
       }
 
       BorderSurface {
@@ -449,33 +624,47 @@ Item {
             Layout.fillWidth: true
             spacing: Style.spacing.controlGap
 
-            ColumnLayout {
+            Item {
               Layout.fillWidth: true
-              spacing: Style.spacing.xs
+              implicitHeight: titleStack.implicitHeight
 
-              Text {
-                text: "OMARCHY NEWS RADAR"
-                textFormat: Text.PlainText
-                color: Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.display
-                font.bold: true
-                font.letterSpacing: Style.spaceReal(1)
-                Accessible.role: Accessible.Heading
-                Accessible.name: text
+              ColumnLayout {
+                id: titleStack
+                anchors.fill: parent
+                spacing: Style.spacing.xs
+
+                Text {
+                  text: "OMARCHY NEWS RADAR"
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.display
+                  font.bold: true
+                  font.letterSpacing: Style.spaceReal(1)
+                  Accessible.role: Accessible.Heading
+                  Accessible.name: text
+                }
+
+                Text {
+                  Layout.fillWidth: true
+                  text: root.feedStatus + " · " + root.sourceHealth
+                  textFormat: Text.PlainText
+                  color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed" || root.feedStatus === "Failed"
+                    ? Color.urgent : Color.muted
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  elide: Text.ElideRight
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: "Refresh status: " + text
+                }
               }
 
-              Text {
-                Layout.fillWidth: true
-                text: root.feedStatus + " · " + root.sourceHealth
-                textFormat: Text.PlainText
-                color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed" || root.feedStatus === "Failed"
-                  ? Color.urgent : Color.muted
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                elide: Text.ElideRight
-                Accessible.role: Accessible.StaticText
-                Accessible.name: "Refresh status: " + text
+              MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.SizeAllCursor
+                onPressed: panelWindow.startSystemMove()
+                onDoubleClicked: panelWindow.maximized = !panelWindow.maximized
               }
             }
 
@@ -491,6 +680,18 @@ Item {
             }
 
             RadarButton {
+              label: "Minimize"
+              onClicked: panelWindow.minimized = true
+            }
+
+            RadarButton {
+              id: maximizeButton
+              label: panelWindow.maximized ? "Restore" : "Maximize"
+              onClicked: panelWindow.maximized = !panelWindow.maximized
+            }
+
+            RadarButton {
+              id: closeButton
               label: "Close"
               onClicked: root.dismiss()
             }
@@ -574,7 +775,7 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: "1–6 sections\nj/k stories\no source\ns save\nr refresh"
+                text: "Tab/Shift+Tab sections\n1–6 sections\nj/k stories\no source\ns save\nr refresh"
                 textFormat: Text.PlainText
                 color: Color.muted
                 font.family: Style.font.family
@@ -610,6 +811,13 @@ Item {
                 }
 
                 RadarButton {
+                  id: filterButton
+                  label: "⚙ Filters"
+                  selected: root.filterSummary !== "No extra filters"
+                  onClicked: root.showFilters()
+                }
+
+                RadarButton {
                   visible: keySurface.narrow
                   label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
                   enabled: !!root.selectedStory
@@ -621,6 +829,18 @@ Item {
                   enabled: !!root.selectedStory
                   onClicked: root.openSelected()
                 }
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: root.filterSummary + " · " + root.totalStories + " stories"
+                textFormat: Text.PlainText
+                color: Color.muted
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                elide: Text.ElideRight
+                Accessible.role: Accessible.StaticText
+                Accessible.name: "Active section filters: " + text
               }
 
               ListView {
@@ -643,6 +863,33 @@ Item {
                   lead: root.currentSection === "front-page" && index === 0
                   onHovered: root.selectedIndex = index
                   onActivated: root.selectedIndex = index
+                }
+
+                footer: Item {
+                  width: storyList.width
+                  height: root.stories.length ? Style.space(54) : 0
+                  visible: root.stories.length > 0
+
+                  RadarButton {
+                    id: loadMoreButton
+                    anchors.centerIn: parent
+                    visible: root.hasMoreStories
+                    label: "Load more (" + Math.max(0, root.totalStories - root.stories.length) + " remaining)"
+                    onClicked: {
+                      root.loadMore()
+                      navigationFocus.forceActiveFocus()
+                    }
+                  }
+
+                  Text {
+                    anchors.centerIn: parent
+                    visible: !root.hasMoreStories
+                    text: "All " + root.totalStories + " stories loaded"
+                    textFormat: Text.PlainText
+                    color: Color.muted
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                  }
                 }
 
                 Text {
@@ -730,6 +977,42 @@ Item {
                   wrapMode: Text.WordWrap
                   Accessible.role: Accessible.Heading
                   Accessible.name: text
+                }
+
+                Text {
+                  visible: !!root.selectedStory && !!root.selectedStory.metricsText
+                  width: parent.width
+                  text: visible ? "METRICS\n" + root.selectedStory.metricsText
+                    + (root.selectedStory.metricsObservedAt ? "\nOBSERVED  " + root.selectedStory.metricsObservedAt : "") : ""
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.bodySmall
+                  font.bold: true
+                  wrapMode: Text.WordWrap
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: text
+                }
+
+                Text {
+                  visible: !!root.selectedStory && !!root.selectedStory.metricsCaveat
+                  width: parent.width
+                  text: visible ? root.selectedStory.metricsCaveat : ""
+                  textFormat: Text.PlainText
+                  color: Color.muted
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                }
+
+                Repeater {
+                  model: root.selectedStory && root.selectedStory.metricSources
+                    ? root.selectedStory.metricSources : []
+                  RadarButton {
+                    required property var modelData
+                    label: "Open " + modelData.label.toLowerCase() + " source"
+                    onClicked: root.openUrl(String(modelData.url))
+                  }
                 }
 
                 Text {
@@ -939,6 +1222,215 @@ Item {
             }
           }
         }
+
+        Rectangle {
+          anchors.fill: parent
+          visible: root.filtersOpen
+          z: 21
+          color: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.82)
+          MouseArea { anchors.fill: parent; onClicked: root.filtersOpen = false }
+
+          BorderSurface {
+            anchors.centerIn: parent
+            width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(760))
+            height: Math.min(parent.height - Style.spacing.panelPadding * 2, Style.space(520))
+            color: Color.popups.background
+            radius: Style.cornerRadius
+            borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+
+            MouseArea { anchors.fill: parent }
+
+            ColumnLayout {
+              anchors.fill: parent
+              anchors.margins: Style.spacing.panelPadding
+              spacing: Style.spacing.panelGap
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  Layout.fillWidth: true
+                  text: "⚙ " + root.sections[root.sectionIndex].label.toUpperCase() + " FILTERS"
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.heading
+                  font.bold: true
+                }
+                RadarButton {
+                  id: filterDoneButton
+                  label: "Done"
+                  onClicked: {
+                    root.filtersOpen = false
+                    navigationFocus.forceActiveFocus()
+                  }
+                }
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: "BUILT-IN SECTION RULE\n" + root.sectionRule
+                textFormat: Text.PlainText
+                color: Color.muted
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+                wrapMode: Text.WordWrap
+              }
+
+              Text {
+                text: "TIME WINDOW"
+                textFormat: Text.PlainText
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+
+              RowLayout {
+                spacing: Style.spacing.controlGap
+                Repeater {
+                  model: [
+                    { id: "all", label: "Any time" },
+                    { id: "24h", label: "24 hours" },
+                    { id: "7d", label: "7 days" },
+                    { id: "30d", label: "30 days" }
+                  ]
+                  RadarButton {
+                    required property var modelData
+                    label: modelData.label
+                    selected: root.currentFilter.period === modelData.id
+                    onClicked: root.updateFilter("period", modelData.id)
+                  }
+                }
+              }
+
+              Text {
+                text: "SIGNIFICANCE"
+                textFormat: Text.PlainText
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+
+              RowLayout {
+                spacing: Style.spacing.controlGap
+                Repeater {
+                  model: [
+                    { id: "all", label: "All" },
+                    { id: "notable", label: "Notable + critical" },
+                    { id: "critical", label: "Critical only" }
+                  ]
+                  RadarButton {
+                    required property var modelData
+                    label: modelData.label
+                    selected: root.currentFilter.significance === modelData.id
+                    onClicked: root.updateFilter("significance", modelData.id)
+                  }
+                }
+              }
+
+              RowLayout {
+                Layout.fillWidth: true
+                spacing: Style.spacing.controlGap
+                RadarButton {
+                  id: unreadFilterButton
+                  label: "Unread only"
+                  selected: root.currentFilter.unreadOnly
+                  onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
+                }
+                RadarButton {
+                  label: "With images"
+                  selected: root.currentFilter.imagesOnly
+                  onClicked: root.updateFilter("imagesOnly", !root.currentFilter.imagesOnly)
+                }
+              }
+
+              Text {
+                text: "STORY TYPES"
+                textFormat: Text.PlainText
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+
+              Flow {
+                Layout.fillWidth: true
+                Layout.preferredHeight: childrenRect.height
+                spacing: Style.spacing.controlGap
+
+                RadarButton {
+                  label: "All types"
+                  selected: (root.currentFilter.types || []).length === 0
+                  onClicked: root.updateFilter("types", [])
+                }
+
+                Repeater {
+                  model: root.filterOptions
+                  RadarButton {
+                    required property var modelData
+                    label: modelData.label
+                    selected: (root.currentFilter.types || []).indexOf(modelData.id) !== -1
+                    onClicked: root.toggleFilterType(modelData.id)
+                  }
+                }
+              }
+
+              Item { Layout.fillHeight: true }
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  Layout.fillWidth: true
+                  text: "Local-only · " + root.filterSummary
+                  textFormat: Text.PlainText
+                  color: Color.muted
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  elide: Text.ElideRight
+                }
+                RadarButton {
+                  id: filterResetButton
+                  label: "Reset section"
+                  onClicked: root.resetFilter()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      MouseArea {
+        visible: !panelWindow.maximized
+        z: 100
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        height: Style.space(6)
+        cursorShape: Qt.SizeVerCursor
+        onPressed: panelWindow.startSystemResize(Qt.TopEdge)
+      }
+      MouseArea {
+        visible: !panelWindow.maximized
+        z: 100
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        height: Style.space(6)
+        cursorShape: Qt.SizeVerCursor
+        onPressed: panelWindow.startSystemResize(Qt.BottomEdge)
+      }
+      MouseArea {
+        visible: !panelWindow.maximized
+        z: 100
+        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        width: Style.space(6)
+        cursorShape: Qt.SizeHorCursor
+        onPressed: panelWindow.startSystemResize(Qt.LeftEdge)
+      }
+      MouseArea {
+        visible: !panelWindow.maximized
+        z: 100
+        anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+        width: Style.space(6)
+        cursorShape: Qt.SizeHorCursor
+        onPressed: panelWindow.startSystemResize(Qt.RightEdge)
       }
     }
   }

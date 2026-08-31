@@ -143,3 +143,27 @@
 **Why:** The public Pages origin deliberately does not exist before owner-authorized publication. Leaving a deterministic acceptance fixture in a daily installation makes preferences appear broken and misrepresents synthetic/local test stories as current ecosystem news.
 
 **Consequence:** Local import revalidates canonical feed bytes, build digest/revision, and every referenced raster before atomically replacing the feed. The client uses private file URLs only for those imported assets, suppresses the nonexistent public refresh, and explains that rerunning the make target collects the next edition. Fresh visual preferences remain on by default. The exact unmodified panel-only preview placement migrates once through Omarchy's disable/enable lifecycle to the default right-side bar; custom, duplicate, ambiguous, or deliberately disabled modern configurations are not overwritten.
+
+## D019 — Use a normal compositor-managed window
+
+**Decision:** The panel entry point owns a Quickshell `FloatingWindow` rather than a full-monitor layer-shell `PanelWindow`.
+
+**Why:** A news reader is a desktop task, not a modal shell overlay. The normal XDG toplevel provides compositor resize, minimize, maximize, window close, and ordinary `Alt+Tab`; current Omarchy uses the same supported contract for its dev gallery.
+
+**Consequence:** The entry point remains an on-demand `Item` with `open()`/`close()`. Window-manager close tells the shell to hide the panel, while shell close hides the window without recursive notification. After map a bounded helper requires exactly one mapped client whose current and initial title are `Omarchy News Radar` and whose current and initial class are `org.quickshell`. Only when that unique client reports `floating: false` does it validate the compositor address and invoke Omarchy's current Lua float-toggle dispatcher once, with Hyprland's legacy structural dispatcher as the same bounded compatibility fallback used by Omarchy's window-pop helper. Zero matches time out harmlessly and multiple matches are refused as ambiguous. It does not edit configuration or affect an unrelated window, and an already-floating Radar is left untouched. The masthead starts system move, explicit edge handles start system resize, and bounded minimum geometry preserves usability.
+
+## D020 — Enrich existing events with honest source metrics
+
+**Decision:** Existing release and plugin events may carry optional marketplace views/hearts/command copies, catalog repository stars, and GitHub release-asset downloads with an observation timestamp and source URL.
+
+**Why:** These counters help a reader assess activity when their semantics are precise. They do not prove installation, reach, quality, safety, or importance.
+
+**Consequence:** Metrics use closed IDs and strict integer/URL/time validation. A successful source refresh replaces only its metric group; failure retains the prior observation. Counter changes never create events or affect identity, order, significance, curation, or Front Page composition. The UI states the marketplace caveat and calls GitHub's number “release asset downloads.”
+
+## D021 — Keep filters independent and pagination finite
+
+**Decision:** State v3 stores one strict local filter per client section, and the reader reveals a maximum twelve matching events at a time through an explicit Load more control.
+
+**Why:** Users need inspectable control over time, significance, unread/image state, and event types without turning Radar into an infinite stream or personalized server API.
+
+**Consequence:** The options screen always exposes the immutable built-in rule and exact reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections; Load more expands the current bounded projection by twelve up to the feed's 500-event bound.

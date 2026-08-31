@@ -15,6 +15,15 @@ MARKETPLACE_URL = "https://plugins.omarchy.org/"
 VERIFICATION = {"verified", "reviewed", "unverified", "unknown"}
 PREVIEW_RE = re.compile(r"^assets/img/plugins/[A-Za-z0-9._-]+\.(?:webp|png|jpg|jpeg)$")
 MAX_BOOTSTRAP_EVENTS = 12
+MAX_METRIC_VALUE = 9_007_199_254_740_991
+
+
+def _optional_count(value: Any, name: str) -> int | None:
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= MAX_METRIC_VALUE:
+        raise ValidationError(f"marketplace {name} is invalid")
+    return value
 
 
 def _bounded_description(value: Any, fallback: str) -> str:
@@ -141,6 +150,9 @@ def parse_marketplace(payload: Any) -> dict[str, Any]:
             "retired": retired,
             "absenceCount": 0,
         }
+        stars = _optional_count(raw.get("stars"), "stars")
+        if stars is not None:
+            plugins[plugin_id]["stars"] = stars
         preview = _preview(raw)
         if preview:
             plugins[plugin_id]["preview"] = preview

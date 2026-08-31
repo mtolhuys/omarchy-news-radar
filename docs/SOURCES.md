@@ -20,6 +20,8 @@ Event identity uses the immutable GitHub release ID when present. `occurredAt` u
 
 The adapter does not treat commits, pull requests, issues, discussions, or repository pushes as news in version 1.
 
+For an already supported release event, the adapter may sum GitHub's `assets[].download_count` values and expose the result only as **release asset downloads** with the release URL and collection time. This is not a total release, repository, package, or installation count. A counter change creates no event.
+
 ## Marketplace catalog
 
 Authoritative generated catalog:
@@ -31,6 +33,8 @@ https://raw.githubusercontent.com/omacom/omarchy-plugin-marketplace/main/site/ca
 The catalog is currently a versioned object containing `generatedAt`, `stateSchemaVersion`, `plugins`, and warnings. Treat this shape as dated research, revalidate it before implementation, and isolate all upstream-specific parsing inside the marketplace adapter.
 
 The adapter flattens catalog entries by canonical plugin ID and normalizes name, a safely truncated description, version, repository, category, tags, listing times, release URL when public, verification fields, and optional preview-thumbnail metadata.
+
+When the catalog supplies a non-negative `stars` count, Radar may attach it to an existing plugin event as **repository stars**, observed at collection time and linked to the repository. Stars create no event and affect no ordering or significance.
 
 ### Bootstrap
 
@@ -51,6 +55,18 @@ An event created by a supported marketplace diff may carry its catalog preview t
 
 One repository-level validated commit may represent multiple plugins and may change for reasons unrelated to a specific plugin. It is not a plugin-release signal.
 
+## Marketplace engagement aggregates
+
+Authoritative generated endpoint:
+
+```text
+https://api.omarchyplugins.com/v1/stats
+```
+
+The adapter accepts only schema version 1, at most 5,000 canonical plugin IDs, and exact non-negative JavaScript-safe integer `views`, `hearts`, and `copies` fields. These are the marketplace's anonymous aggregate detail views, heart interactions, and successful command copies. They are not installs, downloads, unique people, verified votes, rankings, recommendations, or security signals.
+
+The endpoint is optional enrichment. A successful response replaces its metric group on retained and new plugin events; failure records `marketplace-engagement` source health and retains the prior observed values. Metric changes never create events, affect IDs, or influence curation and front-page composition.
+
 ## Reviewed community entries
 
 Community activity lives as one reviewed JSON or YAML-equivalent record per item under `content/community/`; choose one format and enforce it consistently. Records are ordinary pull-request-reviewed source files, not remote form submissions.
@@ -69,6 +85,7 @@ Rules:
 
 - A failed source retains its last successful snapshot.
 - A failed source emits no additions, removals, retirements, or version changes.
+- A failed optional metric source retains prior observed counters; a later valid source snapshot replaces only that source's metric group.
 - A partial feed names the unavailable adapter and remains usable when at least one current or cached source is valid.
 - Global publication fails when the feed envelope itself cannot be validated, when event IDs collide, or when output would exceed bounds.
 - `generatedAt` is assigned only after collection and validation finish.

@@ -12,6 +12,16 @@ FocusScope {
   signal hovered()
 
   readonly property bool hasImage: !!story && !!story.imageUrl
+  // A selected surface must never keep the ambient muted token: some themes
+  // intentionally make that token close to their selection fill.  Derive all
+  // selected text tiers from the popup foreground so the pair stays legible.
+  readonly property color primaryTextColor: Color.popups.text
+  readonly property color secondaryTextColor: selected
+    ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
+    : Color.muted
+  readonly property color selectedLabelColor: selected
+    ? Color.popups.text
+    : story && story.classification.significance === "critical" ? Color.urgent : Color.accent
   implicitHeight: Math.max(
     storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2,
     hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0
@@ -55,7 +65,8 @@ FocusScope {
       Text {
         width: parent.width
         text: root.story ? String(root.story.classification.section).toUpperCase() + (root.story.isNew ? " · NEW" : "") : ""
-        color: root.story && root.story.classification.significance === "critical" ? Color.urgent : Color.accent
+        textFormat: Text.PlainText
+        color: root.selectedLabelColor
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
         font.bold: true
@@ -65,7 +76,8 @@ FocusScope {
       Text {
         width: parent.width
         text: root.story ? root.story.title : ""
-        color: Color.popups.text
+        textFormat: Text.PlainText
+        color: root.primaryTextColor
         font.family: Style.font.family
         font.pixelSize: root.lead ? Style.font.heading : Style.font.subtitle
         font.bold: true
@@ -77,11 +89,24 @@ FocusScope {
       Text {
         width: parent.width
         text: root.story ? root.story.summary : ""
-        color: Color.muted
+        textFormat: Text.PlainText
+        color: root.secondaryTextColor
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
         wrapMode: Text.WordWrap
         maximumLineCount: root.lead ? 4 : 2
+        elide: Text.ElideRight
+      }
+
+      Text {
+        width: parent.width
+        visible: !!root.story && !!root.story.metricsText
+        text: visible ? root.story.metricsText : ""
+        textFormat: Text.PlainText
+        color: root.secondaryTextColor
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        font.bold: root.selected
         elide: Text.ElideRight
       }
     }

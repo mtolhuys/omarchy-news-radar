@@ -7,6 +7,7 @@ GitHub Actions
   └─ Python collector
        ├─ Omarchy release adapter
        ├─ marketplace catalog adapter
+       ├─ marketplace engagement adapter
        ├─ reviewed community adapter
        ├─ snapshot diff + normalization
        └─ bounded feed + RSS + static-site build
@@ -18,10 +19,10 @@ GitHub Actions
 Omarchy shell
   └─ News Radar plugin
        ├─ optional default-on bar newspaper
-       ├─ on-demand panel
+       ├─ on-demand compositor-managed window
        ├─ bundled Python client helper
        ├─ last-known-good cache
-       ├─ local seen/saved/preferences state
+       ├─ local seen/saved/preferences/filter state
        ├─ installed-plugin + private-interest matching
        └─ explicit HTTPS source opening
 ```
@@ -48,6 +49,8 @@ omarchy-news-radar/
 ├── radar/
 │   ├── __init__.py
 │   ├── model.py
+│   ├── filters.py
+│   ├── metrics.py
 │   ├── validation.py
 │   ├── collector.py
 │   ├── publisher.py
@@ -56,6 +59,7 @@ omarchy-news-radar/
 │   └── sources/
 │       ├── omarchy_releases.py
 │       ├── marketplace.py
+│       ├── marketplace_engagement.py
 │       └── community.py
 ├── src/
 │   ├── Panel.qml
@@ -73,7 +77,8 @@ omarchy-news-radar/
 ├── schemas/
 │   ├── feed-v1.schema.json
 │   ├── state-v1.schema.json
-│   └── state-v2.schema.json
+│   ├── state-v2.schema.json
+│   └── state-v3.schema.json
 ├── tests/
 │   ├── fixtures/
 │   ├── unit/
@@ -104,7 +109,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
 }
 ```
 
-This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, and exposes `open(payloadJson)` and `close()`.
+This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, exposes `open(payloadJson)` and `close()`, and owns a normal `FloatingWindow`. The window is compositor-managed, resizable/minimizable/maximizable, and follows ordinary task switching; it is not a `PanelWindow` or layer-shell overlay.
 
 Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar lifecycle, while the panel exposes the ordinary `open`/`close` contract. The bar widget loads only bounded local indicator state, runs a refresh only when the cache is due, and stops its refresh cadence while hidden. Neither entry point installs a service or daemon.
 
@@ -162,6 +167,8 @@ An imported local marker is honored only when its SHA-256 matches the canonical 
 
 The collector is a Python standard-library application with pure source adapters and one orchestration layer. Adapters convert source-specific payloads into normalized snapshots; the diff layer converts two valid snapshots into events; the publisher validates the full envelope and emits JSON, RSS, and a static HTML projection.
 
+Optional metric enrichment is a post-diff step. Successful source snapshots replace their own metric group; a failed optional metric source retains prior observed facts. Metrics never enter event identity, diff generation, curation, ordering, or Front Page selection.
+
 Collection is transactional:
 
 1. Fetch each allowlisted source using explicit headers, timeouts, size limits, and conditional request metadata where useful.
@@ -213,3 +220,5 @@ The main manifest declares one non-multiple `bar-widget`, defaulted to the right
 - One corrupt local state file is quarantined with a bounded diagnostic and replaced by safe defaults; it never invalidates the feed cache.
 - Shortcut setup failure restores the previous binding file and leaves the plugin usable through IPC.
 - Panel close and disable terminate owned work without deleting user state.
+- Window-manager close follows the same shell hide path; minimize, maximize, resize, and `Alt+Tab` do not alter panel state.
+- Pagination and per-section filters operate only on the validated cache projection and cannot expand the network boundary.

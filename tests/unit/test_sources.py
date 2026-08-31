@@ -10,6 +10,7 @@ from pathlib import Path
 from radar.errors import ValidationError
 from radar.sources.community import community_events
 from radar.sources.marketplace import diff_marketplace, parse_marketplace
+from radar.sources.marketplace_engagement import parse_engagement
 from radar.sources.omarchy_releases import diff_releases, parse_releases
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -110,6 +111,18 @@ class SourceTests(unittest.TestCase):
         noise = parse_marketplace(noise_payload)
         noise_events, _ = diff_marketplace(previous, noise, discovered_at=CLOCK)
         self.assertEqual([], noise_events)
+
+    def test_marketplace_engagement_is_strict_bounded_aggregate_data(self) -> None:
+        parsed = parse_engagement(self.payload("engagement-next.json"))
+        self.assertEqual({"views": 145, "copies": 23, "hearts": 9}, parsed["io.github.mtolhuys.disk-lens"])
+        malformed = self.payload("engagement-next.json")
+        malformed["plugins"]["io.github.mtolhuys.disk-lens"]["hearts"] = -1
+        with self.assertRaises(ValidationError):
+            parse_engagement(malformed)
+        malformed = self.payload("engagement-next.json")
+        malformed["schemaVersion"] = 2
+        with self.assertRaises(ValidationError):
+            parse_engagement(malformed)
 
     def test_marketplace_explicit_retirement_multi_plugin_repo_and_schema_checks(self) -> None:
         baseline_payload = self.payload("catalog-baseline.json")

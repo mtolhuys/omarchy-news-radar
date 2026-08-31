@@ -7,7 +7,11 @@
     "name": "Omarchy 4.0.2",
     "prerelease": false,
     "published_at": "2026-08-31T03:42:33Z",
-    "tag_name": "v4.0.2"
+    "tag_name": "v4.0.2",
+    "assets": [
+      { "download_count": 314 },
+      { "download_count": 27 }
+    ]
   },
   {
     "body": "## Omarchy 4.0.1\n\nThis maintenance release refines the Quattro shell and plugin lifecycle.",

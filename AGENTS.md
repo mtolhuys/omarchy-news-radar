@@ -30,14 +30,17 @@ For Omarchy runtime work, also read the maintained Plugin Lab `AGENTS.md`, `READ
 
 - `Super+Alt+N` is the recommended primary interaction. The current Omarchy source and disposable live session leave it free; install it only after confirming that both the personal configuration and live binding table are conflict-free, and never replace another action.
 - The main plugin pairs an on-demand `panel` with one default-on `bar-widget`. The newspaper shows unread/source health, right-click hides it by setting local state, hidden geometry is exactly zero, and the panel can restore it. It is not a separate companion plugin.
+- The panel entry point owns a normal compositor-managed `FloatingWindow`, not a layer-shell overlay. It is resizable, minimizable, maximizable, participates in ordinary `Alt+Tab`, and preserves the shell `open()`/`close()` lifecycle.
 - Opening the panel shows a validated cached edition immediately when one exists, then refreshes without blocking the cached reading experience.
 - Remote feed content, marketplace metadata, release notes, repository text, and community submissions are untrusted data. Render textual fields as bounded plain text and never execute them. Images are optional publisher-mirrored marketplace rasters: accept only validated PNG/JPEG/WebP from the fixed official image origin, publish them as content-addressed same-origin assets, and never render remote HTML, Markdown, SVG, or arbitrary image URLs.
 - Every visible claim links to its original source. Radar summarizes and organizes; it does not become the source of truth.
 - The plugin has no telemetry, accounts, tracking identifiers, remote read state, cookies, or personalized server requests.
 - Read state, saved items, installed plugin IDs, interests, and preferences remain local. Generic feed and same-origin mirrored-image retrieval are the only normal client network requests.
+- Per-section filters and finite pagination are local projections. `Tab`/`Shift+Tab` cycles sections; “Load more” expands the bounded local projection and never requests another remote page.
+- Optional views, hearts, command copies, repository stars, and release-asset download counts are labelled source facts with observation time and source URL. They never create events, affect identity, rank the front page, imply installs, unique people, votes, or security, or survive a successful source refresh as stale values.
 - No arbitrary web scraping, X scraping, AI-generated summaries, engagement bait, notification spam, or automatic “best plugin” claims belong in version 1.
 - A first collector run establishes a baseline and may backfill only the twelve newest marketplace listings from the previous fourteen days; it must not publish the whole catalog as new.
-- Closing the panel stops its processes. A visible bar indicator may perform one due-checked refresh at startup and every 30 minutes; hiding the indicator stops that network cadence. No daemon is installed.
+- Closing the window through Radar, the compositor, or shell lifecycle stops its processes. A visible bar indicator may perform one due-checked refresh at startup and every 30 minutes; hiding the indicator stops that network cadence. No daemon is installed.
 - Every state has visible feedback and deterministic recovery: first use, cached, refreshing, current, offline, empty, invalid feed, source-partial, and failed.
 
 ## Repository rules

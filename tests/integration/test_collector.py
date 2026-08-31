@@ -10,6 +10,7 @@ from unittest import mock
 from radar.collector import FixtureInputs, collect_from_fixtures, collect_production, empty_snapshot, load_snapshot
 from radar.io import canonical_json_bytes
 from radar.sources.marketplace import CATALOG_URL
+from radar.sources.marketplace_engagement import ENGAGEMENT_URL
 from radar.sources.omarchy_releases import API_URL
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,6 +24,7 @@ class CollectorIntegrationTests(unittest.TestCase):
             ROOT / f"tests/fixtures/catalog-{generation}.json",
             ROOT / "tests/fixtures/community",
             ROOT / "content/curation",
+            ROOT / f"tests/fixtures/engagement-{generation}.json",
         )
 
     def test_bootstrap_backfill_is_bounded_and_second_generation_is_stable(self) -> None:
@@ -83,6 +85,7 @@ class CollectorIntegrationTests(unittest.TestCase):
             item["draft"] = True
             first_page.append(item)
         catalog = (ROOT / "tests/fixtures/catalog-baseline.json").read_bytes()
+        engagement = (ROOT / "tests/fixtures/engagement-baseline.json").read_bytes()
         calls: list[tuple[str, dict[str, str]]] = []
 
         def fixture_fetch(url, *, policy, headers=None):  # type: ignore[no-untyped-def]
@@ -93,6 +96,8 @@ class CollectorIntegrationTests(unittest.TestCase):
                 return b"[]", {}, 200
             if url == CATALOG_URL:
                 return catalog, {}, 200
+            if url == ENGAGEMENT_URL:
+                return engagement, {}, 200
             raise AssertionError(f"unexpected URL: {url}")
 
         with mock.patch("radar.collector.fetch_bytes", side_effect=fixture_fetch):
@@ -109,6 +114,7 @@ class CollectorIntegrationTests(unittest.TestCase):
                 API_URL + "?per_page=100&page=1",
                 API_URL + "?per_page=100&page=2",
                 CATALOG_URL,
+                ENGAGEMENT_URL,
             ],
             [url for url, _ in calls],
         )

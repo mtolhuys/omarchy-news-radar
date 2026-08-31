@@ -4,7 +4,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 
 ## Trust boundaries
 
-- GitHub API responses, marketplace catalogs, preview rasters, release notes, repository metadata, community records, generated feeds, titles, summaries, tags, author names, and URLs are untrusted.
+- GitHub API responses, marketplace catalogs, marketplace engagement aggregates, preview rasters, release notes, repository metadata, community records, generated feeds, titles, summaries, counters, tags, author names, and URLs are untrusted.
 - The published feed is owned by this project but remains untrusted at the client boundary because hosting, transport endpoints, build pipelines, or stored artifacts can fail.
 - Installed plugin IDs and local reading state are private local data.
 - `~/.config/hypr/bindings.lua` is user-owned configuration and may contain arbitrary valid Lua, comments, custom formatting, or symlinks.
@@ -19,10 +19,11 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 - Opening a source requires an explicit user action and passes the validated URL as one structural process argument to the maintained desktop launcher and `xdg-open`.
 - The collector fetches only allowlisted machine sources. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
 - Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
+- Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS source URLs. They cannot create events or drive ranking, and marketplace aggregate caveats remain visible in the client.
 
 ## Client fetch
 
-The production feed origin is fixed in one module. Normal UI settings do not accept arbitrary feed or image URLs. The helper:
+The production feed origin is fixed in one module. Collector machine inputs are likewise fixed to the GitHub release API, marketplace catalog, and `https://api.omarchyplugins.com/v1/stats`. Normal UI settings do not accept arbitrary feed, image, or metric URLs. The helper:
 
 - uses HTTPS with certificate verification;
 - uses explicit connect and total timeouts;
@@ -39,6 +40,8 @@ Tests may inject a fixture file or loopback endpoint through an explicit test bo
 Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename.
 
 The state parser accepts only its own bounded schema. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
+
+Section filters are validated local state. They select only from closed enums and booleans, never become query parameters, and never alter collector or feed requests. Load more changes only a bounded local projection limit.
 
 Saved items and cache are preserved on plugin disable or normal removal. A separate explicit purge action may remove only paths owned by Radar after resolving and validating their exact XDG locations.
 

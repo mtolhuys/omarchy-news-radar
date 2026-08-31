@@ -119,6 +119,12 @@ Compatibility basis is `declared`, `inferred-from-source`, or `unknown`. Version
 - All timestamps: canonical UTC RFC 3339 with `Z`.
 - Public image paths: optional relative `assets/images/<sha256>.(jpg|png|webp)` only, with 1–4,096 pixel dimensions, at most 12 million pixels, bounded plain-text alt/credit, and no upstream URL in the public feed.
 
+### Optional observed metrics
+
+An event may carry at most one canonical record for each closed metric ID: `marketplace-views`, `marketplace-hearts`, `marketplace-copies`, `repository-stars`, and `release-asset-downloads`. Each record contains a non-negative JavaScript-safe integer `value`, canonical UTC `observedAt`, and validated public HTTPS `sourceUrl`. Records sort by ID.
+
+These are observed source facts, not occurrences. Counter changes never create an event or change its ID, timestamps, significance, curation, ordering, or Front Page position. Marketplace aggregates specifically mean anonymous detail views, hearts, and command copies; they do not mean installs, downloads, unique people, votes, rankings, or security.
+
 Replace C0/DEL control characters in display strings, normalize line breaks and repeated whitespace, and preserve Unicode without converting user content into markup. Do not silently repair structural IDs or URLs; reject them.
 
 ## Deterministic IDs
@@ -155,13 +161,13 @@ Normalized marketplace state is keyed by canonical plugin ID and retains only fi
 }
 ```
 
-Stars, views, hearts, copy counts, repository update timestamps, observed commits, preview paths, and source fingerprints are not news identities. Valid preview metadata is retained only so the publisher can mirror an optional image for an event created by another supported fact.
+Stars, views, hearts, copy counts, release-asset downloads, repository update timestamps, observed commits, preview paths, and source fingerprints are not news identities. Valid counters may enrich an event created by another supported fact; valid preview metadata is retained only so the publisher can mirror its optional image.
 
 ## Local state
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "seenThrough": "2026-08-31T14:00:00Z",
   "saved": {
     "evt_8cb067f9ef7da216bcab4781": {
@@ -175,7 +181,15 @@ Stars, views, hearts, copy counts, repository update timestamps, observed commit
   "preferences": {
     "barVisible": true,
     "imagesVisible": true,
-    "interests": ["security", "quickshell"]
+    "interests": ["security", "quickshell"],
+    "sectionFilters": {
+      "front-page": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
+      "for-you": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
+      "core": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
+      "plugins": {"period":"7d","significance":"notable","unreadOnly":false,"imagesOnly":true,"types":["plugin-released"]},
+      "community": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
+      "saved": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]}
+    }
   }
 }
 ```
@@ -184,7 +198,7 @@ Saved records intentionally duplicate a small bounded subset so a bookmark survi
 
 `seenThrough` is monotonic. It advances only to the greatest event timestamp captured in a successfully rendered session and never to wall-clock “now.” Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v2 adds three local preferences. `barVisible` and `imagesVisible` default true. `interests` contains at most twelve unique normalized lowercase words or phrases of at most 32 characters. A valid v1 state migrates atomically to v2 with saved and seen data preserved and default preferences; no migration data is sent over the network.
+State v3 retains the three v2 preferences and adds one strict filter for each of the six client sections. A filter has a period (`all`, `24h`, `7d`, or `30d`), significance (`all`, `notable`, or `critical`), two booleans, and a canonical list of event types. All defaults are unfiltered. Valid v1 and v2 states migrate atomically with saved, seen, and existing v2 preferences preserved; filters receive defaults and no migration data is sent over the network.
 
 ## Schema evolution
 

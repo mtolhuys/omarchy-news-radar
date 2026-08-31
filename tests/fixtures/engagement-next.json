@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "plugins": {
+    "io.github.mtolhuys.disk-lens": { "views": 145, "copies": 23, "hearts": 9 },
+    "org.example.focus": { "views": 44, "copies": 3, "hearts": 2 },
+    "org.example.notes": { "views": 12, "copies": 1, "hearts": 4 }
+  }
+}

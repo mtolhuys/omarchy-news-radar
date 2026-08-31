@@ -11,10 +11,14 @@ from urllib.parse import urlsplit
 
 from .constants import (
     CHANNELS,
+    CLIENT_SECTIONS,
     COMPATIBILITY_BASIS,
     EVENT_TYPES,
+    FILTER_PERIODS,
+    FILTER_SIGNIFICANCE,
     FUTURE_SKEW_SECONDS,
     MARKETPLACE_TRUST,
+    METRIC_IDS,
     MAX_EVENTS,
     MAX_SAVED,
     FEED_SCHEMA_VERSION,
@@ -160,6 +164,36 @@ def validate_image(value: Any, *, public_only: bool) -> dict[str, Any]:
     return normalized
 
 
+def validate_metrics(value: Any) -> list[dict[str, Any]]:
+    metrics = require_list(value, "event.metrics")
+    if len(metrics) > len(METRIC_IDS):
+        raise ValidationError("event.metrics exceeds its bound")
+    normalized: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw in metrics:
+        metric = require_mapping(raw, "event metric")
+        metric_id = require_string(metric.get("id"), "event metric id", 1, 48)
+        count = metric.get("value")
+        if metric_id not in METRIC_IDS or metric_id in seen:
+            raise ValidationError("event metric id is invalid or duplicated")
+        if not isinstance(count, int) or isinstance(count, bool) or not 0 <= count <= 9_007_199_254_740_991:
+            raise ValidationError("event metric value is invalid")
+        observed_at = require_string(metric.get("observedAt"), "event metric observedAt", 20, 20)
+        parse_timestamp(observed_at, "event metric observedAt")
+        normalized.append(
+            {
+                "id": metric_id,
+                "value": count,
+                "observedAt": observed_at,
+                "sourceUrl": validate_https_url(metric.get("sourceUrl"), "event metric sourceUrl"),
+            }
+        )
+        seen.add(metric_id)
+    if normalized != sorted(normalized, key=lambda item: item["id"]):
+        raise ValidationError("event metrics are not in canonical order")
+    return normalized
+
+
 def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
     event = require_mapping(value, "event")
     event_id = require_string(event.get("id"), "event.id", 28, 28)
@@ -241,6 +275,8 @@ def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
         parse_timestamp(normalized["correctedAt"], "event.correctedAt")
     if "image" in event:
         normalized["image"] = validate_image(event["image"], public_only=public_only)
+    if "metrics" in event:
+        normalized["metrics"] = validate_metrics(event["metrics"])
     return normalized
 
 
@@ -335,6 +371,32 @@ def validate_saved_record(value: Any, event_id: str) -> dict[str, Any]:
     }
 
 
+def validate_section_filter(value: Any) -> dict[str, Any]:
+    current = require_mapping(value, "section filter")
+    period = require_string(current.get("period"), "section filter period", 1, 8)
+    significance = require_string(current.get("significance"), "section filter significance", 1, 16)
+    if period not in FILTER_PERIODS or significance not in FILTER_SIGNIFICANCE:
+        raise ValidationError("section filter enum is unsupported")
+    types_raw = require_list(current.get("types"), "section filter types")
+    if len(types_raw) > len(EVENT_TYPES):
+        raise ValidationError("section filter types exceed their bound")
+    types: list[str] = []
+    for raw in types_raw:
+        event_type = require_string(raw, "section filter type", 1, 64)
+        if event_type not in EVENT_TYPES or event_type in types:
+            raise ValidationError("section filter types are invalid")
+        types.append(event_type)
+    if types != sorted(types):
+        raise ValidationError("section filter types are not canonical")
+    return {
+        "period": period,
+        "significance": significance,
+        "unreadOnly": require_bool(current.get("unreadOnly"), "section filter unreadOnly"),
+        "imagesOnly": require_bool(current.get("imagesOnly"), "section filter imagesOnly"),
+        "types": types,
+    }
+
+
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
@@ -358,6 +420,13 @@ def validate_state(value: Any) -> dict[str, Any]:
         if not INTEREST_RE.fullmatch(value) or value in interests:
             raise ValidationError("interests must be unique normalized words or phrases")
         interests.append(value)
+    filters_raw = require_mapping(preferences.get("sectionFilters"), "preferences.sectionFilters")
+    if set(filters_raw) != set(CLIENT_SECTIONS):
+        raise ValidationError("preferences.sectionFilters must define every section")
+    section_filters = {
+        section: validate_section_filter(filters_raw[section])
+        for section in CLIENT_SECTIONS
+    }
     return {
         "schemaVersion": STATE_SCHEMA_VERSION,
         "seenThrough": seen,
@@ -366,6 +435,7 @@ def validate_state(value: Any) -> dict[str, Any]:
             "barVisible": bar_visible,
             "imagesVisible": images_visible,
             "interests": interests,
+            "sectionFilters": section_filters,
         },
     }
 

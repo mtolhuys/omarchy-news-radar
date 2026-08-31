@@ -33,6 +33,7 @@ FocusScope {
       id: labelText
       anchors.centerIn: parent
       text: root.label
+      textFormat: Text.PlainText
       color: root.danger ? Color.urgent : Color.popups.text
       font.family: Style.font.family
       font.pixelSize: Style.font.bodySmall

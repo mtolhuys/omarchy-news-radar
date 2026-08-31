@@ -20,14 +20,14 @@ omarchy-shell shell toggle io.github.mtolhuys.news-radar
 
 ## Surface
 
-Version 1 is an on-demand panel paired with a default-on, optional top-bar newspaper. The panel opens centered on the active monitor, fits within current outer gaps, never exceeds the usable monitor rectangle, and becomes scrollable before content clips.
+Version 1 is an on-demand normal desktop window paired with a default-on, optional top-bar newspaper. The panel entry point creates a compositor-managed `FloatingWindow` with a bounded minimum size. It is movable, resizable, minimizable, maximizable, and participates in ordinary `Alt+Tab`; closing it through window management follows the same state/process teardown as `Escape`.
 
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar, local date, edition freshness, source health, and close action.
 2. **Section rail:** Front Page, For You, Core, Plugins, Community, and Saved with bounded counts.
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
-4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, save action, and open-source action.
+4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, source-labelled metrics and caveat, save action, and open-source action.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow layouts collapse to one column without changing content or controls.
 
@@ -39,7 +39,7 @@ The front page is finite. The initial viewport should communicate the most impor
 - Up to six secondary items may appear above the fold.
 - Remaining activity is grouped by section and date.
 - The interface states exactly what “since last read” means.
-- No autoplay, carousel, ticker, infinite scroll, or continuously moving decoration is allowed.
+- No autoplay, carousel, ticker, infinite scroll, or continuously moving decoration is allowed. A visible Load more control may reveal the next twelve matches from the already downloaded edition, up to the feed bound.
 
 ## Keyboard model
 
@@ -55,10 +55,17 @@ All behavior must remain reachable without a pointer:
 | `s` | Save or unsave selected story locally |
 | `/` | Focus search/filter input |
 | `r` | Refresh the feed |
+| `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
 | `1`–`6` | Switch between the six primary sections |
 | `Home` / `End` | Select first or last story in the current section |
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
+
+## Section filters and pagination
+
+Each section exposes a cogwheel control. Its options screen always shows the immutable built-in section rule, then local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
+
+The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded.
 
 ## Seen and saved semantics
 
@@ -99,6 +106,7 @@ Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off contro
 - Use current Omarchy `Color`, `Style`, and `Border` contracts rather than hard-coded theme colors or sizes.
 - Use the system monospace family and Omarchy type scale; distinguish masthead, section, headline, summary, metadata, and source through hierarchy rather than excessive color.
 - Accent marks focus, selection, and one lead rule. Urgent color is reserved for actual source or compatibility warnings.
+- A selected row must pair its fill with explicit primary and secondary foregrounds. It must never keep an ambient muted token that can blend into the selected fill; this is visually accepted in maintained dark and light themes.
 - Dense metadata remains secondary and collapsible; the main reading path prioritizes headline and summary.
 - Any motion is bounded to active refresh and has equivalent literal status text. There is no perpetual radar sweep.
 

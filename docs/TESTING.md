@@ -25,7 +25,8 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1-to-v2 migration, preference/interest bounds, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
+- State-v1/v2-to-v3 migration, preference/interest/filter bounds, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, and last-known-good preservation.
+- Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
 
@@ -38,6 +39,7 @@ make site
 - Explicit baseline with a maximum twelve-item recent/fourteen-day backfill and no historical event flood.
 - Added plugin, non-empty version change, unchanged version with repository activity, verification transition, explicit retirement, one-run absence, two-run confirmed absence, reappearance, multi-plugin repository, schema mismatch, and warnings.
 - Stars, views, commits, validation times, descriptions, tags, and preview changes do not create unsupported events.
+- Marketplace engagement schema/bounds, metric observation/source fields, release-asset download labels, repository stars, failed-source retention, and proof that metrics do not create or rank events.
 - A failed current snapshot preserves prior state and creates no mass retirement.
 
 ### Community and curation
@@ -85,7 +87,7 @@ Run a two-generation collector scenario: bootstrap a marketplace fixture, then a
 
 ## QML and static contract tests
 
-Source validation proves that the manifest references both existing entry points, the panel exposes `open()` and `close()`, the bar exposes exact visibility-driven geometry and fixed pointer actions, process commands are structural arrays, remote text is not assigned to rich-text paths, image sources come only from helper-projected feed paths, and hard-coded colors/sizing do not replace Omarchy tokens.
+Source validation proves that the manifest references both existing entry points, the panel exposes `open()` and `close()`, owns a `FloatingWindow` rather than a layer-shell `PanelWindow`, the bar exposes exact visibility-driven geometry and fixed pointer actions, process commands are structural arrays, remote text is not assigned to rich-text paths, image sources come only from helper-projected feed paths, selected secondary text uses an explicit selection foreground, and hard-coded colors/sizing do not replace Omarchy tokens.
 
 When `qmllint` and a selected Omarchy source are available, import paths and QML syntax must pass. Static grep is supporting evidence, not runtime proof.
 
@@ -109,14 +111,17 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 4. The shortcut helper reports `Super+Alt+N` as free, writes its exact managed bind-only block, reloads cleanly, exposes exactly one Radar action on that chord, and leaves the separate Editor action live.
 5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
-7. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
-8. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
-9. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
-10. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
-11. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable.
-12. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
-13. A same-path plugin update replaces the loaded panel and bar identities/behavior.
-14. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
+7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
+8. `Tab` and `Shift+Tab` cycle sections; the cogwheel shows the built-in rule, persists and resets a section-local filter, and Load more expands a dense local projection without another feed request.
+9. Source-labelled metrics, observed time, metric source link, and marketplace caveat render from the validated fixture without changing Front Page order.
+10. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
+11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
+12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
+13. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
+14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable; selected headlines, summaries, metadata, and metrics remain readable in both themes.
+15. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
+16. A same-path plugin update replaces the loaded panel and bar identities/behavior.
+17. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
 `public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
 

@@ -24,6 +24,7 @@ from .client import (
     require_unprivileged,
     toggle_saved_state,
     set_preferences,
+    set_section_filter,
 )
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
 from .errors import RadarError
@@ -31,6 +32,7 @@ from .io import atomic_write_json
 from .local_edition import import_local_edition
 from .publisher import publish
 from .validation import parse_timestamp, validate_feed
+from .window import ensure_window_floating
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -49,6 +51,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("indicator")
     commands.add_parser("installed")
     commands.add_parser("purge")
+    commands.add_parser("ensure-window-floating")
     seen = commands.add_parser("mark-seen")
     seen.add_argument("--through", required=True)
     saved = commands.add_parser("toggle-saved")
@@ -63,6 +66,10 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     projection.add_argument("--section", required=True)
     projection.add_argument("--installed-json", default="[]")
     projection.add_argument("--query", default="")
+    projection.add_argument("--limit", type=int, default=12)
+    section_filter = commands.add_parser("set-section-filter")
+    section_filter.add_argument("--section", required=True)
+    section_filter.add_argument("--filter-json", required=True)
     args = parser.parse_args(argv)
     try:
         require_unprivileged()
@@ -76,6 +83,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = indicator_model()
         elif args.command == "installed":
             result = installed_plugins()
+        elif args.command == "ensure-window-floating":
+            result = ensure_window_floating()
         elif args.command == "mark-seen":
             result = mark_seen_state(args.through)
         elif args.command == "toggle-saved":
@@ -96,8 +105,18 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             )
         elif args.command == "open-source":
             result = open_source(args.url)
+        elif args.command == "set-section-filter":
+            if len(args.filter_json) > 8192:
+                raise RadarError("section filter exceeds its bound")
+            try:
+                filter_value = json.loads(args.filter_json)
+            except json.JSONDecodeError as exc:
+                raise RadarError("section filter must be a JSON object") from exc
+            if not isinstance(filter_value, dict):
+                raise RadarError("section filter must be a JSON object")
+            result = set_section_filter(args.section, filter_value)
         elif args.command == "project":
-            result = projection_model(args.section, args.installed_json, args.query)
+            result = projection_model(args.section, args.installed_json, args.query, limit=args.limit)
         else:
             result = purge_state()
         _print(result)
@@ -116,6 +135,7 @@ def build_fixture(*, second_generation: bool, output: Path, snapshot_output: Pat
         marketplace=ROOT / f"tests/fixtures/catalog-{suffix}.json",
         community=ROOT / "tests/fixtures/community",
         curation=ROOT / "content/curation",
+        engagement=ROOT / f"tests/fixtures/engagement-{suffix}.json",
     )
     clock = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
     feed, snapshot = collect_from_fixtures(

@@ -7,7 +7,16 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from radar.client import indicator_model, projection_model, read_model, refresh, set_preferences, toggle_saved_state
+from radar.client import (
+    indicator_model,
+    projection_model,
+    read_model,
+    refresh,
+    set_preferences,
+    set_section_filter,
+    toggle_saved_state,
+)
+from radar.errors import ValidationError
 from radar.io import atomic_write_json
 from radar.state import feed_path, load_feed
 
@@ -90,6 +99,42 @@ class ClientIntegrationTests(unittest.TestCase):
         projected = projection_model("for-you", "[]", "", self.environment, now=CLOCK)
         self.assertTrue(any("notes" in event["classification"]["tags"] for event in projected["events"]))
         self.assertFalse(indicator_model(self.environment, now=CLOCK)["barVisible"])
+
+    def test_projection_paginates_decorates_metrics_and_applies_local_section_filter(self) -> None:
+        refresh(self.environment, now=CLOCK)
+        first = projection_model("front-page", "[]", "", self.environment, now=CLOCK, limit=1)
+        self.assertEqual(1, len(first["events"]))
+        self.assertGreater(first["totalEvents"], 1)
+        self.assertTrue(first["hasMore"])
+        self.assertEqual("No extra filters", first["filterSummary"])
+        self.assertIn("sectionRule", first)
+
+        plugins = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        metric_story = next(event for event in plugins["events"] if event.get("metricsText"))
+        self.assertIn("Views 145", metric_story["metricsText"])
+        self.assertIn("Hearts 9", metric_story["metricsText"])
+        self.assertIn("not installs", metric_story["metricsCaveat"])
+        self.assertTrue(all(source["url"].startswith("https://") for source in metric_story["metricSources"]))
+
+        updated = set_section_filter(
+            "plugins",
+            {
+                "period": "all",
+                "significance": "all",
+                "unreadOnly": False,
+                "imagesOnly": False,
+                "types": ["plugin-released"],
+            },
+            self.environment,
+        )
+        self.assertEqual(["plugin-released"], updated["state"]["preferences"]["sectionFilters"]["plugins"]["types"])
+        filtered = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertTrue(filtered["events"])
+        self.assertTrue(all(event["type"] == "plugin-released" for event in filtered["events"]))
+        self.assertEqual("No extra filters", projection_model("core", "[]", "", self.environment, now=CLOCK)["filterSummary"])
+
+        with self.assertRaisesRegex(ValidationError, "limit"):
+            projection_model("plugins", "[]", "", self.environment, now=CLOCK, limit=0)
 
 
 if __name__ == "__main__":

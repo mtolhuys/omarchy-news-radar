@@ -70,6 +70,7 @@ def validate_generated_fixture() -> None:
         ROOT / "tests/fixtures/catalog-next.json",
         ROOT / "tests/fixtures/community",
         ROOT / "content/curation",
+        ROOT / "tests/fixtures/engagement-next.json",
     )
     feed, _ = collect_from_fixtures(
         inputs,

@@ -14,6 +14,8 @@ from ..validation import format_timestamp, normalize_text, parse_timestamp, vali
 API_URL = "https://api.github.com/repos/basecamp/omarchy/releases"
 PUBLIC_URL = "https://github.com/basecamp/omarchy/releases"
 MAX_RELEASES = 300
+MAX_RELEASE_ASSETS = 1000
+MAX_METRIC_VALUE = 9_007_199_254_740_991
 
 FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
 IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
@@ -62,6 +64,21 @@ def parse_releases(payload: Any) -> dict[str, dict[str, Any]]:
         title_source = item.get("name") if isinstance(item.get("name"), str) and item["name"].strip() else tag
         title = normalize_text(title_source, 120)
         prerelease = item.get("prerelease") is True
+        assets_raw = item.get("assets")
+        if assets_raw is None:
+            assets_raw = []
+        if not isinstance(assets_raw, list) or len(assets_raw) > MAX_RELEASE_ASSETS:
+            raise ValidationError("GitHub release assets are invalid")
+        asset_downloads = 0
+        for asset in assets_raw:
+            if not isinstance(asset, dict):
+                raise ValidationError("GitHub release asset is invalid")
+            count = asset.get("download_count")
+            if not isinstance(count, int) or isinstance(count, bool) or not 0 <= count <= MAX_METRIC_VALUE:
+                raise ValidationError("GitHub release asset download count is invalid")
+            asset_downloads += count
+            if asset_downloads > MAX_METRIC_VALUE:
+                raise ValidationError("GitHub release asset downloads exceed their bound")
         releases[key] = {
             "id": key,
             "tag": tag,
@@ -70,6 +87,8 @@ def parse_releases(payload: Any) -> dict[str, dict[str, Any]]:
             "url": url,
             "prerelease": prerelease,
             "summary": release_summary(item.get("body"), f"Omarchy {tag} was published."),
+            "assetCount": len(assets_raw),
+            "assetDownloads": asset_downloads,
         }
     return dict(sorted(releases.items(), key=lambda pair: int(pair[0])))
 

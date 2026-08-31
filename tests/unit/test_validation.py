@@ -62,6 +62,23 @@ class ValidationTests(unittest.TestCase):
         validated = validate_feed(hostile, now=NOW)
         self.assertEqual("<script>alert(1)</script>", validated["events"][0]["title"])
 
+    def test_metrics_are_optional_strict_canonical_source_facts(self) -> None:
+        validated = validate_feed(self.feed, now=NOW)
+        self.assertEqual(341, next(
+            metric["value"]
+            for event in validated["events"]
+            for metric in event.get("metrics", [])
+            if metric["id"] == "release-asset-downloads"
+        ))
+        invalid = copy.deepcopy(self.feed)
+        invalid["events"][0]["metrics"][0]["value"] = -1
+        with self.assertRaises(ValidationError):
+            validate_feed(invalid, now=NOW)
+        unordered = copy.deepcopy(self.feed)
+        unordered["events"][0]["metrics"] = list(reversed(unordered["events"][0]["metrics"]))
+        with self.assertRaises(ValidationError):
+            validate_feed(unordered, now=NOW)
+
     def test_url_boundary(self) -> None:
         for value in (
             "http://github.com/example/project",

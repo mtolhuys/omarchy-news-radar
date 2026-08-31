@@ -13,6 +13,7 @@ from .constants import FEED_MAX_BYTES, MAX_SAVED, STATE_SCHEMA_VERSION
 from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
 from .validation import format_timestamp, parse_timestamp, validate_feed, validate_state
+from .filters import default_section_filters
 
 EPOCH = "1970-01-01T00:00:00Z"
 
@@ -38,7 +39,12 @@ def default_state() -> dict[str, Any]:
         "schemaVersion": STATE_SCHEMA_VERSION,
         "seenThrough": EPOCH,
         "saved": {},
-        "preferences": {"barVisible": True, "imagesVisible": True, "interests": []},
+        "preferences": {
+            "barVisible": True,
+            "imagesVisible": True,
+            "interests": [],
+            "sectionFilters": default_section_filters(),
+        },
     }
 
 
@@ -89,12 +95,18 @@ def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, 
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") == 1:
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2}:
+            old_preferences = raw.get("preferences") if raw.get("schemaVersion") == 2 else None
+            preferences = default_state()["preferences"]
+            if isinstance(old_preferences, dict):
+                for key in ("barVisible", "imagesVisible", "interests"):
+                    if key in old_preferences:
+                        preferences[key] = old_preferences[key]
             raw = {
                 "schemaVersion": STATE_SCHEMA_VERSION,
                 "seenThrough": raw.get("seenThrough"),
                 "saved": raw.get("saved"),
-                "preferences": default_state()["preferences"],
+                "preferences": preferences,
             }
             migrated = validate_state(raw)
             atomic_write_json(path, migrated)
@@ -167,6 +179,18 @@ def update_preferences(
     if interests is not None:
         preferences["interests"] = interests
     current["preferences"] = preferences
+    return validate_state(current)
+
+
+def update_section_filter(
+    state: Mapping[str, Any], section: str, value: Mapping[str, Any]
+) -> dict[str, Any]:
+    current = validate_state(dict(state))
+    filters = dict(current["preferences"]["sectionFilters"])
+    if section not in filters:
+        raise ValidationError("unknown client section")
+    filters[section] = dict(value)
+    current["preferences"] = {**current["preferences"], "sectionFilters": filters}
     return validate_state(current)
 
 

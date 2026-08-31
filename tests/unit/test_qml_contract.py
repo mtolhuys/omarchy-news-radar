@@ -39,6 +39,20 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function tuneNewspaperGeometry()", qml)
         self.assertIn("No stories in this edition include a validated image.", qml)
         self.assertIn("Local live edition", qml)
+        self.assertIn("FloatingWindow", qml)
+        self.assertNotIn("PanelWindow", qml)
+        self.assertIn("minimumSize:", qml)
+        self.assertIn("panelWindow.maximized", qml)
+        self.assertIn("startSystemResize", qml)
+        self.assertIn("Load more", qml)
+        self.assertIn("BUILT-IN SECTION RULE", qml)
+        self.assertIn("METRICS", qml)
+        self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
+
+        story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
+        self.assertIn("secondaryTextColor: selected", story)
+        self.assertIn("Color.popups.text", story)
+        self.assertIn("textFormat: Text.PlainText", story)
 
     def test_complete_keyboard_and_visible_state_labels_exist(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")
@@ -49,6 +63,9 @@ class QmlContractTests(unittest.TestCase):
             "Qt.Key_Return",
             "Qt.Key_Home",
             "Qt.Key_End",
+            "Qt.Key_Tab",
+            "Qt.Key_Backtab",
+            "Keys.onEscapePressed",
             'event.text === "/"',
             'toLowerCase() === "s"',
             'toLowerCase() === "r"',

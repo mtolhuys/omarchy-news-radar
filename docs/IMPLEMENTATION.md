@@ -8,7 +8,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 2. Read the current Plugin Lab contracts and run `./bin/lab doctor` before any runtime session.
 3. Inspect the exact Omarchy source selected by the lab, including root `AGENTS.md`, shell development guidance, `docs/omarchy-shell.md`, `shell/services/PluginRegistry.qml`, panel loaders, current theme/UI tokens, and current default bindings.
 4. Reconfirm that `Super+Alt+N` is absent from both the current default source and live binding table in the disposable guest, while the separate `Super+Shift+N` Editor action remains intact. If the chord contract changed, stop and update the decision rather than guessing.
-5. Revalidate the marketplace `site/catalog.json` top-level and plugin-entry schema. Update only the source adapter and dated research unless a product contract truly changed.
+5. Revalidate the marketplace `site/catalog.json` top-level/plugin-entry schema and the official engagement endpoint. Update only the source adapters and dated research unless a product contract truly changed.
 
 **Done when:** The implementation agent records current source/lab revisions and any contract drift in `docs/RESEARCH.md` without changing the intended product silently.
 
@@ -36,7 +36,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 3 — Build the client helper
 
 1. Implement fixed-origin bounded HTTPS refresh, redirect policy, candidate validation, cache locking, and atomic last-known-good replacement.
-2. Implement state read, v1-to-v2 migration, session cutoff, saved toggle, private bar/image/interest preferences, indicator model, quarantine, and explicit purge.
+2. Implement state read, v1/v2-to-v3 migration, session cutoff, saved toggle, private bar/image/interest preferences, strict per-section filters, indicator model, quarantine, and explicit purge.
 3. Return small versioned JSON responses designed for QML rather than exposing internal exceptions.
 4. Add loopback integration tests for success, timeout, redirect, oversize, truncation, invalid schema, concurrent refresh, and offline cache.
 
@@ -46,9 +46,9 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 
 1. Inspect and use the current host-owned panel/window, focus, token, border, scroll, and source-opening contracts.
 2. Create `src/Panel.qml` and supporting components with an explicit runtime build identity.
-3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin and explicit-interest matching, deterministic front page, safe feed-image projection, search, selection, save, source opening, Tune preferences, and state labels.
-4. Implement the complete keyboard map and pointer equivalents.
-5. Implement responsive one/two-column presentation without changing semantic order.
+3. Implement cached-first open, one asynchronous refresh, section projections, installed-plugin and explicit-interest matching, deterministic front page, safe feed-image projection, source-labelled metrics, search, selection, save, source opening, Tune preferences, per-section filter options, finite load-more pagination, and state labels.
+4. Implement the complete keyboard map and pointer equivalents, including `Tab`/`Shift+Tab` section cycling.
+5. Implement a normal compositor-managed movable/resizable/minimizable/maximizable `FloatingWindow`, ordinary `Alt+Tab`, responsive one/two-column presentation, and explicit selected-state contrast without changing semantic order.
 6. Add `manifest.json` only after both entry points exist and validation passes.
 
 **Done when:** Source tests prove structure and a fixture-driven component can represent every UX state without remote HTML, arbitrary image URLs, hard-coded theme values, or network-blocked opening.
@@ -77,7 +77,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Create product-owned lab fixtures and `tests/lab/acceptance.sh` using lab helpers rather than another VM controller.
 2. Install the exact candidate, set deterministic guest-only feed/cache fixtures, and expose source/installed/runtime identities.
 3. Send `Super+Alt+N` through QMP and assert the rendered panel, not just IPC state; also prove the Editor binding remains live before, during, and after Radar setup.
-4. Drive keyboard and pointer journeys, bar hide/restore, image on/off, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, themes, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
+4. Drive keyboard and pointer journeys, window resize/maximize/restore/`Alt+Tab`, bar hide/restore, image on/off, source metrics, section filters, load-more pagination, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, dark/light selected-row contrast, narrow layout, error recovery, close teardown, hot update, disable, re-enable, shortcut removal, and plugin removal.
 5. Inspect shell logs and every visual checkpoint.
 6. Prove `make local-latest` in a separate guest scenario: clean first install, exact source origin/revision, committed fast-forward, validated pictured local-edition import, idempotence, dirty-source refusal without installed-state change, exact panel-only placement migration with visual defaults, and removal.
 

@@ -11,11 +11,14 @@ from typing import Any, Mapping
 from .curation import apply_curation, load_curation
 from .errors import ValidationError
 from .errors import FetchError
+from .constants import ENGAGEMENT_MAX_BYTES
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import atomic_write_json, canonical_json_bytes, read_json_bounded
+from .metrics import enrich_event_metrics
 from .model import canonical_events, make_feed
-from .sources import community_events, diff_marketplace, diff_releases, parse_marketplace, parse_releases
+from .sources import community_events, diff_marketplace, diff_releases, parse_engagement, parse_marketplace, parse_releases
 from .sources.marketplace import CATALOG_URL
+from .sources.marketplace_engagement import ENGAGEMENT_URL
 from .sources.omarchy_releases import API_URL, PUBLIC_URL
 from .validation import format_timestamp, parse_timestamp
 
@@ -28,6 +31,7 @@ class FixtureInputs:
     marketplace: Path
     community: Path
     curation: Path
+    engagement: Path | None = None
 
 
 def empty_snapshot() -> dict[str, Any]:
@@ -78,6 +82,9 @@ def collect_from_fixtures(
     events: list[dict[str, Any]] = []
     health: list[dict[str, Any]] = []
     checked_at = format_timestamp(clock)
+    releases: dict[str, dict[str, Any]] | None = None
+    marketplace: dict[str, Any] | None = None
+    engagement: dict[str, dict[str, int]] | None = None
 
     if "omarchy-releases" in failed:
         health.append({"id": "omarchy-releases", "status": "failed", "checkedAt": checked_at, "sourceUrl": PUBLIC_URL, "reason": failed["omarchy-releases"]})
@@ -106,6 +113,18 @@ def collect_from_fixtures(
         next_sources["marketplace"] = marketplace_snapshot
         health.append({"id": "marketplace", "status": "current", "checkedAt": checked_at, "sourceUrl": CATALOG_URL})
 
+    if inputs.engagement is not None:
+        if "marketplace-engagement" in failed:
+            health.append({"id": "marketplace-engagement", "status": "failed", "checkedAt": checked_at, "sourceUrl": ENGAGEMENT_URL, "reason": failed["marketplace-engagement"]})
+        else:
+            engagement_payload = read_json_bounded(inputs.engagement, ENGAGEMENT_MAX_BYTES)
+            engagement = parse_engagement(engagement_payload)
+            next_sources["marketplace-engagement"] = {
+                "schemaVersion": 1,
+                "pluginCount": len(engagement),
+            }
+            health.append({"id": "marketplace-engagement", "status": "current", "checkedAt": checked_at, "sourceUrl": ENGAGEMENT_URL})
+
     if "community" in failed:
         health.append({"id": "community", "status": "failed", "checkedAt": checked_at, "sourceUrl": "https://github.com/mtolhuys/omarchy-news-radar/tree/main/content/community", "reason": failed["community"]})
     else:
@@ -120,7 +139,15 @@ def collect_from_fixtures(
         if parse_timestamp(event["occurredAt"]) >= window_from
     }
     retained_events.update({event["id"]: event for event in events})
-    base_events = canonical_events(retained_events.values())
+    base_events = canonical_events(
+        enrich_event_metrics(
+            retained_events.values(),
+            observed_at=checked_at,
+            marketplace=marketplace,
+            engagement=engagement,
+            releases=releases,
+        )
+    )
     overlays = load_curation(inputs.curation)
     curated_events, lead = apply_curation(base_events, overlays)
     feed = make_feed(
@@ -151,12 +178,13 @@ def collect_production(
     bootstrap_marketplace: bool,
     github_token: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Fetch only the two allowlisted machine sources, then collect transactionally."""
+    """Fetch only the three allowlisted machine sources, then collect transactionally."""
 
     failures: dict[str, str] = {}
     release_payload: list[Any] = []
     release_bytes = b"[]"
     catalog_bytes = b'{"generatedAt":"1970-01-01T00:00:00Z","stateSchemaVersion":2,"plugins":[]}'
+    engagement_bytes = b'{"schemaVersion":1,"plugins":{}}'
     try:
         headers = {"X-GitHub-Api-Version": "2022-11-28"}
         if github_token:
@@ -197,18 +225,37 @@ def collect_production(
     except ValidationError:
         failures["marketplace"] = "schema-mismatch"
 
+    try:
+        engagement_bytes, _, _ = fetch_bytes(
+            ENGAGEMENT_URL,
+            policy=FetchPolicy(
+                ENGAGEMENT_MAX_BYTES,
+                20.0,
+                frozenset({"https://api.omarchyplugins.com"}),
+            ),
+            headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-collector/0.1"},
+        )
+        parse_engagement(decode_json(engagement_bytes, label="marketplace engagement"))
+    except FetchError as exc:
+        failures["marketplace-engagement"] = exc.reason
+    except ValidationError:
+        failures["marketplace-engagement"] = "schema-mismatch"
+
     with tempfile.TemporaryDirectory(prefix="omarchy-news-radar-collect-") as temporary:
         root = Path(temporary)
         releases_path = root / "releases.json"
         marketplace_path = root / "catalog.json"
+        engagement_path = root / "engagement.json"
         releases_path.write_bytes(release_bytes)
         marketplace_path.write_bytes(catalog_bytes)
+        engagement_path.write_bytes(engagement_bytes)
         return collect_from_fixtures(
             FixtureInputs(
                 releases=releases_path,
                 marketplace=marketplace_path,
                 community=community_directory,
                 curation=curation_directory,
+                engagement=engagement_path,
             ),
             previous_snapshot=previous_snapshot,
             now=now,

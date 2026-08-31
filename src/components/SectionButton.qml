@@ -35,6 +35,7 @@ FocusScope {
       anchors.leftMargin: Style.spacing.controlPaddingX
       anchors.verticalCenter: parent.verticalCenter
       text: root.label
+      textFormat: Text.PlainText
       color: Color.popups.text
       font.family: Style.font.family
       font.pixelSize: Style.font.bodySmall
@@ -49,7 +50,10 @@ FocusScope {
       anchors.rightMargin: Style.spacing.controlPaddingX
       anchors.verticalCenter: parent.verticalCenter
       text: String(root.count)
-      color: root.selected ? Color.accent : Color.muted
+      textFormat: Text.PlainText
+      color: root.selected
+        ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
+        : Color.muted
       font.family: Style.font.family
       font.pixelSize: Style.font.caption
     }

@@ -31,12 +31,13 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 3. Pressing `Super+Alt+N` or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
 4. Radar refreshes one bounded static feed without blocking the cached edition.
 5. The front page explains how many core, plugin, and community changes occurred since the last completed reading session.
-6. The user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved.
-7. Selecting an item exposes its type, date, source, trust metadata, compatibility information when known, and one concise factual summary.
+6. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, Community, and Saved, with `Tab` and `Shift+Tab` cycling sections.
+7. Selecting an item exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics.
 8. Opening a source launches the default browser only after explicit activation.
 9. Closing the panel records the newest event timestamp that was actually present in that session. Events arriving later remain new.
 10. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
-11. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
+11. The user can inspect the immutable built-in rule for each section, add local filters, and reveal further matching stories in finite twelve-item steps.
+12. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
 
 Before the public static feed is authorized and published, an owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts, imports the complete validated edition and mirrored images into private cache, and labels the result “Local live edition.” Test fixtures must never masquerade as this mode.
 
@@ -57,6 +58,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - “For You” matches events against locally installed plugin IDs and up to twelve explicit local interest words or phrases.
 - Category and tag filters operate locally.
 - Saved items and seen-through state remain local.
+- Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
 - Front Page ordering is deterministic and auditable.
 - Manually notable items are visibly distinguished from routine activity.
 
@@ -69,10 +71,12 @@ Before the public static feed is authorized and published, an owner deliberately
 - Useful empty, offline, partial-source, and invalid-feed states.
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
+- A compositor-managed resizable/maximizable window with ordinary task switching, finite load-more controls, and selected-state text contrast across maintained themes.
+- Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with exact labels, observation times, and source links.
 
 ## What “interesting” means
 
-An item is interesting when it changes what a user can do, affects compatibility or trust, introduces a meaningfully distinct project, or teaches a reusable Omarchy workflow. A repository commit, star change, metadata touch, or repeated clone of an existing idea is not automatically news.
+An item is interesting when it changes what a user can do, affects compatibility or trust, introduces a meaningfully distinct project, or teaches a reusable Omarchy workflow. A repository commit, star or interaction-count change, metadata touch, or repeated clone of an existing idea is not automatically news.
 
 Automated activity and editorial significance are separate facts. The collector may prove that an event occurred; only an explicit rule or reviewed curation record may call it notable.
 
@@ -97,6 +101,7 @@ Automated activity and editorial significance are separate facts. The collector 
 - Installing, updating, enabling, disabling, ranking, or removing third-party plugins from a news item.
 - Mandatory top-bar presence, desktop notifications, polling while the newspaper is hidden, or a resident daemon.
 - Claiming that marketplace verification is a complete security audit.
+- Treating views, hearts, command copies, stars, or release-asset downloads as installs, unique users, votes, rankings, safety, or editorial significance.
 - Mirroring entire articles, release notes, arbitrary screenshots, or repository content. Only bounded official marketplace preview thumbnails are mirrored.
 
 ## Milestone success criterion

@@ -12,6 +12,7 @@ from urllib.parse import urljoin, urlsplit
 
 from .constants import FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
 from .errors import FetchError, RadarError, StorageError, ValidationError
+from .filters import SECTION_RULES, apply_section_filter, filter_options, filter_summary
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
 from .local_edition import local_edition_metadata, local_image_url
@@ -26,6 +27,7 @@ from .state import (
     save_state,
     toggle_saved,
     update_preferences,
+    update_section_filter,
 )
 from .validation import parse_timestamp, validate_feed, validate_https_url
 
@@ -165,6 +167,18 @@ def set_preferences(
     return response("ok", state=save_state(updated, environment))
 
 
+def set_section_filter(
+    section: str,
+    value: Mapping[str, Any],
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Persist one strictly validated, local-only section filter."""
+
+    state, _ = load_state(environment)
+    updated = update_section_filter(state, section, value)
+    return response("ok", state=save_state(updated, environment))
+
+
 def indicator_model(
     environment: Mapping[str, str] | None = None, *, now: datetime | None = None
 ) -> dict[str, Any]:
@@ -237,9 +251,12 @@ def projection_model(
     environment: Mapping[str, str] | None = None,
     *,
     now: datetime | None = None,
+    limit: int = 12,
 ) -> dict[str, Any]:
     if len(installed_json) > 256 * 1024 or len(query) > 100:
         raise ValidationError("projection input exceeds its bound")
+    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 500:
+        raise ValidationError("projection limit is outside its bound")
     try:
         installed_raw = json.loads(installed_json)
     except json.JSONDecodeError as exc:
@@ -253,23 +270,59 @@ def projection_model(
         installed.append(item)
     feed = load_feed(environment, now=now)
     state, _ = load_state(environment)
+    names = ("front-page", "for-you", "core", "plugins", "community", "saved")
+    if section not in names:
+        raise ValidationError("unknown projection section")
+    filters = state["preferences"]["sectionFilters"]
+    current_filter = filters[section]
     if feed is None:
-        return response("first-use", section=section, events=[], counts={name: 0 for name in ("front-page", "for-you", "core", "plugins", "community", "saved")})
+        return response(
+            "first-use",
+            section=section,
+            events=[],
+            counts={name: 0 for name in names},
+            totalEvents=0,
+            hasMore=False,
+            limit=limit,
+            filter=current_filter,
+            filterSummary=filter_summary(current_filter),
+            sectionRule=SECTION_RULES[section],
+            filterOptions=filter_options(section),
+        )
     saved_ids = set(state["saved"])
     interests = state["preferences"]["interests"]
-    names = ("front-page", "for-you", "core", "plugins", "community", "saved")
-    counts = {
-        name: len(project_section(feed, name, installed_plugin_ids=installed, saved_ids=saved_ids, interests=interests))
-        for name in names
-    }
-    events = project_section(
-        feed,
-        section,
-        installed_plugin_ids=installed,
-        saved_ids=saved_ids,
-        interests=interests,
-        query=query,
+    counts: dict[str, int] = {}
+    for name in names:
+        section_events = project_section(
+            feed,
+            name,
+            installed_plugin_ids=installed,
+            saved_ids=saved_ids,
+            interests=interests,
+        )
+        counts[name] = len(
+            apply_section_filter(
+                section_events,
+                filters[name],
+                seen_through=state["seenThrough"],
+                now=now,
+            )
+        )
+    events = apply_section_filter(
+        project_section(
+            feed,
+            section,
+            installed_plugin_ids=installed,
+            saved_ids=saved_ids,
+            interests=interests,
+            query=query,
+        ),
+        current_filter,
+        seen_through=state["seenThrough"],
+        now=now,
     )
+    total_events = len(events)
+    events = events[:limit]
     seen = state["seenThrough"]
     env = dict(environment or os.environ)
     image_base = FEED_URL
@@ -277,6 +330,14 @@ def projection_model(
     if env.get("OMARCHY_NEWS_RADAR_TEST_MODE") == "1" and env.get("OMARCHY_NEWS_RADAR_TEST_FEED_URL"):
         image_base = env["OMARCHY_NEWS_RADAR_TEST_FEED_URL"]
     decorated: list[dict[str, Any]] = []
+    metric_labels = {
+        "marketplace-views": "Views",
+        "marketplace-hearts": "Hearts",
+        "marketplace-copies": "Command copies",
+        "repository-stars": "Repository stars",
+        "release-asset-downloads": "Release asset downloads",
+    }
+    metric_order = tuple(metric_labels)
     for event in events:
         item = dict(event)
         item["isNew"] = item["occurredAt"] > seen
@@ -289,8 +350,43 @@ def projection_model(
                     item["imageUrl"] = cached_url
             else:
                 item["imageUrl"] = urljoin(image_base, image["path"])
+        metrics = item.get("metrics", [])
+        if isinstance(metrics, list) and metrics:
+            by_id = {
+                metric["id"]: metric
+                for metric in metrics
+                if isinstance(metric, dict) and metric.get("id") in metric_labels
+            }
+            ordered = [by_id[metric_id] for metric_id in metric_order if metric_id in by_id]
+            item["metricsText"] = " · ".join(
+                f"{metric_labels[metric['id']]} {metric['value']:,}" for metric in ordered
+            )
+            item["metricSources"] = [
+                {"label": metric_labels[metric["id"]], "url": metric["sourceUrl"]}
+                for metric in ordered
+            ]
+            item["metricsObservedAt"] = max(metric["observedAt"] for metric in ordered)
+            if any(metric["id"].startswith("marketplace-") for metric in ordered):
+                item["metricsCaveat"] = (
+                    "Marketplace views, hearts, and command copies are anonymous aggregate "
+                    "interactions—not installs, downloads, unique people, rankings, votes, "
+                    "or security signals."
+                )
         decorated.append(item)
-    return response("ok", section=section, events=decorated, counts=counts, seenThrough=seen)
+    return response(
+        "ok",
+        section=section,
+        events=decorated,
+        counts=counts,
+        seenThrough=seen,
+        totalEvents=total_events,
+        hasMore=total_events > len(decorated),
+        limit=limit,
+        filter=current_filter,
+        filterSummary=filter_summary(current_filter),
+        sectionRule=SECTION_RULES[section],
+        filterOptions=filter_options(section),
+    )
 
 
 def open_source(url: str) -> dict[str, Any]:

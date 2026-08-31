@@ -23,7 +23,7 @@
       "items": {
         "$ref": "#/$defs/sourceHealth"
       },
-      "maxItems": 3,
+      "maxItems": 4,
       "type": "array"
     },
     "window": {
@@ -185,6 +185,29 @@
         "occurredAt": {
           "$ref": "#/$defs/timestamp"
         },
+        "metrics": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "enum": [
+                  "marketplace-views",
+                  "marketplace-hearts",
+                  "marketplace-copies",
+                  "repository-stars",
+                  "release-asset-downloads"
+                ]
+              },
+              "observedAt": { "$ref": "#/$defs/timestamp" },
+              "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+              "value": { "maximum": 9007199254740991, "minimum": 0, "type": "integer" }
+            },
+            "required": ["id", "value", "observedAt", "sourceUrl"],
+            "type": "object"
+          },
+          "maxItems": 5,
+          "type": "array"
+        },
         "source": {
           "additionalProperties": false,
           "properties": {
@@ -280,6 +303,7 @@
           "enum": [
             "omarchy-releases",
             "marketplace",
+            "marketplace-engagement",
             "community"
           ]
         },

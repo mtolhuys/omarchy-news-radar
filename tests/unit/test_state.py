@@ -20,6 +20,7 @@ from radar.state import (
     save_state,
     toggle_saved,
     update_preferences,
+    update_section_filter,
     user_state_path,
 )
 
@@ -69,7 +70,7 @@ class StateTests(unittest.TestCase):
         updated, saved = toggle_saved(updated, self.feed["events"][0], now=CLOCK)
         self.assertFalse(saved)
 
-    def test_v1_migrates_and_private_preferences_are_strict(self) -> None:
+    def test_old_state_migrates_and_private_preferences_and_filters_are_strict(self) -> None:
         path = user_state_path(self.environment)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
@@ -78,8 +79,12 @@ class StateTests(unittest.TestCase):
         )
         state, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(2, state["schemaVersion"])
+        self.assertEqual(3, state["schemaVersion"])
         self.assertTrue(state["preferences"]["barVisible"])
+        self.assertEqual(
+            {"period": "all", "significance": "all", "unreadOnly": False, "imagesOnly": False, "types": []},
+            state["preferences"]["sectionFilters"]["front-page"],
+        )
         tuned = update_preferences(
             state,
             bar_visible=False,
@@ -89,6 +94,35 @@ class StateTests(unittest.TestCase):
         self.assertEqual(["security", "quick shell"], tuned["preferences"]["interests"])
         with self.assertRaises(ValidationError):
             update_preferences(state, interests=["bad!"])
+        filtered = update_section_filter(
+            tuned,
+            "plugins",
+            {
+                "period": "7d",
+                "significance": "notable",
+                "unreadOnly": True,
+                "imagesOnly": False,
+                "types": ["plugin-released"],
+            },
+        )
+        self.assertEqual("7d", filtered["preferences"]["sectionFilters"]["plugins"]["period"])
+        self.assertEqual("all", filtered["preferences"]["sectionFilters"]["core"]["period"])
+        with self.assertRaises(ValidationError):
+            update_section_filter(state, "plugins", {"period": "forever"})
+
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 2,
+                "seenThrough": "2026-08-30T10:00:00Z",
+                "saved": {},
+                "preferences": {"barVisible": False, "imagesVisible": False, "interests": ["security"]},
+            }),
+            encoding="utf-8",
+        )
+        v2, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertFalse(v2["preferences"]["barVisible"])
+        self.assertEqual(["security"], v2["preferences"]["interests"])
 
     def test_symlink_targets_and_concurrent_refresh_are_refused(self) -> None:
         path = feed_path(self.environment)

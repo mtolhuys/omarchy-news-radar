@@ -20,7 +20,7 @@ The front page is composed deterministically from the live window:
 5. Up to six events matching explicit local interests.
 6. A bounded mix of routine plugin and community activity, preventing one category from consuming the entire edition.
 
-Server output may nominate a lead item, but the client verifies that the referenced event exists. Without an explicit lead, the first highest-significance event becomes the visual lead. Popularity counters never decide the lead.
+Server output may nominate a lead item, but the client verifies that the referenced event exists. Without an explicit lead, the first highest-significance event becomes the visual lead. Popularity and interaction counters never decide the lead, ordering, inclusion, or significance.
 
 ## Notable criteria
 
@@ -33,7 +33,7 @@ An item may be marked notable when at least one reviewed statement is true:
 - It teaches a reusable workflow with clear original evidence.
 - It affects a large class of existing installations.
 
-Stars, social reach, author identity, DHH amplification, novelty alone, visual polish alone, or marketplace verification alone are insufficient.
+Stars, views, hearts, command copies, release-asset downloads, social reach, author identity, DHH amplification, novelty alone, visual polish alone, or marketplace verification alone are insufficient.
 
 ## Summary style
 
