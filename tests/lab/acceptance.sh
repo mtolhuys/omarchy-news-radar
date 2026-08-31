@@ -162,7 +162,7 @@ omarchy_host_test() {
   type_text "omarchy news radar"
   sleep 1
   capture_console "success-news-radar-00-app-launcher"
-  press enter
+  press ret
   wait_for_guest_state "visible Apps-menu selection summons Radar" 15 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || {
       ssh_session "hyprctl -j clients" >"$RUN_DIR/news-radar-app-launcher-failure-clients.json" 2>&1 || true
@@ -588,7 +588,7 @@ omarchy_host_test() {
   type_text "omarchy news radar"
   sleep 1
   capture_console "success-news-radar-14-app-launcher-removed"
-  press enter
+  press ret
   sleep 1
   ssh_session "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
   press esc

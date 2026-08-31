@@ -44,7 +44,7 @@ omarchy_host_test() {
     "hyprctl -j layers | jq -e '[.. | objects | select(.namespace? == \"omarchy-menu\")] | length >= 1'" || return 1
   type_text "omarchy news radar"
   sleep 1
-  press enter
+  press ret
   wait_for_guest_state "public Apps entry opens the installed panel" 20 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
   capture_console "success-news-radar-public-app-launcher"
