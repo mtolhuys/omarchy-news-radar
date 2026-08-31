@@ -790,8 +790,6 @@ Item {
               Layout.fillWidth: keySurface.narrow
               Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
               Layout.preferredHeight: childrenRect.height
-              implicitWidth: childrenRect.width
-              implicitHeight: childrenRect.height
               spacing: Style.spacing.controlGap
 
               RadarButton {
