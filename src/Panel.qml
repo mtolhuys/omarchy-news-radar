@@ -48,6 +48,7 @@ Item {
   property bool bulkReadInFlight: false
   property int sectionIndex: 0
   property int selectedIndex: 0
+  property int storyViewportAnchorIndex: 0
   property string feedStatus: "First use"
   property string statusDetail: "No validated cache yet. Radar will check the published edition."
   property string sourceHealth: "No validated source status"
@@ -295,6 +296,7 @@ Item {
     preferencesOpen = false
     sectionSettingsOpen = false
     selectedIndex = 0
+    storyViewportAnchorIndex = 0
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
     Qt.callLater(function() {
@@ -432,8 +434,14 @@ Item {
     storyScrollAnimation.stop()
     if (hasMoreStories && selectedIndex === stories.length - 1)
       storyList.positionViewAtEnd()
-    else
-      storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
+    else {
+      var anchorIndex = Math.max(
+        0,
+        Math.min(selectedIndex, storyViewportAnchorIndex)
+      )
+      storyViewportAnchorIndex = anchorIndex
+      storyList.positionViewAtIndex(anchorIndex, ListView.Beginning)
+    }
   }
 
   function handleProjection(raw) {
@@ -448,12 +456,16 @@ Item {
       sectionSources = String(result.sectionSources || "")
       filterOptions = result.filterOptions || []
       selectedIndex = stories.length ? Math.min(Math.max(0, selectedIndex), stories.length - 1) : -1
+      storyViewportAnchorIndex = stories.length
+        ? Math.min(Math.max(0, storyViewportAnchorIndex), selectedIndex)
+        : -1
       Qt.callLater(root.restoreStoryViewport)
     } else {
       stories = []
       totalStories = 0
       hasMoreStories = false
       selectedIndex = -1
+      storyViewportAnchorIndex = -1
       feedStatus = "Failed"
       statusDetail = result.message || "The local reading model could not be built."
     }
@@ -474,6 +486,7 @@ Item {
     navigationFocus.forceActiveFocus()
     sectionIndex = index
     selectedIndex = 0
+    storyViewportAnchorIndex = 0
     requestProjection()
   }
 
@@ -515,37 +528,41 @@ Item {
     storyScrollAnimation.stop()
     var nextIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
     var initialContentY = storyList.contentY
-    var anchorAtTop = delta > 0 && !storyFullyVisible(nextIndex)
     selectStory(nextIndex, true)
     Qt.callLater(function() {
       if (root.selectedIndex !== nextIndex) return
-      animateStoryPosition(
-        nextIndex,
-        anchorAtTop ? ListView.Beginning : ListView.Contain,
-        initialContentY
-      )
+      var anchorAtTop = delta > 0 && storyNeedsTopAnchor(nextIndex)
+      if (anchorAtTop) root.storyViewportAnchorIndex = nextIndex
+      animateStoryPosition(nextIndex, anchorAtTop, initialContentY)
     })
   }
 
-  function storyFullyVisible(index) {
+  function storyNeedsTopAnchor(index) {
     var row = storyList.itemAtIndex(index)
-    if (!row) return false
+    if (!row) {
+      storyList.positionViewAtIndex(index, ListView.Contain)
+      row = storyList.itemAtIndex(index)
+    }
+    if (!row) return true
     var top = row.y - storyList.contentY
-    return top >= -0.5 && top + row.height <= storyList.height + 0.5
+    return top < -0.5 || top + row.height >= storyList.height - 0.5
   }
 
-  function animateStoryPosition(index, mode, initialContentY) {
+  function animateStoryPosition(index, alignAtTop, initialContentY) {
     storyScrollAnimation.stop()
-    storyList.positionViewAtIndex(index, mode)
-    var targetContentY = storyList.contentY
-    var row = storyList.itemAtIndex(index)
-    if (mode === ListView.Beginning && row) {
-      var maximumContentY = storyList.originY
-        + Math.max(0, storyList.contentHeight - storyList.height)
-      targetContentY = Math.max(
-        storyList.originY,
-        Math.min(row.y, maximumContentY)
-      )
+    var targetContentY = initialContentY
+    if (alignAtTop) {
+      storyList.positionViewAtIndex(index, ListView.Beginning)
+      targetContentY = storyList.contentY
+      var row = storyList.itemAtIndex(index)
+      if (row) {
+        var maximumContentY = storyList.originY
+          + Math.max(0, storyList.contentHeight - storyList.height)
+        targetContentY = Math.max(
+          storyList.originY,
+          Math.min(row.y, maximumContentY)
+        )
+      }
     }
     storyList.contentY = initialContentY
     if (Math.abs(targetContentY - initialContentY) <= 0.5) {
@@ -858,9 +875,10 @@ Item {
             storyScrollAnimation.stop()
             var initialContentY = storyList.contentY
             root.selectStory(0, true)
+            root.storyViewportAnchorIndex = 0
             Qt.callLater(function() {
               if (root.selectedIndex === 0)
-                root.animateStoryPosition(0, ListView.Beginning, initialContentY)
+                root.animateStoryPosition(0, true, initialContentY)
             })
           } else root.selectedIndex = -1
           event.accepted = true; return
