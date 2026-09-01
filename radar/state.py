@@ -26,6 +26,7 @@ from .validation import (
     require_exact_keys,
     require_mapping,
     validate_feed,
+    validate_event,
     validate_legacy_interests,
     validate_section_filter,
     validate_section_profile,
@@ -245,22 +246,51 @@ def set_event_read(
 ) -> dict[str, Any]:
     """Set one event explicitly while pruning overrides outside the current edition."""
 
+    return set_events_read(
+        state,
+        [event],
+        read,
+        current_event_ids=current_event_ids,
+    )
+
+
+def set_events_read(
+    state: Mapping[str, Any],
+    events: list[Mapping[str, Any]],
+    read: bool,
+    *,
+    current_event_ids: set[str],
+) -> dict[str, Any]:
+    """Set a bounded event batch atomically against the current validated edition."""
+
     current = validate_state(dict(state))
     if not isinstance(read, bool):
         raise ValidationError("read state must be a boolean")
-    event_id = str(event["id"])
-    if event_id not in current_event_ids:
-        raise ValidationError("event is not present in the validated cache")
+    if len(events) > MAX_READ_OVERRIDES:
+        raise ValidationError("read event batch exceeds its bound")
+    validated_events: list[dict[str, Any]] = []
+    selected_ids: set[str] = set()
+    for raw_event in events:
+        event = validate_event(dict(raw_event))
+        event_id = event["id"]
+        if event_id not in current_event_ids:
+            raise ValidationError("event is not present in the validated cache")
+        if event_id in selected_ids:
+            raise ValidationError("read event batch contains a duplicate")
+        selected_ids.add(event_id)
+        validated_events.append(event)
     overrides = {
         key: value
         for key, value in current["readOverrides"].items()
         if key in current_event_ids
     }
-    default_read = event["occurredAt"] <= current["readThrough"]
-    if read == default_read:
-        overrides.pop(event_id, None)
-    else:
-        overrides[event_id] = read
+    for event in validated_events:
+        event_id = event["id"]
+        default_read = event["occurredAt"] <= current["readThrough"]
+        if read == default_read:
+            overrides.pop(event_id, None)
+        else:
+            overrides[event_id] = read
     if len(overrides) > MAX_READ_OVERRIDES:
         raise ValidationError("read override limit reached")
     current["readOverrides"] = dict(sorted(overrides.items()))

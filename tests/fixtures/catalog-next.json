@@ -5,7 +5,7 @@
     {
       "addedAt": "2026-08-01",
       "category": "System",
-      "description": "Metadata wording changed without creating a separate event.",
+      "description": "A native disk-usage dashboard with a fast visual treemap.",
       "id": "io.github.mtolhuys.disk-lens",
       "listedAt": "2026-08-01T00:00:00.000Z",
       "name": "Omarchy Disk Lens",

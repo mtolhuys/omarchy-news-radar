@@ -247,3 +247,11 @@
 **Why:** The generic “now listed” sentence repeats the headline and fails to explain what the plugin does even when the authoritative marketplace provides that fact.
 
 **Consequence:** Description enrichment is presentation-only. It never creates an event or affects event ID, occurrence time, significance, ordering, metrics, or curation; catalog failure preserves the prior summary. All explanation text remains bounded untrusted plain text.
+
+## D032 — Make batch reading explicit and plugin explanations useful
+
+**Decision:** Each section exposes one **Mark all as read** action. It atomically marks every unread story matching that section's persistent Settings filters, including unloaded pages; temporary search never changes its scope. D031's catalog-description enrichment now applies to every plugin marketplace event, not additions alone.
+
+**Why:** A long finite edition needs a deliberate way to clear a known section without pretending that opening, refreshing, searching, or closing constitutes reading. Generic version and verification sentences repeat facts already visible in the title and metadata while omitting the catalog's useful explanation of what the plugin does.
+
+**Consequence:** The helper derives the exact bounded section projection from validated cache, enabled-plugin IDs, saved IDs, and persisted filters, then writes all required per-event overrides under the existing state lock. Other sections and nonmatching stories keep their prior state. New and retained plugin additions, releases, verification changes, and retirements use the current validated catalog description as bounded untrusted plain text; event identity, type, version, trust state, time, ordering, metrics, and curation remain unchanged.

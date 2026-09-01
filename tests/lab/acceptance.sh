@@ -10,7 +10,7 @@ omarchy_host_test() {
   local control_x control_y window_before_width window_after_width window_x window_y window_width window_height window_initial_maximized
   local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
-  local shell_rss_open shell_rss_closed projection_seconds
+  local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
   alttab_root="$(cd -- "$product_root/../hyprland-alttab" && pwd)"
@@ -502,6 +502,20 @@ omarchy_host_test() {
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == true' && \
      jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
 
+  log "Proving the rendered filtered-section batch read action"
+  core_unread_before="$(ssh_session "$helper project --section core --installed-json '[]' --query '' | jq -r '.unreadCounts.core'")" || return 1
+  press 4
+  wait_for_guest_state "Plugins has unread stories before the explicit batch action" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"plugins\" and .unreadCount > 0 and .bulkReadInFlight == false'" || return 1
+  plugin_unread_before="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.unreadCount'")" || return 1
+  radar_control_geometry markAllReadGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "Mark all as read atomically clears the complete Plugins section" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"plugins\" and .unreadCount == 0 and .bulkReadInFlight == false' && \
+     test \"\$($helper project --section core --installed-json '[]' --query '' | jq -r '.unreadCounts.core')\" = '$core_unread_before'" || return 1
+  [[ $plugin_unread_before =~ ^[1-9][0-9]*$ ]] || return 1
+  capture_console "success-news-radar-03-mark-all-read"
+
   log "Proving malformed, oversized, partial, offline, empty, long, and dense states"
   ssh_guest "cp /tmp/news-radar-fixtures/malformed.json /tmp/news-radar-fixtures/current.json"
   press r
@@ -571,7 +585,7 @@ omarchy_host_test() {
   press 2
   press home
   wait_for_guest_state "long Unicode story renders as plain text" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedIndex == 0 and (.selectedTitle | startswith(\"長い見出し\"))'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .section == \"for-you\" and .selectedIndex == 0 and (.selectedTitle | startswith(\"長い見出し\"))'" || return 1
 
   log "Reviewing light, dark, narrow, 200 percent text, and reduced-motion checkpoints"
   ssh_session "omarchy-theme-set catppuccin-latte >/dev/null"
@@ -603,12 +617,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.1.2+identity-1/news-radar-0.1.2+identity-2/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.1.3+identity-1/news-radar-0.1.3+identity-2/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell toggle io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.2+identity-2" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.3+identity-2" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1

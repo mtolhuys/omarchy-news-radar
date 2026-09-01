@@ -26,6 +26,7 @@ from radar.state import (
     save_feed,
     save_state,
     set_event_read,
+    set_events_read,
     toggle_saved,
     update_preferences,
     update_section_filter,
@@ -105,6 +106,39 @@ class StateTests(unittest.TestCase):
         self.assertEqual(state["readOverrides"], updated["readOverrides"])
         updated, saved = toggle_saved(updated, self.feed["events"][0], now=CLOCK)
         self.assertFalse(saved)
+
+    def test_read_batches_are_bounded_atomic_and_reject_invalid_members(self) -> None:
+        events = self.feed["events"][:3]
+        event_ids = {item["id"] for item in self.feed["events"]}
+        state = default_state()
+        state["readOverrides"]["evt_ffffffffffffffffffffffff"] = True
+
+        updated = set_events_read(
+            state,
+            events,
+            True,
+            current_event_ids=event_ids,
+        )
+        self.assertTrue(all(event_is_read(updated, event) for event in events))
+        self.assertEqual(
+            sorted(event["id"] for event in events),
+            list(updated["readOverrides"]),
+        )
+        self.assertNotIn("evt_ffffffffffffffffffffffff", updated["readOverrides"])
+
+        restored = set_events_read(
+            updated,
+            events,
+            False,
+            current_event_ids=event_ids,
+        )
+        self.assertTrue(all(not event_is_read(restored, event) for event in events))
+        self.assertEqual({}, restored["readOverrides"])
+
+        with self.assertRaisesRegex(ValidationError, "duplicate"):
+            set_events_read(state, [events[0], events[0]], True, current_event_ids=event_ids)
+        with self.assertRaisesRegex(ValidationError, "validated cache"):
+            set_events_read(state, [events[0]], True, current_event_ids=set())
 
     def test_old_state_migrates_and_private_preferences_and_filters_are_strict(self) -> None:
         path = user_state_path(self.environment)

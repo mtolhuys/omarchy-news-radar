@@ -11,6 +11,7 @@ from unittest import mock
 from radar.client import (
     indicator_model,
     installed_plugins,
+    mark_section_read_state,
     projection_model,
     read_model,
     refresh,
@@ -122,6 +123,68 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertNotIn("interests", tuned["state"]["preferences"])
         self.assertEqual([], projection_model("for-you", "[]", "", self.environment, now=CLOCK)["events"])
         self.assertFalse(indicator_model(self.environment, now=CLOCK)["barVisible"])
+
+    def test_stale_read_mutation_after_refresh_is_a_benign_no_op(self) -> None:
+        refresh(self.environment, now=CLOCK)
+        result = set_event_read_state(
+            "evt_ffffffffffffffffffffffff",
+            True,
+            self.environment,
+            now=CLOCK,
+        )
+        self.assertEqual("stale-event", result["status"])
+        self.assertEqual({}, result["state"]["readOverrides"])
+        self.assertIn("left unchanged", result["message"])
+
+    def test_mark_section_read_is_atomic_bounded_and_follows_section_filters(self) -> None:
+        refresh(self.environment, now=CLOCK)
+        first_page = projection_model(
+            "plugins", "[]", "", self.environment, now=CLOCK, limit=1
+        )
+        self.assertTrue(first_page["hasMore"])
+        plugin_unread = first_page["unreadCounts"]["plugins"]
+        core_unread = first_page["unreadCounts"]["core"]
+        searched = projection_model(
+            "plugins", "[]", "Workspace Notes", self.environment, now=CLOCK, limit=1
+        )
+        self.assertEqual(1, searched["totalEvents"])
+
+        marked = mark_section_read_state("plugins", "[]", self.environment, now=CLOCK)
+        self.assertEqual(plugin_unread, marked["markedRead"])
+        after = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertEqual(0, after["unreadCounts"]["plugins"])
+        self.assertTrue(all(not event["isUnread"] for event in after["events"]))
+        self.assertEqual(
+            core_unread,
+            projection_model("core", "[]", "", self.environment, now=CLOCK)["unreadCounts"]["core"],
+        )
+
+        for event in after["events"]:
+            set_event_read_state(event["id"], False, self.environment, now=CLOCK)
+        filtered_value = {
+            "period": "all",
+            "significance": "all",
+            "unreadOnly": False,
+            "imagesOnly": False,
+            "types": ["plugin-released"],
+        }
+        set_section_filter("plugins", filtered_value, self.environment)
+        filtered = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        marked = mark_section_read_state("plugins", "[]", self.environment, now=CLOCK)
+        self.assertEqual(filtered["unreadCounts"]["plugins"], marked["markedRead"])
+        self.assertEqual(0, projection_model("plugins", "[]", "", self.environment, now=CLOCK)["unreadCounts"]["plugins"])
+
+        set_section_filter(
+            "plugins",
+            {**filtered_value, "types": []},
+            self.environment,
+        )
+        unfiltered = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertGreater(unfiltered["unreadCounts"]["plugins"], 0)
+        self.assertTrue(any(event["type"] != "plugin-released" and event["isUnread"] for event in unfiltered["events"]))
+
+        with self.assertRaisesRegex(ValidationError, "unknown projection section"):
+            mark_section_read_state("community", "[]", self.environment, now=CLOCK)
 
     def test_projection_paginates_decorates_metrics_and_applies_local_section_filter(self) -> None:
         refresh(self.environment, now=CLOCK)

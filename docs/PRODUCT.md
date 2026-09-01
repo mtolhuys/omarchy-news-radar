@@ -33,7 +33,7 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 5. Radar refreshes one bounded static feed without blocking the cached edition.
 6. The front page and section rail show exactly how many stories remain unread; every row says `UNREAD` or `READ`, and any accepted reviewed link joins that finite edition without creating a separate empty lane.
 7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, and Saved, with `Tab` and `Shift+Tab` cycling sections and Down/Enter reaching finite pagination.
-8. Deliberately selecting an item marks only that story read and exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics. The inspector and `u` shortcut can mark it unread again.
+8. Deliberately selecting an item marks only that story read and exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics. The inspector and `u` shortcut can mark it unread again; a separate explicit section action marks every unread story matching that section's persistent Settings filters read in one atomic transition.
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel never bulk-marks the edition. Stories the user did not deliberately select remain unread across close, refresh, and restart.
 11. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
@@ -68,13 +68,13 @@ Before the public static feed is authorized and published, an owner deliberately
 
 - Cached-first rendering.
 - Keyboard-first selection and source opening.
-- Plain-text summaries with source attribution; plugin-addition explanations use the current validated marketplace description when available.
+- Plain-text summaries with source attribution; every plugin-event explanation uses the current validated marketplace description when available.
 - Light and dark theme support using current Omarchy tokens, with meaningful secondary text derived from the panel foreground rather than an ambient low-contrast muted token.
 - Useful empty, offline, partial-source, and invalid-feed states.
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
 - A compositor-managed resizable/maximizable window with ordinary task switching, an always-visible keyboard guide, explicit arrow-key/Enter finite load-more controls, a hover-visible Refresh shortcut, animated refresh progress, and selected/secondary text contrast across maintained themes.
-- Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, and durable private reading state.
+- Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, an explicit filtered-section **Mark all as read** action, and durable private reading state.
 - Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 
 ## What “interesting” means

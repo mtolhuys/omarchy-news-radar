@@ -112,7 +112,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -156,6 +156,7 @@ news-radar-client refresh
 news-radar-client refresh-if-due --minimum-age <seconds>
 news-radar-client indicator
 news-radar-client set-read --event-id <id> --read true|false
+news-radar-client mark-section-read --section <id> --installed-json <json-array>
 news-radar-client toggle-saved --event-id <id>
 news-radar-client set-preferences [--bar-visible true|false] [--images-visible true|false]
 news-radar-client purge

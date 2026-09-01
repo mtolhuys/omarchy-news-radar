@@ -54,7 +54,7 @@
         "label": "Plugin source",
         "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.1"
       },
-      "summary": "Marketplace verification changed from reviewed to verified; this is not a security audit.",
+      "summary": "A native disk-usage dashboard with a fast visual treemap.",
       "title": "Omarchy Disk Lens verification changed",
       "trust": {
         "marketplace": "verified",
@@ -116,7 +116,7 @@
         "label": "Plugin source",
         "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.1"
       },
-      "summary": "The marketplace version changed from 0.4.0 to 0.4.1.",
+      "summary": "A native disk-usage dashboard with a fast visual treemap.",
       "title": "Omarchy Disk Lens 0.4.1",
       "trust": {
         "marketplace": "verified",

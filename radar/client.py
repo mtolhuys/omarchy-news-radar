@@ -28,6 +28,7 @@ from .state import (
     save_feed,
     save_state,
     set_event_read,
+    set_events_read,
     toggle_saved,
     update_preferences,
     update_section_filter,
@@ -171,7 +172,12 @@ def set_event_read_state(
     events_by_id = {item["id"]: item for item in feed["events"]}
     event = events_by_id.get(event_id)
     if event is None:
-        raise ValidationError("event is not present in the validated cache")
+        state, _ = load_state(environment)
+        return response(
+            "stale-event",
+            message="The story changed during refresh; the current edition was left unchanged.",
+            state=state,
+        )
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
         updated = set_event_read(
@@ -182,6 +188,49 @@ def set_event_read_state(
         )
         saved = save_state(updated, environment)
     return response("ok", read=event_is_read(saved, event), state=saved)
+
+
+def mark_section_read_state(
+    section: str,
+    installed_json: str,
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Atomically mark unread stories in one persistently filtered section read."""
+
+    installed = _parse_installed_plugin_ids(installed_json)
+    if section not in CLIENT_SECTIONS:
+        raise ValidationError("unknown projection section")
+    feed = load_feed(environment, now=now)
+    if feed is None:
+        raise ValidationError("cannot change reading state without a valid cached feed")
+    current_event_ids = {item["id"] for item in feed["events"]}
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        section_events = _filtered_section_events(
+            feed,
+            state,
+            section,
+            installed,
+            now=now,
+        )
+        unread_events = [
+            event for event in section_events if not event_is_read(state, event)
+        ]
+        updated = set_events_read(
+            state,
+            unread_events,
+            True,
+            current_event_ids=current_event_ids,
+        )
+        saved = save_state(updated, environment)
+    return response(
+        "ok",
+        section=section,
+        markedRead=len(unread_events),
+        state=saved,
+    )
 
 
 def set_preferences(
@@ -294,19 +343,9 @@ def installed_plugins() -> dict[str, Any]:
     return response("ok", pluginIds=sorted(set(ids))[:500])
 
 
-def projection_model(
-    section: str,
-    installed_json: str,
-    query: str,
-    environment: Mapping[str, str] | None = None,
-    *,
-    now: datetime | None = None,
-    limit: int = 12,
-) -> dict[str, Any]:
-    if len(installed_json) > 256 * 1024 or len(query) > 100:
-        raise ValidationError("projection input exceeds its bound")
-    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 500:
-        raise ValidationError("projection limit is outside its bound")
+def _parse_installed_plugin_ids(installed_json: str) -> list[str]:
+    if len(installed_json) > 256 * 1024:
+        raise ValidationError("installed plugin IDs exceed their bound")
     try:
         installed_raw = json.loads(installed_json)
     except json.JSONDecodeError as exc:
@@ -318,6 +357,50 @@ def projection_model(
         if not isinstance(item, str) or not 1 <= len(item) <= 160:
             raise ValidationError("installed plugin ID is invalid")
         installed.append(item)
+    return installed
+
+
+def _filtered_section_events(
+    feed: Mapping[str, Any],
+    state: Mapping[str, Any],
+    section: str,
+    installed_plugin_ids: list[str],
+    *,
+    query: str = "",
+    now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    if section not in CLIENT_SECTIONS:
+        raise ValidationError("unknown projection section")
+    section_filter = state["preferences"]["sectionFilters"][section]
+    return apply_section_filter(
+        project_section(
+            feed,
+            section,
+            installed_plugin_ids=installed_plugin_ids,
+            saved_ids=set(state["saved"]),
+            query=query,
+        ),
+        section_filter,
+        read_through=state["readThrough"],
+        read_overrides=state["readOverrides"],
+        now=now,
+    )
+
+
+def projection_model(
+    section: str,
+    installed_json: str,
+    query: str,
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+    limit: int = 12,
+) -> dict[str, Any]:
+    if len(query) > 100:
+        raise ValidationError("projection input exceeds its bound")
+    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 500:
+        raise ValidationError("projection limit is outside its bound")
+    installed = _parse_installed_plugin_ids(installed_json)
     feed = load_feed(environment, now=now)
     state, _ = load_state(environment)
     names = CLIENT_SECTIONS
@@ -344,34 +427,23 @@ def projection_model(
     counts: dict[str, int] = {}
     unread_counts: dict[str, int] = {}
     for name in names:
-        section_events = project_section(
+        filtered_events = _filtered_section_events(
             feed,
+            state,
             name,
-            installed_plugin_ids=installed,
-            saved_ids=saved_ids,
-        )
-        filtered_events = apply_section_filter(
-            section_events,
-            filters[name],
-            read_through=state["readThrough"],
-            read_overrides=state["readOverrides"],
+            installed,
             now=now,
         )
         counts[name] = len(filtered_events)
         unread_counts[name] = sum(
             not event_is_read(state, event) for event in filtered_events
         )
-    events = apply_section_filter(
-        project_section(
-            feed,
-            section,
-            installed_plugin_ids=installed,
-            saved_ids=saved_ids,
-            query=query,
-        ),
-        current_filter,
-        read_through=state["readThrough"],
-        read_overrides=state["readOverrides"],
+    events = _filtered_section_events(
+        feed,
+        state,
+        section,
+        installed,
+        query=query,
         now=now,
     )
     total_events = len(events)

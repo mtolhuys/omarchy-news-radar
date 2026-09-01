@@ -14,6 +14,7 @@ from typing import Any, Sequence
 from .client import (
     installed_plugins,
     indicator_model,
+    mark_section_read_state,
     open_source,
     projection_model,
     purge_state,
@@ -55,6 +56,9 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     reading = commands.add_parser("set-read")
     reading.add_argument("--event-id", required=True)
     reading.add_argument("--read", required=True, choices=("true", "false"))
+    section_reading = commands.add_parser("mark-section-read")
+    section_reading.add_argument("--section", required=True)
+    section_reading.add_argument("--installed-json", default="[]")
     saved = commands.add_parser("toggle-saved")
     saved.add_argument("--event-id", required=True)
     preferences = commands.add_parser("set-preferences")
@@ -87,6 +91,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = ensure_window_floating()
         elif args.command == "set-read":
             result = set_event_read_state(args.event_id, args.read == "true")
+        elif args.command == "mark-section-read":
+            result = mark_section_read_state(args.section, args.installed_json)
         elif args.command == "toggle-saved":
             result = toggle_saved_state(args.event_id)
         elif args.command == "set-preferences":

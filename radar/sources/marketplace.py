@@ -214,10 +214,10 @@ def _base_event(
 def enrich_plugin_descriptions(
     events: Iterable[Mapping[str, Any]], marketplace: Mapping[str, Any] | None
 ) -> list[dict[str, Any]]:
-    """Refresh plugin-addition explanations from the validated catalog.
+    """Refresh plugin explanations from the validated catalog.
 
     Description edits remain presentation enrichment: they update an existing
-    addition story but never create or reorder an event.
+    plugin story but never create or reorder an event.
     """
 
     plugins = marketplace.get("plugins", {}) if marketplace is not None else {}
@@ -225,7 +225,12 @@ def enrich_plugin_descriptions(
     for raw_event in events:
         event = deepcopy(dict(raw_event))
         entity = event.get("entity")
-        if event.get("type") == "plugin-added" and isinstance(entity, Mapping):
+        if event.get("type") in {
+            "plugin-added",
+            "plugin-released",
+            "plugin-retired",
+            "plugin-verification-changed",
+        } and isinstance(entity, Mapping):
             plugin = plugins.get(entity.get("id"))
             if isinstance(plugin, Mapping):
                 event["summary"] = plugin["description"]
@@ -310,7 +315,7 @@ def diff_marketplace(
                     occurred_at=discovered_text,
                     discovered_at=discovered_at,
                     title=f"{plugin['name']} {new_version}",
-                    summary=f"The marketplace version changed from {old_version} to {new_version}.",
+                    summary=plugin["description"],
                 )
             )
         old_verification = str(old.get("verification") or "unknown")
@@ -324,7 +329,7 @@ def diff_marketplace(
                     occurred_at=discovered_text,
                     discovered_at=discovered_at,
                     title=f"{plugin['name']} verification changed",
-                    summary=f"Marketplace verification changed from {old_verification} to {plugin['verification']}; this is not a security audit.",
+                    summary=plugin["description"],
                 )
             )
         if plugin["retired"] and not bool(old.get("retired")):
@@ -337,7 +342,7 @@ def diff_marketplace(
                     occurred_at=discovered_text,
                     discovered_at=discovered_at,
                     title=f"{plugin['name']} retired",
-                    summary="The marketplace now marks this plugin as retired.",
+                    summary=plugin["description"],
                 )
             )
 
@@ -358,7 +363,7 @@ def diff_marketplace(
                     occurred_at=discovered_text,
                     discovered_at=discovered_at,
                     title=f"{retained['name']} left the marketplace",
-                    summary="The plugin was absent from two consecutive complete marketplace catalogs.",
+                    summary=retained["description"],
                 )
             )
         next_plugins[plugin_id] = retained

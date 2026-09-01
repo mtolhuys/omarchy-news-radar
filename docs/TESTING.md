@@ -24,7 +24,7 @@ make site
 - Required fields, closed enums, UTC timestamps, URL rules, text normalization, bounds, duplicate IDs, and unsupported schema versions.
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, exact enabled-plugin matching, front-page composition, and saved-item retention.
-- Explicit per-event read/unread overrides, migrated baseline semantics, indicator and section unread counts, unread-only filtering, read/unread reversal, pruning outside the current edition, and proof that close or refresh never bulk-marks unselected stories.
+- Explicit per-event read/unread overrides, migrated baseline semantics, indicator and section unread counts, unread-only filtering, read/unread reversal, bounded atomic filtered-section marking across unloaded pages, isolation from temporary search and nonmatching sections, pruning outside the current edition, and proof that close or refresh never bulk-marks unselected stories.
 - State-v1-through-v8-to-v9 migration, exact legacy/current object shapes, legacy-interest/profile validation and removal, preference/filter/read-override bounds, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, cross-process state-mutation serialization, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
@@ -38,7 +38,7 @@ make site
 
 - Explicit baseline with a maximum twelve-item recent/fourteen-day backfill and no historical event flood.
 - Added plugin, non-empty version change, unchanged version with repository activity, verification transition, explicit retirement, one-run absence, two-run confirmed absence, reappearance, multi-plugin repository, schema mismatch, and warnings.
-- Stars, views, commits, validation times, descriptions, tags, and preview changes do not create unsupported events; current validated catalog descriptions may refresh only an existing plugin-addition explanation.
+- Stars, views, commits, validation times, descriptions, tags, and preview changes do not create unsupported events; current validated catalog descriptions may refresh every existing plugin-event explanation without changing its identity or order.
 - Marketplace engagement schema/bounds, metric observation/source fields, release-asset download labels, repository stars, failed-source retention, and proof that metrics do not create or rank events.
 - A failed current snapshot preserves prior state and creates no mass retirement.
 
@@ -57,7 +57,7 @@ make site
 
 ### Client helper
 
-- Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, and no-cache failure.
+- Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, benign stale per-story writes across replacement, and no-cache failure.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
 - Indicator unread/health output, due-check age bounds, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
 - Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, published downgrade refusal, adoption of a newer published edition while local mode is active, and purge of imported assets.
@@ -119,7 +119,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
 8. `Tab` and `Shift+Tab` cycle the five sections; the Settings cogwheel shows fixed sources and only actionable filters, exposes no renaming/profile path or low-value explanatory filler, and independently resets filters. Down focuses Load more with an explicit Enter label; Enter expands it without another feed request before the next Down continues into the new page.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
-10. `j`, `k`, section keys, search, save, read/unread toggle, refresh, Tune, and source opening use rendered controls; the keyboard guide is visible below search, Refresh exposes `R` on hover, every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
+10. `j`, `k`, section keys, search, save, read/unread toggle, filtered-section **Mark all as read**, refresh, Tune, and source opening use rendered controls; the batch action includes unloaded matches but not nonmatching stories, the keyboard guide is visible below search, Refresh exposes `R` on hover, every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Exact enabled-plugin matching places fixture events in For You without transmitting private inputs; no manual-interest UI, CLI argument, or current state field exists.
 12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
 13. Normal close does not change unselected stories; an event introduced during the session remains unread next time, one rendered action persists only that event as read, and `u` makes it unread again.

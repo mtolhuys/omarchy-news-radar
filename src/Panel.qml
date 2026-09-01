@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.2+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.3+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -45,6 +45,7 @@ Item {
   property var unreadCounts: ({})
   property var pendingReadChanges: ({})
   property bool readChangeInFlight: false
+  property bool bulkReadInFlight: false
   property int sectionIndex: 0
   property int selectedIndex: 0
   property string feedStatus: "First use"
@@ -90,8 +91,12 @@ Item {
       ? preferences.sectionFilters[currentSection]
       : ({ period: "all", significance: "all", unreadOnly: false, imagesOnly: false, types: [] })
   readonly property int availableImageCount: countEditionImages(cachedFeed)
+  readonly property bool readMutationPending: readChangeInFlight
+    || Object.keys(pendingReadChanges).length > 0
+  readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight
   readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
-    || installedProc.running || stateProc.running || readChangeInFlight || openSourceProc.running || windowProc.running
+    || installedProc.running || stateMutationPending || readMutationPending
+    || openSourceProc.running || windowProc.running
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
@@ -130,6 +135,7 @@ Item {
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
       unreadCount: Number(root.unreadCounts[currentSection] || 0),
+      bulkReadInFlight: bulkReadInFlight,
       preferencesOpen: preferencesOpen,
       sectionSettingsOpen: sectionSettingsOpen,
       totalStories: totalStories,
@@ -166,6 +172,7 @@ Item {
   function maximizeGeometry() { return itemGeometry(maximizeButton, maximizeButton.visible) }
   function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
   function settingsGeometry() { return itemGeometry(settingsButton, settingsButton.visible) }
+  function markAllReadGeometry() { return itemGeometry(markAllReadButton, markAllReadButton.visible) }
   function refreshGeometry() { return itemGeometry(refreshButton, refreshButton.visible) }
   function loadMoreGeometry() {
     return itemGeometry(loadMoreButton, loadMoreButton.visible)
@@ -256,6 +263,7 @@ Item {
     openSourceProc.running = false
     windowProc.running = false
     refreshing = false
+    bulkReadInFlight = false
   }
 
   function close() {
@@ -456,7 +464,7 @@ Item {
   }
 
   function queueStoryRead(story, read) {
-    if (!story || !story.id) return
+    if (!story || !story.id || bulkReadInFlight) return
     var changes = Object.assign({}, pendingReadChanges)
     changes[String(story.id)] = read === true
     pendingReadChanges = changes
@@ -477,7 +485,7 @@ Item {
   }
 
   function toggleSelectedRead() {
-    if (!selectedStory || readChangeInFlight) return
+    if (!selectedStory || readMutationPending || bulkReadInFlight) return
     queueStoryRead(selectedStory, selectedStory.isUnread === true)
   }
 
@@ -498,12 +506,12 @@ Item {
   }
 
   function toggleSaved() {
-    if (!selectedStory || stateProc.running) return
+    if (!selectedStory || stateMutationPending) return
     startProcess(stateProc, ["toggle-saved", "--event-id", String(selectedStory.id)])
   }
 
   function setBooleanPreference(name, value) {
-    if (stateProc.running) return
+    if (stateMutationPending) return
     var argument = name === "barVisible" ? "--bar-visible" : "--images-visible"
     startProcess(stateProc, ["set-preferences", argument, value ? "true" : "false"])
   }
@@ -519,7 +527,7 @@ Item {
   }
 
   function updateFilter(name, value) {
-    if (stateProc.running) return
+    if (stateMutationPending) return
     var next = {
       period: currentFilter.period,
       significance: currentFilter.significance,
@@ -546,7 +554,7 @@ Item {
   }
 
   function resetFilter() {
-    if (stateProc.running) return
+    if (stateMutationPending) return
     resetSectionLimit(currentSection)
     startProcess(stateProc, [
       "set-section-filter",
@@ -558,6 +566,18 @@ Item {
         imagesOnly: false,
         types: []
       })
+    ])
+  }
+
+  function markCurrentSectionRead() {
+    if (!helperPath || refreshing || projectProc.running
+        || stateMutationPending || readMutationPending
+        || Number(unreadCounts[currentSection] || 0) <= 0) return
+    bulkReadInFlight = true
+    startProcess(stateProc, [
+      "mark-section-read",
+      "--section", currentSection,
+      "--installed-json", JSON.stringify(installedPluginIds)
     ])
   }
 
@@ -596,13 +616,20 @@ Item {
         var result = RadarModel.parseResponse(text)
         if (result.status === "ok") {
           root.userState = result.state || root.userState
+          if (result.markedRead !== undefined) {
+            var marked = Number(result.markedRead || 0)
+            root.statusDetail = marked > 0
+              ? "Marked " + marked + " stor" + (marked === 1 ? "y" : "ies") + " read in this section."
+              : "This filtered section has no unread stories."
+          }
           root.requestProjection()
         } else {
           root.feedStatus = "Failed"
-          root.statusDetail = result.message || "Saved state could not be changed."
+          root.statusDetail = result.message || "Local state could not be changed."
         }
       }
     }
+    onExited: root.bulkReadInFlight = false
   }
 
   Process {
@@ -612,6 +639,9 @@ Item {
       onStreamFinished: {
         var result = RadarModel.parseResponse(text)
         if (result.status === "ok") {
+          root.userState = result.state || root.userState
+          if (root.opened) root.requestProjection()
+        } else if (result.status === "stale-event") {
           root.userState = result.state || root.userState
           if (root.opened) root.requestProjection()
         } else if (root.opened) {
@@ -1029,12 +1059,28 @@ Item {
                   }
                 }
 
-                RadarButton {
-                  id: settingsButton
+                RowLayout {
+                  Layout.fillWidth: keySurface.narrow
                   Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
-                  label: "⚙ Settings"
-                  selected: root.filterSummary !== "No extra filters"
-                  onClicked: root.showSectionSettings()
+                  spacing: Style.spacing.controlGap
+
+                  RadarButton {
+                    id: markAllReadButton
+                    label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
+                    tooltipText: "Mark every unread story matching this section's Settings as read"
+                    enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
+                      && !root.refreshing && !projectProc.running
+                      && !root.stateMutationPending && !root.readMutationPending
+                    onClicked: root.markCurrentSectionRead()
+                  }
+
+                  RadarButton {
+                    id: settingsButton
+                    label: "⚙ Settings"
+                    selected: root.filterSummary !== "No extra filters"
+                    enabled: !root.stateMutationPending
+                    onClicked: root.showSectionSettings()
+                  }
                 }
               }
 
@@ -1061,7 +1107,7 @@ Item {
                   id: narrowReadButton
                   label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"
                   selected: !!root.selectedStory && !root.selectedStory.isUnread
-                  enabled: !!root.selectedStory && !root.readChangeInFlight
+                  enabled: !!root.selectedStory && !root.readMutationPending && !root.bulkReadInFlight
                   onClicked: root.toggleSelectedRead()
                 }
                 RadarButton {
@@ -1304,7 +1350,7 @@ Item {
                     id: readStateButton
                     label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"
                     selected: !!root.selectedStory && !root.selectedStory.isUnread
-                    enabled: !!root.selectedStory && !root.readChangeInFlight
+                    enabled: !!root.selectedStory && !root.readMutationPending && !root.bulkReadInFlight
                     onClicked: root.toggleSelectedRead()
                   }
                   RadarButton {
@@ -1332,7 +1378,7 @@ Item {
           Text {
             Layout.fillWidth: true
             text: (root.generatedAt ? "Edition " + root.generatedAt : "No edition generated")
-              + " · v0.1.2 · independent community project"
+              + " · v0.1.3 · independent community project"
             textFormat: Text.PlainText
             color: root.secondaryTextColor
             font.family: Style.font.family

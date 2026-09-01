@@ -107,10 +107,19 @@ class SourceTests(unittest.TestCase):
         )
         addition = next(item for item in events if item["type"] == "plugin-added")
         self.assertEqual("A small workspace note panel.", addition["summary"])
-        stale_addition = copy.deepcopy(addition)
-        stale_addition["summary"] = "Workspace Notes is now listed in the Omarchy plugin marketplace."
-        enriched = enrich_plugin_descriptions([stale_addition], current)
-        self.assertEqual("A small workspace note panel.", enriched[0]["summary"])
+        for event in events:
+            self.assertEqual(
+                current["plugins"][event["entity"]["id"]]["description"],
+                event["summary"],
+            )
+        stale_events = copy.deepcopy(events)
+        for event in stale_events:
+            event["summary"] = "Generic marketplace change text."
+        enriched = enrich_plugin_descriptions(stale_events, current)
+        self.assertEqual(
+            [current["plugins"][event["entity"]["id"]]["description"] for event in events],
+            [event["summary"] for event in enriched],
+        )
         noise_payload = self.payload("catalog-baseline.json")
         noise_payload["plugins"][0]["stars"] = 5000
         noise_payload["plugins"][0]["description"] = "Changed wording only."
@@ -143,6 +152,7 @@ class SourceTests(unittest.TestCase):
         retired = parse_marketplace(retired_payload)
         events, _ = diff_marketplace(previous, retired, discovered_at=CLOCK)
         self.assertEqual(["plugin-retired"], [event["type"] for event in events])
+        self.assertEqual(retired["plugins"][events[0]["entity"]["id"]]["description"], events[0]["summary"])
         self.assertEqual(3, len(retired["plugins"]))
         invalid = self.payload("catalog-baseline.json")
         invalid["stateSchemaVersion"] = 99

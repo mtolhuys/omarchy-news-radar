@@ -72,13 +72,17 @@ Each section exposes a cogwheel named **Settings**. Names, icons, order, backgro
 
 Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 
+Each section header exposes **Mark all as read** while that filtered section has unread stories. It marks every unread story matching the section's persistent Settings filters, including stories beyond the loaded page, through one atomic local-state update. Temporary search does not change the batch scope. The control is disabled while another reading/state mutation is pending and reports completion before the projection reloads.
+
 The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final visible story focuses the control and changes its label to the explicit Enter action, Up returns to the story list, and Enter expands the page while preserving the prior selection; the next Down reaches the first newly revealed story.
 
 ## Read and saved semantics
 
-Every projected story has one explicit local `isUnread` fact. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation deliberately selects that story and marks only its event ID read. Pointer hover and the default selection on open do not count as reading. The inspector action and `u` key toggle the selected story in either direction.
+Every projected story has one explicit local `isUnread` fact. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation deliberately selects that story and marks only its event ID read. Pointer hover and the default selection on open do not count as reading. The inspector action and `u` key toggle the selected story in either direction; **Mark all as read** is the one explicit batch action.
 
 Closing, refreshing, or merely rendering a feed never marks unrelated stories read. State v9 retains state v7's migrated `readThrough` baseline and bounded canonical `readOverrides` map for exact per-event decisions while removing the obsolete interests and section-profile fields. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
+
+If a queued per-story write becomes stale because refresh atomically replaced the edition first, the helper leaves current state unchanged and the panel quietly reprojects. That normal race never presents as a feed or storage failure.
 
 ## State model
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 — 2026-09-01
+
+- Add an atomic **Mark all as read** action for every unread story matching the current section's persistent Settings filters, including stories beyond the loaded page; temporary search never changes its scope.
+- Use each plugin's current validated marketplace description as the useful explanation for additions, releases, verification changes, and retirements instead of repeating the event headline.
+- Treat a per-story read write made stale by a concurrent feed replacement as a benign no-op instead of turning the whole reader into a failed state.
+
 ## 0.1.2 — 2026-09-01
 
 - Make keyboard pagination unmistakable: Down focuses **Load more**, its focused label says exactly what Enter will do, and the next Down continues into newly revealed stories.
