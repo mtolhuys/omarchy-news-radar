@@ -276,7 +276,7 @@ Item {
 
   function open(payloadJson) {
     closingFromHost = false
-    if (opened) {
+    if (opened && panelWindow.visible) {
       panelWindow.visible = true
       panelWindow.requestActivate()
       windowIntegrationStatus = "waiting"
@@ -334,7 +334,7 @@ Item {
 
   function dismiss() {
     if (shell && typeof shell.hide === "function") shell.hide(pluginId)
-    else close()
+    if (opened) close()
   }
 
   function handleEscape() {
