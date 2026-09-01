@@ -11,6 +11,7 @@ omarchy_host_test() {
   local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before
+  local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
   alttab_root="$(cd -- "$product_root/../hyprland-alttab" && pwd)"
@@ -247,8 +248,8 @@ omarchy_host_test() {
   wait_for_guest_state "shortcut opens the panel while its bar widget is hidden" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true'" || return 1
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar showPreferences ''" >/dev/null || return 1
-  wait_for_guest_state "Tune Your Radar is visibly open" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true'" || return 1
+  wait_for_guest_state "Tune Your Radar is visibly open and ready" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true and .helperRunning == false'" || return 1
   capture_console "success-news-radar-00-tune-hidden"
   radar_control_geometry tuneNewspaperGeometry || return 1
   tune_x="$control_x"
@@ -592,6 +593,29 @@ omarchy_host_test() {
   press 4
   wait_for_guest_state "dense projection starts with one bounded page" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .storyCount == 12 and .totalStories == 120 and .hasMoreStories == true'" || return 1
+  press home
+  wait_for_guest_state "Home positions the first dense story at the viewport top" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.selectedIndex == 0 and .fullyVisible == true and .topAligned == true and .scrolling == false'" || return 1
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    press down
+    sleep 0.25
+    viewport_state="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'")" || return 1
+    if jq -e '.selectedIndex > 0 and .fullyVisible == true and .topAligned == true and .scrolling == false' \
+      <<<"$viewport_state" >/dev/null; then
+      anchored=true
+      break
+    fi
+  done
+  [[ $anchored == true ]] || return 1
+  anchored_index="$(jq -r '.selectedIndex' <<<"$viewport_state")" || return 1
+  anchored_content_y="$(jq -r '.contentY' <<<"$viewport_state")" || return 1
+  printf '%s\n' "$viewport_state" >"$RUN_DIR/news-radar-scroll-anchor.json"
+  press down
+  wait_for_guest_state "Down continues normally below the top-anchored story without bottom overlap" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e --argjson priorIndex '$anchored_index' --argjson priorY '$anchored_content_y' '.selectedIndex == (\$priorIndex + 1) and .fullyVisible == true and .top > 0 and ((.contentY - \$priorY) | fabs) <= 0.5 and .scrolling == false'" || return 1
+  ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'" \
+    >"$RUN_DIR/news-radar-scroll-continue.json" || return 1
+  capture_console "success-news-radar-08-smooth-keyboard-scroll"
   radar_control_geometry refreshGeometry || return 1
   qmp_pointer_move "$viewport_width" "$viewport_height" "$control_x" "$control_y" || return 1
   wait_for_guest_state "Check for updates exposes its R shortcut on hover" 10 ssh_session \

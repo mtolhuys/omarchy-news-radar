@@ -271,3 +271,11 @@
 **Why:** Omarchy's `toggle` chooses hide whenever the plugin reports `opened`, even when its normal window is merely behind another application. The first activation therefore briefly raised the hosted window and then hid it. This was a semantic mismatch, not input duplication, so debouncing would conceal the wrong contract.
 
 **Consequence:** An exact mapped-window helper always focuses the validated compositor address and floats only when needed. One QML `Process` instance coalesces rapid helper starts. Disposable-lab acceptance must drive the actual newspaper with QMP pointer input and the live global binding with compositor-level QMP keys across closed, obscured, foreground, rapid-repeat, Alt+Tab, close, and reopen states, while proving exactly one Radar client and no competing helper remain.
+
+## D035 — Re-anchor keyboard selection at the viewport edge
+
+**Decision:** Down keeps ordinary row-by-row movement while the next story is fully visible. When the next story would cross or overlap the list viewport bottom, one short eased scroll places that complete selected row at the viewport top; following keys again move through the visible rows normally. Pointer scrolling remains a direct Flickable interaction.
+
+**Why:** `ListView.Contain` can park a variable-height selected row against the lower clip boundary, where spacing and the adjacent footer make the selection appear overlapped or incomplete. Continually pinning every selection to the top would remove useful visual context. Re-anchoring only at the crossing preserves context and creates a clear new reading block.
+
+**Consequence:** The viewport decision is based on delegate geometry before selection changes, and the animation targets the exact `ListView.Beginning` position. A read-only geometry probe lets disposable-lab acceptance prove that the crossing row is fully visible and top-aligned, and that the next Down changes selection without moving the viewport.

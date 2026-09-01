@@ -73,7 +73,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Useful empty, offline, partial-source, and invalid-feed states.
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
-- A compositor-managed resizable/maximizable window with ordinary task switching, summon-to-focus activation, an always-visible keyboard guide, explicit arrow-key/Enter finite load-more controls, a hover-visible **Check for updates** shortcut, animated check progress, and selected/secondary text contrast across maintained themes.
+- A compositor-managed resizable/maximizable window with ordinary task switching, summon-to-focus activation, an always-visible keyboard guide, smooth unclipped viewport-edge story selection, explicit arrow-key/Enter finite load-more controls, a hover-visible **Check for updates** shortcut, animated check progress, and selected/secondary text contrast across maintained themes.
 - Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, an explicit filtered-section **Mark all as read** action, and durable private reading state.
 - Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 

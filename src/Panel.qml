@@ -73,6 +73,14 @@ Item {
     "saved": 12
   })
 
+  NumberAnimation {
+    id: storyScrollAnimation
+    target: storyList
+    property: "contentY"
+    duration: 140
+    easing.type: Easing.OutCubic
+  }
+
   readonly property var preferences: userState && userState.preferences
     ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionFilters: ({}) })
 
@@ -191,6 +199,32 @@ Item {
   }
   function tuneNewspaperGeometry() {
     return itemGeometry(barPreferenceButton, preferencesOpen && barPreferenceButton.visible)
+  }
+
+  function storyViewportState() {
+    var row = selectedIndex >= 0 ? storyList.itemAtIndex(selectedIndex) : null
+    if (!row) {
+      return JSON.stringify({
+        selectedIndex: selectedIndex,
+        available: false,
+        fullyVisible: false,
+        topAligned: false,
+        scrolling: storyScrollAnimation.running
+      })
+    }
+    var top = row.y - storyList.contentY
+    var bottom = top + row.height
+    return JSON.stringify({
+      selectedIndex: selectedIndex,
+      available: true,
+      fullyVisible: top >= -0.5 && bottom <= storyList.height + 0.5,
+      topAligned: Math.abs(top) <= 1,
+      top: top,
+      bottom: bottom,
+      viewportHeight: storyList.height,
+      contentY: storyList.contentY,
+      scrolling: storyScrollAnimation.running
+    })
   }
 
   function startProcess(process, argumentsList) {
@@ -392,6 +426,7 @@ Item {
 
   function restoreStoryViewport() {
     if (!stories.length || selectedIndex < 0) return
+    storyScrollAnimation.stop()
     if (hasMoreStories && selectedIndex === stories.length - 1)
       storyList.positionViewAtEnd()
     else
@@ -474,8 +509,40 @@ Item {
       storyList.positionViewAtEnd()
       return
     }
-    selectStory(Math.max(0, Math.min(stories.length - 1, selectedIndex + delta)), true)
-    storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
+    storyScrollAnimation.stop()
+    var nextIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
+    var initialContentY = storyList.contentY
+    var anchorAtTop = delta > 0 && !storyFullyVisible(nextIndex)
+    selectStory(nextIndex, true)
+    Qt.callLater(function() {
+      if (root.selectedIndex !== nextIndex) return
+      animateStoryPosition(
+        nextIndex,
+        anchorAtTop ? ListView.Beginning : ListView.Contain,
+        initialContentY
+      )
+    })
+  }
+
+  function storyFullyVisible(index) {
+    var row = storyList.itemAtIndex(index)
+    if (!row) return false
+    var top = row.y - storyList.contentY
+    return top >= -0.5 && top + row.height <= storyList.height + 0.5
+  }
+
+  function animateStoryPosition(index, mode, initialContentY) {
+    storyScrollAnimation.stop()
+    storyList.positionViewAtIndex(index, mode)
+    var targetContentY = storyList.contentY
+    storyList.contentY = initialContentY
+    if (Math.abs(targetContentY - initialContentY) <= 0.5) {
+      storyList.contentY = targetContentY
+      return
+    }
+    storyScrollAnimation.from = initialContentY
+    storyScrollAnimation.to = targetContentY
+    storyScrollAnimation.start()
   }
 
   function selectStory(index, markRead) {
@@ -761,8 +828,15 @@ Item {
           searchField.forceActiveFocus(); event.accepted = true; return
         }
         if (event.key === Qt.Key_Home) {
-          if (root.stories.length) root.selectStory(0, true)
-          else root.selectedIndex = -1
+          if (root.stories.length) {
+            storyScrollAnimation.stop()
+            var initialContentY = storyList.contentY
+            root.selectStory(0, true)
+            Qt.callLater(function() {
+              if (root.selectedIndex === 0)
+                root.animateStoryPosition(0, ListView.Beginning, initialContentY)
+            })
+          } else root.selectedIndex = -1
           event.accepted = true; return
         }
         if (event.key === Qt.Key_End) {

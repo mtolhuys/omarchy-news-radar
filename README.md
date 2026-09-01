@@ -106,7 +106,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 
 - `1`–`5`: Front Page, For You, Core, Plugins, Saved.
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections.
-- `j` / `k` or arrow keys: move the selected story; Down from the final visible story focuses **Load more** and labels the Enter action, Up returns to the story list, and Enter loads the next page.
+- `j` / `k` or arrow keys: move the selected story. Crossing the viewport bottom smoothly anchors the newly selected row at the top, then normal row-by-row movement continues without bottom overlap. Down from the final loaded story focuses **Load more**, labels the Enter action, and Enter loads the next page.
 - `Home` / `End`: first or last story.
 - `u`: mark the selected story read or unread locally.
 - `/`: focus local search; `Escape` returns to panel navigation.

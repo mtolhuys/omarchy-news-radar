@@ -146,6 +146,8 @@ Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar l
 7. Preserve the cached model and surface a recoverable status if refresh fails.
 8. Prime keyboard focus only after the visible model exists.
 
+Dense-list keyboard movement reads the instantiated delegate geometry before changing selection. A next row already inside the viewport uses ordinary containment; a next row crossing the bottom resolves its exact `ListView.Beginning` offset and eases `contentY` there. This keeps variable-height rows fully visible without changing pointer flicking, pagination, projection, or read-state semantics.
+
 `close()` and component destruction must cancel or terminate owned network/model helpers, drain any already-requested per-story reading mutation, release the panel window, and leave no child process. Close never bulk-marks a session or edition. All cross-process state read/modify/write operations use one private kernel-backed lock so panel and bar mutations cannot overwrite each other.
 
 ## Client helper
