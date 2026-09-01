@@ -15,7 +15,7 @@ CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
 
 class ReleaseContractTests(unittest.TestCase):
     def test_schedule_has_four_off_peak_recovery_opportunities_per_hour(self) -> None:
-        workflow = (ROOT / ".github/workflows/publish.yml").read_text(encoding="utf-8")
+        workflow = (ROOT / ".github/workflows/publication.yml").read_text(encoding="utf-8")
         for minute in (8, 23, 38, 53):
             self.assertIn(f'cron: "{minute} * * * *"', workflow)
         self.assertNotIn('cron: "8,23,38,53 * * * *"', workflow)

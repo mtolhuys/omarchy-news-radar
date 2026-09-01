@@ -98,7 +98,7 @@ omarchy-news-radar/
 │   └── lab/
 └── .github/workflows/
     ├── test.yml
-    └── publish.yml
+    └── publication.yml
 ```
 
 Generated deployment output belongs in `dist/` and stays untracked. The source snapshot is intentionally tracked because it is the deterministic baseline for future diffs; it must contain public normalized source state only, not tokens, response headers containing secrets, or deployment evidence.

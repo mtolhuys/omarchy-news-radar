@@ -211,7 +211,7 @@ def validate_workflows() -> None:
                 fail(f"workflow action is not pinned to an immutable SHA: {reference}")
         if "contents: write" in text:
             fail(f"workflow requests repository write permission: {workflow.name}")
-    publish = (ROOT / ".github" / "workflows" / "publish.yml").read_text(encoding="utf-8")
+    publish = (ROOT / ".github" / "workflows" / "publication.yml").read_text(encoding="utf-8")
     for required in ("contents: read", "pages: write", "id-token: write", "state/source-snapshot.json"):
         if required not in publish:
             fail(f"publish workflow lacks required least-privilege/state contract: {required}")
