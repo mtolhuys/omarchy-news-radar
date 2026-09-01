@@ -80,6 +80,19 @@ def main() -> int:
     }
     write(output / "valid.json", feed)
 
+    background = copy.deepcopy(feed)
+    background["generatedAt"] = "2026-08-31T14:01:00Z"
+    background["window"]["through"] = "2026-08-31T14:01:00Z"
+    background_event = event_clone(
+        feed["events"][0],
+        0xBEE,
+        datetime(2026, 8, 31, 14, 1, tzinfo=timezone.utc),
+    )
+    background_event["discoveredAt"] = "2026-08-31T14:01:00Z"
+    background_event["title"] = "A background-only unread arrival"
+    background["events"].insert(0, background_event)
+    write(output / "background.json", background)
+
     stale = copy.deepcopy(feed)
     stale["generatedAt"] = "2026-08-31T14:01:00Z"
     stale["window"]["through"] = "2026-08-31T14:01:00Z"

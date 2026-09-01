@@ -58,9 +58,9 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Implement one theme-native `bar-widget` with a code-native newspaper, unread count, and source-health dot.
 2. Route left click to panel summon/raise, middle click to a bounded published-edition check, and right click to the local hide preference.
 3. Bind hidden state to exact invisible root geometry and watch local state so Tune in the panel can restore it.
-4. Use `refresh-if-due` on startup and every 30 minutes only while visible; use the shared atomic lock to contain multi-monitor overlap.
+4. Use `refresh-if-due` from a private last-attempt timestamp: 15 minutes after success, five minutes after failure, and only while visible. Dynamically schedule the exact next deadline, watch feed replacement for immediate unread/health propagation, and use the shared atomic lock to contain multi-monitor overlap.
 
-**Done when:** Source tests and Plugin Lab geometry/pointer evidence prove default placement, zero-gap hiding, restoration, no hidden refresh cadence, and clean unload.
+**Done when:** Source tests and Plugin Lab geometry/pointer evidence prove default placement, closed-panel background unread adoption, immediate badge propagation, bounded failure retry, zero-gap hiding, restoration, no hidden refresh cadence, and clean unload.
 
 ## Phase 5 — Build explicit shortcut setup
 

@@ -15,6 +15,7 @@ from radar.client import (
     projection_model,
     read_model,
     refresh,
+    refresh_if_due,
     set_event_read_state,
     set_preferences,
     set_section_filter,
@@ -22,7 +23,7 @@ from radar.client import (
 )
 from radar.errors import ValidationError
 from radar.io import atomic_write_json
-from radar.state import feed_path, load_feed
+from radar.state import feed_path, load_feed, update_check_path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
@@ -73,6 +74,45 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertIn("community-link", {event["type"] for event in front_page["events"]})
         with self.assertRaisesRegex(ValidationError, "unknown projection section"):
             projection_model("community", "[]", "", self.environment, now=CLOCK)
+
+    def test_background_update_cadence_adopts_unread_without_opening_panel(self) -> None:
+        initial = refresh(self.environment, now=CLOCK)
+        initial_unread = indicator_model(self.environment, now=CLOCK)["unread"]
+        stamp = json.loads(update_check_path(self.environment).read_text(encoding="utf-8"))
+        self.assertEqual({"schemaVersion": 1, "checkedAt": "2026-08-31T14:00:00Z", "outcome": "success"}, stamp)
+        self.assertEqual(0o600, update_check_path(self.environment).stat().st_mode & 0o777)
+
+        newer = copy.deepcopy(self.feed)
+        newer["generatedAt"] = "2026-08-31T14:15:00Z"
+        newer["window"]["through"] = "2026-08-31T14:15:00Z"
+        event = copy.deepcopy(newer["events"][0])
+        event["id"] = "evt_eeeeeeeeeeeeeeeeeeeeeeee"
+        event["occurredAt"] = "2026-08-31T14:15:00Z"
+        event["discoveredAt"] = "2026-08-31T14:15:00Z"
+        newer["events"].insert(0, event)
+        atomic_write_json(self.fixture, newer)
+
+        not_due = refresh_if_due(900, self.environment, now=CLOCK + timedelta(minutes=14, seconds=59))
+        self.assertEqual("not-due", not_due["status"])
+        self.assertEqual(1, not_due["nextCheckInSeconds"])
+        adopted = refresh_if_due(900, self.environment, now=CLOCK + timedelta(minutes=15))
+        self.assertEqual("updated", adopted["status"])
+        self.assertEqual(1, adopted["newStories"])
+        self.assertEqual(900, adopted["nextCheckInSeconds"])
+        self.assertEqual(initial_unread + 1, indicator_model(self.environment, now=CLOCK + timedelta(minutes=15))["unread"])
+
+        self.fixture.unlink()
+        failed = refresh_if_due(900, self.environment, now=CLOCK + timedelta(minutes=30))
+        self.assertEqual("offline", failed["status"])
+        self.assertEqual(300, failed["nextCheckInSeconds"])
+        retry_wait = refresh_if_due(900, self.environment, now=CLOCK + timedelta(minutes=34, seconds=59))
+        self.assertEqual("not-due", retry_wait["status"])
+        self.assertEqual(1, retry_wait["nextCheckInSeconds"])
+        atomic_write_json(self.fixture, newer)
+        retried = refresh_if_due(900, self.environment, now=CLOCK + timedelta(minutes=35))
+        self.assertEqual("no-change", retried["status"])
+        self.assertEqual(900, retried["nextCheckInSeconds"])
+        self.assertTrue(initial["editionChanged"])
 
     def test_stale_publication_is_not_reported_current_when_sources_are_old_successes(self) -> None:
         result = refresh(

@@ -21,6 +21,7 @@ MAX_SAVED = 250
 # part of the current state or projection contract.
 MAX_LEGACY_INTERESTS = 12
 MAX_DIAGNOSTIC_BYTES = 64 * 1024
+UPDATE_CHECK_MAX_BYTES = 1024
 FUTURE_SKEW_SECONDS = 300
 
 EVENT_TYPES = frozenset(

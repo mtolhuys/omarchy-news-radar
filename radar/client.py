@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import subprocess
 from datetime import datetime, timezone
@@ -26,9 +27,11 @@ from .state import (
     feed_cached_at,
     load_feed,
     load_state,
+    load_update_check,
     purge,
     save_feed,
     save_state,
+    save_update_check,
     set_event_read,
     set_events_read,
     toggle_saved,
@@ -113,6 +116,10 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
     local = local_edition_metadata(cached, env)
     try:
         with RefreshLock(env):
+            try:
+                save_update_check("failed", env, now=clock)
+            except (RadarError, OSError):
+                pass
             candidate = _test_feed(env)
             if candidate is None:
                 candidate = _fetch_feed()
@@ -150,6 +157,10 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
                 now=clock,
                 cached_at=feed_cached_at(env),
             )
+            try:
+                save_update_check("success", env, now=clock)
+            except (RadarError, OSError):
+                pass
         return response(
             status,
             feed=selected,
@@ -322,6 +333,7 @@ def indicator_model(
     feed = load_feed(environment, now=clock)
     state, quarantined = load_state(environment)
     preferences = state["preferences"]
+    update_check = load_update_check(environment, now=clock)
     if feed is None:
         return response(
             "first-use",
@@ -329,6 +341,7 @@ def indicator_model(
             health="empty",
             barVisible=preferences["barVisible"],
             quarantine=quarantined,
+            lastUpdateCheck=update_check,
         )
     unread = sum(not event_is_read(state, event) for event in feed["events"])
     timing = edition_timing(feed, now=clock, cached_at=feed_cached_at(environment))
@@ -342,6 +355,7 @@ def indicator_model(
         quarantine=quarantined,
         publisherStale=timing["publisherStale"],
         timing=timing,
+        lastUpdateCheck=update_check,
     )
 
 
@@ -355,16 +369,36 @@ def refresh_if_due(
         raise ValidationError("minimum refresh age is outside its bound")
     clock = now or datetime.now(timezone.utc)
     cached = load_feed(environment, now=clock)
-    if cached is not None:
-        age = (clock - parse_timestamp(cached["generatedAt"])).total_seconds()
-        if age < minimum_age:
+    update_check = load_update_check(environment, now=clock)
+    checked_at = (
+        parse_timestamp(update_check["checkedAt"])
+        if update_check
+        else feed_cached_at(environment)
+    )
+    due_after = (
+        min(minimum_age, 300)
+        if update_check and update_check["outcome"] == "failed"
+        else minimum_age
+    )
+    if checked_at is not None:
+        age = max(0.0, (clock - checked_at).total_seconds())
+        if age < due_after:
             return response(
                 "not-due",
                 feed=cached,
-                cachePreserved=True,
-                timing=edition_timing(cached, now=clock, cached_at=feed_cached_at(environment)),
+                cachePreserved=cached is not None,
+                timing=edition_timing(cached, now=clock, cached_at=feed_cached_at(environment))
+                if cached is not None else None,
+                nextCheckInSeconds=max(1, math.ceil(due_after - age)),
+                lastUpdateCheck=update_check,
             )
-    return refresh(environment, now=clock)
+    result = refresh(environment, now=clock)
+    result["nextCheckInSeconds"] = (
+        min(minimum_age, 300)
+        if result["status"] in {"offline", "invalid-feed"}
+        else minimum_age
+    )
+    return result
 
 
 def installed_plugins() -> dict[str, Any]:

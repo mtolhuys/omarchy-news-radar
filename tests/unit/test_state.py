@@ -8,12 +8,13 @@ import sys
 import tempfile
 import time
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
 from radar.constants import STATE_SCHEMA_VERSION
 from radar.errors import StorageError, ValidationError
+from radar.io import atomic_write_json
 from radar.state import (
     RefreshLock,
     StateLock,
@@ -22,12 +23,15 @@ from radar.state import (
     feed_path,
     load_feed,
     load_state,
+    load_update_check,
     purge,
     save_feed,
     save_state,
+    save_update_check,
     set_event_read,
     set_events_read,
     toggle_saved,
+    update_check_path,
     update_preferences,
     update_section_filter,
     user_state_path,
@@ -60,10 +64,61 @@ class StateTests(unittest.TestCase):
 
     def test_atomic_private_roundtrip_and_purge(self) -> None:
         save_feed(self.feed, self.environment, now=CLOCK)
+        save_update_check("success", self.environment, now=CLOCK)
         save_state(default_state(), self.environment)
         self.assertEqual(self.feed, load_feed(self.environment, now=CLOCK))
         self.assertEqual(0o600, feed_path(self.environment).stat().st_mode & 0o777)
-        self.assertEqual(["feed.json", "state.json"], purge(self.environment))
+        self.assertEqual(
+            ["feed.json", "state.json", "update-check.json"],
+            purge(self.environment),
+        )
+        self.assertFalse(update_check_path(self.environment).exists())
+
+    def test_update_check_metadata_is_bounded_private_and_fail_open(self) -> None:
+        saved = save_update_check("failed", self.environment, now=CLOCK)
+        self.assertEqual(
+            {
+                "schemaVersion": 1,
+                "checkedAt": "2026-08-31T14:00:00Z",
+                "outcome": "failed",
+            },
+            saved,
+        )
+        path = update_check_path(self.environment)
+        self.assertEqual(0o600, path.stat().st_mode & 0o777)
+        self.assertEqual(saved, load_update_check(self.environment, now=CLOCK))
+
+        for malformed in (
+            {
+                "schemaVersion": True,
+                "checkedAt": saved["checkedAt"],
+                "outcome": "success",
+            },
+            {"schemaVersion": 1, "checkedAt": saved["checkedAt"], "outcome": []},
+            {
+                "schemaVersion": 1,
+                "checkedAt": "2026-08-31T14:05:01Z",
+                "outcome": "success",
+            },
+        ):
+            atomic_write_json(path, malformed)
+            self.assertIsNone(load_update_check(self.environment, now=CLOCK))
+
+        path.unlink()
+        sentinel = path.with_name("sentinel.json")
+        sentinel.write_text("sentinel", encoding="utf-8")
+        path.symlink_to(sentinel)
+        self.assertIsNone(load_update_check(self.environment, now=CLOCK))
+        with self.assertRaisesRegex(StorageError, "symlinked"):
+            save_update_check("success", self.environment, now=CLOCK)
+        self.assertEqual("sentinel", sentinel.read_text(encoding="utf-8"))
+        path.unlink()
+
+        save_update_check("success", self.environment, now=CLOCK + timedelta(minutes=5))
+        self.assertIsNotNone(load_update_check(self.environment, now=CLOCK))
+
+        with self.assertRaisesRegex(ValidationError, "outcome"):
+            save_update_check("unknown", self.environment, now=CLOCK)
 
     def test_corrupt_state_is_quarantined_without_touching_feed(self) -> None:
         save_feed(self.feed, self.environment, now=CLOCK)

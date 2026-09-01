@@ -30,7 +30,7 @@
 
 **Why:** Cached-first loading provides speed without another singleton or system service. The visible status indicator needs a bounded due-checked timer, which can live in the bar widget already hosted by Omarchy.
 
-**Consequence:** Durable state lives in XDG files, every panel open restores it, and every panel close terminates panel-owned work. A visible newspaper checks locally every 30 seconds and requests a refresh only when at least 30 minutes old; hiding it stops refresh polling.
+**Consequence:** Durable state lives in XDG files, every panel open restores it, and every panel close terminates panel-owned work. A visible newspaper maintains one bounded due-checked timer in the existing shell process; hiding it stops network checks. D036 defines the corrected cadence and propagation contract.
 
 ## D005 — Pair the panel with an optional default-on bar newspaper
 
@@ -106,11 +106,11 @@
 
 ## D014 — No desktop notifications in version 1
 
-**Decision:** Radar is pull-based through the shortcut.
+**Decision:** Radar emits no desktop pop-up notifications. Reading remains pull-based through the panel, with an optional passive newspaper badge in the existing Omarchy bar.
 
 **Why:** The product exists to reduce noise, and it has no reliable version 1 definition of an urgent user interruption.
 
-**Consequence:** Source health, critical labels, and unread counts appear only when Radar is opened. Notifications require an explicit future product contract.
+**Consequence:** The bar may show unread count and source/publication health without interrupting the user; story details and critical labels remain in the panel. Sound, banners, notification-center entries, urgency, and notification actions require an explicit future product contract.
 
 ## D015 — Use one implementation repository, but keep the feed contract client-neutral
 
@@ -279,3 +279,11 @@
 **Why:** `ListView.Contain` can park a variable-height selected row against the lower clip boundary, where spacing and the adjacent footer make the selection appear overlapped or incomplete. Continually pinning every selection to the top would remove useful visual context. Re-anchoring only at the crossing preserves context and creates a clear new reading block.
 
 **Consequence:** The viewport decision uses settled selected-delegate geometry after layout, and the animation targets the exact `ListView.Beginning` position. The resulting top-row anchor is explicit panel state so an asynchronous read-state projection cannot return the selected row to the lower clip boundary. A read-only geometry probe lets disposable-lab acceptance prove that the crossing row is fully visible and top-aligned, and that the next Down changes selection without moving the viewport.
+
+## D036 — Discover unread editions without opening the panel
+
+**Decision:** The visible newspaper records the last real network-check attempt independently from feed age. A success schedules the next check after 15 minutes; a failure retries after five minutes. A watched atomic feed replacement immediately reloads the shared unread/health indicator, with a 30-second local-only fallback for missed filesystem events. The hidden newspaper performs no network checks.
+
+**Why:** Using the feed's `generatedAt` as a polling clock conflated publisher time with client activity. Starting the shell just before a 30-minute boundary could then wait another full repeating interval, approaching an hour before discovery. Watching only reading state also meant a newly adopted feed could leave the visible badge stale until its fallback poll. Opening the panel appeared to fix both because it forces an immediate check and projection.
+
+**Consequence:** Closed-panel users receive a passive unread badge within one bounded client interval after Pages serves the edition, and a successful feed adoption propagates without waiting for another timer. The private cadence file is strict, bounded, atomic, mode `0600`, purge-owned, and contains no reading data or identifiers; malformed or materially future values mean “due” rather than delaying checks. This does not add a daemon, hidden polling, desktop notification, telemetry, account, or personalized request.

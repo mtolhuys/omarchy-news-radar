@@ -136,7 +136,7 @@ Reviewed community links are an optional edition input, not a dedicated reader s
 - Right click: hide the newspaper immediately; its bar slot collapses to zero.
 - Restore: press `Super+Alt+N` (or use shell IPC), choose Tune, then set “Top-bar newspaper” to On.
 
-The visible widget checks the published edition only when the cache is at least 30 minutes old. Hiding it stops that cadence. There are no desktop notifications.
+The visible widget records network-check time separately from edition age. It checks at most once every 15 minutes after success, retries after five minutes when a check fails, and watches the private feed cache so the unread badge changes as soon as a valid edition is adopted—even while the panel is closed. Hiding the newspaper stops network checks. Radar deliberately uses this passive badge rather than desktop pop-up notifications.
 
 ## Local data and removal
 
@@ -144,6 +144,7 @@ Radar uses:
 
 ```text
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json
+${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json
 ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json

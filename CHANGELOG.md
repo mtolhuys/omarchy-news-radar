@@ -6,6 +6,7 @@
 - Make `R` and the middle-click action honestly **Check for updates**, reporting adopted new-story counts, no newer edition, stale publication, invalid data, and offline last-known-good results.
 - Use summon-to-focus activation for the bar, `Super+Alt+N`, and Apps entry so an already-open background Radar raises once and stays open; repeated foreground and rapid activation keep one deterministic window while explicit close routes remain unchanged.
 - Smooth dense-list keyboard navigation: when Down crosses the viewport bottom, the complete selected story eases to the top and subsequent movement continues normally without a clipped bottom row.
+- Make closed-panel unread discovery dependable: the visible newspaper now checks from a private last-attempt timestamp every 15 minutes after success, retries failures after five minutes, and watches adopted feed changes so its badge updates immediately without opening Radar.
 
 ## 0.1.3 — 2026-09-01
 

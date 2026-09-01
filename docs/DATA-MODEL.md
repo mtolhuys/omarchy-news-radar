@@ -207,6 +207,14 @@ State v9 retains strict filters and explicit read overrides but cannot represent
 
 The stable client sections are `front-page`, `for-you`, `core`, `plugins`, and `saved`; they own the fixed name, projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections.
 
+Background check cadence is disposable cache metadata, not reading state or feed metadata:
+
+```json
+{"schemaVersion":1,"checkedAt":"2026-08-31T14:05:00Z","outcome":"success"}
+```
+
+The strict bounded record distinguishes an actual client attempt from source `checkedAt`, collection `generatedAt`, artifact `publishedAt`, and feed-cache modification time. `outcome` is only `success` or `failed`; malformed or materially future records are treated as absent so they cannot postpone a check. It contains no event IDs, preferences, installation facts, or user identifiers.
+
 ## Schema evolution
 
 Additive optional fields may appear within schema version 1. A semantic change to required fields, enums, ID calculation, read-state meaning, or validation bounds requires a new schema version plus explicit migration and compatibility tests. The publisher may offer multiple feed versions during a documented transition; the client never guesses across versions.

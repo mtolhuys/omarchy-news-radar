@@ -4,7 +4,10 @@ on:
   schedule:
     # GitHub schedules are best effort and may be delayed or dropped. Four
     # off-peak opportunities bound the impact of one missed invocation.
-    - cron: "8,23,38,53 * * * *"
+    - cron: "8 * * * *"
+    - cron: "23 * * * *"
+    - cron: "38 * * * *"
+    - cron: "53 * * * *"
   workflow_dispatch:
     inputs:
       bootstrap_marketplace:

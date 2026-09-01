@@ -112,7 +112,7 @@ The image preference always reports whether the current edition actually contain
 
 The main manifest declares both `panel` and `bar-widget`; normal enablement places one newspaper in the right section. The widget shows a bounded unread count plus distinct publisher/source health. Left click summons or raises the same panel, middle click checks the published edition, and right click hides the widget after writing the local preference. Its hidden root is invisible, so Omarchy's module slot computes exact zero width and height rather than reserving a phantom gap.
 
-Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off control, so a hidden widget can be restored through the global shortcut or documented IPC. Hiding stops its due-checked network timer. It emits no desktop notification and keeps no separate companion lifecycle.
+Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off control, so a hidden widget can be restored through the global shortcut or documented IPC. While visible, it checks from the last real attempt every 15 minutes after success, retries a failure after five minutes, and watches the validated feed cache so unread and health change without opening the panel. Hiding stops its due-checked network timer. It emits no desktop pop-up notification and keeps no separate companion lifecycle.
 
 ## Visual language
 

@@ -38,7 +38,7 @@ Tests may inject a fixture file or loopback endpoint through an explicit test bo
 
 ## Local files
 
-Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename.
+Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename. The bounded `update-check.json` cache record contains only a schema version, UTC attempt timestamp, and `success`/`failed` outcome; malformed or materially future metadata is ignored so it can never postpone a check.
 
 The state parser accepts only its own bounded schema. Per-story read overrides are keyed only by validated event IDs, capped at the feed bound, and never transmitted. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
 
@@ -52,7 +52,7 @@ The optional application launcher uses one fixed desktop-entry name and one fixe
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
 
-At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private lock serializes every state read/modify/write transition across panel and bar helpers, preventing a concurrent read toggle, save, filter, or visibility change from overwriting another mutation. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private lock serializes every state read/modify/write transition across panel and bar helpers, preventing a concurrent read toggle, save, filter, or visibility change from overwriting another mutation. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` only while its local visibility preference is true: a successful attempt schedules 15 minutes later and a failed attempt schedules a five-minute retry. Hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
 ## Local checkout synchronization
 

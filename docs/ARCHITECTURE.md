@@ -131,7 +131,7 @@ Every public activation route uses the shell's `summon` operation. Closed means 
 
 The optional Apps-menu integration is a standard XDG desktop entry, not another plugin entry point. `news-radar-launcher install` copies that fixed entry and the existing SVG mark into their user XDG data locations and stores a private digest/path receipt. `make local-latest` invokes it as part of the owner's explicit desktop synchronization. Public plugin installation documents the same explicit command because current Omarchy plugin add/remove deliberately runs no repository hooks. Removal is therefore performed through the helper while the checkout still exists.
 
-Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar lifecycle, while the panel exposes the ordinary `open`/`close` contract. The bar widget loads only bounded local indicator state, runs a refresh only when the cache is due, and stops its refresh cadence while hidden. Neither entry point installs a service or daemon.
+Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar lifecycle, while the panel exposes the ordinary `open`/`close` contract. The bar widget loads only bounded local indicator state, runs a refresh from a separately recorded last-check deadline, and stops its refresh cadence while hidden. Neither entry point installs a service or daemon.
 
 ## Panel lifecycle
 
@@ -177,6 +177,7 @@ Follow XDG ownership:
 | Path | Purpose |
 | --- | --- |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json` | Private bounded timestamp/outcome for background check cadence; not publication freshness |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local display/filter/name preferences, and schema version |
@@ -235,6 +236,8 @@ The panel calls the maintained shell IPC and treats the returned plugin IDs as l
 ## Optional bar indicator
 
 The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
+
+While visible, one single-shot timer checks the fixed feed at most every 15 minutes after a successful attempt and retries a failed attempt after five minutes. Cadence comes from private `update-check.json`, not the edition's collection timestamp, so loading the shell shortly before an edition becomes old cannot defer the next check for another full interval. A feed-file watch reloads the canonical unread/health indicator immediately after either entry point adopts a valid edition; a 30-second local-only fallback covers missed filesystem events. The panel does not need to be opened. This is a passive bar indicator, not a desktop notification service.
 
 ## Failure containment
 

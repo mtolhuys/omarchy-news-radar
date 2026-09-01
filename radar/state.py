@@ -7,26 +7,29 @@ import fcntl
 import os
 import stat
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .constants import (
     CLIENT_SECTIONS,
     FEED_MAX_BYTES,
+    FUTURE_SKEW_SECONDS,
     MAX_READ_OVERRIDES,
     MAX_SAVED,
     STATE_SCHEMA_VERSION,
+    UPDATE_CHECK_MAX_BYTES,
 )
 from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
 from .validation import (
     format_timestamp,
     migrate_section_profile_v4,
+    parse_timestamp,
     require_exact_keys,
     require_mapping,
-    validate_feed,
     validate_event,
+    validate_feed,
     validate_legacy_interests,
     validate_section_filter,
     validate_section_profile,
@@ -135,6 +138,63 @@ def feed_cached_at(environment: Mapping[str, str] | None = None) -> datetime | N
     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
         raise StorageError("cached feed is not an owned regular file")
     return datetime.fromtimestamp(info.st_mtime, tz=timezone.utc)
+
+
+def update_check_path(environment: Mapping[str, str] | None = None) -> Path:
+    return cache_root(environment) / "update-check.json"
+
+
+def save_update_check(
+    outcome: str,
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Record one bounded network-check attempt independently from feed age."""
+
+    if outcome not in {"success", "failed"}:
+        raise ValidationError("update-check outcome is invalid")
+    value = {
+        "schemaVersion": 1,
+        "checkedAt": format_timestamp(now or datetime.now(timezone.utc)),
+        "outcome": outcome,
+    }
+    atomic_write_json(update_check_path(environment), value)
+    return value
+
+
+def load_update_check(
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any] | None:
+    """Read ephemeral cadence metadata; malformed owned metadata is simply due."""
+
+    path = update_check_path(environment)
+    try:
+        raw = read_json_bounded(path, UPDATE_CHECK_MAX_BYTES)
+        value = require_mapping(raw, "update-check metadata")
+        require_exact_keys(
+            value,
+            {"schemaVersion", "checkedAt", "outcome"},
+            "update-check metadata",
+        )
+        if (
+            type(value["schemaVersion"]) is not int
+            or value["schemaVersion"] != 1
+            or not isinstance(value["outcome"], str)
+            or value["outcome"] not in {"success", "failed"}
+        ):
+            raise ValidationError("update-check metadata is invalid")
+        checked_at = parse_timestamp(value["checkedAt"], "update-check checkedAt")
+        clock = now or datetime.now(timezone.utc)
+        if checked_at > clock + timedelta(seconds=FUTURE_SKEW_SECONDS):
+            raise ValidationError("update-check metadata is from the future")
+        return dict(value)
+    except FileNotFoundError:
+        return None
+    except (StorageError, ValidationError):
+        return None
 
 
 def _quarantine(path: Path) -> Path:
@@ -462,6 +522,7 @@ def purge(environment: Mapping[str, str] | None = None) -> list[str]:
     refuse_symlink(state_directory)
     candidates = [
         feed_path(environment),
+        update_check_path(environment),
         cache_root(environment) / "local-edition.json",
         user_state_path(environment),
         diagnostic_path(environment),

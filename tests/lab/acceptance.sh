@@ -11,6 +11,7 @@ omarchy_host_test() {
   local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before
+  local initial_bar_unread background_bar_unread
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -209,11 +210,47 @@ omarchy_host_test() {
   [[ $bar_x =~ ^[0-9]+$ && $bar_y =~ ^[0-9]+$ ]] || return 1
   wait_for_guest_state "startup refresh cached the valid edition" 15 ssh_session \
     "jq -e '.generatedAt == \"2026-08-31T14:00:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" || return 1
-  ssh_guest "cp /tmp/news-radar-fixtures/later.json /tmp/news-radar-fixtures/current.json"
+  initial_bar_unread="$(ssh_session "$helper indicator | jq -r '.unread'")" || return 1
+  [[ $initial_bar_unread =~ ^[0-9]+$ ]] || return 1
+  ssh_guest "cp /tmp/news-radar-fixtures/background.json /tmp/news-radar-fixtures/current.json"
+  ssh_session "mkdir -p \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar\" && \
+    printf '%s\n' '{\"schemaVersion\":1,\"checkedAt\":\"1970-01-01T00:00:00Z\",\"outcome\":\"failed\"}' \
+      >\"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/update-check.json\" && \
+    chmod 600 \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/update-check.json\" && \
+    omarchy-restart-shell"
+  background_bar_unread=$((initial_bar_unread + 1))
+  wait_for_guest_state "closed-panel background check adopts the new edition and unread count" 20 ssh_session \
+    "omarchy-shell shell ping >/dev/null && \
+     hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && \
+     jq -e '.generatedAt == \"2026-08-31T14:01:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\" && \
+     jq -e '.outcome == \"success\" and .checkedAt != \"1970-01-01T00:00:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/update-check.json\" && \
+     test \"\$($helper indicator | jq -r '.unread')\" = '$background_bar_unread'" || {
+       ssh_session "$helper indicator" >"$RUN_DIR/news-radar-background-indicator.json" 2>&1 || true
+       ssh_session "cat \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" \
+         >"$RUN_DIR/news-radar-background-feed.json" 2>&1 || true
+       ssh_session "cat \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/update-check.json\"" \
+         >"$RUN_DIR/news-radar-background-check.json" 2>&1 || true
+       ssh_session "pgrep -a -u \"\$USER\" -f 'news-radar-client' || true" \
+         >"$RUN_DIR/news-radar-background-processes.txt" 2>&1 || true
+       ssh_session "hyprctl -j clients" >"$RUN_DIR/news-radar-background-clients.json" 2>&1 || true
+       ssh_session "curl -fsS http://127.0.0.1:18765/current.json | jq '{generatedAt,events:(.events | length)}'" \
+         >"$RUN_DIR/news-radar-background-origin.json" 2>&1 || true
+       ssh_session "journalctl --user --since '@$start_epoch' --no-pager" \
+         >"$RUN_DIR/news-radar-background-journal.log" 2>&1 || true
+       return 1
+     }
+  wait_for_guest_state "closed-panel background helpers exit after badge propagation" 10 ssh_session \
+    "! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
+  radar_bar_coordinates || return 1
+  qmp_pointer_move "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" || return 1
+  sleep 1
+  capture_console "success-news-radar-00-background-unread"
+  qmp_pointer_move "$viewport_width" "$viewport_height" 4 4 || return 1
+  ssh_guest "cp /tmp/news-radar-fixtures/recovered.json /tmp/news-radar-fixtures/current.json"
   radar_bar_coordinates || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" middle
   wait_for_guest_state "middle click performs one bounded refresh" 15 ssh_session \
-    "jq -e '.generatedAt == \"2026-08-31T14:03:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" || return 1
+    "jq -e '.generatedAt == \"2026-08-31T14:02:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" >/dev/null || return 1
   radar_bar_coordinates || return 1
@@ -772,5 +809,5 @@ omarchy_host_test() {
   ssh_guest "systemctl --user stop omarchy-news-radar-fixture.service 2>/dev/null || true"
   capture_console "success-news-radar-14-shortcut-removed-editor-intact"
 
-  printf 'ok - exact candidate passed app launcher, summon/focus, newspaper, images, update-check progress, shortcut, cached-first, keyboard pagination, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
+  printf 'ok - exact candidate passed app launcher, summon/focus, background unread discovery, newspaper, images, update-check progress, shortcut, cached-first, keyboard pagination, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
 }

@@ -33,6 +33,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('"--bar-visible", "false"', widget)
         self.assertIn("Qt.RightButton", widget)
         self.assertIn("refresh-if-due", widget)
+        self.assertIn('path: root.cacheBase + "/omarchy-news-radar/feed.json"', widget)
+        self.assertIn("readonly property int refreshMinimumAgeSeconds: 15 * 60", widget)
+        self.assertIn("function scheduleRefresh(result)", widget)
+        self.assertIn("nextCheckInSeconds", widget)
 
     def test_panel_uses_plain_text_and_structural_process_arguments(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

@@ -215,7 +215,7 @@ def validate_workflows() -> None:
     for required in ("contents: read", "pages: write", "id-token: write", "state/source-snapshot.json"):
         if required not in publish:
             fail(f"publish workflow lacks required least-privilege/state contract: {required}")
-    if 'cron: "8,23,38,53 * * * *"' not in publish:
+    if any(f'cron: "{minute} * * * *"' not in publish for minute in (8, 23, 38, 53)):
         fail("publish workflow lacks the four-times-hourly off-peak recovery schedule")
 
 

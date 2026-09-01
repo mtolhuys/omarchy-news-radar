@@ -14,6 +14,8 @@ BarWidget {
   readonly property string helperPath: widgetMetadata && widgetMetadata.sourceDir
     ? String(widgetMetadata.sourceDir) + "/bin/news-radar-client" : ""
   readonly property string stateBase: Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")
+  readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")
+  readonly property int refreshMinimumAgeSeconds: 15 * 60
   // Start collapsed until the validated local preference arrives. This avoids
   // a one-frame flash for users who previously hid the indicator; state defaults
   // to visible on first use.
@@ -40,7 +42,23 @@ BarWidget {
   }
 
   function refreshIfDue() {
-    if (barVisible) runHelper(refreshProc, ["refresh-if-due", "--minimum-age", "1800"])
+    if (barVisible) runHelper(refreshProc, [
+      "refresh-if-due", "--minimum-age", String(refreshMinimumAgeSeconds)
+    ])
+  }
+
+  function scheduleRefresh(result) {
+    if (!barVisible) {
+      refreshTimer.stop()
+      return
+    }
+    var seconds = Number(result && result.nextCheckInSeconds
+      ? result.nextCheckInSeconds : refreshMinimumAgeSeconds)
+    if (!isFinite(seconds)) seconds = refreshMinimumAgeSeconds
+    refreshTimer.interval = Math.round(
+      Math.max(5, Math.min(refreshMinimumAgeSeconds, seconds)) * 1000
+    )
+    refreshTimer.restart()
   }
 
   function hideIndicator() {
@@ -50,12 +68,20 @@ BarWidget {
   onHelperPathChanged: {
     if (!helperPath) return
     updateIndicator()
-    firstRefresh.restart()
+    refreshTimer.interval = 1800
+    refreshTimer.restart()
   }
 
   Component.onCompleted: {
     updateIndicator()
-    firstRefresh.start()
+    refreshTimer.start()
+  }
+
+  onBarVisibleChanged: {
+    if (barVisible) {
+      refreshTimer.interval = 1800
+      refreshTimer.restart()
+    } else refreshTimer.stop()
   }
 
   Process {
@@ -87,7 +113,10 @@ BarWidget {
 
   Process {
     id: refreshProc
-    stdout: StdioCollector { waitForEnd: true }
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.scheduleRefresh(RadarModel.parseResponse(text))
+    }
     onExited: function() { root.updateIndicator() }
   }
 
@@ -102,8 +131,19 @@ BarWidget {
     }
   }
 
+  FileView {
+    id: feedWatcher
+    path: root.cacheBase + "/omarchy-news-radar/feed.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: {
+      reload()
+      root.updateIndicator()
+    }
+  }
+
   Timer {
-    id: firstRefresh
+    id: refreshTimer
     interval: 1800
     onTriggered: root.refreshIfDue()
   }
@@ -113,13 +153,6 @@ BarWidget {
     repeat: true
     running: true
     onTriggered: root.updateIndicator()
-  }
-
-  Timer {
-    interval: 30 * 60 * 1000
-    repeat: true
-    running: root.barVisible
-    onTriggered: root.refreshIfDue()
   }
 
   BarIconButton {
