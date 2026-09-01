@@ -4,7 +4,7 @@ import copy
 import json
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -50,7 +50,14 @@ class ClientIntegrationTests(unittest.TestCase):
     def test_first_use_refresh_cached_read_and_private_projection(self) -> None:
         self.assertEqual("first-use", read_model(self.environment, now=CLOCK)["status"])
         result = refresh(self.environment, now=CLOCK)
-        self.assertEqual("current", result["status"])
+        self.assertEqual("updated", result["status"])
+        self.assertEqual(len(self.feed["events"]), result["newStories"])
+        self.assertTrue(result["editionChanged"])
+        unchanged = refresh(self.environment, now=CLOCK)
+        self.assertEqual("no-change", unchanged["status"])
+        self.assertEqual(0, unchanged["newStories"])
+        self.assertFalse(unchanged["editionChanged"])
+        self.assertIn("No newer edition", unchanged["message"])
         self.assertEqual("cached", read_model(self.environment, now=CLOCK)["status"])
         projected = projection_model(
             "for-you",
@@ -67,8 +74,36 @@ class ClientIntegrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "unknown projection section"):
             projection_model("community", "[]", "", self.environment, now=CLOCK)
 
+    def test_stale_publication_is_not_reported_current_when_sources_are_old_successes(self) -> None:
+        result = refresh(
+            self.environment,
+            now=CLOCK + timedelta(minutes=90, seconds=1),
+        )
+        self.assertEqual("stale-publication", result["status"])
+        self.assertTrue(result["timing"]["publisherStale"])
+        self.assertTrue(all(source["status"] == "current" for source in result["feed"]["sources"]))
+        self.assertIn("Publisher lag", result["message"])
+
+    def test_newer_edition_reports_only_newly_adopted_story_ids(self) -> None:
+        first = refresh(self.environment, now=CLOCK)
+        self.assertEqual("updated", first["status"])
+        newer = copy.deepcopy(self.feed)
+        newer["generatedAt"] = "2026-08-31T14:01:00Z"
+        newer["window"]["through"] = "2026-08-31T14:01:00Z"
+        event = copy.deepcopy(newer["events"][0])
+        event["id"] = "evt_ffffffffffffffffffffffff"
+        event["occurredAt"] = "2026-08-31T14:01:00Z"
+        event["discoveredAt"] = "2026-08-31T14:01:00Z"
+        newer["events"].insert(0, event)
+        atomic_write_json(self.fixture, newer)
+
+        result = refresh(self.environment, now=CLOCK + timedelta(minutes=1))
+        self.assertEqual("updated", result["status"])
+        self.assertEqual(1, result["newStories"])
+        self.assertIn("1 new story", result["message"])
+
     def test_invalid_candidate_preserves_last_known_good(self) -> None:
-        self.assertEqual("current", refresh(self.environment, now=CLOCK)["status"])
+        self.assertEqual("updated", refresh(self.environment, now=CLOCK)["status"])
         good = feed_path(self.environment).read_bytes()
         invalid = copy.deepcopy(self.feed)
         invalid["schemaVersion"] = 99
@@ -79,7 +114,7 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertEqual(good, feed_path(self.environment).read_bytes())
 
     def test_truncated_and_oversized_candidates_do_not_replace_cache(self) -> None:
-        self.assertEqual("current", refresh(self.environment, now=CLOCK)["status"])
+        self.assertEqual("updated", refresh(self.environment, now=CLOCK)["status"])
         self.fixture.write_text("{", encoding="utf-8")
         self.assertEqual("invalid-feed", refresh(self.environment, now=CLOCK)["status"])
         self.fixture.write_bytes(b"x" * (2 * 1024 * 1024 + 1))

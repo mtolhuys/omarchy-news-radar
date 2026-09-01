@@ -27,7 +27,8 @@ from .validation import validate_feed
 
 LOCAL_EDITION_SCHEMA_VERSION = 1
 BUILD_INFO_PATTERN = re.compile(
-    r"\AsourceRevision=([0-9a-f]{40})\neventsSha256=([0-9a-f]{64})\n\Z"
+    r"\AsourceRevision=([0-9a-f]{40})\neventsSha256=([0-9a-f]{64})\n"
+    r"(?:publishedAt=([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)\n)?\Z"
 )
 CONTENT_TYPES = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
 
@@ -36,7 +37,7 @@ def marker_path(environment: Mapping[str, str] | None = None) -> Path:
     return cache_root(environment) / "local-edition.json"
 
 
-def _read_build_info(edition: Path) -> tuple[str, str]:
+def _read_build_info(edition: Path) -> tuple[str, str, str | None]:
     try:
         text = read_bytes_bounded(edition / "BUILD-INFO.txt", 512).decode("ascii")
     except UnicodeDecodeError as exc:
@@ -44,7 +45,7 @@ def _read_build_info(edition: Path) -> tuple[str, str]:
     match = BUILD_INFO_PATTERN.fullmatch(text)
     if match is None:
         raise ValidationError("local edition build information is invalid")
-    return match.group(1), match.group(2)
+    return match.group(1), match.group(2), match.group(3)
 
 
 def _validate_edition_root(edition: Path) -> Path:
@@ -73,10 +74,12 @@ def import_local_edition(
     raw = read_json_bounded(root / "events.json", FEED_MAX_BYTES)
     feed = validate_feed(raw, now=clock, public_only=True)
     canonical = canonical_json_bytes(feed)
-    revision, declared_digest = _read_build_info(root)
+    revision, declared_digest, declared_publication = _read_build_info(root)
     actual_digest = hashlib.sha256(canonical).hexdigest()
     if declared_digest != actual_digest:
         raise ValidationError("local edition feed digest does not match its build information")
+    if declared_publication is not None and declared_publication != feed.get("publishedAt"):
+        raise ValidationError("local edition publication time does not match its build information")
 
     private_cache = cache_root(environment)
     ensure_private_directory(private_cache)

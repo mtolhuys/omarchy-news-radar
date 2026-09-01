@@ -72,13 +72,14 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         import_local_edition(self.edition, self.environment, now=NOW)
         newer = json.loads(json.dumps(self.published_feed))
         newer["generatedAt"] = "2026-08-31T14:04:00Z"
+        newer["publishedAt"] = "2026-08-31T14:04:00Z"
         newer["window"]["through"] = "2026-08-31T14:04:00Z"
 
         with mock.patch("radar.client._fetch_feed", return_value=newer) as fetch:
             current = refresh(self.environment, now=NOW)
 
         fetch.assert_called_once()
-        self.assertEqual("current", current["status"])
+        self.assertEqual("updated", current["status"])
         self.assertEqual("published", current["editionMode"])
         self.assertEqual("published", read_model(self.environment, now=NOW)["editionMode"])
         self.assertEqual("2026-08-31T14:04:00Z", current["feed"]["generatedAt"])
@@ -92,6 +93,18 @@ class LocalEditionIntegrationTests(unittest.TestCase):
             import_local_edition(self.edition, self.environment, now=NOW)
         self.assertEqual(before, feed_path(self.environment).read_bytes())
         self.assertTrue(marker_path(self.environment).is_file())
+
+    def test_build_publication_metadata_must_match_the_feed(self) -> None:
+        build_info = self.edition / "BUILD-INFO.txt"
+        build_info.write_text(
+            build_info.read_text(encoding="utf-8").replace(
+                "publishedAt=2026-08-31T14:00:00Z",
+                "publishedAt=2026-08-31T14:01:00Z",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValidationError, "publication time"):
+            import_local_edition(self.edition, self.environment, now=NOW)
 
     def test_marker_mismatch_falls_back_to_the_published_refresh_boundary(self) -> None:
         import_local_edition(self.edition, self.environment, now=NOW)

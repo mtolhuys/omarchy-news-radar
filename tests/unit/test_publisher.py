@@ -60,6 +60,12 @@ class PublisherTests(unittest.TestCase):
                 if path.is_file()
             }
             self.assertEqual(expected, actual)
+            published = json.loads((destination / "events.json").read_text(encoding="utf-8"))
+            self.assertEqual(published["generatedAt"], published["publishedAt"])
+            self.assertIn(
+                f"publishedAt={published['publishedAt']}\n",
+                (destination / "BUILD-INFO.txt").read_text(encoding="utf-8"),
+            )
 
     def test_allowlisted_images_are_mirrored_and_unsafe_media_is_omitted(self) -> None:
         png = base64.b64decode(

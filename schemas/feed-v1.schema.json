@@ -13,6 +13,9 @@
     "generatedAt": {
       "$ref": "#/$defs/timestamp"
     },
+    "publishedAt": {
+      "$ref": "#/$defs/timestamp"
+    },
     "leadEventId": {
       "$ref": "#/$defs/eventId"
     },

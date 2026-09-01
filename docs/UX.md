@@ -15,10 +15,10 @@ Shortcut installation is a separate, explicit setup action after plugin enableme
 The plugin must remain openable through documented shell IPC even without the shortcut:
 
 ```bash
-omarchy-shell shell toggle io.github.mtolhuys.news-radar
+omarchy-shell shell summon io.github.mtolhuys.news-radar
 ```
 
-An optional XDG application entry exposes **Omarchy News Radar** with its bundled newspaper mark in Omarchy's normal Apps menu. Its action summons the same panel through shell IPC. Installation and removal are explicit because the current third-party plugin lifecycle runs no hooks; the helper may mutate only its receipt-backed desktop entry and icon.
+An optional XDG application entry exposes **Omarchy News Radar** with its bundled newspaper mark in Omarchy's normal Apps menu. Its action summons the same panel through shell IPC. The shortcut, Apps row, and newspaper all share one state model: closed opens and focuses; open but obscured raises and focuses; already foreground stays open and focused. Repeated activation is never a close gesture. `Escape`, `q`, the close control, and window-manager close are the consistent close routes. Installation and removal are explicit because the current third-party plugin lifecycle runs no hooks; the helper may mutate only its receipt-backed desktop entry and icon.
 
 ## Surface
 
@@ -33,7 +33,7 @@ The panel has four stable visual zones:
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
-A compact keyboard guide sits directly below search instead of at the bottom of the section rail. It includes section, story, source, save, read-state, pagination, and Refresh keys. The Refresh control also repeats `R` on hover. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
+A compact keyboard guide sits directly below search instead of at the bottom of the section rail. It includes section, story, source, save, read-state, pagination, and update-check keys. The **Check for updates** control also repeats `R` on hover. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
 
 ## Front page composition
 
@@ -51,7 +51,7 @@ All behavior must remain reachable without a pointer:
 
 | Key | Action |
 | --- | --- |
-| `Super+Alt+N` | Toggle Radar globally after explicit conflict-free setup |
+| `Super+Alt+N` | Summon or raise Radar after explicit conflict-free setup |
 | `Escape` or `q` | Close Radar |
 | `j` / `Down` | Select next story |
 | `k` / `Up` | Select previous story |
@@ -59,7 +59,7 @@ All behavior must remain reachable without a pointer:
 | `s` | Save or unsave selected story locally |
 | `u` | Mark the selected story read or unread locally |
 | `/` | Focus search/filter input |
-| `r` | Refresh the feed; the Refresh button repeats this shortcut on hover |
+| `r` | Check the published edition; **Check for updates** repeats this shortcut on hover |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
 | `1`–`5` | Switch between the five primary sections |
 | `Home` / `End` | Select first or last story in the current section |
@@ -90,9 +90,11 @@ If a queued per-story write becomes stale because refresh atomically replaced th
 | --- | --- | --- |
 | First use | Explains the empty cache and starts one refresh | Wait or retry |
 | Cached | Shows last-known-good edition immediately with age | Background refresh |
-| Refreshing | Keeps cached content readable and shows a restrained animated indicator on Refresh | Wait or cancel by closing |
-| Current | Shows successful generation time and complete available sources | Read normally |
-| Offline | Keeps cache, labels failed refresh and cache age | Retry |
+| Checking | Keeps cached content readable and shows a restrained animated indicator on **Check for updates** | Wait or cancel by closing |
+| Updated | Adopts the newer edition atomically and reports its exact new-story count | Read normally |
+| No newer edition | Reports the artifact publication age without implying a source crawl | Read normally |
+| Publisher stale | Shows publisher lag when artifact publication exceeds 90 minutes, even if old source checks succeeded | Wait for publication or use an intentional local edition |
+| Offline | Keeps cache and labels the failed check, artifact age, and local cache age | Retry |
 | Source partial | Keeps valid events and names unavailable source adapters | Retry later |
 | Empty | Valid feed contains no events in the selected section | Change section or filters |
 | Filtered empty | Current filters match nothing | Clear filters |
@@ -108,7 +110,7 @@ The image preference always reports whether the current edition actually contain
 
 ## Top-bar newspaper
 
-The main manifest declares both `panel` and `bar-widget`; normal enablement places one newspaper in the right section. The widget shows a bounded unread count and a source-health dot. Left click opens the same panel, middle click refreshes, and right click hides the widget after writing the local preference. Its hidden root is invisible, so Omarchy's module slot computes exact zero width and height rather than reserving a phantom gap.
+The main manifest declares both `panel` and `bar-widget`; normal enablement places one newspaper in the right section. The widget shows a bounded unread count plus distinct publisher/source health. Left click summons or raises the same panel, middle click checks the published edition, and right click hides the widget after writing the local preference. Its hidden root is invisible, so Omarchy's module slot computes exact zero width and height rather than reserving a phantom gap.
 
 Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off control, so a hidden widget can be restored through the global shortcut or documented IPC. Hiding stops its due-checked network timer. It emits no desktop notification and keeps no separate companion lifecycle.
 

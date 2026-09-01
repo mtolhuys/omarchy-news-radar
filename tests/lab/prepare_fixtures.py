@@ -61,6 +61,7 @@ def main() -> int:
     output = Path(sys.argv[2])
     output.mkdir(parents=True, exist_ok=True)
     feed = json.loads(source.read_text(encoding="utf-8"))
+    feed["publishedAt"] = datetime.now(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
     image_bytes = fixture_png()
     image_digest = hashlib.sha256(image_bytes).hexdigest()
     image_path = f"assets/images/{image_digest}.png"
@@ -79,9 +80,20 @@ def main() -> int:
     }
     write(output / "valid.json", feed)
 
+    stale = copy.deepcopy(feed)
+    stale["generatedAt"] = "2026-08-31T14:01:00Z"
+    stale["window"]["through"] = "2026-08-31T14:01:00Z"
+    stale["publishedAt"] = "2026-08-31T14:01:00Z"
+    write(output / "stale.json", stale)
+
+    recovered = copy.deepcopy(feed)
+    recovered["generatedAt"] = "2026-08-31T14:02:00Z"
+    recovered["window"]["through"] = "2026-08-31T14:02:00Z"
+    write(output / "recovered.json", recovered)
+
     later = copy.deepcopy(feed)
-    later["generatedAt"] = "2026-08-31T14:02:00Z"
-    later["window"]["through"] = "2026-08-31T14:02:00Z"
+    later["generatedAt"] = "2026-08-31T14:03:00Z"
+    later["window"]["through"] = "2026-08-31T14:03:00Z"
     newest = event_clone(feed["events"][0], 0xABC, datetime(2026, 8, 31, 14, 1, tzinfo=timezone.utc))
     newest["discoveredAt"] = "2026-08-31T14:02:00Z"
     newest["title"] = "An event that arrived during the open session"
@@ -92,6 +104,8 @@ def main() -> int:
     write(output / "later.json", later)
 
     partial = copy.deepcopy(later)
+    partial["generatedAt"] = "2026-08-31T14:04:00Z"
+    partial["window"]["through"] = "2026-08-31T14:04:00Z"
     for source_health in partial["sources"]:
         if source_health["id"] == "marketplace":
             source_health["status"] = "failed"
@@ -99,17 +113,21 @@ def main() -> int:
     write(output / "partial.json", partial)
 
     empty = copy.deepcopy(later)
+    empty["generatedAt"] = "2026-08-31T14:05:00Z"
+    empty["window"]["through"] = "2026-08-31T14:05:00Z"
     empty["events"] = []
     write(output / "empty.json", empty)
 
     long_text = copy.deepcopy(later)
+    long_text["generatedAt"] = "2026-08-31T14:07:00Z"
+    long_text["window"]["through"] = "2026-08-31T14:07:00Z"
     long_text["events"][0]["title"] = "長い見出し — " + "Keyboard-first Omarchy panel text " * 4
     long_text["events"][0]["summary"] = "Unicode remains inert plain text. " + "This deliberately long summary checks wrapping, clipping, and inspector scrolling. " * 4
     write(output / "long.json", long_text)
 
     dense = copy.deepcopy(feed)
-    dense["generatedAt"] = "2026-08-31T14:03:00Z"
-    dense["window"]["through"] = "2026-08-31T14:03:00Z"
+    dense["generatedAt"] = "2026-08-31T14:06:00Z"
+    dense["window"]["through"] = "2026-08-31T14:06:00Z"
     start = datetime(2026, 8, 31, 14, 3, tzinfo=timezone.utc)
     dense["events"] = [event_clone(feed["events"][0], 1000 + index, start - timedelta(minutes=index)) for index in range(120)]
     write(output / "dense.json", dense)

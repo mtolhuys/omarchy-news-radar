@@ -33,7 +33,7 @@ from .io import atomic_write_json
 from .local_edition import import_local_edition
 from .publisher import publish
 from .validation import parse_timestamp, validate_feed
-from .window import ensure_window_floating
+from .window import activate_window
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -52,7 +52,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("indicator")
     commands.add_parser("installed")
     commands.add_parser("purge")
-    commands.add_parser("ensure-window-floating")
+    commands.add_parser("activate-window")
     reading = commands.add_parser("set-read")
     reading.add_argument("--event-id", required=True)
     reading.add_argument("--read", required=True, choices=("true", "false"))
@@ -87,8 +87,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = indicator_model()
         elif args.command == "installed":
             result = installed_plugins()
-        elif args.command == "ensure-window-floating":
-            result = ensure_window_floating()
+        elif args.command == "activate-window":
+            result = activate_window()
         elif args.command == "set-read":
             result = set_event_read_state(args.event_id, args.read == "true")
         elif args.command == "mark-section-read":
@@ -186,7 +186,12 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
                 github_token=os.environ.get("GITHUB_TOKEN"),
             )
             revision = os.environ.get("GITHUB_SHA", os.environ.get("SOURCE_REVISION", "working-tree"))
-            result = publish(feed, args.output, source_revision=revision)
+            result = publish(
+                feed,
+                args.output,
+                source_revision=revision,
+                published_at=datetime.now(timezone.utc).replace(microsecond=0),
+            )
             save_snapshot(args.snapshot, snapshot)
             _print({"status": "ok", "events": len(feed["events"]), **result})
         elif args.command == "validate-feed":

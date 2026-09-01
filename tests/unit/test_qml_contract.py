@@ -81,7 +81,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('tooltipText: "Down to focus · Enter to load the next page"', qml)
         self.assertIn('iconText: root.refreshing ? "↻" : ""', qml)
         self.assertIn("iconSpinning: root.refreshing", qml)
-        self.assertIn('tooltipText: "Refresh feed (R)"', qml)
+        self.assertIn('label: root.refreshing ? "Checking…" : "Check for updates"', qml)
+        self.assertIn('tooltipText: "Check the published edition (R)"', qml)
         self.assertIn('"set-read", "--event-id"', qml)
         self.assertIn('"mark-section-read"', qml)
         self.assertIn('result.status === "stale-event"', qml)
@@ -109,7 +110,9 @@ class QmlContractTests(unittest.TestCase):
         self.assertNotIn("Apply interests", qml)
         self.assertNotIn("interestField", qml)
         self.assertNotIn("--interests-json", qml)
-        self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
+        self.assertIn("if (opened) {", qml)
+        self.assertIn('startProcess(windowProc, ["activate-window"])', qml)
+        self.assertIn("panelWindow.requestActivate()", qml)
         self.assertIn("function emptyStateMessage()", qml)
         self.assertNotIn('id: "community"', qml)
         self.assertNotIn('currentSection === "community"', qml)
@@ -185,7 +188,7 @@ class QmlContractTests(unittest.TestCase):
             'toLowerCase() === "r"',
         ):
             self.assertIn(key, qml)
-        for state in ("First use", "Cached", "Refreshing", "Current", "Offline", "Source partial", "Invalid feed", "No cache and failed"):
+        for state in ("First use", "Cached", "Checking", "Updated", "No newer edition", "Publisher stale", "Offline", "Source partial", "Invalid feed", "No cache and failed"):
             self.assertIn(state, qml)
 
 

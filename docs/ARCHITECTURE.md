@@ -29,7 +29,7 @@ Omarchy shell
 
 The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API. The visible bar widget owns one due-checked refresh timer inside the existing shell process.
 
-The local-development route reuses the collector and publisher directly. `make local-latest` builds into a temporary directory from the tracked source baseline, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images into the user's private cache. A matching bounded marker makes the client project those assets as local file URLs. Refresh still fetches the fixed Pages feed: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+The local-development route reuses the collector and publisher directly. `make local-latest` builds into a temporary directory from the tracked source baseline, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images into the user's private cache. A matching bounded marker makes the client project those assets as local file URLs. **Check for updates** still fetches the fixed Pages feed: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
 
 ## Target repository layout
 
@@ -112,7 +112,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -124,6 +124,8 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
 ```
 
 This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, exposes `open(payloadJson)` and `close()`, and owns a normal `FloatingWindow`. The window is compositor-managed, resizable/maximizable, and follows ordinary task switching; it is not a `PanelWindow` or layer-shell overlay. Radar omits an unreliable minimize control.
+
+Every public activation route uses the shell's `summon` operation. Closed means create/open/focus; already open means raise and focus the same window, whether it is foreground or obscured. Repeated activation never serves as close. `Escape`, `q`, the rendered close control, and normal window-manager close remain the deliberate close routes. The panel's bounded window helper validates one exact mapped Radar client, floats it if necessary, then focuses that address; an ambiguous identity fails closed.
 
 `windowIdentity` is a narrow companion-integration declaration for hosted normal windows. The app ID and full title must both equal the compositor values before a companion switcher or dock may use the existing local manifest name/icon. Unknown, disabled, malformed, missing, or ambiguous declarations fall back to normal desktop-entry resolution; the declaration does not alter Quickshell's process-wide app ID.
 
@@ -220,6 +222,8 @@ The site contains no runtime framework, cookies, analytics, user input, service 
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 
+The workflow requests four best-effort schedules per hour at minutes 8, 23, 38, and 53. These offsets avoid the top-of-hour load peak and provide recovery opportunities after a delayed or dropped invocation; they are not a delivery guarantee. Workflow concurrency does not cancel an in-progress publication. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. GitHub Pages/CDN propagation may add up to ten minutes after deployment, and each client separately reports when its validated copy was cached. A publication becomes visibly stale only when `publishedAt` is more than 90 minutes old, so normal scheduling and documented cache propagation do not create false alarms while sustained publisher lag cannot masquerade as source success.
+
 ## Installed-plugin relevance
 
 The panel calls the maintained shell IPC and treats the returned plugin IDs as local data. Matching is exact on canonical plugin ID. Do not send installed IDs to the feed host and do not infer installation from repository names or display names.
@@ -228,7 +232,7 @@ The panel calls the maintained shell IPC and treats the returned plugin IDs as l
 
 ## Optional bar indicator
 
-The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, unread count, and current/partial health dot; left click toggles the panel, middle click refreshes, and right click persists `barVisible=false`. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
+The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
 
 ## Failure containment
 

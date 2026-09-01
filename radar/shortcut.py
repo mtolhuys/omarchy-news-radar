@@ -18,7 +18,7 @@ from .errors import ShortcutError
 CHORD = "SUPER + ALT + N"
 MODMASK = 72
 RADAR_DESCRIPTION = "Omarchy News Radar"
-RADAR_COMMAND = "omarchy-shell shell toggle io.github.mtolhuys.news-radar"
+RADAR_COMMAND = "omarchy-shell shell summon io.github.mtolhuys.news-radar"
 BEGIN = "-- BEGIN OMARCHY NEWS RADAR MANAGED SHORTCUT"
 END = "-- END OMARCHY NEWS RADAR MANAGED SHORTCUT"
 MANAGED_BLOCK = (

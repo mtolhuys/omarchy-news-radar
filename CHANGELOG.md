@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 — 2026-09-01
+
+- Replace the single hourly GitHub schedule with four off-peak best-effort opportunities per hour, record artifact publication time, and distinguish publisher lag, source checks, Pages propagation, and local cache age with a 90-minute stale-publication threshold.
+- Make `R` and the middle-click action honestly **Check for updates**, reporting adopted new-story counts, no newer edition, stale publication, invalid data, and offline last-known-good results.
+- Use summon-to-focus activation for the bar, `Super+Alt+N`, and Apps entry so an already-open background Radar raises once and stays open; repeated foreground and rapid activation keep one deterministic window while explicit close routes remain unchanged.
+
 ## 0.1.3 — 2026-09-01
 
 - Add an atomic **Mark all as read** action for every unread story matching the current section's persistent Settings filters, including stories beyond the loaded page; temporary search never changes its scope.

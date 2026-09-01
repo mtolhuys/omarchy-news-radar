@@ -20,6 +20,10 @@ BarWidget {
   property bool barVisible: false
   property int unread: 0
   property string health: "empty"
+  readonly property string healthLabel: health === "publisher-stale" ? "publisher stale"
+    : health === "source-stale" ? "source stale"
+    : health === "partial" ? "source partial"
+    : health === "current" ? "publication healthy" : "no cached edition"
 
   visible: barVisible
   implicitWidth: button.implicitWidth
@@ -126,13 +130,13 @@ BarWidget {
     active: root.unread > 0
     activeColor: Color.accent
     tooltipText: root.unread > 0
-      ? root.unread + " unread · left open · right hide · middle refresh"
-      : "News Radar · left open · right hide · middle refresh"
+      ? root.unread + " unread · " + root.healthLabel + " · left activate · right hide · middle check for updates"
+      : "News Radar · " + root.healthLabel + " · left activate · right hide · middle check for updates"
 
     onPressed: function(pressedButton) {
       if (pressedButton === Qt.RightButton) root.hideIndicator()
       else if (pressedButton === Qt.MiddleButton) root.runHelper(refreshProc, ["refresh"])
-      else if (root.bar) root.bar.run("omarchy-shell shell toggle io.github.mtolhuys.news-radar")
+      else if (root.bar) root.bar.run("omarchy-shell shell summon io.github.mtolhuys.news-radar")
     }
 
     Rectangle {

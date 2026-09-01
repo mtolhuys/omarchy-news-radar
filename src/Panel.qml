@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.3+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.4+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -49,9 +49,10 @@ Item {
   property int sectionIndex: 0
   property int selectedIndex: 0
   property string feedStatus: "First use"
-  property string statusDetail: "No validated cache yet. Radar will try one bounded refresh."
+  property string statusDetail: "No validated cache yet. Radar will check the published edition."
   property string sourceHealth: "No validated source status"
   property string generatedAt: ""
+  property var editionTiming: ({})
   property string editionMode: "published"
   property bool refreshing: false
   property bool pendingProjection: false
@@ -128,6 +129,9 @@ Item {
       storyCount: stories.length,
       status: feedStatus,
       editionMode: editionMode,
+      publisherStale: editionTiming.publisherStale === true,
+      timing: editionTiming,
+      statusDetail: statusDetail,
       availableImageCount: availableImageCount,
       refreshing: refreshing,
       refreshIndicatorVisible: refreshButton.iconSpinning,
@@ -235,15 +239,27 @@ Item {
 
   function open(payloadJson) {
     closingFromHost = false
+    if (opened) {
+      panelWindow.visible = true
+      panelWindow.requestActivate()
+      windowIntegrationStatus = "waiting"
+      startProcess(windowProc, ["activate-window"])
+      Qt.callLater(function() {
+        panelWindow.requestActivate()
+        navigationFocus.forceActiveFocus()
+      })
+      return
+    }
+    opened = true
+    panelWindow.visible = true
+    panelWindow.requestActivate()
+    windowIntegrationStatus = "waiting"
+    startProcess(windowProc, ["activate-window"])
     feedStatus = "Loading cache"
     statusDetail = "Reading the last-known-good local edition."
-    opened = true
-    windowIntegrationStatus = "waiting"
     preferencesOpen = false
     sectionSettingsOpen = false
-    panelWindow.visible = true
     selectedIndex = 0
-    startProcess(windowProc, ["ensure-window-floating"])
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
     Qt.callLater(function() {
@@ -298,12 +314,13 @@ Item {
     var result = RadarModel.parseResponse(raw)
     userState = result.state || userState
     editionMode = String(result.editionMode || "published")
+    editionTiming = result.timing || ({})
     if (result.feed) {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
       sourceHealth = RadarModel.sourceHealth(result.feed)
       feedStatus = "Cached"
-      statusDetail = "Showing the validated local edition while Radar refreshes."
+      statusDetail = "Showing the validated local edition while Radar checks the published edition."
     } else {
       cachedFeed = null
       feedStatus = "First use"
@@ -319,6 +336,7 @@ Item {
     var result = RadarModel.parseResponse(raw)
     refreshing = false
     editionMode = String(result.editionMode || editionMode)
+    editionTiming = result.timing || editionTiming
     if (result.feed) {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
@@ -327,22 +345,25 @@ Item {
     }
     if (result.status === "local-current") {
       feedStatus = "Local live edition"
-      statusDetail = "This owner-built edition is at least as new as the published feed. Refresh keeps checking for a newer public edition."
-    } else if (result.status === "current") {
-      feedStatus = sourceHealth.indexOf("Partial") === 0 ? "Source partial" : "Current"
-      statusDetail = sourceHealth.indexOf("Partial") === 0
-        ? "The valid edition is readable; unavailable sources are named above."
-        : "Refresh completed and the validated cache is current."
+      statusDetail = result.message || "No newer published edition; the owner-built edition remains selected."
+    } else if (result.status === "stale-publication") {
+      feedStatus = "Publisher stale"
+      statusDetail = result.message || "Publisher lag: the public edition is older than the documented threshold."
+    } else if (result.status === "updated" || result.status === "no-change") {
+      feedStatus = sourceHealth.indexOf("Partial") === 0
+        ? "Source partial"
+        : (result.status === "updated" ? "Updated" : "No newer edition")
+      statusDetail = result.message || "The published edition check completed."
     } else if (result.status === "invalid-feed") {
       feedStatus = "Invalid feed"
-      statusDetail = result.cachePreserved
+      statusDetail = result.message || (result.cachePreserved
         ? "Radar rejected the candidate and preserved the last-known-good edition."
-        : "Radar rejected the candidate. Retry after the feed is repaired."
+        : "Radar rejected the candidate. Retry after the feed is repaired.")
     } else {
       feedStatus = result.feed ? "Offline" : "No cache and failed"
-      statusDetail = result.feed
-        ? "Refresh failed; the last-known-good edition remains readable."
-        : "Refresh failed and no validated cache exists. Retry when online."
+      statusDetail = result.message || (result.feed
+        ? "The update check failed; the last-known-good edition remains readable."
+        : "The update check failed and no validated cache exists. Retry when online.")
     }
   }
 
@@ -403,9 +424,9 @@ Item {
   function refreshFeed() {
     if (refreshing || !opened) return
     refreshing = true
-    feedStatus = cachedFeed ? "Refreshing" : "First use"
+    feedStatus = cachedFeed ? "Checking" : "First use"
     statusDetail = cachedFeed
-      ? "The cached edition remains readable during one bounded refresh."
+      ? "Checking the published static edition; cached stories remain readable."
       : "Fetching the first bounded edition."
     startProcess(refreshProc, ["refresh"])
   }
@@ -831,13 +852,14 @@ Item {
                     Layout.fillWidth: true
                     text: root.feedStatus + " · " + root.sourceHealth
                     textFormat: Text.PlainText
-                    color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed" || root.feedStatus === "Failed"
+                    color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed"
+                      || root.feedStatus === "Publisher stale" || root.feedStatus === "Failed"
                       ? Color.urgent : root.secondaryTextColor
                     font.family: Style.font.family
                     font.pixelSize: Style.font.caption
                     elide: Text.ElideRight
                     Accessible.role: Accessible.StaticText
-                    Accessible.name: "Refresh status: " + text
+                    Accessible.name: "Edition status: " + text
                   }
                 }
 
@@ -858,10 +880,10 @@ Item {
 
               RadarButton {
                 id: refreshButton
-                label: root.refreshing ? "Refreshing…" : "Refresh"
+                label: root.refreshing ? "Checking…" : "Check for updates"
                 iconText: root.refreshing ? "↻" : ""
                 iconSpinning: root.refreshing
-                tooltipText: "Refresh feed (R)"
+                tooltipText: "Check the published edition (R)"
                 enabled: !root.refreshing
                 onClicked: root.refreshFeed()
               }
@@ -966,7 +988,7 @@ Item {
               anchors.verticalCenter: parent.verticalCenter
               anchors.leftMargin: Style.spacing.controlPaddingX
               anchors.rightMargin: Style.spacing.controlPaddingX
-              text: "KEYBOARD  Tab/Shift+Tab sections · 1–5 sections · J/K or ↑/↓ stories · Enter open or load more · U read/unread · O source · S save · R refresh"
+              text: "KEYBOARD  Tab/Shift+Tab sections · 1–5 sections · J/K or ↑/↓ stories · Enter open or load more · U read/unread · O source · S save · R check for updates"
               textFormat: Text.PlainText
               color: root.secondaryTextColor
               font.family: Style.font.family
@@ -1377,8 +1399,13 @@ Item {
 
           Text {
             Layout.fillWidth: true
-            text: (root.generatedAt ? "Edition " + root.generatedAt : "No edition generated")
-              + " · v0.1.3 · independent community project"
+            text: root.generatedAt
+              ? "Sources " + String(root.editionTiming.latestSourceCheckedAt || root.generatedAt)
+                + " · collected " + String(root.editionTiming.collectedAt || root.generatedAt)
+                + " · published " + String(root.editionTiming.publishedAt || root.generatedAt)
+                + " · cached " + String(root.editionTiming.cachedAt || "this session")
+                + " · Pages cache ≤10m · v0.1.4"
+              : "No edition generated · v0.1.4 · independent community project"
             textFormat: Text.PlainText
             color: root.secondaryTextColor
             font.family: Style.font.family

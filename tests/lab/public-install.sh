@@ -31,7 +31,7 @@ omarchy_host_test() {
   }
   wait_for_guest_state "public clone is enabled with paired panel and newspaper entry points" 20 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && \
-     jq -e '.version == \"0.1.3\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
+     jq -e '.version == \"0.1.4\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
 
   log "Proving documented public Apps-menu and shortcut setup"
   ssh_session "$launcher install" >"$RUN_DIR/news-radar-public-launcher-installed.json" || return 1
@@ -48,7 +48,7 @@ omarchy_host_test() {
   wait_for_guest_state "public Apps entry opens the installed panel" 20 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
   wait_for_guest_state "public panel loads the fixed published edition with explicit unread state" 30 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .selectedIsUnread == true and .unreadCount > 0 and (.status == \"Current\" or .status == \"Cached\")'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .selectedIsUnread == true and .unreadCount > 0 and (.status == \"Updated\" or .status == \"No newer edition\" or .status == \"Cached\")'" || return 1
   capture_console "success-news-radar-public-app-launcher"
   selected_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedId'")" || return 1
   [[ $selected_id =~ ^evt_[0-9a-f]{24}$ ]] || return 1

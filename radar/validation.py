@@ -319,6 +319,14 @@ def validate_feed(value: Any, *, now: datetime | None = None, public_only: bool 
     comparison = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     if generated > comparison + timedelta(seconds=FUTURE_SKEW_SECONDS):
         raise ValidationError("feed generation time is materially in the future")
+    published_at: str | None = None
+    if "publishedAt" in feed:
+        published_at = require_string(feed.get("publishedAt"), "publishedAt", 20, 20)
+        published = parse_timestamp(published_at, "publishedAt")
+        if published < generated:
+            raise ValidationError("feed publication time predates collection")
+        if published > comparison + timedelta(seconds=FUTURE_SKEW_SECONDS):
+            raise ValidationError("feed publication time is materially in the future")
     window = require_mapping(feed.get("window"), "window")
     require_exact_keys(window, {"from", "through"}, "window")
     from_text = require_string(window.get("from"), "window.from", 20, 20)
@@ -372,6 +380,8 @@ def validate_feed(value: Any, *, now: datetime | None = None, public_only: bool 
         "sources": sources,
         "events": events,
     }
+    if published_at is not None:
+        normalized["publishedAt"] = published_at
     if "leadEventId" in feed:
         lead = require_string(feed["leadEventId"], "leadEventId", 28, 28)
         if lead not in ids:

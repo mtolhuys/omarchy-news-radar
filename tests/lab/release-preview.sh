@@ -32,7 +32,7 @@ omarchy_host_test() {
   wait_for_guest_state "preview candidate is enabled" 20 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)'" || return 1
 
-  log "Refreshing the fixed public edition and applying Matte Black"
+  log "Checking the fixed public edition and applying Matte Black"
   ssh_session "$helper refresh" >"$RUN_DIR/news-radar-preview-refresh.json" || return 1
   wait_for_guest_state "public edition contains current stories and mirrored images" 30 ssh_session \
     "jq -e '.events | length > 0 and any(.[]; (.image.path // \"\") | startswith(\"assets/images/\"))' \
@@ -40,7 +40,7 @@ omarchy_host_test() {
   ssh_session "omarchy-theme-set matte-black >/dev/null && omarchy-shell shell summon io.github.mtolhuys.news-radar" || return 1
   wait_for_guest_state "public edition is rendered by the local candidate" 30 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | \
-      jq -e '.opened == true and .storyCount > 0 and .unreadCount > 0 and (.status == \"Current\" or .status == \"Cached\")'" || return 1
+      jq -e '.opened == true and .storyCount > 0 and .unreadCount > 0 and (.status == \"Updated\" or .status == \"No newer edition\" or .status == \"Cached\")'" || return 1
 
   preview_address="$(ssh_session "hyprctl -j clients | jq -er '.[] | select(.title == \"📰 Omarchy News Radar\") | .address'")" || return 1
   ssh_session "hyprctl dispatch 'hl.dsp.window.fullscreen({ window = \"address:$preview_address\", mode = \"maximized\", action = \"unset\" })' >/dev/null && \

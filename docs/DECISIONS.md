@@ -255,3 +255,19 @@
 **Why:** A long finite edition needs a deliberate way to clear a known section without pretending that opening, refreshing, searching, or closing constitutes reading. Generic version and verification sentences repeat facts already visible in the title and metadata while omitting the catalog's useful explanation of what the plugin does.
 
 **Consequence:** The helper derives the exact bounded section projection from validated cache, enabled-plugin IDs, saved IDs, and persisted filters, then writes all required per-event overrides under the existing state lock. Other sections and nonmatching stories keep their prior state. New and retained plugin additions, releases, verification changes, and retirements use the current validated catalog description as bounded untrusted plain text; event identity, type, version, trust state, time, ordering, metrics, and curation remain unchanged.
+
+## D033 — Treat publication as best effort and expose its real age
+
+**Decision:** Keep the bounded static GitHub Pages architecture, request workflow schedules at minutes 8, 23, 38, and 53, retain manual dispatch for recovery, and define publication as stale only when artifact `publishedAt` is more than 90 minutes old. Record and present source `checkedAt`, collection `generatedAt`, artifact `publishedAt`, the documented Pages cache window, and local cache time as different facts.
+
+**Why:** On 1 September 2026 GitHub stopped delivering the hourly schedule after 13:31 UTC while two manual runs succeeded. Collection, validation, and Pages deployment were healthy when invoked; the single best-effort trigger was the unreliable link. GitHub documents that scheduled runs may be delayed or dropped under load and recommends avoiding high-load hour boundaries. More off-peak opportunities provide recovery without another account, secret, service, or server, but cannot create a guarantee.
+
+**Consequence:** Workflow concurrency never cancels an active publication. Clients still fetch only the fixed static feed, replace it atomically after validation, and keep last-known-good data. Old successful source states can no longer make an old artifact appear current. `R` and middle click are named **Check for updates** and report exact new/no-change/stale/offline outcomes rather than implying upstream collection. The health monitor separately checks scheduled-run continuity, publication age, Pages propagation, and source timestamps.
+
+## D034 — Summon is activation; close remains deliberate
+
+**Decision:** The bar, managed `Super+Alt+N` binding, and Apps entry all use `omarchy-shell shell summon`. Repeated invocation opens or raises and focuses the single Radar window; it never closes it. `Escape`, `q`, the rendered close button, and window-manager close are the supported close routes.
+
+**Why:** Omarchy's `toggle` chooses hide whenever the plugin reports `opened`, even when its normal window is merely behind another application. The first activation therefore briefly raised the hosted window and then hid it. This was a semantic mismatch, not input duplication, so debouncing would conceal the wrong contract.
+
+**Consequence:** An exact mapped-window helper always focuses the validated compositor address and floats only when needed. One QML `Process` instance coalesces rapid helper starts. Disposable-lab acceptance must drive the actual newspaper with QMP pointer input and the live global binding with compositor-level QMP keys across closed, obscured, foreground, rapid-repeat, Alt+Tab, close, and reopen states, while proving exactly one Radar client and no competing helper remain.

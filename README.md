@@ -8,7 +8,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.1.3` is the current public release. Its source, live Pages edition, release evidence, and exact public-clone Plugin Lab acceptance are published here; an Omarchy marketplace listing becomes available only after the marketplace maintainers approve the submitted repository.
+Version `0.1.4` is the current public release. Its source, live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public. Marketplace verification is commit-specific compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -18,7 +18,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, serialized atomic private XDG state, corrupt-state quarantine, saved items, bounded per-story read overrides, and explicit purge.
-- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe primary and secondary text, images, icon metrics, source-derived plugin explanations, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, fixed section identity, per-section filters, finite keyboard/pointer pagination, an always-visible keyboard guide, search, source opening, visible refresh progress and recovery states, responsive layout, and virtualized story rows.
+- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, summon-to-focus activation, contrast-safe primary and secondary text, images, icon metrics, source-derived plugin explanations, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, fixed section identity, per-section filters, finite keyboard/pointer pagination, an always-visible keyboard guide, search, source opening, visible update-check progress and honest publisher/source/cache states, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
@@ -49,7 +49,7 @@ cd ~/Projects/omarchy/plugin-lab
 ./bin/lab plugin ~/Projects/plugins/omarchy-news-radar/tests/lab/acceptance.sh
 ```
 
-The Lab scenario seeds a deterministic guest-only feed, installs the conflict-free `Super+Alt+N` binding, drives the real bar and panel, captures screenshots, checks zero-gap hide/restore, animated refresh progress, and keyboard Load more activation, then removes the owned shortcut and plugin. Keep automated development and acceptance in the disposable VM; the command below is an explicit owner-run opt-in for intentional daily use, not a test route.
+The Lab scenario seeds a deterministic guest-only feed, installs the conflict-free `Super+Alt+N` binding, drives the real bar and panel, captures screenshots, proves closed/foreground/obscured activation with QMP pointer and compositor shortcut input, checks zero-gap hide/restore, publisher-stale disclosure, animated update-check progress, and keyboard Load more activation, then removes the owned shortcut and plugin. Keep automated development and acceptance in the disposable VM; the command below is an explicit owner-run opt-in for intentional daily use, not a test route.
 
 ### Keep an intentional local installation current
 
@@ -59,11 +59,11 @@ When you deliberately want to run this checkout on your daily desktop, use:
 make local-latest
 ```
 
-The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and collect a new local edition. The panel labels this mode “Local live edition” while that owner-built edition is newest. Normal Refresh still checks Pages, refuses to downgrade the local edition, and automatically returns to the published stream as soon as it advances.
+The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and collect a new local edition. The panel labels this mode “Local live edition” while that owner-built edition is newest. **Check for updates** still checks Pages, refuses to downgrade the local edition, and automatically returns to the published stream as soon as it advances.
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install v0.1.3
+## Install v0.1.4
 
 Install the tagged public release directly with:
 
@@ -75,7 +75,7 @@ omarchy plugin add https://github.com/mtolhuys/omarchy-news-radar --enable --yes
 The panel is always reachable without changing a shortcut:
 
 ```bash
-omarchy-shell shell toggle io.github.mtolhuys.news-radar
+omarchy-shell shell summon io.github.mtolhuys.news-radar
 ```
 
 The explicit launcher command creates the **Omarchy News Radar** row in the normal Apps menu with the bundled newspaper mark. Omarchy's third-party plugin lifecycle intentionally runs no install hooks, so a public plugin add cannot create that XDG entry implicitly. `status`, `install`, and `remove` are idempotent and refuse symlinked, modified, unowned, or unrelated targets.
@@ -99,7 +99,7 @@ The helper refuses personal, multiple, unknown, symlinked, unowned, or ambiguous
 To choose another free chord, skip the helper and add your own reviewed line to `~/.config/hypr/bindings.lua`, for example:
 
 ```lua
-o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io.github.mtolhuys.news-radar")
+o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io.github.mtolhuys.news-radar")
 ```
 
 ## Panel controls
@@ -112,7 +112,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `/`: focus local search; `Escape` returns to panel navigation.
 - `o` or `Enter`: open the selected validated HTTPS source.
 - `s`: save or unsave the selected story locally.
-- `r`: refresh once with an animated progress indicator while preserving readable cached content and the last-known-good edition; hover Refresh to see the shortcut.
+- `r`: **Check for updates** once against the published static edition, with an animated progress indicator while cached content stays readable; the result reports adopted new stories, no newer edition, publisher lag, invalid data, or offline cache preservation.
 - `Escape` or `q`: close the panel.
 - `Tune`: enable or disable the top-bar newspaper and story images.
 - `⚙ Settings`: inspect the section's fixed sources, then locally refine time, significance, unread/image state, and story types. Names, icons, order, background, and source scope remain canonical.
@@ -131,12 +131,12 @@ Reviewed community links are an optional edition input, not a dedicated reader s
 
 ## Newspaper controls
 
-- Left click: open or close the News Radar panel.
-- Middle click: request one bounded refresh.
+- Left click: summon News Radar; an obscured or foreground instance is raised and focused rather than closed.
+- Middle click: check the published edition once.
 - Right click: hide the newspaper immediately; its bar slot collapses to zero.
 - Restore: press `Super+Alt+N` (or use shell IPC), choose Tune, then set “Top-bar newspaper” to On.
 
-The visible widget requests a refresh only when the cache is at least 30 minutes old. Hiding it stops that cadence. There are no desktop notifications.
+The visible widget checks the published edition only when the cache is at least 30 minutes old. Hiding it stops that cadence. There are no desktop notifications.
 
 ## Local data and removal
 
@@ -177,7 +177,9 @@ python3 -m radar collect                          # later editions
 
 The first successful marketplace run publishes at most twelve genuinely recent listings from the previous fourteen days, then records the complete baseline. It never treats the historical catalog as new. A failed adapter retains its prior normalized state and cannot manufacture additions, releases, or mass retirements.
 
-The Pages workflow runs hourly at minute 17 and also supports manual dispatch. It keeps repository permissions read-only and uploads the updated `state/source-snapshot.json` as a run artifact. The owner must periodically review, validate, and commit that artifact so multi-run retirement confirmation and baseline advancement remain explicit. Exact first-publication steps are in [`docs/RELEASE.md`](docs/RELEASE.md) and the local evidence record.
+The Pages workflow requests best-effort runs at minutes 8, 23, 38, and 53 and also supports manual dispatch. Off-peak quarter-hour opportunities reduce the impact of a delayed or dropped GitHub invocation; GitHub does not guarantee scheduled delivery. The workflow keeps repository permissions read-only, never cancels an in-progress publication, and uploads the updated `state/source-snapshot.json` as a run artifact. The owner must periodically review, validate, and commit that artifact so multi-run retirement confirmation and baseline advancement remain explicit.
+
+Feed `checkedAt` values describe individual source attempts, `generatedAt` describes completed collection, and `publishedAt` describes the static artifact build. GitHub Pages/CDN propagation may take up to ten minutes after deployment; the client additionally reports when its validated local copy was cached. Radar labels the publisher stale only after `publishedAt` is more than 90 minutes old, so an old successful source check can never masquerade as current publication. Operational recovery and exact release steps are in [`docs/RELEASE.md`](docs/RELEASE.md).
 
 ## Documentation
 

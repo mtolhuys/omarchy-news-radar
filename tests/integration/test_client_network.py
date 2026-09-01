@@ -112,9 +112,9 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
 
     def test_success_and_same_origin_redirect_use_bounded_get_contract(self) -> None:
         result = refresh(self.environment, now=CLOCK)
-        self.assertEqual("current", result["status"])
+        self.assertEqual("updated", result["status"])
         self.environment["OMARCHY_NEWS_RADAR_TEST_FEED_URL"] = self.origin + "/redirect"
-        self.assertEqual("current", refresh(self.environment, now=CLOCK)["status"])
+        self.assertEqual("no-change", refresh(self.environment, now=CLOCK)["status"])
         self.assertEqual(["/feed", "/redirect", "/feed"], [item["path"] for item in FeedHandler.requests])
         for request in FeedHandler.requests:
             self.assertEqual("GET", request["method"])
@@ -122,7 +122,7 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
             self.assertEqual("omarchy-news-radar-client/0.1", request["userAgent"])
 
     def test_network_and_candidate_failures_preserve_last_known_good(self) -> None:
-        self.assertEqual("current", refresh(self.environment, now=CLOCK)["status"])
+        self.assertEqual("updated", refresh(self.environment, now=CLOCK)["status"])
         expectations = {
             "/redirect-away": "offline",
             "/truncated": "invalid-feed",
@@ -145,7 +145,7 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
                     self.assertEqual("http-error", result["reason"])
 
     def test_total_timeout_is_bounded_and_preserves_cache(self) -> None:
-        self.assertEqual("current", refresh(self.environment, now=CLOCK)["status"])
+        self.assertEqual("updated", refresh(self.environment, now=CLOCK)["status"])
         self.environment["OMARCHY_NEWS_RADAR_TEST_FEED_URL"] = self.origin + "/slow"
         self.environment["OMARCHY_NEWS_RADAR_TEST_TIMEOUT_SECONDS"] = "0.05"
         started = time.monotonic()
@@ -168,7 +168,7 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
         production = json.loads((ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8"))
         with mock.patch("radar.client._fetch_feed", return_value=copy.deepcopy(production)) as fetch:
             result = refresh(environment, now=CLOCK)
-        self.assertEqual("current", result["status"])
+        self.assertEqual("updated", result["status"])
         fetch.assert_called_once_with()
         self.assertEqual([], FeedHandler.requests)
 

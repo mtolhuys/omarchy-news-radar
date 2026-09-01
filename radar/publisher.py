@@ -18,7 +18,7 @@ from .errors import FetchError, ValidationError
 from .http import FetchPolicy, fetch_bytes
 from .images import MAX_IMAGE_BYTES, inspect_raster
 from .model import front_page
-from .validation import parse_timestamp, validate_feed
+from .validation import format_timestamp, parse_timestamp, validate_feed
 
 CSP = "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 
@@ -30,7 +30,8 @@ def render_rss(feed: Mapping[str, Any]) -> bytes:
     ET.SubElement(channel, "title").text = "Omarchy News Radar"
     ET.SubElement(channel, "link").text = "https://mtolhuys.github.io/omarchy-news-radar/"
     ET.SubElement(channel, "description").text = "Source-linked Omarchy ecosystem activity. Independent community project."
-    ET.SubElement(channel, "lastBuildDate").text = datetime.strptime(validated["generatedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+    last_build = str(validated.get("publishedAt", validated["generatedAt"]))
+    ET.SubElement(channel, "lastBuildDate").text = datetime.strptime(last_build, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
     for event in validated["events"]:
         item = ET.SubElement(channel, "item")
         ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = event["id"]
@@ -75,6 +76,7 @@ def render_html(feed: Mapping[str, Any]) -> bytes:
     stories = "\n".join(_story(event, lead=index == 0) for index, event in enumerate(edition))
     health = ", ".join(f"{html.escape(source['id'])}: {html.escape(source['status'])}" for source in validated["sources"])
     generated = html.escape(validated["generatedAt"])
+    published = html.escape(str(validated.get("publishedAt", validated["generatedAt"])))
     page = f'''<!doctype html>
 <html lang="en">
 <head>
@@ -91,7 +93,7 @@ def render_html(feed: Mapping[str, Any]) -> bytes:
     <p class="eyebrow">Independent community project</p>
     <h1>Omarchy News Radar</h1>
     <p class="deck">A calm, source-linked edition of meaningful Omarchy activity.</p>
-    <p class="health">Generated {generated} · {health}</p>
+    <p class="health">Sources collected {generated} · artifact published {published} · Pages propagation may take up to 10 minutes · {health}</p>
   </header>
   <main>{stories if stories else '<p class="empty">This edition contains no events.</p>'}</main>
   <footer><a href="events.json">JSON feed</a> · <a href="feed.xml">RSS</a></footer>
@@ -156,6 +158,7 @@ def publish(
     *,
     source_revision: str = "unknown",
     image_fetcher: ImageFetcher = _fetch_image,
+    published_at: datetime | None = None,
 ) -> dict[str, Any]:
     validated = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
     parent = destination.parent
@@ -165,6 +168,12 @@ def publish(
         (temporary / "assets").mkdir()
         (temporary / "archive").mkdir()
         validated, image_failures = materialize_images(validated, temporary / "assets", image_fetcher=image_fetcher)
+        publication_clock = (published_at or parse_timestamp(validated["generatedAt"])).astimezone(timezone.utc).replace(microsecond=0)
+        validated = validate_feed(
+            {**validated, "publishedAt": format_timestamp(publication_clock)},
+            now=publication_clock,
+            public_only=True,
+        )
         events_bytes = canonical_json_bytes(validated)
         rss_bytes = render_rss(validated)
         html_bytes = render_html(validated)
@@ -176,7 +185,8 @@ def publish(
         (temporary / "archive" / f"{month}.json").write_bytes(events_bytes)
         digest = hashlib.sha256(events_bytes).hexdigest()
         (temporary / "BUILD-INFO.txt").write_text(
-            f"sourceRevision={source_revision}\neventsSha256={digest}\n", encoding="utf-8"
+            f"sourceRevision={source_revision}\neventsSha256={digest}\npublishedAt={validated['publishedAt']}\n",
+            encoding="utf-8",
         )
         if destination.exists():
             backup = destination.with_name(f".{destination.name}.previous")
@@ -196,6 +206,7 @@ def publish(
         return {
             "eventsSha256": digest,
             "sourceRevision": source_revision,
+            "publishedAt": validated["publishedAt"],
             "images": sum("image" in event for event in validated["events"]),
             "imageFailures": image_failures,
         }

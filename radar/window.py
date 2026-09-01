@@ -38,12 +38,12 @@ def _run(command: list[str], *, runner: RunCommand) -> subprocess.CompletedProce
     return result
 
 
-def ensure_window_floating(
+def activate_window(
     *,
     runner: RunCommand = subprocess.run,
     sleeper: Sleep = time.sleep,
 ) -> dict[str, Any]:
-    """Float only the unique mapped Radar client; leave all others alone."""
+    """Float and focus only the unique mapped Radar client; leave all others alone."""
 
     for attempt in range(PROBE_ATTEMPTS):
         result = _run(["hyprctl", "clients", "-j"], runner=runner)
@@ -70,21 +70,25 @@ def ensure_window_floating(
             continue
         client = matches[0]
         floating = client.get("floating")
-        if floating is True:
-            return {"protocolVersion": 1, "status": "ok", "outcome": "already-floating"}
-        if floating is not False:
+        if floating is not True and floating is not False:
             raise RadarError("Hyprland Radar client has invalid floating state")
         address = client.get("address")
         if not isinstance(address, str) or ADDRESS_PATTERN.fullmatch(address) is None:
             raise RadarError("Hyprland Radar client has invalid address")
-        lua_action = (
-            'hl.dsp.window.float({ window = "address:'
-            + address
-            + '", action = "toggle" })'
-        )
-        try:
-            _run(["hyprctl", "dispatch", lua_action], runner=runner)
-        except RadarError:
-            _run(["hyprctl", "dispatch", "togglefloating", f"address:{address}"], runner=runner)
-        return {"protocolVersion": 1, "status": "ok", "outcome": "float-requested"}
+        if floating is False:
+            lua_action = (
+                'hl.dsp.window.float({ window = "address:'
+                + address
+                + '", action = "toggle" })'
+            )
+            try:
+                _run(["hyprctl", "dispatch", lua_action], runner=runner)
+            except RadarError:
+                _run(["hyprctl", "dispatch", "togglefloating", f"address:{address}"], runner=runner)
+        _run(["hyprctl", "dispatch", "focuswindow", f"address:{address}"], runner=runner)
+        return {
+            "protocolVersion": 1,
+            "status": "ok",
+            "outcome": "floated-and-focused" if floating is False else "focused",
+        }
     return {"protocolVersion": 1, "status": "ok", "outcome": "radar-not-mapped"}

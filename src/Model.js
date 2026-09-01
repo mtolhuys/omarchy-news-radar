@@ -17,12 +17,17 @@ function sourceHealth(feed) {
   if (!feed || !Array.isArray(feed.sources)) return "No validated source status"
   var failed = []
   var stale = []
+  var latestCheckedAt = ""
   for (var index = 0; index < feed.sources.length; index++) {
     var source = feed.sources[index]
     if (source.status === "failed") failed.push(source.id)
     if (source.status === "stale") stale.push(source.id)
+    if (typeof source.checkedAt === "string" && source.checkedAt > latestCheckedAt)
+      latestCheckedAt = source.checkedAt
   }
   if (failed.length) return "Partial · " + failed.join(", ")
   if (stale.length) return "Stale · " + stale.join(", ")
-  return "All available sources current"
+  return latestCheckedAt
+    ? "All available sources succeeded at " + latestCheckedAt
+    : "All available sources succeeded"
 }

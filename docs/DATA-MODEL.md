@@ -14,6 +14,7 @@ Version 1 has this conceptual shape:
 {
   "schemaVersion": 1,
   "generatedAt": "2026-08-31T14:00:00Z",
+  "publishedAt": "2026-08-31T14:01:00Z",
   "window": {
     "from": "2026-06-02T00:00:00Z",
     "through": "2026-08-31T14:00:00Z"
@@ -36,10 +37,13 @@ Version 1 has this conceptual shape:
 - Maximum downloaded feed size: 2 MiB.
 - Maximum live events: 500.
 - `generatedAt` may not be materially in the future relative to the client clock; tolerate a documented small skew.
+- `generatedAt` is the completed source-collection time. `publishedAt` is the later artifact-build time, may not predate collection, and may not be materially in the future. Legacy schema-v1 editions without `publishedAt` explicitly infer publication from `generatedAt`.
 - Events are sorted descending by `occurredAt`, then stable descending discovery order, then ascending ID.
 - Source IDs are unique and come from a closed enum in version 1.
 
 Source `status` values are `current`, `not-modified`, `stale`, or `failed`. A failed source records one bounded public-safe reason code, never tokens, response bodies, stack traces, or internal runner paths.
+
+Source health and publication freshness are separate. Successful sources at old `checkedAt` values do not make an old artifact current. The client derives publication age from `publishedAt`, reports publisher lag beyond 90 minutes, exposes the documented ten-minute Pages cache window, and derives local cache time from the owned cache file's UTC modification time.
 
 ## Event
 

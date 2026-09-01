@@ -5,7 +5,7 @@ import subprocess
 import unittest
 
 from radar.errors import RadarError
-from radar.window import ensure_window_floating
+from radar.window import activate_window
 
 
 class FakeRunner:
@@ -41,11 +41,12 @@ class WindowIntegrationTests(unittest.TestCase):
                 completed(json.dumps([client(title="Terminal")])),
                 completed(json.dumps([client(address="0xA02f")])),
                 completed("ok\n"),
+                completed("ok\n"),
             ]
         )
         delays: list[float] = []
-        result = ensure_window_floating(runner=runner, sleeper=delays.append)
-        self.assertEqual("float-requested", result["outcome"])
+        result = activate_window(runner=runner, sleeper=delays.append)
+        self.assertEqual("floated-and-focused", result["outcome"])
         self.assertEqual([0.12], delays)
         self.assertEqual(
             [
@@ -53,20 +54,24 @@ class WindowIntegrationTests(unittest.TestCase):
                 "dispatch",
                 'hl.dsp.window.float({ window = "address:0xA02f", action = "toggle" })',
             ],
+            runner.commands[-2],
+        )
+        self.assertEqual(
+            ["hyprctl", "dispatch", "focuswindow", "address:0xA02f"],
             runner.commands[-1],
         )
 
     def test_already_floating_and_unrelated_clients_are_not_toggled(self) -> None:
         floating = FakeRunner(
-            [completed(json.dumps([client(floating=True)]))]
+            [completed(json.dumps([client(floating=True)])), completed("ok\n")]
         )
-        self.assertEqual("already-floating", ensure_window_floating(runner=floating, sleeper=lambda _: None)["outcome"])
-        self.assertEqual(1, len(floating.commands))
+        self.assertEqual("focused", activate_window(runner=floating, sleeper=lambda _: None)["outcome"])
+        self.assertEqual(2, len(floating.commands))
 
         unrelated = FakeRunner(
             [completed(json.dumps([client(title="Terminal")])) for _ in range(10)]
         )
-        self.assertEqual("radar-not-mapped", ensure_window_floating(runner=unrelated, sleeper=lambda _: None)["outcome"])
+        self.assertEqual("radar-not-mapped", activate_window(runner=unrelated, sleeper=lambda _: None)["outcome"])
         self.assertEqual(10, len(unrelated.commands))
 
     def test_invalid_address_is_refused(self) -> None:
@@ -74,13 +79,13 @@ class WindowIntegrationTests(unittest.TestCase):
             [completed(json.dumps([client(address="$(bad)")]))]
         )
         with self.assertRaisesRegex(RadarError, "invalid address"):
-            ensure_window_floating(runner=runner, sleeper=lambda _: None)
+            activate_window(runner=runner, sleeper=lambda _: None)
         self.assertEqual(1, len(runner.commands))
 
     def test_ambiguous_identity_is_refused(self) -> None:
         runner = FakeRunner([completed(json.dumps([client(address="0x1"), client(address="0x2")]))])
         with self.assertRaisesRegex(RadarError, "ambiguous"):
-            ensure_window_floating(runner=runner, sleeper=lambda _: None)
+            activate_window(runner=runner, sleeper=lambda _: None)
         self.assertEqual(1, len(runner.commands))
 
     def test_legacy_dispatch_is_a_bounded_compatibility_fallback(self) -> None:
@@ -89,13 +94,31 @@ class WindowIntegrationTests(unittest.TestCase):
                 completed(json.dumps([client(address="0x55")])),
                 subprocess.CompletedProcess([], 1, "", "unsupported"),
                 completed("ok\n"),
+                completed("ok\n"),
             ]
         )
-        result = ensure_window_floating(runner=runner, sleeper=lambda _: None)
-        self.assertEqual("float-requested", result["outcome"])
+        result = activate_window(runner=runner, sleeper=lambda _: None)
+        self.assertEqual("floated-and-focused", result["outcome"])
         self.assertEqual(
             ["hyprctl", "dispatch", "togglefloating", "address:0x55"],
-            runner.commands[-1],
+            runner.commands[-2],
+        )
+
+    def test_repeated_activation_focuses_the_same_window_without_creating_another(self) -> None:
+        runner = FakeRunner(
+            [
+                completed(json.dumps([client(floating=True, address="0x77")])),
+                completed("ok\n"),
+                completed(json.dumps([client(floating=True, address="0x77")])),
+                completed("ok\n"),
+            ]
+        )
+        first = activate_window(runner=runner, sleeper=lambda _: None)
+        second = activate_window(runner=runner, sleeper=lambda _: None)
+        self.assertEqual(("focused", "focused"), (first["outcome"], second["outcome"]))
+        self.assertEqual(
+            2,
+            sum(command[:3] == ["hyprctl", "dispatch", "focuswindow"] for command in runner.commands),
         )
 
 

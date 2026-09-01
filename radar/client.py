@@ -13,6 +13,7 @@ from urllib.parse import urlencode, urljoin, urlsplit
 from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary
+from .freshness import edition_timing, update_message
 from .sections import SECTION_SOURCE_SUMMARIES
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
@@ -22,6 +23,7 @@ from .state import (
     RefreshLock,
     StateLock,
     event_is_read,
+    feed_cached_at,
     load_feed,
     load_state,
     purge,
@@ -43,7 +45,8 @@ def response(status: str, **values: Any) -> dict[str, Any]:
 
 
 def read_model(environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
-    feed = load_feed(environment, now=now)
+    clock = now or datetime.now(timezone.utc)
+    feed = load_feed(environment, now=clock)
     state, quarantined = load_state(environment)
     if feed is None:
         return response("first-use", feed=None, state=state, quarantine=quarantined)
@@ -55,6 +58,7 @@ def read_model(environment: Mapping[str, str] | None = None, *, now: datetime | 
         quarantine=quarantined,
         editionMode="local" if local else "published",
         localEdition=local,
+        timing=edition_timing(feed, now=clock, cached_at=feed_cached_at(environment)),
     )
 
 
@@ -113,33 +117,80 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
             if candidate is None:
                 candidate = _fetch_feed()
             validated = validate_feed(candidate, now=clock, public_only=True)
-            if (
-                local is not None
-                and cached is not None
-                and parse_timestamp(validated["generatedAt"])
-                <= parse_timestamp(cached["generatedAt"])
-            ):
-                return response(
-                    "local-current",
-                    feed=cached,
-                    cachePreserved=True,
-                    editionMode="local",
-                    localEdition=local,
-                    publishedGeneratedAt=validated["generatedAt"],
-                )
-            saved = save_feed(validated, env, now=clock)
-        return response("current", feed=saved, cachePreserved=False, editionMode="published")
+            published_timing = edition_timing(validated, now=clock)
+            candidate_is_newer = cached is None or (
+                parse_timestamp(validated["generatedAt"])
+                > parse_timestamp(cached["generatedAt"])
+            )
+            if candidate_is_newer:
+                previous_ids = {event["id"] for event in cached["events"]} if cached else set()
+                new_stories = sum(event["id"] not in previous_ids for event in validated["events"])
+                selected = save_feed(validated, env, now=clock)
+                edition_mode = "published"
+                local = None
+                edition_changed = True
+                cache_preserved = False
+            else:
+                selected = cached or validated
+                edition_mode = "local" if local is not None else "published"
+                new_stories = 0
+                edition_changed = False
+                cache_preserved = cached is not None
+
+            if published_timing["publisherStale"]:
+                status = "stale-publication"
+            elif edition_changed:
+                status = "updated"
+            elif local is not None:
+                status = "local-current"
+            else:
+                status = "no-change"
+            selected_timing = edition_timing(
+                selected,
+                now=clock,
+                cached_at=feed_cached_at(env),
+            )
+        return response(
+            status,
+            feed=selected,
+            cachePreserved=cache_preserved,
+            editionMode=edition_mode,
+            localEdition=local,
+            publishedGeneratedAt=validated["generatedAt"],
+            newStories=new_stories,
+            editionChanged=edition_changed,
+            timing=selected_timing,
+            publishedTiming=published_timing,
+            message=update_message(
+                status,
+                timing=published_timing,
+                new_stories=new_stories,
+                local_edition=edition_mode == "local",
+            ),
+        )
     except (RadarError, OSError) as exc:
         reason = exc.reason if isinstance(exc, FetchError) else "validation-failed" if isinstance(exc, ValidationError) else "local-error"
         invalid_candidate = isinstance(exc, ValidationError) or (
             isinstance(exc, FetchError) and exc.reason in {"invalid-json", "too-large"}
         )
+        status = "invalid-feed" if invalid_candidate else "offline"
+        cache_timing = (
+            edition_timing(cached, now=clock, cached_at=feed_cached_at(env))
+            if cached is not None
+            else None
+        )
         return response(
-            "invalid-feed" if invalid_candidate else "offline",
+            status,
             reason=reason,
-            message=str(exc),
+            detail=str(exc),
             feed=cached,
             cachePreserved=cached is not None,
+            editionMode="local" if local is not None else "published",
+            localEdition=local,
+            newStories=0,
+            editionChanged=False,
+            timing=cache_timing,
+            message=update_message(status, timing=cache_timing, local_edition=local is not None),
         )
 
 
@@ -267,7 +318,8 @@ def set_section_filter(
 def indicator_model(
     environment: Mapping[str, str] | None = None, *, now: datetime | None = None
 ) -> dict[str, Any]:
-    feed = load_feed(environment, now=now)
+    clock = now or datetime.now(timezone.utc)
+    feed = load_feed(environment, now=clock)
     state, quarantined = load_state(environment)
     preferences = state["preferences"]
     if feed is None:
@@ -279,7 +331,8 @@ def indicator_model(
             quarantine=quarantined,
         )
     unread = sum(not event_is_read(state, event) for event in feed["events"])
-    health = "partial" if any(source["status"] == "failed" for source in feed["sources"]) else "stale" if any(source["status"] == "stale" for source in feed["sources"]) else "current"
+    timing = edition_timing(feed, now=clock, cached_at=feed_cached_at(environment))
+    health = "partial" if any(source["status"] == "failed" for source in feed["sources"]) else "publisher-stale" if timing["publisherStale"] else "source-stale" if any(source["status"] == "stale" for source in feed["sources"]) else "current"
     return response(
         "ok",
         unread=unread,
@@ -287,6 +340,8 @@ def indicator_model(
         generatedAt=feed["generatedAt"],
         barVisible=preferences["barVisible"],
         quarantine=quarantined,
+        publisherStale=timing["publisherStale"],
+        timing=timing,
     )
 
 
@@ -303,7 +358,12 @@ def refresh_if_due(
     if cached is not None:
         age = (clock - parse_timestamp(cached["generatedAt"])).total_seconds()
         if age < minimum_age:
-            return response("not-due", feed=cached, cachePreserved=True)
+            return response(
+                "not-due",
+                feed=cached,
+                cachePreserved=True,
+                timing=edition_timing(cached, now=clock, cached_at=feed_cached_at(environment)),
+            )
     return refresh(environment, now=clock)
 
 

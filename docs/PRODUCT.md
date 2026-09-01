@@ -29,14 +29,14 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 1. The user installs and enables the plugin through the normal Omarchy plugin flow. A small newspaper appears in the right bar section by default.
 2. The user may install Radar's explicit XDG launcher entry, which adds **Omarchy News Radar** with its newspaper mark to Omarchy's normal Apps menu without touching unrelated entries.
 3. The user may run the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change.
-4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
-5. Radar refreshes one bounded static feed without blocking the cached edition.
+4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper summons the same window: closed Radar opens; an existing foreground or obscured Radar is raised and focused without toggling closed. Omarchy's `Super+Shift+N` Editor action remains unchanged.
+5. Radar checks one bounded static published edition without blocking the cached edition. It never implies that the desktop action collects upstream sources.
 6. The front page and section rail show exactly how many stories remain unread; every row says `UNREAD` or `READ`, and any accepted reviewed link joins that finite edition without creating a separate empty lane.
 7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, and Saved, with `Tab` and `Shift+Tab` cycling sections and Down/Enter reaching finite pagination.
 8. Deliberately selecting an item marks only that story read and exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics. The inspector and `u` shortcut can mark it unread again; a separate explicit section action marks every unread story matching that section's persistent Settings filters read in one atomic transition.
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel never bulk-marks the edition. Stories the user did not deliberately select remain unread across close, refresh, and restart.
-11. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
+11. Offline or failed checks preserve the last-known-good edition and clearly separate source checks, collection, artifact publication, Pages cache propagation, and local cache age. Publication older than 90 minutes is visibly stale even if all sources succeeded previously.
 12. The user can inspect each section's fixed source scope, add local filters, and reveal further matching stories in finite twelve-item steps.
 13. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images.
 
@@ -73,7 +73,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Useful empty, offline, partial-source, and invalid-feed states.
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
-- A compositor-managed resizable/maximizable window with ordinary task switching, an always-visible keyboard guide, explicit arrow-key/Enter finite load-more controls, a hover-visible Refresh shortcut, animated refresh progress, and selected/secondary text contrast across maintained themes.
+- A compositor-managed resizable/maximizable window with ordinary task switching, summon-to-focus activation, an always-visible keyboard guide, explicit arrow-key/Enter finite load-more controls, a hover-visible **Check for updates** shortcut, animated check progress, and selected/secondary text contrast across maintained themes.
 - Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, an explicit filtered-section **Mark all as read** action, and durable private reading state.
 - Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 

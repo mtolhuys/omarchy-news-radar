@@ -110,8 +110,31 @@ def load_feed(environment: Mapping[str, str] | None = None, *, now: datetime | N
 
 def save_feed(feed: Mapping[str, Any], environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
     validated = validate_feed(dict(feed), now=now, public_only=True)
-    atomic_write_json(feed_path(environment), validated)
+    path = feed_path(environment)
+    atomic_write_json(path, validated)
+    if now is not None:
+        try:
+            timestamp = now.astimezone(timezone.utc).timestamp()
+            os.utime(path, (timestamp, timestamp), follow_symlinks=False)
+        except OSError:
+            # Cache mtime is observability metadata, never a reason to discard
+            # an already validated and atomically replaced last-known-good feed.
+            pass
     return validated
+
+
+def feed_cached_at(environment: Mapping[str, str] | None = None) -> datetime | None:
+    """Return when this client last adopted its cache, using the owned feed mtime."""
+
+    path = feed_path(environment)
+    refuse_symlink(path)
+    try:
+        info = path.stat()
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+        raise StorageError("cached feed is not an owned regular file")
+    return datetime.fromtimestamp(info.st_mtime, tz=timezone.utc)
 
 
 def _quarantine(path: Path) -> Path:

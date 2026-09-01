@@ -50,6 +50,8 @@ make site
 ### Publisher
 
 - JSON, RSS, and HTML remain deterministic with a fixed clock.
+- Source check, collection, artifact publication, Pages-cache, and local-cache timestamps remain distinct; publication staleness is false at exactly 90 minutes and true one second later, with explicit legacy-feed fallback.
+- Workflow source validation requires four off-peak best-effort schedule opportunities per hour and non-cancelling Pages concurrency.
 - HTML/XML/context escaping defeats hostile titles, summaries, URLs, Unicode, quotes, angle brackets, and control characters.
 - CSP and external-link attributes remain present.
 - Generated-file drift fails validation.
@@ -58,6 +60,7 @@ make site
 ### Client helper
 
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, benign stale per-story writes across replacement, and no-cache failure.
+- Published-edition checks report `updated` with an exact new-story count, `no-change`, `stale-publication`, invalid-feed, and offline results without calling an old source-success snapshot current.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
 - Indicator unread/health output, due-check age bounds, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
 - Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, published downgrade refusal, adoption of a newer published edition while local mode is active, and purge of imported assets.
@@ -112,16 +115,16 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 
 1. Source tests and manifest validation pass for the exact candidate.
 2. Plugin add, enable, discovery, and panel entry-point identity match the candidate.
-3. The default right-section newspaper renders at native cross-axis size with unread and health states; left click opens the panel, middle click refreshes, right click hides it with exact zero slot geometry, and Tune restores it.
+3. The default right-section newspaper renders at native cross-axis size with unread and publisher/source health states; left click summons or raises the panel, middle click checks the published edition, right click hides it with exact zero slot geometry, and Tune restores it.
 4. The shortcut helper reports `Super+Alt+N` as free, writes its exact managed bind-only block, reloads cleanly, exposes exactly one Radar action on that chord, and leaves the separate Editor action live.
-5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
+5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route; QMP pointer activation of the newspaper and the global shortcut each raise an obscured Radar, foreground and rapid repeated activation retain exactly one focused window, and no competing helper remains.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
 8. `Tab` and `Shift+Tab` cycle the five sections; the Settings cogwheel shows fixed sources and only actionable filters, exposes no renaming/profile path or low-value explanatory filler, and independently resets filters. Down focuses Load more with an explicit Enter label; Enter expands it without another feed request before the next Down continues into the new page.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
-10. `j`, `k`, section keys, search, save, read/unread toggle, filtered-section **Mark all as read**, refresh, Tune, and source opening use rendered controls; the batch action includes unloaded matches but not nonmatching stories, the keyboard guide is visible below search, Refresh exposes `R` on hover, every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
+10. `j`, `k`, section keys, search, save, read/unread toggle, filtered-section **Mark all as read**, **Check for updates**, Tune, and source opening use rendered controls; the batch action includes unloaded matches but not nonmatching stories, the keyboard guide is visible below search, the update control exposes `R` on hover, every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Exact enabled-plugin matching places fixture events in For You without transmitting private inputs; no manual-interest UI, CLI argument, or current state field exists.
-12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
+12. The published-edition check proves updated/new-story-count, no-change/publication-age, stale-publisher, offline, malformed, oversized, and partial-source states while preserving the last-known-good edition where required.
 13. Normal close does not change unselected stories; an event introduced during the session remains unread next time, one rendered action persists only that event as read, and `u` makes it unread again.
 14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, animated-refreshing, offline, invalid, and partial states remain unclipped and understandable; selected and unselected headlines, summaries, metadata, metrics, and meaningful secondary copy remain readable in both themes, and no empty Community destination is present.
 15. AltTab and Omadock companion candidates resolve Radar's exact enabled `windowIdentity` to its local manifest name/icon, render the newspaper asset in their visible UI, and fall back for disabled, malformed, missing, or ambiguous declarations without relabeling unrelated Quickshell windows.
