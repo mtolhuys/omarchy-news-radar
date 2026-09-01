@@ -4,9 +4,11 @@
 
 Omarchy News Radar is a visual, keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with an optional newspaper status widget, a full panel, a deterministic Python collector/publisher, a bounded static JSON/RSS/HTML edition with safe mirrored previews, and a cached local reader that remains useful offline.
 
+![Omarchy News Radar showing explicit read and unread stories](preview.png)
+
 ## Project status
 
-Version `0.1.0` is a public release candidate, not yet a tagged release or marketplace listing. The source repository and live Pages edition exist; exact-commit public-clone acceptance, final evidence, the release tag, and marketplace review remain gated on the per-story read-state work introduced before first release.
+Version `0.1.0` is the first public release. Its source, live Pages edition, release evidence, and exact public-clone Plugin Lab acceptance are published here; an Omarchy marketplace listing becomes available only after the marketplace maintainers approve the submitted repository.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -61,9 +63,9 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install after the v0.1.0 release
+## Install v0.1.0
 
-After the exact candidate is tagged and listed, install it with:
+Install the tagged public release directly with:
 
 ```bash
 omarchy plugin add https://github.com/mtolhuys/omarchy-news-radar --enable --yes

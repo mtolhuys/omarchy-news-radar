@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — Unreleased preview
+## 0.1.0 — 2026-09-01
 
 - Implement the deterministic release, marketplace, and reviewed-community collector.
 - Publish a bounded JSON feed, RSS projection, archive, and framework-free static site.

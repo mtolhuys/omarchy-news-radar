@@ -76,13 +76,13 @@ Normal plugin removal does not delete local state or run repository cleanup hook
 
 ## Owner-authorized publication procedure
 
-These steps are deliberately external and remain pending until the owner authorizes them:
+The owner explicitly authorized this procedure on 2026-09-01. It remains the required sequence for this release and any reproduction of it:
 
 1. Create the intended public repository at `https://github.com/mtolhuys/omarchy-news-radar`, push the reviewed clean candidate commit, and configure Pages to use GitHub Actions. Do not create a release or marketplace entry yet.
 2. Run the `Build and publish static edition` workflow manually with `bootstrap_marketplace` enabled only if the committed snapshot is empty. Confirm the published JSON, RSS, HTML, mirrored images, archive, build digest, and source-health metadata at the fixed Pages origin. The hourly minute-17 schedule can run after this proof.
 3. Download the workflow's `source-snapshot` artifact, replace `state/source-snapshot.json` with that exact reviewed file, run all four local source gates, commit it, and push it before running publication again. For every later publication, leave bootstrap disabled and repeat this snapshot-review commit step so the repository remains the explicit source baseline.
 4. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
-5. Review the release checklist and evidence record against that exact commit. Only then, with separate owner authorization, create the `v0.1.0` tag and release and submit the repository to the Omarchy marketplace.
+5. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.0` tag and release and submit the repository to the Omarchy marketplace. Marketplace availability remains maintainer-controlled and must not be claimed from issue creation alone.
 
 The workflow intentionally has no repository write permission. Snapshot advancement is a human-reviewed source change, not hidden CI state.
 
