@@ -81,6 +81,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function storyFullyVisible(index)", qml)
         self.assertIn("function animateStoryPosition(index, mode, initialContentY)", qml)
         self.assertIn("anchorAtTop ? ListView.Beginning : ListView.Contain", qml)
+        self.assertIn("Math.min(row.y, maximumContentY)", qml)
         self.assertIn('property: "contentY"', qml)
         self.assertIn("duration: 140", qml)
         self.assertIn("function loadMore() {\n    if (!hasMoreStories) return", qml)

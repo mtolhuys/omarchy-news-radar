@@ -628,17 +628,22 @@ omarchy_host_test() {
   press home
   wait_for_guest_state "Home positions the first dense story at the viewport top" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.selectedIndex == 0 and .fullyVisible == true and .topAligned == true and .scrolling == false'" || return 1
+  : >"$RUN_DIR/news-radar-scroll-probes.jsonl"
   for _ in 1 2 3 4 5 6 7 8 9 10; do
     press down
     sleep 0.25
     viewport_state="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'")" || return 1
+    printf '%s\n' "$viewport_state" >>"$RUN_DIR/news-radar-scroll-probes.jsonl"
     if jq -e '.selectedIndex > 0 and .fullyVisible == true and .topAligned == true and .scrolling == false' \
       <<<"$viewport_state" >/dev/null; then
       anchored=true
       break
     fi
   done
-  [[ $anchored == true ]] || return 1
+  if [[ $anchored != true ]]; then
+    log "Dense-list selection never reached a complete top-anchored row"
+    return 1
+  fi
   anchored_index="$(jq -r '.selectedIndex' <<<"$viewport_state")" || return 1
   anchored_content_y="$(jq -r '.contentY' <<<"$viewport_state")" || return 1
   printf '%s\n' "$viewport_state" >"$RUN_DIR/news-radar-scroll-anchor.json"

@@ -538,6 +538,15 @@ Item {
     storyScrollAnimation.stop()
     storyList.positionViewAtIndex(index, mode)
     var targetContentY = storyList.contentY
+    var row = storyList.itemAtIndex(index)
+    if (mode === ListView.Beginning && row) {
+      var maximumContentY = storyList.originY
+        + Math.max(0, storyList.contentHeight - storyList.height)
+      targetContentY = Math.max(
+        storyList.originY,
+        Math.min(row.y, maximumContentY)
+      )
+    }
     storyList.contentY = initialContentY
     if (Math.abs(targetContentY - initialContentY) <= 0.5) {
       storyList.contentY = targetContentY
