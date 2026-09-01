@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6 — 2026-09-02
+
+- Make the normal Omarchy plugin update path repair the background-window shortcut defect: the bar generation loaded by the updater's plugin rescan automatically migrates only the byte-exact, unmodified Radar-owned 0.1.3 `toggle` block to `summon`.
+- Keep fresh shortcut installation explicit and conflict-free. The automatic migration command cannot install a free chord and leaves personal, edited, multiple, conflicting, symlinked, or ambiguous configuration unchanged.
+- Change the permanent disposable-VM upgrade regression to prove update-only repair before Radar is opened or any migration control is clicked, while retaining the visible panel action as a rollback-safe fallback.
+
 ## 0.1.5 — 2026-09-02
 
 - Repair the missed 0.1.3 upgrade path: an exact Radar-owned `toggle` shortcut is now identified as legacy instead of ambiguous and can be explicitly migrated to `summon` with the same private backup, atomic reload validation, and rollback guarantees.

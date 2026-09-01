@@ -112,7 +112,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -127,7 +127,7 @@ This is a target manifest, not permission to create it before `src/Panel.qml` ex
 
 Every public activation route uses the shell's `summon` operation. Closed means create/open/focus; already open means raise and focus the same window, whether it is foreground or obscured. Repeated activation never serves as close. `Escape`, `q`, the rendered close control, and normal window-manager close remain the deliberate close routes. The panel's bounded window helper validates one exact mapped Radar client, floats it if necessary, then focuses that address; an ambiguous identity fails closed.
 
-The panel also performs one read-only shortcut inspection on open. If and only if the helper identifies the byte-exact 0.1.3 Radar-owned `toggle` block and one matching live action, the panel renders **Update shortcut**. Activating that control delegates to the explicit helper, which backs up and atomically replaces only the owned block with `summon`, reloads and validates Hyprland, and rolls back on failure. There is no automatic mutation during plugin installation, update, enablement, or panel open.
+The bar entry point runs one bounded migration command when Omarchy creates its generation, including the generation loaded by the updater's normal rescan. That command cannot install a free chord: it mutates only when the helper identifies the byte-exact 0.1.3 Radar-owned `toggle` block and one matching live action. It backs up and atomically replaces only that owned block with `summon`, reloads and validates Hyprland, and rolls back on failure. Every other classification is a no-op. The panel still performs a read-only inspection on open and renders **Update shortcut** as a user-visible retry if the exact legacy state remains.
 
 `windowIdentity` is a narrow companion-integration declaration for hosted normal windows. The app ID and full title must both equal the compositor values before a companion switcher or dock may use the existing local manifest name/icon. Unknown, disabled, malformed, missing, or ambiguous declarations fall back to normal desktop-entry resolution; the declaration does not alter Quickshell's process-wide app ID.
 

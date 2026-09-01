@@ -18,6 +18,7 @@ from radar.shortcut import (
     ShortcutStatus,
     inspect,
     install,
+    migrate_owned_legacy,
     remove,
 )
 
@@ -96,6 +97,46 @@ class ShortcutTests(unittest.TestCase):
         self.assertTrue(candidate.startswith(self.original))
         self.assertEqual(1, candidate.decode("utf-8").count(MANAGED_BLOCK))
         self.assertNotIn(LEGACY_MANAGED_BLOCK.encode("utf-8"), candidate)
+
+    def test_owned_legacy_migration_command_repairs_only_the_legacy_block(self) -> None:
+        self.bindings.write_bytes(self.original + LEGACY_MANAGED_BLOCK.encode("utf-8"))
+        with (
+            mock.patch("radar.shortcut._live_bindings", side_effect=self.live),
+            mock.patch("radar.shortcut._reload_expect"),
+        ):
+            migrated = migrate_owned_legacy(self.environment)
+        self.assertEqual("migrated", migrated["status"])
+        self.assertIn(MANAGED_BLOCK.encode("utf-8"), self.bindings.read_bytes())
+        self.assertNotIn(LEGACY_MANAGED_BLOCK.encode("utf-8"), self.bindings.read_bytes())
+
+    def test_owned_legacy_migration_command_never_installs_a_free_binding(self) -> None:
+        with mock.patch("radar.shortcut._live_bindings", side_effect=self.live):
+            result = migrate_owned_legacy(self.environment)
+        self.assertEqual("not-needed", result["status"])
+        self.assertEqual("free", result["classification"])
+        self.assertEqual(self.original, self.bindings.read_bytes())
+
+    def test_owned_legacy_migration_command_never_changes_personal_or_edited_bindings(self) -> None:
+        personal = b'o.bind("SUPER + ALT + N", "Mine", "mine")\n'
+        self.bindings.write_bytes(personal)
+        with mock.patch(
+            "radar.shortcut._live_bindings",
+            return_value=[{"key": "N", "modmask": 72, "description": "Mine"}],
+        ):
+            result = migrate_owned_legacy(self.environment)
+        self.assertEqual("not-needed", result["status"])
+        self.assertEqual("personal-conflict", result["classification"])
+        self.assertEqual(personal, self.bindings.read_bytes())
+
+        edited = self.original + LEGACY_MANAGED_BLOCK.replace(
+            "Omarchy News Radar", "Personal Radar"
+        ).encode("utf-8")
+        self.bindings.write_bytes(edited)
+        with mock.patch("radar.shortcut._live_bindings", return_value=self.live()):
+            result = migrate_owned_legacy(self.environment)
+        self.assertEqual("not-needed", result["status"])
+        self.assertEqual("ambiguous", result["classification"])
+        self.assertEqual(edited, self.bindings.read_bytes())
 
     def test_legacy_migration_failure_restores_exact_original(self) -> None:
         legacy = self.original + LEGACY_MANAGED_BLOCK.encode("utf-8")

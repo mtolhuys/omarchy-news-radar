@@ -74,6 +74,7 @@ Use a temporary fake home and stub `hyprctl` executable to prove:
 - explicit installation without an unbind or action replacement;
 - personal, multiple, unknown, and ambiguous conflict refusal;
 - exact idempotence;
+- automatic migration command no-op behavior for free, current, personal, edited, conflicting, multiple, symlinked, and ambiguous states;
 - preservation of arbitrary surrounding Lua bytes;
 - symlink and ownership refusal;
 - successful reload and empty config errors;
@@ -134,7 +135,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 18. Installing the receipt-backed XDG launcher makes **Omarchy News Radar** searchable with its newspaper icon in the real Apps menu; selecting that visible row summons Radar, and explicit launcher removal makes the row disappear without touching another application.
 19. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
-`activation-upgrade.sh` separately constructs an exact local Git history from released 0.1.3 and the current candidate. It must install the 0.1.3 managed shortcut, reproduce the released background-window close through both real QMP routes, fast-forward through Omarchy's official plugin updater, classify the retained binding as `owned-legacy`, render the explicit migration action, drive it with QMP pointer input, and prove that the resulting live shortcut and current newspaper each raise one obscured Radar window while foreground repeats keep it open. It must also prove empty Hyprland configuration errors and exact shortcut removal.
+`activation-upgrade.sh` separately constructs an exact local Git history from released 0.1.3 and the current candidate. It must install the 0.1.3 managed shortcut, reproduce the released background-window close through both real QMP routes, fast-forward through Omarchy's official plugin updater, and—without opening Radar or clicking any migration control—prove that the updater's normal rescan backs up and replaces only the exact retained legacy block. The resulting live shortcut and current newspaper must each raise one obscured Radar window while foreground repeats keep it open. It must also prove empty Hyprland configuration errors and exact shortcut removal. The panel's visible migration control remains separately source/unit tested as the rollback-safe retry path.
 
 `public-install.sh` separately proves the public GitHub URL clones the expected commit, validates and enables the panel, loads the fixed Pages edition, exposes durable per-story read state, supports documented launcher and shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`.
 

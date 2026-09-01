@@ -60,9 +60,9 @@ At most one refresh helper belongs to one panel or bar instance, and a kernel-ba
 
 The same command collects one edition into a private temporary directory using only the ordinary allowlisted publisher sources. Import requires canonical validated feed bytes, exact build digest and source revision, and complete byte/format/dimension/hash validation for every referenced raster before the cached feed changes. The one-time panel-only preview migration acts only on one exact unmodified owned `plugins[]` entry with no bar entry; it uses Omarchy disable/enable commands, restores the newly introduced bar/image defaults once, and refuses custom, duplicate, or ambiguous placement.
 
-## Shortcut installer
+## Shortcut installer and owned-block migration
 
-Global shortcut setup is an explicit user action and is not run by plugin installation, enablement, panel opening, refresh, or update.
+Creating a global shortcut remains an explicit user action and is not run by plugin installation, enablement, panel opening, refresh, or update. A prior explicit setup creates one byte-exact marked Radar-managed block. When an update reloads the bar generation, Radar may automatically migrate only that exact unmodified legacy block; the migration command can never install a free chord.
 
 `news-radar-shortcut install` must:
 
@@ -79,7 +79,9 @@ Global shortcut setup is an explicit user action and is not run by plugin instal
 11. Restore the backup and reload again when validation fails.
 12. Report the exact changed file, binding, backup, and recovery result.
 
-`status` and the panel-open inspection are read-only. The panel runs migration only after the user activates its visible **Update shortcut** control. `remove` deletes only an exact unmodified current or legacy managed block, uses the same backup/atomic/reload/rollback process, refuses ambiguous or user-edited blocks, and verifies that `Super+Alt+N` is free again. It also leaves the separate `Super+Shift+N` Editor action untouched. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
+`migrate-owned-legacy` performs the same inspection and returns without mutation for `free`, `owned`, `personal-conflict`, or `ambiguous`. Only `owned-legacy` reaches the existing backup, atomic replacement, reload, validation, and rollback path. The bar invokes this narrow command once per loaded generation, so Omarchy's normal post-update rescan repairs an owned legacy action without treating a free chord as permission to create one.
+
+`status` and the panel-open inspection are read-only. The panel runs migration only after the user activates its visible **Update shortcut** retry. `remove` deletes only an exact unmodified current or legacy managed block, uses the same backup/atomic/reload/rollback process, refuses ambiguous or user-edited blocks, and verifies that `Super+Alt+N` is free again. It also leaves the separate `Super+Shift+N` Editor action untouched. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
 
 Never expose a force-overwrite or action-replacement flag in version 1. Users with any conflict receive manual guidance for choosing and configuring a different free key.
 

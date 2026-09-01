@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Permanent upgrade regression for the v0.1.3 toggle binding and the current
-# candidate's explicit, ownership-preserving migration to summon activation.
+# Permanent update-only regression for the v0.1.3 toggle binding and the
+# current candidate's ownership-preserving migration to summon activation.
 
 omarchy_host_test() {
   local product_root lab_root plugin_dir shortcut viewport_width viewport_height bar_x bar_y
@@ -72,31 +72,17 @@ omarchy_host_test() {
   ssh_guest "git -C /tmp/news-radar-upgrade-origin add -A && git -C /tmp/news-radar-upgrade-origin -c user.name=PluginLab -c user.email=lab@invalid commit -qm candidate"
   ssh_session "omarchy-plugin-update io.github.mtolhuys.news-radar --yes" >"$RUN_DIR/news-radar-candidate-update.log" || return 1
   wait_for_guest_state "candidate replaces plugin source" 20 ssh_session \
-    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && jq -e '.version == \"0.1.5\"' $plugin_dir/manifest.json && grep -Fq 'shell summon io.github.mtolhuys.news-radar' $plugin_dir/src/BarWidget.qml" || return 1
+    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && jq -e '.version == \"0.1.6\"' $plugin_dir/manifest.json && grep -Fq 'shell summon io.github.mtolhuys.news-radar' $plugin_dir/src/BarWidget.qml" || return 1
 
-  ssh_session "$shortcut status" >"$RUN_DIR/news-radar-candidate-legacy-shortcut-status.json" || return 1
-  jq -e '.classification == "owned-legacy"' "$RUN_DIR/news-radar-candidate-legacy-shortcut-status.json" >/dev/null || return 1
-  ssh_session "grep -Fq 'shell toggle io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\"" || return 1
+  wait_for_guest_state "the update alone migrates the exact owned legacy action" 20 ssh_session \
+    "$shortcut status | jq -e '.classification == \"owned\"' && grep -Fq 'shell summon io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && ! grep -Fq 'shell toggle io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && compgen -G \"\$HOME/.config/hypr/bindings.lua.news-radar-backup-*\" >/dev/null && test -z \"\$(hyprctl configerrors)\" && hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
+  ssh_session "$shortcut status" >"$RUN_DIR/news-radar-candidate-updated-shortcut-status.json" || return 1
 
-  ssh_session "omarchy-shell shell summon io.github.mtolhuys.news-radar"
-  wait_radar "candidate Radar opens after update" || return 1
-  wait_for_guest_state "candidate exposes the explicit owned-shortcut migration" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.shortcutState == \"needs-update\"'" || return 1
-  capture_console "success-news-radar-shortcut-migration-offer"
-
-  local migration_geometry window_position migration_x migration_y window_x window_y
-  migration_geometry="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar shortcutMigrationGeometry ''")" || return 1
-  window_position="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | [.at[0], .at[1]] | @tsv'")" || return 1
-  read -r window_x window_y <<<"$window_position"
-  migration_x=$((window_x + $(jq -r '(.x + (.width / 2) | floor)' <<<"$migration_geometry")))
-  migration_y=$((window_y + $(jq -r '(.y + (.height / 2) | floor)' <<<"$migration_geometry")))
-  qmp_pointer_tap "$viewport_width" "$viewport_height" "$migration_x" "$migration_y" left
-  wait_for_guest_state "explicit migration replaces only the owned legacy action" 15 ssh_session \
-    "$shortcut status | jq -e '.classification == \"owned\"' && grep -Fq 'shell summon io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && ! grep -Fq 'shell toggle io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && test -z \"\$(hyprctl configerrors)\" && omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.shortcutState == \"updated\"'" || return 1
-
+  press meta_l-alt-n
+  wait_radar "update-migrated shortcut opens Radar" || return 1
   obscure_radar || return 1
   press meta_l-alt-n
-  wait_radar "migrated shortcut raises obscured Radar without closing" || return 1
+  wait_radar "update-migrated shortcut raises obscured Radar without closing" || return 1
 
   obscure_radar || return 1
   bar_x="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.x + (.width / 2) | floor)'")"
@@ -111,5 +97,5 @@ omarchy_host_test() {
 
   capture_console "success-news-radar-activation-upgrade"
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-candidate-shortcut-removed.json" || return 1
-  printf 'ok - exact legacy ownership migrated explicitly; shortcut and bar each raise one obscured Radar window\n'
+  printf 'ok - the plugin update alone migrated exact legacy ownership; shortcut and bar each raise one obscured Radar window\n'
 }

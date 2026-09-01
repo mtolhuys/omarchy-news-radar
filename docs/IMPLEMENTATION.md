@@ -69,8 +69,9 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 3. Make `status` read-only and make `install` succeed only when `Super+Alt+N` is free; never provide a force or action-replacement path.
 4. Implement backup, atomic write, reload, live-action/config-error validation, rollback, idempotence, chord release, and manual fallback text.
 5. Document free-chord inspection, install, custom binding, shortcut removal, unchanged Editor behavior, plugin removal, and stale-binding behavior accurately.
+6. Give the bar generation one automatic migration command that no-ops for every state except the exact unmodified Radar-owned legacy block; retain the panel action as a visible retry.
 
-**Done when:** Temporary-home tests cover every mutation and rollback case, and the disposable guest can install and remove the live binding without touching unrelated configuration.
+**Done when:** Temporary-home tests cover every mutation and rollback case, the disposable guest proves a normal plugin update alone repairs the exact legacy block, and fresh install/remove still cannot touch unrelated configuration.
 
 ## Phase 5b — Add the explicit Apps-menu entry
 

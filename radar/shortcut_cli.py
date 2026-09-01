@@ -8,7 +8,7 @@ import sys
 from typing import Sequence
 
 from .errors import ShortcutError
-from .shortcut import inspect, install, remove
+from .shortcut import inspect, install, migrate_owned_legacy, remove
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -16,6 +16,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("status")
     commands.add_parser("install")
+    commands.add_parser("migrate-owned-legacy")
     commands.add_parser("remove")
     args = parser.parse_args(argv)
     try:
@@ -23,6 +24,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = {"protocolVersion": 1, "status": "ok", **inspect().public()}
         elif args.command == "install":
             result = {"protocolVersion": 1, **install()}
+        elif args.command == "migrate-owned-legacy":
+            result = {"protocolVersion": 1, **migrate_owned_legacy()}
         else:
             result = {"protocolVersion": 1, **remove()}
         print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))

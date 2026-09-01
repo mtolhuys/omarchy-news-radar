@@ -288,10 +288,18 @@
 
 **Consequence:** Closed-panel users receive a passive unread badge within one bounded client interval after Pages serves the edition, and a successful feed adoption propagates without waiting for another timer. The private cadence file is strict, bounded, atomic, mode `0600`, purge-owned, and contains no reading data or identifiers; malformed or materially future values mean “due” rather than delaying checks. This does not add a daemon, hidden polling, desktop notification, telemetry, account, or personalized request.
 
-## D037 — Migrate only the exact legacy shortcut, after explicit consent
+## D037 — Migrate only the exact legacy shortcut, after explicit consent (superseded by D038)
 
 **Decision:** Treat the byte-exact 0.1.3 Radar-owned managed block as `owned-legacy`. A read-only panel-open inspection may expose **Update shortcut**, but replacement with the current `summon` block occurs only when the user activates that control or explicitly runs `news-radar-shortcut install` again.
 
 **Why:** Version 0.1.4 corrected the template but did not change an already-installed personal binding, because Omarchy plugin updates intentionally run no repository hooks. The old live `toggle` action therefore survived a normal upgrade and kept closing an obscured Radar. Classifying the old marker pair as generic ambiguity made the helper unable to repair or remove its own unmodified output. Automatic mutation during update or panel open would violate the explicit shortcut-ownership contract.
 
 **Consequence:** Exact legacy detection requires one complete known block, one marker pair, and one matching live Radar action. Migration preserves all surrounding bytes, creates a private backup, writes atomically, reloads Hyprland, validates one current live action and no configuration error, and restores the legacy action if validation fails. Current, legacy, edited, personal, multiple, conflicting, symlinked, or otherwise ambiguous cases remain distinct; no force path exists. Disposable-lab acceptance must exercise the real 0.1.3-to-candidate update rather than only a fresh candidate installation.
+
+## D038 — Repair an exact Radar-owned legacy block during the update rescan
+
+**Decision:** Initial shortcut installation remains explicit. Once that action created Radar's byte-exact marked block, the bar generation loaded by Omarchy's normal plugin-update rescan invokes `migrate-owned-legacy`. The command changes only the exact unmodified 0.1.3-owned `toggle` block with one matching live action; it returns without mutation for every other state. The panel retains **Update shortcut** as a visible retry if automatic validation cannot complete.
+
+**Why:** Version 0.1.5 made migration possible but required a second, undiscoverable action after the user had already run the advertised updater. That did not fulfill the ordinary meaning of an activation bug fix. The original explicit setup already delegated ownership of this exact marked block to Radar, and changing its action from close-on-obscured `toggle` to the promised summon-to-focus behavior is a repair of that owned output, not a new shortcut grant.
+
+**Consequence:** The narrow command can never install a free chord, claim a lookalike, or touch personal, edited, multiple, conflicting, symlinked, or ambiguous configuration. It reuses the private backup, atomic byte-preserving replacement, Hyprland reload/config validation, and exact rollback path. Disposable-lab acceptance now proves the official update command alone repairs the live binding before Radar opens or any migration control is clicked. A future declarative Omarchy shortcut/update contract may replace this generation-load bridge.

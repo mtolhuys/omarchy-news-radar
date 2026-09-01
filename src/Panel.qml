@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.5+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.6+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -1621,8 +1621,8 @@ Item {
                 + " · collected " + String(root.editionTiming.collectedAt || root.generatedAt)
                 + " · published " + String(root.editionTiming.publishedAt || root.generatedAt)
                 + " · cached " + String(root.editionTiming.cachedAt || "this session")
-                + " · Pages cache ≤10m · v0.1.5"
-              : "No edition generated · v0.1.5 · independent community project"
+                + " · Pages cache ≤10m · v0.1.6"
+              : "No edition generated · v0.1.6 · independent community project"
             textFormat: Text.PlainText
             color: root.secondaryTextColor
             font.family: Style.font.family

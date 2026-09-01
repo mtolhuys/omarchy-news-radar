@@ -37,6 +37,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("readonly property int refreshMinimumAgeSeconds: 15 * 60", widget)
         self.assertIn("function scheduleRefresh(result)", widget)
         self.assertIn("nextCheckInSeconds", widget)
+        self.assertIn('String(widgetMetadata.sourceDir) + "/bin/news-radar-shortcut"', widget)
+        self.assertIn('shortcutMigrationProc.command = [shortcutHelperPath, "migrate-owned-legacy"]', widget)
+        self.assertIn("property bool componentReady: false", widget)
+        self.assertIn("property bool shortcutMigrationAttempted: false", widget)
 
     def test_panel_uses_plain_text_and_structural_process_arguments(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

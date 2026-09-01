@@ -283,6 +283,17 @@ def install(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     }
 
 
+def migrate_owned_legacy(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Repair only Radar's exact legacy block; never install a free chord."""
+
+    if os.geteuid() == 0:
+        raise ShortcutError("shortcut setup refuses to run as root")
+    status = inspect(environment)
+    if status.classification != "owned-legacy":
+        return {"status": "not-needed", **status.public()}
+    return install(environment)
+
+
 def remove(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     if os.geteuid() == 0:
         raise ShortcutError("shortcut setup refuses to run as root")

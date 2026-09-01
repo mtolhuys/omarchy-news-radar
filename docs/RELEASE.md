@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.1.5` repairs the missed 0.1.3 shortcut-upgrade path while preserving explicit user consent and deterministic summon-to-focus behavior. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.1.6` makes the normal Omarchy update path repair the missed 0.1.3 shortcut defect while preserving conflict-free initial setup and deterministic summon-to-focus behavior. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
@@ -11,7 +11,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 ### Product
 
 - `Super+Alt+N` is re-audited as free, installed only after conflict checks, reversible, and accurately documented; the separate Editor shortcut remains intact.
-- An exact unmodified 0.1.3 Radar-owned block is reported as `owned-legacy`, exposed through a visible explicit migration action, backed up and atomically replaced with `summon`, and rolled back on validation failure; all edited or ambiguous cases remain refused.
+- An exact unmodified 0.1.3 Radar-owned block is reported as `owned-legacy`, automatically backed up and atomically replaced with `summon` by the generation loaded through a normal update rescan, and rolled back on validation failure; all free, current, edited, personal, conflicting, multiple, symlinked, or ambiguous cases remain unchanged, and the visible migration action remains a retry.
 - A documented IPC route keeps the panel reachable without the shortcut.
 - The explicit XDG launcher helper adds one searchable Apps-menu row with the newspaper icon, refuses modified/unrelated targets, and removes only receipt-matching files.
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
@@ -46,7 +46,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Cache/state writes are private, bounded, symlink-safe, atomic, recoverable, and serialized across panel/bar helper processes.
 - Application launcher/icon writes are bounded, receipt-backed, symlink-safe, atomic, reversible, and never overwrite user-modified or unrelated files.
 - One refresh process maximum per entry point plus a cross-instance lock; the panel tears down on close and bar refresh polling stops when hidden.
-- Shortcut install/migrate/remove preserves unrelated Lua exactly and rolls back on reload or config error.
+- Shortcut install/migrate/remove preserves unrelated Lua exactly and rolls back on reload or config error; the automatic update command cannot install a free chord.
 - Disable and removal preserve user state; explicit purge removes only validated Radar-owned paths.
 - No runtime package installation, privilege escalation, arbitrary command, or background daemon exists.
 - The local path identifies itself as a local live edition, revalidates imported feed/images, never presents fixtures as current news, refuses a published downgrade, adopts a newer published edition on refresh, and migrates only the exact old panel-only placement.
@@ -91,7 +91,7 @@ The owner explicitly authorized this procedure on 2026-09-01. It remains the req
 3. Download the workflow's `source-snapshot` artifact, replace `state/source-snapshot.json` with that exact reviewed file, run all four local source gates, commit it, and push it before running publication again. For every later publication, leave bootstrap disabled and repeat this snapshot-review commit step so the repository remains the explicit source baseline.
 4. Wait for two consecutive genuine `event=schedule` workflow runs on the merged four-times-hourly schedule. Both must pass build and deploy. After Pages/CDN propagation, verify `events.json`, RSS, HTML, build metadata, all source states/timestamps, event count, newest event, image count, schema, artifact SHA-256, and that public `publishedAt` matches the deployed build. A manual run does not satisfy this trigger proof.
 5. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
-6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.5` tag and release.
+6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.6` tag and release.
 7. Use the marketplace's **Plugin verification** form with **Verify and publish a newer upstream commit**, the exact plugin ID, repository root URL, and full 40-character release SHA. The existing snapshot remains live while compatibility validation, the Automated Security Baseline, maintainer approval, testing, and deployment remain maintainer-controlled. Do not represent issue creation as promotion or as a security audit.
 
 The workflow intentionally has no repository write permission. Snapshot advancement is a human-reviewed source change, not hidden CI state. If scheduled activity exceeds 45 minutes, publication age exceeds 90 minutes, Pages remains behind a successful deployment for more than its documented ten-minute propagation window, or a source check lags publication materially, the read-only health automation reports the exact layer. Recovery is to inspect the workflow trigger and latest scheduled run, use one manual dispatch only to restore publication, verify Pages, and leave schedule continuity to the next genuine invocations.

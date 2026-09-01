@@ -13,6 +13,8 @@ BarWidget {
     ? bar.barWidgetRegistry.metadataFor(moduleName) : null
   readonly property string helperPath: widgetMetadata && widgetMetadata.sourceDir
     ? String(widgetMetadata.sourceDir) + "/bin/news-radar-client" : ""
+  readonly property string shortcutHelperPath: widgetMetadata && widgetMetadata.sourceDir
+    ? String(widgetMetadata.sourceDir) + "/bin/news-radar-shortcut" : ""
   readonly property string stateBase: Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")
   readonly property int refreshMinimumAgeSeconds: 15 * 60
@@ -22,6 +24,8 @@ BarWidget {
   property bool barVisible: false
   property int unread: 0
   property string health: "empty"
+  property bool componentReady: false
+  property bool shortcutMigrationAttempted: false
   readonly property string healthLabel: health === "publisher-stale" ? "publisher stale"
     : health === "source-stale" ? "source stale"
     : health === "partial" ? "source partial"
@@ -65,6 +69,13 @@ BarWidget {
     runHelper(preferenceProc, ["set-preferences", "--bar-visible", "false"])
   }
 
+  function migrateOwnedLegacyShortcut() {
+    if (!componentReady || !shortcutHelperPath || shortcutMigrationAttempted || shortcutMigrationProc.running) return
+    shortcutMigrationAttempted = true
+    shortcutMigrationProc.command = [shortcutHelperPath, "migrate-owned-legacy"]
+    shortcutMigrationProc.running = true
+  }
+
   onHelperPathChanged: {
     if (!helperPath) return
     updateIndicator()
@@ -72,7 +83,11 @@ BarWidget {
     refreshTimer.restart()
   }
 
+  onShortcutHelperPathChanged: migrateOwnedLegacyShortcut()
+
   Component.onCompleted: {
+    componentReady = true
+    migrateOwnedLegacyShortcut()
     updateIndicator()
     refreshTimer.start()
   }
@@ -118,6 +133,10 @@ BarWidget {
       onStreamFinished: root.scheduleRefresh(RadarModel.parseResponse(text))
     }
     onExited: function() { root.updateIndicator() }
+  }
+
+  Process {
+    id: shortcutMigrationProc
   }
 
   FileView {
