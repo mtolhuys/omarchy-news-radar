@@ -1255,7 +1255,6 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 model: root.stories
-                currentIndex: root.selectedIndex
                 spacing: Style.spacing.sm
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
