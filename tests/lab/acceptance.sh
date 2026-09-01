@@ -419,7 +419,7 @@ omarchy_host_test() {
       return 1
     }
   capture_console "success-news-radar-03-background-bar-activation"
-  ssh_session "hyprctl dispatch focuswindow 'title:Radar Alt Tab Fixture' >/dev/null"
+  ssh_session "hyprctl dispatch 'hl.dsp.focus({ window = \"title:Radar Alt Tab Fixture\" })' >/dev/null"
   wait_for_guest_state "terminal obscures Radar again" 10 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"'" || return 1
   press meta_l-alt-n
@@ -448,7 +448,7 @@ omarchy_host_test() {
   wait_for_guest_state "one shortcut reopens and focuses Radar after window-manager close" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"' && \
      hyprctl -j clients | jq -e '[.[] | select(.title == \"📰 Omarchy News Radar\")] | length == 1'" || return 1
-  ssh_session "hyprctl dispatch focuswindow 'title:Radar Alt Tab Fixture' >/dev/null"
+  ssh_session "hyprctl dispatch 'hl.dsp.focus({ window = \"title:Radar Alt Tab Fixture\" })' >/dev/null"
   press alt-tab
   wait_for_guest_state "Alt+Tab returns focus to the Radar toplevel" 10 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"'" || return 1
