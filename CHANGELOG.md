@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-09-01
+
+- Fix local development editions becoming permanently pinned: Refresh now keeps an equal/newer owner-built edition, checks the live published feed, and atomically transitions back when publication advances.
+- Make **Load more** a visible arrow-key focus stop; Enter expands the list and Down continues into the first newly loaded story.
+- Add an animated, process-bound refresh indicator while cached stories remain readable.
+- Remove the broken interests UI, helper flag, projection branch, and current state field; state v8 validates and discards legacy v2–v7 interests while preserving reading state, saves, display preferences, names, and filters.
+
 ## 0.1.0 — 2026-09-01
 
 - Implement the deterministic release, marketplace, and reviewed-community collector.

@@ -26,6 +26,7 @@ from .validation import (
     require_exact_keys,
     require_mapping,
     validate_feed,
+    validate_legacy_interests,
     validate_section_filter,
     validate_section_profile,
     validate_state,
@@ -49,7 +50,9 @@ LEGACY_PREFERENCE_KEYS = {
     4: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
     5: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
     6: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+    7: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
 }
+STATE_V7_KEYS = {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences"}
 
 
 def cache_root(environment: Mapping[str, str] | None = None) -> Path:
@@ -77,7 +80,6 @@ def default_state() -> dict[str, Any]:
         "preferences": {
             "barVisible": True,
             "imagesVisible": True,
-            "interests": [],
             "sectionFilters": default_section_filters(),
             "sectionProfiles": default_section_profiles(),
         },
@@ -127,12 +129,16 @@ def _quarantine(path: Path) -> Path:
 
 
 def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate one published legacy shape before converting it to v7."""
+    """Validate one published legacy shape before converting it to v8."""
 
     old_version = raw.get("schemaVersion")
-    if old_version not in {1, 2, 3, 4, 5, 6}:
+    if old_version not in {1, 2, 3, 4, 5, 6, 7}:
         raise ValidationError("unsupported legacy state schemaVersion")
-    expected_state_keys = LEGACY_STATE_KEYS if old_version >= 2 else LEGACY_STATE_KEYS - {"preferences"}
+    expected_state_keys = (
+        STATE_V7_KEYS
+        if old_version == 7
+        else LEGACY_STATE_KEYS if old_version >= 2 else LEGACY_STATE_KEYS - {"preferences"}
+    )
     require_exact_keys(raw, expected_state_keys, f"state v{old_version}")
 
     preferences = default_state()["preferences"]
@@ -143,7 +149,8 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             LEGACY_PREFERENCE_KEYS[old_version],
             f"state v{old_version} preferences",
         )
-        for key in ("barVisible", "imagesVisible", "interests"):
+        validate_legacy_interests(old_preferences["interests"])
+        for key in ("barVisible", "imagesVisible"):
             preferences[key] = old_preferences[key]
 
         if old_version >= 3:
@@ -153,7 +160,7 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             )
             require_exact_keys(
                 old_filters,
-                CLIENT_SECTIONS if old_version == 6 else LEGACY_CLIENT_SECTIONS,
+                CLIENT_SECTIONS if old_version >= 6 else LEGACY_CLIENT_SECTIONS,
                 f"state v{old_version} section filters",
             )
             preferences["sectionFilters"] = {
@@ -168,7 +175,7 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             )
             require_exact_keys(
                 old_profiles,
-                CLIENT_SECTIONS if old_version == 6 else LEGACY_CLIENT_SECTIONS,
+                CLIENT_SECTIONS if old_version >= 6 else LEGACY_CLIENT_SECTIONS,
                 f"state v{old_version} section profiles",
             )
             profile_validator = migrate_section_profile_v4 if old_version == 4 else validate_section_profile
@@ -180,8 +187,8 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
     return validate_state(
         {
             "schemaVersion": STATE_SCHEMA_VERSION,
-            "readThrough": raw.get("seenThrough"),
-            "readOverrides": {},
+            "readThrough": raw.get("readThrough") if old_version == 7 else raw.get("seenThrough"),
+            "readOverrides": raw.get("readOverrides") if old_version == 7 else {},
             "saved": raw.get("saved"),
             "preferences": preferences,
         }
@@ -200,7 +207,7 @@ def load_state(
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5, 6}:
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5, 6, 7}:
             migrated = _migrate_legacy_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
@@ -292,7 +299,6 @@ def update_preferences(
     *,
     bar_visible: bool | None = None,
     images_visible: bool | None = None,
-    interests: list[str] | None = None,
 ) -> dict[str, Any]:
     current = validate_state(dict(state))
     preferences = dict(current["preferences"])
@@ -300,8 +306,6 @@ def update_preferences(
         preferences["barVisible"] = bar_visible
     if images_visible is not None:
         preferences["imagesVisible"] = images_visible
-    if interests is not None:
-        preferences["interests"] = interests
     current["preferences"] = preferences
     return validate_state(current)
 

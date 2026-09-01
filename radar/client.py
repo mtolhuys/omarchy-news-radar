@@ -107,20 +107,26 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
     clock = now or datetime.now(timezone.utc)
     cached = load_feed(env, now=clock)
     local = local_edition_metadata(cached, env)
-    if local is not None:
-        return response(
-            "local-current",
-            feed=cached,
-            cachePreserved=True,
-            editionMode="local",
-            localEdition=local,
-        )
     try:
         with RefreshLock(env):
             candidate = _test_feed(env)
             if candidate is None:
                 candidate = _fetch_feed()
             validated = validate_feed(candidate, now=clock, public_only=True)
+            if (
+                local is not None
+                and cached is not None
+                and parse_timestamp(validated["generatedAt"])
+                <= parse_timestamp(cached["generatedAt"])
+            ):
+                return response(
+                    "local-current",
+                    feed=cached,
+                    cachePreserved=True,
+                    editionMode="local",
+                    localEdition=local,
+                    publishedGeneratedAt=validated["generatedAt"],
+                )
             saved = save_feed(validated, env, now=clock)
         return response("current", feed=saved, cachePreserved=False, editionMode="published")
     except (RadarError, OSError) as exc:
@@ -183,7 +189,6 @@ def set_preferences(
     *,
     bar_visible: bool | None = None,
     images_visible: bool | None = None,
-    interests: list[str] | None = None,
     environment: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     with StateLock(environment):
@@ -192,7 +197,6 @@ def set_preferences(
             state,
             bar_visible=bar_visible,
             images_visible=images_visible,
-            interests=interests,
         )
         saved = save_state(updated, environment)
     return response("ok", state=saved)
@@ -353,7 +357,6 @@ def projection_model(
             filterOptions=filter_options(section),
         )
     saved_ids = set(state["saved"])
-    interests = state["preferences"]["interests"]
     counts: dict[str, int] = {}
     unread_counts: dict[str, int] = {}
     for name in names:
@@ -362,7 +365,6 @@ def projection_model(
             name,
             installed_plugin_ids=installed,
             saved_ids=saved_ids,
-            interests=interests,
         )
         filtered_events = apply_section_filter(
             section_events,
@@ -381,7 +383,6 @@ def projection_model(
             section,
             installed_plugin_ids=installed,
             saved_ids=saved_ids,
-            interests=interests,
             query=query,
         ),
         current_filter,

@@ -136,7 +136,7 @@ omarchy_host_test() {
   log "Installing the inert source-opening shim and isolated loopback fixture boundary"
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json && \
     systemd-run --user --unit=omarchy-news-radar-fixture --collect --quiet -- \
-      python3 -m http.server 18765 --bind 127.0.0.1 --directory /tmp/news-radar-fixtures"
+      python3 $plugin_dir/tests/lab/fixture_server.py --port 18765 --directory /tmp/news-radar-fixtures"
   wait_for_guest_state "loopback fixture server is ready" 10 ssh_guest \
     "curl -fsS http://127.0.0.1:18765/current.json >/dev/null" || return 1
   ssh_session "mkdir -p \"\$HOME/.local/bin\" \"\$HOME/.local/state/omarchy-news-radar\" && \
@@ -144,6 +144,7 @@ omarchy_host_test() {
     printf '%s\n' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_MODE\", \"1\")' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_FEED_URL\", \"http://127.0.0.1:18765/current.json\")' \
+      'hl.env(\"OMARCHY_NEWS_RADAR_TEST_TIMEOUT_SECONDS\", \"5\")' \
       'hl.env(\"PATH\", os.getenv(\"HOME\") .. \"/.local/bin:\" .. (os.getenv(\"PATH\") or \"/usr/bin\"))' \
       'dofile(os.getenv(\"HOME\") .. \"/.config/omarchy/plugins/vbrosseau.alttab/omarchy-plugin/alttab-bindings.lua\")' \
       >>\"\$HOME/.config/hypr/bindings.lua\" && \
@@ -306,6 +307,14 @@ omarchy_host_test() {
   wait_for_guest_state "same-origin fixture image is projected into the rendered lead" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedHasImage == true'" || return 1
   capture_console "success-news-radar-03-image-visible"
+  ssh_guest "printf '3\n' >/tmp/news-radar-fixtures/delay-seconds"
+  press r
+  wait_for_guest_state "Refresh exposes its animated progress indicator while cached stories remain readable" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.refreshing == true and .refreshIndicatorVisible == true and .storyCount > 0'" || return 1
+  capture_console "success-news-radar-03-refreshing"
+  ssh_guest "rm -f /tmp/news-radar-fixtures/delay-seconds"
+  wait_for_guest_state "Refresh progress clears when the bounded request completes" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.refreshing == false and .refreshIndicatorVisible == false and .status == \"Current\"'" || return 1
 
   log "Proving normal window management, section tabs, metrics, and local filters"
   wait_for_guest_state "Radar is an independently resizable floating client" 10 ssh_session \
@@ -394,7 +403,7 @@ omarchy_host_test() {
   radar_control_geometry sectionNameApplyGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered section name persists locally" 10 ssh_session \
-    "jq -e '.schemaVersion == 7 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"} and (.preferences.sectionProfiles | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+    "jq -e '.schemaVersion == 8 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"} and (.preferences.sectionProfiles | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
      ! grep -q 'BACKGROUND · THEME-DERIVED\|sectionIconSparkButton\|sectionToneAccentButton' $plugin_dir/src/Panel.qml" || return 1
   capture_console "success-news-radar-03-section-identity-fixed"
   radar_control_geometry sectionAppearanceResetGeometry || return 1
@@ -412,7 +421,7 @@ omarchy_host_test() {
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
-    "jq -e '.schemaVersion == 7 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "jq -e '.schemaVersion == 8 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   radar_control_geometry filterResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered reset restores the exact section defaults" 10 ssh_session \
@@ -423,12 +432,10 @@ omarchy_host_test() {
   press 2
   wait_for_guest_state "For You matches the locally installed exact plugin id" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .storyCount == 2'" || return 1
-  ssh_session "$helper set-preferences --interests-json '[\"notes\"]'" >"$RUN_DIR/news-radar-private-interests.json" || return 1
-  press 1
-  press 2
-  wait_for_guest_state "private interest adds a matching real projection without leaving local state" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .storyCount == 3' && \
-     jq -e '.preferences.interests == [\"notes\"]' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  wait_for_guest_state "retired interests are absent from UI, CLI, and current local state" 10 ssh_session \
+    "! grep -q 'Apply interests\|interestField\|--interests-json' $plugin_dir/src/Panel.qml && \
+     ! $helper set-preferences --help 2>&1 | grep -q -- '--interests-json' && \
+     jq -e '.schemaVersion == 8 and (.preferences | has(\"interests\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   ssh_session "$helper set-preferences --images-visible false" >"$RUN_DIR/news-radar-images-off.json" || return 1
   press 1
   wait_for_guest_state "image-off preference preserves the complete text story" 15 ssh_session \
@@ -471,7 +478,7 @@ omarchy_host_test() {
   press r
   wait_for_guest_state "new event arrives without becoming implicitly read" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\"' && \
-     jq -e '.schemaVersion == 7 and .readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+     jq -e '.schemaVersion == 8 and .readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press esc
   wait_for_guest_state "normal close does not bulk-mark unseen stories" 15 ssh_session \
     "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
@@ -528,14 +535,20 @@ omarchy_host_test() {
   projection_seconds="$(ssh_session "TIMEFORMAT='%R'; { time $helper project --section plugins --installed-json '[]' --query '' --limit 120 >/dev/null; } 2>/tmp/news-radar-projection.time && cat /tmp/news-radar-projection.time")" || return 1
   dense_started_ms="$(date +%s%3N)"
   press end
-  radar_control_geometry loadMoreGeometry || return 1
-  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
-  wait_for_guest_state "rendered Load more reveals the next finite page" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 24 and .totalStories == 120 and .hasMoreStories == true'" || {
+  press down
+  wait_for_guest_state "Down from the last story focuses the rendered Load more action" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 12 and .selectedIndex == 11 and .loadMoreFocused == true'" || return 1
+  # QEMU's qcode name for the physical main Enter/Return key is `ret`.
+  press ret
+  wait_for_guest_state "Enter on keyboard-focused Load more reveals the next finite page" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 24 and .selectedIndex == 11 and .loadMoreFocused == false and .totalStories == 120 and .hasMoreStories == true'" || {
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
         >"$RUN_DIR/news-radar-load-more-failure.json" 2>&1 || true
       return 1
     }
+  press down
+  wait_for_guest_state "Down continues into the first newly loaded story" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIndex == 12 and .loadMoreFocused == false'" || return 1
   dense_ready_ms="$(date +%s%3N)"
   capture_console "success-news-radar-08-dense"
   # Move the synthetic pointer off Radar before replacing the model so it
@@ -580,12 +593,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.1.0+identity-2/news-radar-0.1.0+identity-3/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.1.1+identity-1/news-radar-0.1.1+identity-2/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell toggle io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.0+identity-3" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.1+identity-2" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1
@@ -629,5 +642,5 @@ omarchy_host_test() {
   ssh_guest "systemctl --user stop omarchy-news-radar-fixture.service 2>/dev/null || true"
   capture_console "success-news-radar-14-shortcut-removed-editor-intact"
 
-  printf 'ok - exact candidate passed app launcher, newspaper, images, interests, shortcut, cached-first, keyboard, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
+  printf 'ok - exact candidate passed app launcher, newspaper, images, refresh progress, shortcut, cached-first, keyboard pagination, pointer, source, state, failure, visual, update, and lifecycle assertions\n'
 }

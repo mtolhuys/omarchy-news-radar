@@ -46,11 +46,12 @@ class LocalEditionIntegrationTests(unittest.TestCase):
             source_revision="a" * 40,
             image_fetcher=lambda url: (PNG, "image/png"),
         )
+        self.published_feed = json.loads((self.edition / "events.json").read_text(encoding="utf-8"))
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def test_import_projects_private_file_image_and_skips_missing_public_feed(self) -> None:
+    def test_import_projects_private_image_and_refuses_published_downgrade(self) -> None:
         result = import_local_edition(self.edition, self.environment, now=NOW)
         self.assertEqual(6, result["events"])
         self.assertEqual(1, result["images"])
@@ -61,11 +62,26 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         self.assertTrue(pictured["imageUrl"].startswith("file://"))
         self.assertTrue(Path(pictured["imageUrl"].removeprefix("file://")).is_file())
 
-        with mock.patch("radar.client._fetch_feed") as fetch:
+        with mock.patch("radar.client._fetch_feed", return_value=self.published_feed) as fetch:
             current = refresh(self.environment, now=NOW)
-        fetch.assert_not_called()
+        fetch.assert_called_once()
         self.assertEqual("local-current", current["status"])
         self.assertEqual("local", current["editionMode"])
+
+    def test_newer_published_feed_replaces_local_development_cache(self) -> None:
+        import_local_edition(self.edition, self.environment, now=NOW)
+        newer = json.loads(json.dumps(self.published_feed))
+        newer["generatedAt"] = "2026-08-31T14:04:00Z"
+        newer["window"]["through"] = "2026-08-31T14:04:00Z"
+
+        with mock.patch("radar.client._fetch_feed", return_value=newer) as fetch:
+            current = refresh(self.environment, now=NOW)
+
+        fetch.assert_called_once()
+        self.assertEqual("current", current["status"])
+        self.assertEqual("published", current["editionMode"])
+        self.assertEqual("published", read_model(self.environment, now=NOW)["editionMode"])
+        self.assertEqual("2026-08-31T14:04:00Z", current["feed"]["generatedAt"])
 
     def test_invalid_reimport_preserves_the_complete_previous_edition(self) -> None:
         import_local_edition(self.edition, self.environment, now=NOW)

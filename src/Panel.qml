@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.0+identity-2"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.1+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -27,14 +27,13 @@ Item {
   readonly property string compositorWindowTitle: "📰 Omarchy News Radar"
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 7,
+    schemaVersion: 8,
     readThrough: "1970-01-01T00:00:00Z",
     readOverrides: ({}),
     saved: ({}),
     preferences: ({
       barVisible: true,
       imagesVisible: true,
-      interests: [],
       sectionFilters: ({}),
       sectionProfiles: ({
         "front-page": ({ name: "Front Page" }),
@@ -79,7 +78,7 @@ Item {
   })
 
   readonly property var preferences: userState && userState.preferences
-    ? userState.preferences : ({ barVisible: true, imagesVisible: true, interests: [], sectionProfiles: ({}) })
+    ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionProfiles: ({}) })
 
   readonly property var sectionProfiles: preferences.sectionProfiles || ({})
 
@@ -134,6 +133,7 @@ Item {
       editionMode: editionMode,
       availableImageCount: availableImageCount,
       refreshing: refreshing,
+      refreshIndicatorVisible: refreshButton.iconSpinning,
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
       unreadCount: Number(root.unreadCounts[currentSection] || 0),
@@ -141,6 +141,7 @@ Item {
       sectionSettingsOpen: sectionSettingsOpen,
       totalStories: totalStories,
       hasMoreStories: hasMoreStories,
+      loadMoreFocused: loadMoreButton.activeFocus,
       sectionLimit: Number(sectionLimits[currentSection] || pageSize),
       pendingProjection: pendingProjection,
       projecting: projectProc.running,
@@ -298,8 +299,6 @@ Item {
     var result = RadarModel.parseResponse(raw)
     userState = result.state || userState
     editionMode = String(result.editionMode || "published")
-    if (!interestField.activeFocus)
-      interestField.text = (userState.preferences && userState.preferences.interests || []).join(", ")
     if (result.feed) {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
@@ -329,7 +328,7 @@ Item {
     }
     if (result.status === "local-current") {
       feedStatus = "Local live edition"
-      statusDetail = "Collected from the live official sources by make local-latest. Run it again whenever you want a newer local edition."
+      statusDetail = "This owner-built edition is at least as new as the published feed. Refresh keeps checking for a newer public edition."
     } else if (result.status === "current") {
       feedStatus = sourceHealth.indexOf("Partial") === 0 ? "Source partial" : "Current"
       statusDetail = sourceHealth.indexOf("Partial") === 0
@@ -415,6 +414,7 @@ Item {
 
   function selectSection(index) {
     if (index < 0 || index >= sections.length) return
+    navigationFocus.forceActiveFocus()
     sectionIndex = index
     selectedIndex = 0
     requestProjection()
@@ -442,6 +442,19 @@ Item {
 
   function moveSelection(delta) {
     if (!stories.length) return
+    if (loadMoreButton.activeFocus) {
+      if (delta < 0) {
+        navigationFocus.forceActiveFocus()
+        selectStory(stories.length - 1, true)
+        storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
+      }
+      return
+    }
+    if (delta > 0 && selectedIndex === stories.length - 1 && hasMoreStories) {
+      loadMoreButton.forceActiveFocus(Qt.TabFocusReason)
+      storyList.positionViewAtEnd()
+      return
+    }
     selectStory(Math.max(0, Math.min(stories.length - 1, selectedIndex + delta)), true)
     storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
   }
@@ -505,25 +518,9 @@ Item {
     startProcess(stateProc, ["set-preferences", argument, value ? "true" : "false"])
   }
 
-  function normalizedInterests() {
-    var raw = interestField.text.split(",")
-    var result = []
-    for (var index = 0; index < raw.length && result.length < 12; index++) {
-      var value = String(raw[index]).toLowerCase().trim().replace(/\s+/g, " ")
-      if (value && result.indexOf(value) === -1) result.push(value)
-    }
-    return result
-  }
-
-  function saveInterests() {
-    if (stateProc.running) return
-    startProcess(stateProc, ["set-preferences", "--interests-json", JSON.stringify(normalizedInterests())])
-  }
-
   function showPreferences() {
-    interestField.text = (preferences.interests || []).join(", ")
     preferencesOpen = true
-    Qt.callLater(function() { interestField.forceActiveFocus() })
+    Qt.callLater(function() { barPreferenceButton.forceActiveFocus() })
   }
 
   function showSectionSettings() {
@@ -870,7 +867,10 @@ Item {
               spacing: Style.spacing.controlGap
 
               RadarButton {
+                id: refreshButton
                 label: root.refreshing ? "Refreshing…" : "Refresh"
+                iconText: root.refreshing ? "↻" : ""
+                iconSpinning: root.refreshing
                 enabled: !root.refreshing
                 onClicked: root.refreshFeed()
               }
@@ -1000,7 +1000,7 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: "Tab/Shift+Tab sections\n1–5 sections\nj/k stories\nu read/unread\no source\ns save\nr refresh"
+                text: "Tab/Shift+Tab sections\n1–5 sections\nj/k or ↑/↓ stories\n↓ at end Load more\nu read/unread\no source\ns save\nr refresh"
                 textFormat: Text.PlainText
                 color: Color.muted
                 font.family: Style.font.family
@@ -1351,7 +1351,7 @@ Item {
           Text {
             Layout.fillWidth: true
             text: (root.generatedAt ? "Edition " + root.generatedAt : "No edition generated")
-              + " · v0.1.0 · independent community project"
+              + " · v0.1.1 · independent community project"
             textFormat: Text.PlainText
             color: Color.muted
             font.family: Style.font.family
@@ -1399,7 +1399,7 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: "Preferences stay on this machine and are never sent to the feed or its sources."
+                text: "Display preferences stay on this machine and are never sent to the feed or its sources."
                 textFormat: Text.PlainText
                 color: Color.muted
                 font.family: Style.font.family
@@ -1456,47 +1456,12 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: "Interests · comma-separated words or phrases"
-                color: Color.popups.text
+                text: "For You is built automatically from exact enabled plugin IDs detected on this machine."
+                textFormat: Text.PlainText
+                color: Color.muted
                 font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-              }
-
-              TextField {
-                id: interestField
-                Layout.fillWidth: true
-                placeholderText: "themes, gaming, security, quickshell"
-                color: Color.popups.text
-                placeholderTextColor: Color.muted
-                selectionColor: Style.selectionFill
-                selectedTextColor: Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.body
-                Accessible.name: "Private news interests"
-                background: BorderSurface {
-                  color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
-                  radius: Style.cornerRadius
-                  borderSpec: Border.controlSpec(interestField.activeFocus ? "focus" : "normal", Color.foreground, Color.accent, Color.urgent)
-                }
-                Keys.onReturnPressed: root.saveInterests()
-                Keys.onEnterPressed: root.saveInterests()
-                Keys.onEscapePressed: {
-                  root.preferencesOpen = false
-                  navigationFocus.forceActiveFocus()
-                }
-              }
-
-              RowLayout {
-                Layout.fillWidth: true
-                Text {
-                  Layout.fillWidth: true
-                  text: "For You combines these interests with enabled plugin IDs."
-                  color: Color.muted
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                }
-                RadarButton { label: "Apply interests"; onClicked: root.saveInterests() }
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
               }
             }
           }

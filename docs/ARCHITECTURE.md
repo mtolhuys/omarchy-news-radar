@@ -22,14 +22,14 @@ Omarchy shell
        ├─ on-demand compositor-managed window
        ├─ bundled Python client helper
        ├─ last-known-good cache
-       ├─ local seen/saved/preferences/filter/presentation state
-       ├─ installed-plugin + private-interest matching
+       ├─ local read/saved/display/filter/presentation state
+       ├─ exact enabled-plugin matching
        └─ explicit HTTPS source opening
 ```
 
 The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API. The visible bar widget owns one due-checked refresh timer inside the existing shell process.
 
-The unpublished local-development route reuses the collector and publisher directly. `make local-latest` builds into a temporary directory from the tracked source baseline, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images into the user's private cache. A matching bounded marker makes the client project those assets as local file URLs and suppresses the nonexistent Pages refresh. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+The local-development route reuses the collector and publisher directly. `make local-latest` builds into a temporary directory from the tracked source baseline, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images into the user's private cache. A matching bounded marker makes the client project those assets as local file URLs. Refresh still fetches the fixed Pages feed: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
 
 ## Target repository layout
 
@@ -85,7 +85,8 @@ omarchy-news-radar/
 │   ├── state-v4.schema.json
 │   ├── state-v5.schema.json
 │   ├── state-v6.schema.json
-│   └── state-v7.schema.json
+│   ├── state-v7.schema.json
+│   └── state-v8.schema.json
 ├── share/
 │   └── applications/
 │       └── io.github.mtolhuys.news-radar.desktop
@@ -110,7 +111,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -155,7 +156,7 @@ news-radar-client refresh-if-due --minimum-age <seconds>
 news-radar-client indicator
 news-radar-client set-read --event-id <id> --read true|false
 news-radar-client toggle-saved --event-id <id>
-news-radar-client set-preferences [--bar-visible true|false] [--images-visible true|false] [--interests-json <array>]
+news-radar-client set-preferences [--bar-visible true|false] [--images-visible true|false]
 news-radar-client purge
 ```
 
@@ -172,7 +173,7 @@ Follow XDG ownership:
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |
-| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local preferences/interests, and schema version |
+| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local display/filter/name preferences, and schema version |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/diagnostics.log` | Optional bounded local diagnostics without feed bodies or private paths |
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.
@@ -221,7 +222,7 @@ The live feed contains a bounded rolling window. Monthly archives may retain old
 
 The panel calls the maintained shell IPC and treats the returned plugin IDs as local data. Matching is exact on canonical plugin ID. Do not send installed IDs to the feed host and do not infer installation from repository names or display names.
 
-“For You” includes events whose entity plugin ID is installed plus events matching up to twelve explicit local interest words or phrases. Interests are never derived from browsing or saved history and never leave the device.
+“For You” includes only events whose entity plugin ID exactly matches an enabled local plugin. Radar does not derive or store a second manual-interest relevance path.
 
 ## Optional bar indicator
 
@@ -237,4 +238,4 @@ The main manifest declares one non-multiple `bar-widget`, defaulted to the right
 - Shortcut setup failure restores the previous binding file and leaves the plugin usable through IPC.
 - Panel close and disable terminate owned work without deleting user state.
 - Window-manager close follows the same shell hide path; maximize, resize, and `Alt+Tab` do not alter panel state.
-- Pagination and per-section filters operate only on the validated cache projection and cannot expand the network boundary.
+- Pagination and per-section filters operate only on the validated cache projection and cannot expand the network boundary. Down from the final visible story focuses Load more; Enter expands by twelve and returns navigation to the prior last story so the next Down reaches the first new item without an implicit read.

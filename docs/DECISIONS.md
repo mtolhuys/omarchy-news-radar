@@ -72,7 +72,7 @@
 
 **Consequence:** Summaries may be less literary but remain reproducible and source-linked. A future editorial workflow requires a new decision.
 
-## D010 — Keep personalization local
+## D010 — Keep personalization local (manual interests superseded by D028)
 
 **Decision:** Installed-plugin matching, up to twelve explicit interests, reading state, saves, filters, and preferences stay on the device.
 
@@ -136,7 +136,7 @@
 
 **Consequence:** First use clones and enables this checkout; later uses preserve enablement state and update through Omarchy's official Git-managed lifecycle. Dirty source or installed trees, symlinks, missing origins, public origins, and different local origins are refused. The command never installs the optional shortcut, pulls the source repository, or runs in the background.
 
-## D018 — Build a real private edition for an unpublished local installation
+## D018 — Build a real private edition for an unpublished local installation (refresh behavior superseded by D029)
 
 **Decision:** `make local-latest` collects the allowlisted production sources at invocation time and imports the publisher's validated feed and mirrored content-addressed rasters into private local cache. A digest-bound marker identifies this explicitly as “Local live edition.”
 
@@ -166,7 +166,7 @@
 
 **Why:** Users need inspectable control over time, significance, unread/image state, and event types without turning Radar into an infinite stream or personalized server API.
 
-**Consequence:** The options screen always exposes the immutable built-in rule and exact reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections; Load more expands the current bounded projection by twelve up to the feed's 500-event bound.
+**Consequence:** The options screen always exposes the immutable built-in rule and exact reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections. Down from the final visible story focuses Load more, Up returns to the story list, and Enter expands the current bounded projection by twelve up to the feed's 500-event bound without implicitly reading a newly revealed item.
 
 ## D022 — Personalize section presentation without changing editorial identity (superseded by D025)
 
@@ -215,3 +215,19 @@
 **Why:** A session cutoff can report an article as seen merely because it existed somewhere in an open edition. The bar count then cannot answer the user's essential question: which exact articles remain unread?
 
 **Consequence:** The prior `seenThrough` value migrates once to a fixed `readThrough` compatibility baseline. A bounded canonical boolean override map records only decisions that differ from that baseline and prunes IDs outside the current edition on mutation. Rows, section badges, accessible names, filters, and the top-bar count consume the same predicate. Cross-process state changes are serialized so a bar preference, save, filter, or read action cannot overwrite another local mutation.
+
+## D028 — Remove manual interests until relevance has a reliable interaction
+
+**Decision:** State v8 removes the manual interests field, helper argument, settings control, and text-matching projection. For You uses exact enabled-plugin IDs only.
+
+**Why:** Owner testing found that Apply interests did not provide reliable visible behavior. Keeping a hidden or partially working preference would make the section rule misleading and preserve dead state that users could no longer inspect.
+
+**Consequence:** Valid v2–v7 interests are strictly validated during migration and then discarded; every other supported preference, filter, display name, save, and read override survives. The current state schema cannot represent interests, the CLI cannot set them, and the panel explains the one remaining automatic rule. Reintroducing broader relevance requires a new visible, tested product decision.
+
+## D029 — Let local development editions rejoin the published stream
+
+**Decision:** A digest-matched local edition remains readable and keeps local mirrored images, but Refresh checks the fixed Pages feed after public hosting exists. An equal or older published edition cannot replace it; a newer valid published edition atomically becomes the current cache.
+
+**Why:** The pre-publication safety branch in D018 intentionally suppressed a nonexistent Pages origin. Once Pages became live, that branch permanently pinned users of `make local-latest` to the collection time of their last manual sync even though the public hourly feed continued advancing.
+
+**Consequence:** Local development remains honest and cannot be downgraded, while manual and due-checked refreshes eventually transition it back to the shared published stream. Network or validation failure still preserves the complete local edition. The panel's animated refresh state reflects the actual bounded helper lifetime and keeps cached stories readable.

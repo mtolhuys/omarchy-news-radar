@@ -18,7 +18,7 @@ DEFAULT_SECTION_PROFILES: dict[str, dict[str, str]] = {
 # settings so a local display-name change cannot be mistaken for source changes.
 SECTION_SOURCE_SUMMARIES = {
     "front-page": "Official Omarchy releases · Omarchy Plugin Marketplace · repository-reviewed community links",
-    "for-you": "The same fixed sources, narrowed locally by enabled plugin IDs and private interests",
+    "for-you": "The same fixed sources, narrowed locally by exact enabled plugin IDs",
     "core": "Official Omarchy GitHub releases",
     "plugins": "Omarchy Plugin Marketplace and linked public repositories",
     "saved": "Stories you saved locally from the fixed sources above",

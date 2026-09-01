@@ -23,7 +23,7 @@ from .constants import (
     MAX_READ_OVERRIDES,
     MAX_SAVED,
     FEED_SCHEMA_VERSION,
-    MAX_INTERESTS,
+    MAX_LEGACY_INTERESTS,
     SECTIONS,
     SIGNIFICANCE,
     SOURCE_IDS,
@@ -460,6 +460,22 @@ def migrate_section_profile_v4(value: Any) -> dict[str, str]:
     return {"name": name}
 
 
+def validate_legacy_interests(value: Any) -> list[str]:
+    """Validate the removed v2-v7 interest field before discarding it."""
+
+    interests_raw = require_list(value, "preferences.interests")
+    if len(interests_raw) > MAX_LEGACY_INTERESTS:
+        raise ValidationError("preferences.interests exceeds its bound")
+    interests: list[str] = []
+    for raw in interests_raw:
+        interest = require_string(raw, "interest", 1, 32).lower()
+        interest = " ".join(interest.split())
+        if not INTEREST_RE.fullmatch(interest) or interest in interests:
+            raise ValidationError("interests must be unique normalized words or phrases")
+        interests.append(interest)
+    return interests
+
+
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     require_exact_keys(
@@ -486,21 +502,11 @@ def validate_state(value: Any) -> dict[str, Any]:
     preferences = require_mapping(state.get("preferences"), "preferences")
     require_exact_keys(
         preferences,
-        {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+        {"barVisible", "imagesVisible", "sectionFilters", "sectionProfiles"},
         "preferences",
     )
     bar_visible = require_bool(preferences.get("barVisible"), "preferences.barVisible")
     images_visible = require_bool(preferences.get("imagesVisible"), "preferences.imagesVisible")
-    interests_raw = require_list(preferences.get("interests"), "preferences.interests")
-    if len(interests_raw) > MAX_INTERESTS:
-        raise ValidationError("preferences.interests exceeds its bound")
-    interests: list[str] = []
-    for raw in interests_raw:
-        value = require_string(raw, "interest", 1, 32).lower()
-        value = " ".join(value.split())
-        if not INTEREST_RE.fullmatch(value) or value in interests:
-            raise ValidationError("interests must be unique normalized words or phrases")
-        interests.append(value)
     filters_raw = require_mapping(preferences.get("sectionFilters"), "preferences.sectionFilters")
     if set(filters_raw) != set(CLIENT_SECTIONS):
         raise ValidationError("preferences.sectionFilters must define every section")
@@ -523,7 +529,6 @@ def validate_state(value: Any) -> dict[str, Any]:
         "preferences": {
             "barVisible": bar_visible,
             "imagesVisible": images_visible,
-            "interests": interests,
             "sectionFilters": section_filters,
             "sectionProfiles": section_profiles,
         },

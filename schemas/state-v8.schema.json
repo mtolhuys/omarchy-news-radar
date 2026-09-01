@@ -1,0 +1,109 @@
+{
+  "$id": "https://mtolhuys.github.io/omarchy-news-radar/schemas/state-v8.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "barVisible": { "type": "boolean" },
+        "imagesVisible": { "type": "boolean" },
+        "sectionFilters": {
+          "additionalProperties": false,
+          "properties": {
+            "front-page": { "$ref": "#/$defs/sectionFilter" },
+            "for-you": { "$ref": "#/$defs/sectionFilter" },
+            "core": { "$ref": "#/$defs/sectionFilter" },
+            "plugins": { "$ref": "#/$defs/sectionFilter" },
+            "saved": { "$ref": "#/$defs/sectionFilter" }
+          },
+          "required": ["front-page", "for-you", "core", "plugins", "saved"],
+          "type": "object"
+        },
+        "sectionProfiles": {
+          "additionalProperties": false,
+          "properties": {
+            "front-page": { "$ref": "#/$defs/sectionProfile" },
+            "for-you": { "$ref": "#/$defs/sectionProfile" },
+            "core": { "$ref": "#/$defs/sectionProfile" },
+            "plugins": { "$ref": "#/$defs/sectionProfile" },
+            "saved": { "$ref": "#/$defs/sectionProfile" }
+          },
+          "required": ["front-page", "for-you", "core", "plugins", "saved"],
+          "type": "object"
+        }
+      },
+      "required": ["barVisible", "imagesVisible", "sectionFilters", "sectionProfiles"],
+      "type": "object"
+    },
+    "readOverrides": {
+      "additionalProperties": { "type": "boolean" },
+      "maxProperties": 500,
+      "propertyNames": { "pattern": "^evt_[0-9a-f]{24}$" },
+      "type": "object"
+    },
+    "readThrough": { "$ref": "#/$defs/timestamp" },
+    "saved": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "occurredAt": { "$ref": "#/$defs/timestamp" },
+          "savedAt": { "$ref": "#/$defs/timestamp" },
+          "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+          "title": { "maxLength": 160, "minLength": 1, "type": "string" },
+          "type": { "type": "string" }
+        },
+        "required": ["savedAt", "title", "sourceUrl", "occurredAt", "type"],
+        "type": "object"
+      },
+      "maxProperties": 250,
+      "propertyNames": { "pattern": "^evt_[0-9a-f]{24}$" },
+      "type": "object"
+    },
+    "schemaVersion": { "const": 8 }
+  },
+  "required": ["schemaVersion", "readThrough", "readOverrides", "saved", "preferences"],
+  "title": "Omarchy News Radar local state v8",
+  "type": "object",
+  "$defs": {
+    "httpsUrl": { "maxLength": 2048, "pattern": "^https://", "type": "string" },
+    "sectionFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "imagesOnly": { "type": "boolean" },
+        "period": { "enum": ["all", "24h", "7d", "30d"] },
+        "significance": { "enum": ["all", "notable", "critical"] },
+        "types": {
+          "items": {
+            "enum": [
+              "omarchy-released",
+              "plugin-added",
+              "plugin-released",
+              "plugin-retired",
+              "plugin-verification-changed",
+              "community-link"
+            ]
+          },
+          "maxItems": 6,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "unreadOnly": { "type": "boolean" }
+      },
+      "required": ["period", "significance", "unreadOnly", "imagesOnly", "types"],
+      "type": "object"
+    },
+    "sectionProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "name": { "maxLength": 32, "minLength": 1, "type": "string" }
+      },
+      "required": ["name"],
+      "type": "object"
+    },
+    "timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  }
+}

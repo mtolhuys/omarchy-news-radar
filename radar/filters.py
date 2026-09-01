@@ -9,8 +9,8 @@ from .constants import CLIENT_SECTIONS
 from .validation import parse_timestamp, validate_section_filter
 
 SECTION_RULES = {
-    "front-page": "Finite editorial mix: reviewed significance, the newest core release, your matches, and a balanced routine sample.",
-    "for-you": "Matches enabled plugin IDs or the private interest phrases stored on this machine.",
+    "front-page": "Finite editorial mix: reviewed significance, the newest core release, installed-plugin matches, and a balanced routine sample.",
+    "for-you": "Matches exact enabled plugin IDs detected on this machine.",
     "core": "Official published Omarchy release events.",
     "plugins": "Marketplace additions, releases, retirements, and verification changes.",
     "saved": "Stories saved on this machine that remain in the current edition.",

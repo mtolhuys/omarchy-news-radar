@@ -61,7 +61,6 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     preferences = commands.add_parser("set-preferences")
     preferences.add_argument("--bar-visible", choices=("true", "false"))
     preferences.add_argument("--images-visible", choices=("true", "false"))
-    preferences.add_argument("--interests-json")
     opening = commands.add_parser("open-source")
     opening.add_argument("--url", required=True)
     projection = commands.add_parser("project")
@@ -95,18 +94,9 @@ def client_main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "toggle-saved":
             result = toggle_saved_state(args.event_id)
         elif args.command == "set-preferences":
-            interests = None
-            if args.interests_json is not None:
-                try:
-                    interests = json.loads(args.interests_json)
-                except json.JSONDecodeError as exc:
-                    raise RadarError("interests must be a JSON array") from exc
-                if not isinstance(interests, list):
-                    raise RadarError("interests must be a JSON array")
             result = set_preferences(
                 bar_visible=None if args.bar_visible is None else args.bar_visible == "true",
                 images_visible=None if args.images_visible is None else args.images_visible == "true",
-                interests=interests,
             )
         elif args.command == "open-source":
             result = open_source(args.url)

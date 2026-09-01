@@ -91,7 +91,7 @@ RSS/XML generation escapes every remote value and uses canonical HTTPS links. XM
 
 ## Privacy
 
-The feed host receives ordinary generic feed and same-origin image GET requests and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, explicit interests, filters, saves, and per-story reading state never leave the machine.
+The feed host receives ordinary generic feed and same-origin image GET requests and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, filters, saves, and per-story reading state never leave the machine.
 
 The project must not claim perfect anonymity, sandboxing, or security auditing.
 

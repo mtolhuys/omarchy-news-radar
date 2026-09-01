@@ -96,7 +96,7 @@ class ClientIntegrationTests(unittest.TestCase):
         projected = projection_model("saved", "[]", "", self.environment, now=CLOCK)
         self.assertEqual([event_id], [event["id"] for event in projected["events"]])
 
-    def test_indicator_and_interests_stay_in_local_state(self) -> None:
+    def test_indicator_read_state_and_display_preferences_stay_local(self) -> None:
         refresh(self.environment, now=CLOCK)
         indicator = indicator_model(self.environment, now=CLOCK)
         self.assertGreater(indicator["unread"], 0)
@@ -117,12 +117,11 @@ class ClientIntegrationTests(unittest.TestCase):
         tuned = set_preferences(
             bar_visible=False,
             images_visible=False,
-            interests=["notes"],
             environment=self.environment,
         )
         self.assertFalse(tuned["state"]["preferences"]["barVisible"])
-        projected = projection_model("for-you", "[]", "", self.environment, now=CLOCK)
-        self.assertTrue(any("notes" in event["classification"]["tags"] for event in projected["events"]))
+        self.assertNotIn("interests", tuned["state"]["preferences"])
+        self.assertEqual([], projection_model("for-you", "[]", "", self.environment, now=CLOCK)["events"])
         self.assertFalse(indicator_model(self.environment, now=CLOCK)["barVisible"])
 
     def test_projection_paginates_decorates_metrics_and_applies_local_section_filter(self) -> None:

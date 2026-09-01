@@ -74,6 +74,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function restoreStoryViewport()", qml)
         self.assertIn("storyList.positionViewAtEnd()", qml)
         self.assertIn("function loadMore() {\n    if (!hasMoreStories) return", qml)
+        self.assertIn("loadMoreButton.forceActiveFocus(Qt.TabFocusReason)", qml)
+        self.assertIn("loadMoreFocused: loadMoreButton.activeFocus", qml)
+        self.assertIn('iconText: root.refreshing ? "↻" : ""', qml)
+        self.assertIn("iconSpinning: root.refreshing", qml)
         self.assertIn('"set-read", "--event-id"', qml)
         self.assertIn('label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"', qml)
         self.assertNotIn("mark-seen", qml)
@@ -91,6 +95,9 @@ class QmlContractTests(unittest.TestCase):
         self.assertNotIn("BACKGROUND · THEME-DERIVED", qml)
         self.assertIn("Icon, order, and source scope stay fixed.", qml)
         self.assertIn("Reset name", qml)
+        self.assertNotIn("Apply interests", qml)
+        self.assertNotIn("interestField", qml)
+        self.assertNotIn("--interests-json", qml)
         self.assertIn('startProcess(windowProc, ["ensure-window-floating"])', qml)
         self.assertIn("function emptyStateMessage()", qml)
         self.assertNotIn('id: "community"', qml)
@@ -100,6 +107,7 @@ class QmlContractTests(unittest.TestCase):
         button = (ROOT / "src/components/RadarButton.qml").read_text(encoding="utf-8")
         self.assertIn("preventStealing: true", button)
         self.assertIn("onClicked: root.clicked()", button)
+        self.assertIn("RotationAnimation on rotation", button)
 
     def test_every_section_boundary_uses_the_same_canonical_five_ids(self) -> None:
         expected = list(CLIENT_SECTIONS)

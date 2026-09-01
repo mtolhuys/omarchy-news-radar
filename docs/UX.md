@@ -70,13 +70,13 @@ Each section exposes a cogwheel named **Settings**. Its options screen permits o
 
 The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Plugins into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 
-The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded.
+The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final visible story visibly focuses the control, Up returns to the story list, and Enter expands the page while preserving the prior selection; the next Down reaches the first newly revealed story.
 
 ## Read and saved semantics
 
 Every projected story has one explicit local `isUnread` fact. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation deliberately selects that story and marks only its event ID read. Pointer hover and the default selection on open do not count as reading. The inspector action and `u` key toggle the selected story in either direction.
 
-Closing, refreshing, or merely rendering a feed never marks unrelated stories read. State v7 retains a migrated `readThrough` baseline for previously acknowledged v1–v6 stories and a bounded canonical `readOverrides` map for exact per-event decisions. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
+Closing, refreshing, or merely rendering a feed never marks unrelated stories read. State v8 retains state v7's migrated `readThrough` baseline and bounded canonical `readOverrides` map for exact per-event decisions while removing the obsolete interests field. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
 
 ## State model
 
@@ -84,7 +84,7 @@ Closing, refreshing, or merely rendering a feed never marks unrelated stories re
 | --- | --- | --- |
 | First use | Explains the empty cache and starts one refresh | Wait or retry |
 | Cached | Shows last-known-good edition immediately with age | Background refresh |
-| Refreshing | Keeps cached content readable and shows restrained progress | Wait or cancel by closing |
+| Refreshing | Keeps cached content readable and shows a restrained animated indicator on Refresh | Wait or cancel by closing |
 | Current | Shows successful generation time and complete available sources | Read normally |
 | Offline | Keeps cache, labels failed refresh and cache age | Retry |
 | Source partial | Keeps valid events and names unavailable source adapters | Retry later |
