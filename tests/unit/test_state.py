@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -360,15 +363,53 @@ class StateTests(unittest.TestCase):
         with self.assertRaises(StorageError):
             purge(symlink_environment)
 
-    def test_refresh_lock_write_failure_cleans_up_descriptor_and_lock_file(self) -> None:
+    def test_refresh_lock_write_failure_releases_kernel_lock(self) -> None:
         lock = RefreshLock(self.environment)
         with mock.patch("radar.state.os.write", side_effect=OSError("disk failure")):
             with self.assertRaisesRegex(StorageError, "cannot create refresh lock"):
                 lock.__enter__()
         self.assertIsNone(lock.descriptor)
-        self.assertFalse(lock.path.exists())
+        self.assertTrue(lock.path.exists())
         with RefreshLock(self.environment):
             self.assertTrue(lock.path.exists())
+
+    def test_refresh_lock_is_released_after_abrupt_helper_exit(self) -> None:
+        command = [
+            sys.executable,
+            "-c",
+            (
+                "import time; "
+                "from radar.state import RefreshLock; "
+                "lock = RefreshLock(); lock.__enter__(); "
+                "print('locked', flush=True); time.sleep(30)"
+            ),
+        ]
+        environment = {**os.environ, **self.environment}
+        process = subprocess.Popen(
+            command,
+            cwd=ROOT,
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            self.assertEqual("locked", process.stdout.readline().strip())
+            with self.assertRaisesRegex(StorageError, "already running"):
+                with RefreshLock(self.environment):
+                    pass
+            process.kill()
+            process.wait(timeout=5)
+            with RefreshLock(self.environment):
+                pass
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
+            if process.stdout is not None:
+                process.stdout.close()
+            if process.stderr is not None:
+                process.stderr.close()
 
 
 if __name__ == "__main__":

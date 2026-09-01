@@ -25,7 +25,7 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
 - Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1/v2/v3/v4/v5-to-v6 migration, exact legacy/current object shapes, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, refresh-lock cleanup after write failure, and last-known-good preservation.
+- State-v1/v2/v3/v4/v5-to-v6 migration, exact legacy/current object shapes, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases

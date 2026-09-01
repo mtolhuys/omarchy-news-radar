@@ -52,7 +52,7 @@ The optional application launcher uses one fixed desktop-entry name and one fixe
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
 
-At most one refresh helper belongs to one panel or bar instance, and the atomic refresh lock rejects cross-monitor overlap. Closing the panel terminates its helper. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. The kernel releases that lock even if closing the panel terminates its helper abruptly, so a dead helper cannot strand future refreshes. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
 ## Local checkout synchronization
 

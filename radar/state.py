@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import errno
+import fcntl
 import os
 import stat
 import time
@@ -283,7 +285,7 @@ def update_section_profile(
 
 
 class RefreshLock:
-    """A bounded per-user lock that rejects concurrent refresh helpers."""
+    """A crash-safe per-user lock that rejects concurrent refresh helpers."""
 
     def __init__(self, environment: Mapping[str, str] | None = None) -> None:
         self.path = cache_root(environment) / "refresh.lock"
@@ -292,22 +294,34 @@ class RefreshLock:
     def __enter__(self) -> "RefreshLock":
         ensure_private_directory(self.path.parent)
         refuse_symlink(self.path)
+        flags = os.O_CREAT | os.O_RDWR
+        flags |= getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
         try:
-            self.descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            self.descriptor = os.open(self.path, flags, 0o600)
+            info = os.fstat(self.descriptor)
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+                raise OSError("refresh lock is not an owned regular file")
+            os.fchmod(self.descriptor, 0o600)
+            try:
+                fcntl.flock(self.descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as exc:
+                if exc.errno in {errno.EACCES, errno.EAGAIN}:
+                    os.close(self.descriptor)
+                    self.descriptor = None
+                    raise StorageError("a refresh is already running") from exc
+                raise
+
             payload = f"{os.getpid()} {int(time.time())}\n".encode("ascii")
+            os.ftruncate(self.descriptor, 0)
             if os.write(self.descriptor, payload) != len(payload):
                 raise OSError("short refresh-lock write")
             os.fsync(self.descriptor)
-        except FileExistsError as exc:
-            raise StorageError("a refresh is already running") from exc
+        except StorageError:
+            raise
         except OSError as exc:
             if self.descriptor is not None:
                 os.close(self.descriptor)
                 self.descriptor = None
-                try:
-                    self.path.unlink()
-                except FileNotFoundError:
-                    pass
             raise StorageError("cannot create refresh lock") from exc
         return self
 
@@ -315,11 +329,6 @@ class RefreshLock:
         if self.descriptor is not None:
             os.close(self.descriptor)
             self.descriptor = None
-        try:
-            refuse_symlink(self.path)
-            self.path.unlink()
-        except FileNotFoundError:
-            pass
 
 
 def purge(environment: Mapping[str, str] | None = None) -> list[str]:
