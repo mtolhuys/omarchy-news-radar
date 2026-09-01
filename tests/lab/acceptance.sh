@@ -83,6 +83,14 @@ omarchy_host_test() {
     control_x=$((window_x + local_x))
     control_y=$((window_y + local_y))
   }
+
+  radar_bar_coordinates() {
+    local geometry
+    geometry="$(ssh_session "omarchy-shell shell debugBarGeometry")" || return 1
+    bar_x="$(jq -r '.[] | select(.id == "io.github.mtolhuys.news-radar" and .visible == true) | (.x + (.width / 2) | floor)' <<<"$geometry")" || return 1
+    bar_y="$(jq -r '.[] | select(.id == "io.github.mtolhuys.news-radar" and .visible == true) | (.y + (.height / 2) | floor)' <<<"$geometry")" || return 1
+    [[ $bar_x =~ ^[0-9]+$ && $bar_y =~ ^[0-9]+$ ]]
+  }
   start_epoch="$(date +%s)"
   ssh_session "pkill -x hypridle >/dev/null 2>&1 || true; ! pgrep -x hypridle" || return 1
 
@@ -202,11 +210,13 @@ omarchy_host_test() {
   wait_for_guest_state "startup refresh cached the valid edition" 15 ssh_session \
     "jq -e '.generatedAt == \"2026-08-31T14:00:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/later.json /tmp/news-radar-fixtures/current.json"
+  radar_bar_coordinates || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" middle
   wait_for_guest_state "middle click performs one bounded refresh" 15 ssh_session \
     "jq -e '.generatedAt == \"2026-08-31T14:03:00Z\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" >/dev/null || return 1
+  radar_bar_coordinates || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
   wait_for_guest_state "left click on the newspaper opens the panel" 15 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || {
@@ -228,6 +238,7 @@ omarchy_host_test() {
   press esc
   wait_for_guest_state "Escape clears Radar's hosted and compositor open state" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
+  radar_bar_coordinates || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" right
   wait_for_guest_state "right click persists hidden state with exact zero slot geometry" 15 ssh_session \
     "jq -e '.preferences.barVisible == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
@@ -396,11 +407,17 @@ omarchy_host_test() {
   ssh_session "setsid uwsm-app -- xdg-terminal-exec --title='Radar Alt Tab Fixture' -e bash -c 'sleep 120' >/dev/null 2>&1 &" || return 1
   wait_for_guest_state "another ordinary window can take focus" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"'" || return 1
+  radar_bar_coordinates || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
   wait_for_guest_state "one real newspaper click raises obscured Radar and keeps one instance" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"' && \
      hyprctl -j clients | jq -e '[.[] | select(.title == \"📰 Omarchy News Radar\")] | length == 1' && \
-     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .helperRunning == false'" || return 1
+     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .helperRunning == false'" || {
+      ssh_session "omarchy-shell shell debugBarGeometry" >"$RUN_DIR/news-radar-background-bar-failure-geometry.json" 2>&1 || true
+      ssh_session "hyprctl -j activewindow && hyprctl -j clients" >"$RUN_DIR/news-radar-background-bar-failure-clients.json" 2>&1 || true
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-background-bar-failure-debug.json" 2>&1 || true
+      return 1
+    }
   capture_console "success-news-radar-03-background-bar-activation"
   ssh_session "hyprctl dispatch focuswindow 'title:Radar Alt Tab Fixture' >/dev/null"
   wait_for_guest_state "terminal obscures Radar again" 10 ssh_session \
