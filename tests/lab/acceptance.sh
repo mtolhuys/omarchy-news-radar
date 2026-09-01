@@ -440,7 +440,7 @@ omarchy_host_test() {
      hyprctl -j clients | jq -e '[.[] | select(.title == \"📰 Omarchy News Radar\")] | length == 1' && \
      omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .helperRunning == false'" || return 1
   preview_address="$(ssh_session "hyprctl -j clients | jq -er '.[] | select(.title == \"📰 Omarchy News Radar\") | .address'")" || return 1
-  ssh_session "hyprctl dispatch closewindow 'address:$preview_address' >/dev/null"
+  ssh_session "hyprctl dispatch 'hl.dsp.window.close({ window = \"address:$preview_address\" })' >/dev/null"
   wait_for_guest_state "window-manager close follows shell teardown without a helper" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && \
      ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
