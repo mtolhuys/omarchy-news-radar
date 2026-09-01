@@ -166,7 +166,7 @@
 
 **Why:** Users need inspectable control over time, significance, unread/image state, and event types without turning Radar into an infinite stream or personalized server API.
 
-**Consequence:** The options screen always exposes the immutable built-in rule and exact reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections. Down from the final visible story focuses Load more, Up returns to the story list, and Enter expands the current bounded projection by twelve up to the feed's 500-event bound without implicitly reading a newly revealed item.
+**Consequence:** The options screen exposes fixed source scope and exact filter reset. Filters and limits operate after deterministic section projection, stay on device, and never change network requests. `Tab`/`Shift+Tab` cycles sections. Down from the final visible story focuses Load more with an explicit Enter label, Up returns to the story list, and Enter expands the current bounded projection by twelve up to the feed's 500-event bound without implicitly reading a newly revealed item.
 
 ## D022 — Personalize section presentation without changing editorial identity (superseded by D025)
 
@@ -192,7 +192,7 @@
 
 **Consequence:** The helper owns only `io.github.mtolhuys.news-radar.desktop`, the same-named SVG under the user icon theme, and a private path/digest receipt. Installation uses bounded source assets and atomic replacements, updates only files matching the prior receipt, and refuses symlinked, unowned, modified, unmanaged, or ambiguous targets. Removal deletes only receipt-matching files and preserves user edits. Public removal instructions run the launcher helper before deleting the plugin checkout.
 
-## D025 — Keep section icon, order, background, and scope fixed
+## D025 — Keep section icon, order, background, and scope fixed (superseded by D030)
 
 **Decision:** State v5 retains only a bounded local display name for each stable client section. Section icons, order, backgrounds, source membership, and projection rules are canonical code-owned identity and are not configurable.
 
@@ -231,3 +231,19 @@
 **Why:** The pre-publication safety branch in D018 intentionally suppressed a nonexistent Pages origin. Once Pages became live, that branch permanently pinned users of `make local-latest` to the collection time of their last manual sync even though the public hourly feed continued advancing.
 
 **Consequence:** Local development remains honest and cannot be downgraded, while manual and due-checked refreshes eventually transition it back to the shared published stream. Network or validation failure still preserves the complete local edition. The panel's animated refresh state reflects the actual bounded helper lifetime and keeps cached stories readable.
+
+## D030 — Remove section profiles and keep Settings actionable
+
+**Decision:** State v9 removes section display profiles and the helper/UI route that edited them. Names join icons, order, background, source scope, and projection semantics as canonical code-owned section identity. Settings shows the fixed source summary and only filters that change the visible story set.
+
+**Why:** Owner review found renaming damaging for the same reason as configurable icons and backgrounds: a section could lose its recognizable scope. Explanatory muted paragraphs and a repeated filter summary added visual noise without helping the task.
+
+**Consequence:** Valid v1–v8 profiles are strictly validated during atomic migration and then discarded; supported filters, bar/image preferences, reading state, and saves survive. The current schema and CLI cannot represent a display profile. Settings removes renaming, built-in-rule prose, filler, and the redundant local-only summary while retaining fixed sources and exact filter reset.
+
+## D031 — Refresh plugin-addition explanations from the catalog
+
+**Decision:** A successful marketplace refresh may replace an existing `plugin-added` summary with that plugin's current validated bounded catalog description.
+
+**Why:** The generic “now listed” sentence repeats the headline and fails to explain what the plugin does even when the authoritative marketplace provides that fact.
+
+**Consequence:** Description enrichment is presentation-only. It never creates an event or affects event ID, occurrence time, significance, ordering, metrics, or curation; catalog failure preserves the prior summary. All explanation text remains bounded untrusted plain text.

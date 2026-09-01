@@ -12,7 +12,7 @@ from urllib.parse import urlencode, urljoin, urlsplit
 
 from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
 from .errors import FetchError, RadarError, StorageError, ValidationError
-from .filters import SECTION_RULES, apply_section_filter, filter_options, filter_summary
+from .filters import apply_section_filter, filter_options, filter_summary
 from .sections import SECTION_SOURCE_SUMMARIES
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
@@ -31,7 +31,6 @@ from .state import (
     toggle_saved,
     update_preferences,
     update_section_filter,
-    update_section_profile,
 )
 from .validation import parse_timestamp, validate_feed, validate_https_url
 
@@ -216,20 +215,6 @@ def set_section_filter(
     return response("ok", state=saved)
 
 
-def set_section_profile(
-    section: str,
-    value: Mapping[str, Any],
-    environment: Mapping[str, str] | None = None,
-) -> dict[str, Any]:
-    """Persist one strictly validated, local-only section presentation profile."""
-
-    with StateLock(environment):
-        state, _ = load_state(environment, serialized=False)
-        updated = update_section_profile(state, section, value)
-        saved = save_state(updated, environment)
-    return response("ok", state=saved)
-
-
 def indicator_model(
     environment: Mapping[str, str] | None = None, *, now: datetime | None = None
 ) -> dict[str, Any]:
@@ -352,7 +337,6 @@ def projection_model(
             limit=limit,
             filter=current_filter,
             filterSummary=filter_summary(current_filter),
-            sectionRule=SECTION_RULES[section],
             sectionSources=SECTION_SOURCE_SUMMARIES[section],
             filterOptions=filter_options(section),
         )
@@ -464,7 +448,6 @@ def projection_model(
         limit=limit,
         filter=current_filter,
         filterSummary=filter_summary(current_filter),
-        sectionRule=SECTION_RULES[section],
         sectionSources=SECTION_SOURCE_SUMMARIES[section],
         filterOptions=filter_options(section),
     )

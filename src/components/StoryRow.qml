@@ -17,7 +17,7 @@ FocusScope {
   readonly property color primaryTextColor: Color.popups.text
   readonly property color secondaryTextColor: selected
     ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
-    : Color.muted
+    : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
   implicitHeight: Math.max(
     storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2,
     hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0

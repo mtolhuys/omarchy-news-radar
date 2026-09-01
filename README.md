@@ -8,7 +8,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.1.1` is the current public release. Its source, live Pages edition, release evidence, and exact public-clone Plugin Lab acceptance are published here; an Omarchy marketplace listing becomes available only after the marketplace maintainers approve the submitted repository.
+Version `0.1.2` is the current public release. Its source, live Pages edition, release evidence, and exact public-clone Plugin Lab acceptance are published here; an Omarchy marketplace listing becomes available only after the marketplace maintainers approve the submitted repository.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -18,7 +18,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, serialized atomic private XDG state, corrupt-state quarantine, saved items, bounded per-story read overrides, and explicit purge.
-- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, bounded section display names, fixed section identity, per-section filters, finite keyboard/pointer pagination, search, source opening, visible refresh progress and recovery states, responsive layout, and virtualized story rows.
+- A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe primary and secondary text, images, icon metrics, source-derived plugin explanations, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, fixed section identity, per-section filters, finite keyboard/pointer pagination, an always-visible keyboard guide, search, source opening, visible refresh progress and recovery states, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
@@ -63,7 +63,7 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install v0.1.1
+## Install v0.1.2
 
 Install the tagged public release directly with:
 
@@ -106,16 +106,16 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 
 - `1`–`5`: Front Page, For You, Core, Plugins, Saved.
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections.
-- `j` / `k` or arrow keys: move the selected story; Down from the final visible story focuses **Load more**, Up returns to the story list, and Enter loads the next page.
+- `j` / `k` or arrow keys: move the selected story; Down from the final visible story focuses **Load more** and labels the Enter action, Up returns to the story list, and Enter loads the next page.
 - `Home` / `End`: first or last story.
 - `u`: mark the selected story read or unread locally.
 - `/`: focus local search; `Escape` returns to panel navigation.
 - `o` or `Enter`: open the selected validated HTTPS source.
 - `s`: save or unsave the selected story locally.
-- `r`: refresh once with an animated progress indicator while preserving readable cached content and the last-known-good edition.
+- `r`: refresh once with an animated progress indicator while preserving readable cached content and the last-known-good edition; hover Refresh to see the shortcut.
 - `Escape` or `q`: close the panel.
 - `Tune`: enable or disable the top-bar newspaper and story images.
-- `⚙ Settings`: customize only the section's bounded plain-text display name, inspect its fixed icon, order, sources, and built-in rule, then locally refine time, significance, unread/image state, and story types.
+- `⚙ Settings`: inspect the section's fixed sources, then locally refine time, significance, unread/image state, and story types. Names, icons, order, background, and source scope remain canonical.
 - `Load more`: reveal the next twelve matching stories from the already validated bounded edition by pointer or keyboard.
 
 Every row explicitly says `● UNREAD` or `✓ READ`. Deliberate pointer selection, `j`/`k`, `Home`/`End`, and source activation mark only that story read; hover, opening the panel, refreshing, and closing do not mark the rest of the edition. The section rail and top-bar newspaper use the same durable local unread predicate, and **Mark read / Mark unread** in the inspector mirrors the `u` key.

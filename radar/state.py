@@ -32,7 +32,6 @@ from .validation import (
     validate_state,
 )
 from .filters import default_section_filters
-from .sections import default_section_profiles
 
 EPOCH = "1970-01-01T00:00:00Z"
 LEGACY_CLIENT_SECTIONS = (
@@ -51,8 +50,9 @@ LEGACY_PREFERENCE_KEYS = {
     5: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
     6: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
     7: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+    8: {"barVisible", "imagesVisible", "sectionFilters", "sectionProfiles"},
 }
-STATE_V7_KEYS = {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences"}
+MODERN_LEGACY_STATE_KEYS = {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences"}
 
 
 def cache_root(environment: Mapping[str, str] | None = None) -> Path:
@@ -81,7 +81,6 @@ def default_state() -> dict[str, Any]:
             "barVisible": True,
             "imagesVisible": True,
             "sectionFilters": default_section_filters(),
-            "sectionProfiles": default_section_profiles(),
         },
     }
 
@@ -129,14 +128,14 @@ def _quarantine(path: Path) -> Path:
 
 
 def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate one published legacy shape before converting it to v8."""
+    """Validate one published legacy shape before converting it to v9."""
 
     old_version = raw.get("schemaVersion")
-    if old_version not in {1, 2, 3, 4, 5, 6, 7}:
+    if old_version not in {1, 2, 3, 4, 5, 6, 7, 8}:
         raise ValidationError("unsupported legacy state schemaVersion")
     expected_state_keys = (
-        STATE_V7_KEYS
-        if old_version == 7
+        MODERN_LEGACY_STATE_KEYS
+        if old_version >= 7
         else LEGACY_STATE_KEYS if old_version >= 2 else LEGACY_STATE_KEYS - {"preferences"}
     )
     require_exact_keys(raw, expected_state_keys, f"state v{old_version}")
@@ -149,7 +148,8 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             LEGACY_PREFERENCE_KEYS[old_version],
             f"state v{old_version} preferences",
         )
-        validate_legacy_interests(old_preferences["interests"])
+        if old_version <= 7:
+            validate_legacy_interests(old_preferences["interests"])
         for key in ("barVisible", "imagesVisible"):
             preferences[key] = old_preferences[key]
 
@@ -179,16 +179,14 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
                 f"state v{old_version} section profiles",
             )
             profile_validator = migrate_section_profile_v4 if old_version == 4 else validate_section_profile
-            preferences["sectionProfiles"] = {
-                section: profile_validator(old_profiles[section])
-                for section in preferences["sectionProfiles"]
-            }
+            for section in old_profiles:
+                profile_validator(old_profiles[section])
 
     return validate_state(
         {
             "schemaVersion": STATE_SCHEMA_VERSION,
-            "readThrough": raw.get("readThrough") if old_version == 7 else raw.get("seenThrough"),
-            "readOverrides": raw.get("readOverrides") if old_version == 7 else {},
+            "readThrough": raw.get("readThrough") if old_version >= 7 else raw.get("seenThrough"),
+            "readOverrides": raw.get("readOverrides") if old_version >= 7 else {},
             "saved": raw.get("saved"),
             "preferences": preferences,
         }
@@ -207,7 +205,7 @@ def load_state(
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5, 6, 7}:
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5, 6, 7, 8}:
             migrated = _migrate_legacy_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
@@ -319,18 +317,6 @@ def update_section_filter(
         raise ValidationError("unknown client section")
     filters[section] = dict(value)
     current["preferences"] = {**current["preferences"], "sectionFilters": filters}
-    return validate_state(current)
-
-
-def update_section_profile(
-    state: Mapping[str, Any], section: str, value: Mapping[str, Any]
-) -> dict[str, Any]:
-    current = validate_state(dict(state))
-    profiles = dict(current["preferences"]["sectionProfiles"])
-    if section not in profiles:
-        raise ValidationError("unknown client section")
-    profiles[section] = dict(value)
-    current["preferences"] = {**current["preferences"], "sectionProfiles": profiles}
     return validate_state(current)
 
 

@@ -20,7 +20,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 - The collector fetches only allowlisted machine sources. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
 - Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
 - Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS provenance URLs. They cannot create events or drive ranking. The QML projection strips raw metric URLs, renders only icon/value/accessible-label facts plus the marketplace caveat, and constructs human plugin pages from the fixed marketplace route and validated entity ID.
-- Section display names are normalized bounded plain text. Icons, order, backgrounds, and source membership are code-owned canonical identities; profiles cannot introduce markup, arbitrary colors, URLs, scope changes, or network requests.
+- Section names, icons, order, backgrounds, and source membership are code-owned canonical identities. Local settings contain only strict filter enums/booleans and cannot introduce text, markup, colors, URLs, scope changes, or network requests.
 
 ## Client fetch
 

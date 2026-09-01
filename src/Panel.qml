@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.1+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.2+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string pluginId: manifest && manifest.id
@@ -25,23 +25,18 @@ Item {
   property bool opened: false
   property bool closingFromHost: false
   readonly property string compositorWindowTitle: "📰 Omarchy News Radar"
+  readonly property color secondaryTextColor: Qt.rgba(
+    Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 8,
+    schemaVersion: 9,
     readThrough: "1970-01-01T00:00:00Z",
     readOverrides: ({}),
     saved: ({}),
     preferences: ({
       barVisible: true,
       imagesVisible: true,
-      sectionFilters: ({}),
-      sectionProfiles: ({
-        "front-page": ({ name: "Front Page" }),
-        "for-you": ({ name: "For You" }),
-        "core": ({ name: "Core" }),
-        "plugins": ({ name: "Plugins" }),
-        "saved": ({ name: "Saved" })
-      })
+      sectionFilters: ({})
     })
   })
   property var installedPluginIds: []
@@ -65,7 +60,6 @@ Item {
   property int totalStories: 0
   property bool hasMoreStories: false
   property string filterSummary: "No extra filters"
-  property string sectionRule: ""
   property string sectionSources: ""
   property var filterOptions: []
   property int pageSize: 12
@@ -78,16 +72,14 @@ Item {
   })
 
   readonly property var preferences: userState && userState.preferences
-    ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionProfiles: ({}) })
-
-  readonly property var sectionProfiles: preferences.sectionProfiles || ({})
+    ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionFilters: ({}) })
 
   readonly property var sections: [
-    Object.assign({ id: "front-page" }, root.defaultSectionProfile("front-page"), sectionProfiles["front-page"] || ({})),
-    Object.assign({ id: "for-you" }, root.defaultSectionProfile("for-you"), sectionProfiles["for-you"] || ({})),
-    Object.assign({ id: "core" }, root.defaultSectionProfile("core"), sectionProfiles["core"] || ({})),
-    Object.assign({ id: "plugins" }, root.defaultSectionProfile("plugins"), sectionProfiles["plugins"] || ({})),
-    Object.assign({ id: "saved" }, root.defaultSectionProfile("saved"), sectionProfiles["saved"] || ({}))
+    Object.assign({ id: "front-page" }, root.defaultSectionProfile("front-page")),
+    Object.assign({ id: "for-you" }, root.defaultSectionProfile("for-you")),
+    Object.assign({ id: "core" }, root.defaultSectionProfile("core")),
+    Object.assign({ id: "plugins" }, root.defaultSectionProfile("plugins")),
+    Object.assign({ id: "saved" }, root.defaultSectionProfile("saved"))
   ]
   readonly property string currentSection: sections[sectionIndex].id
   readonly property var currentProfile: sections[sectionIndex]
@@ -134,6 +126,7 @@ Item {
       availableImageCount: availableImageCount,
       refreshing: refreshing,
       refreshIndicatorVisible: refreshButton.iconSpinning,
+      refreshTooltipVisible: refreshButton.tooltipVisible,
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
       unreadCount: Number(root.unreadCounts[currentSection] || 0),
@@ -142,6 +135,7 @@ Item {
       totalStories: totalStories,
       hasMoreStories: hasMoreStories,
       loadMoreFocused: loadMoreButton.activeFocus,
+      loadMoreLabel: loadMoreButton.label,
       sectionLimit: Number(sectionLimits[currentSection] || pageSize),
       pendingProjection: pendingProjection,
       projecting: projectProc.running,
@@ -172,6 +166,7 @@ Item {
   function maximizeGeometry() { return itemGeometry(maximizeButton, maximizeButton.visible) }
   function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
   function settingsGeometry() { return itemGeometry(settingsButton, settingsButton.visible) }
+  function refreshGeometry() { return itemGeometry(refreshButton, refreshButton.visible) }
   function loadMoreGeometry() {
     return itemGeometry(loadMoreButton, loadMoreButton.visible)
   }
@@ -183,10 +178,6 @@ Item {
       ? itemGeometry(narrowReadButton, narrowReadButton.visible)
       : itemGeometry(readStateButton, readStateButton.visible)
   }
-  function sectionNameGeometry() { return itemGeometry(sectionNameField, sectionNameField.visible) }
-  function sectionNameApplyGeometry() { return itemGeometry(sectionNameApplyButton, sectionNameApplyButton.visible) }
-  function sectionAppearanceResetGeometry() { return itemGeometry(sectionAppearanceResetButton, sectionAppearanceResetButton.visible) }
-
   function tuneNewspaperGeometry() {
     return itemGeometry(barPreferenceButton, preferencesOpen && barPreferenceButton.visible)
   }
@@ -387,7 +378,6 @@ Item {
       totalStories = Number(result.totalEvents || 0)
       hasMoreStories = result.hasMore === true
       filterSummary = String(result.filterSummary || "No extra filters")
-      sectionRule = String(result.sectionRule || "")
       sectionSources = String(result.sectionSources || "")
       filterOptions = result.filterOptions || []
       selectedIndex = stories.length ? Math.min(Math.max(0, selectedIndex), stories.length - 1) : -1
@@ -524,38 +514,8 @@ Item {
   }
 
   function showSectionSettings() {
-    sectionNameField.text = String(currentProfile.name || "")
     sectionSettingsOpen = true
-    Qt.callLater(function() { sectionNameField.forceActiveFocus() })
-  }
-
-  function updateSectionName(value) {
-    if (stateProc.running) return
-    startProcess(stateProc, [
-      "set-section-profile",
-      "--section", currentSection,
-      "--profile-json", JSON.stringify({ name: value })
-    ])
-  }
-
-  function saveSectionName() {
-    var name = String(sectionNameField.text).trim().replace(/\s+/g, " ")
-    if (!name) {
-      sectionNameField.text = String(currentProfile.name || "")
-      return
-    }
-    updateSectionName(name)
-  }
-
-  function resetSectionProfile() {
-    if (stateProc.running) return
-    var defaultName = defaultSectionProfile(currentSection).name
-    sectionNameField.text = defaultName
-    startProcess(stateProc, [
-      "set-section-profile",
-      "--section", currentSection,
-      "--profile-json", JSON.stringify({ name: defaultName })
-    ])
+    Qt.callLater(function() { filterDoneButton.forceActiveFocus() })
   }
 
   function updateFilter(name, value) {
@@ -842,7 +802,7 @@ Item {
                     text: root.feedStatus + " · " + root.sourceHealth
                     textFormat: Text.PlainText
                     color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed" || root.feedStatus === "Failed"
-                      ? Color.urgent : Color.muted
+                      ? Color.urgent : root.secondaryTextColor
                     font.family: Style.font.family
                     font.pixelSize: Style.font.caption
                     elide: Text.ElideRight
@@ -871,6 +831,7 @@ Item {
                 label: root.refreshing ? "Refreshing…" : "Refresh"
                 iconText: root.refreshing ? "↻" : ""
                 iconSpinning: root.refreshing
+                tooltipText: "Refresh feed (R)"
                 enabled: !root.refreshing
                 onClicked: root.refreshFeed()
               }
@@ -924,7 +885,7 @@ Item {
             visible: text !== ""
             text: root.statusDetail
             textFormat: Text.PlainText
-            color: Color.muted
+            color: root.secondaryTextColor
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             elide: Text.ElideRight
@@ -937,7 +898,7 @@ Item {
             Layout.fillWidth: true
             placeholderText: "Search this validated edition  /"
             color: Color.popups.text
-            placeholderTextColor: Color.muted
+            placeholderTextColor: root.secondaryTextColor
             selectionColor: Style.selectionFill
             selectedTextColor: Color.popups.text
             font.family: Style.font.family
@@ -961,6 +922,32 @@ Item {
             }
           }
 
+          BorderSurface {
+            Layout.fillWidth: true
+            Layout.preferredHeight: keyboardGuide.implicitHeight + Style.spacing.controlPaddingY * 2
+            color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
+            radius: Style.cornerRadius
+            borderSpec: Border.controlSpec("normal", Color.popups.text, Color.accent, Color.urgent)
+
+            Text {
+              id: keyboardGuide
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.spacing.controlPaddingX
+              anchors.rightMargin: Style.spacing.controlPaddingX
+              text: "KEYBOARD  Tab/Shift+Tab sections · 1–5 sections · J/K or ↑/↓ stories · Enter open or load more · U read/unread · O source · S save · R refresh"
+              textFormat: Text.PlainText
+              color: root.secondaryTextColor
+              font.family: Style.font.family
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              wrapMode: Text.WordWrap
+              Accessible.role: Accessible.StaticText
+              Accessible.name: text
+            }
+          }
+
           RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -974,7 +961,7 @@ Item {
               Text {
                 text: "SECTIONS"
                 textFormat: Text.PlainText
-                color: Color.muted
+                color: root.secondaryTextColor
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -997,16 +984,6 @@ Item {
               }
 
               Item { Layout.fillHeight: true }
-
-              Text {
-                Layout.fillWidth: true
-                text: "Tab/Shift+Tab sections\n1–5 sections\nj/k or ↑/↓ stories\n↓ at end Load more\nu read/unread\no source\ns save\nr refresh"
-                textFormat: Text.PlainText
-                color: Color.muted
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                wrapMode: Text.WordWrap
-              }
             }
 
             Rectangle {
@@ -1066,7 +1043,7 @@ Item {
                 text: root.filterSummary + " · " + root.totalStories + " stories · "
                   + Number(root.unreadCounts[root.currentSection] || 0) + " unread"
                 textFormat: Text.PlainText
-                color: Color.muted
+                color: root.secondaryTextColor
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 elide: Text.ElideRight
@@ -1131,7 +1108,7 @@ Item {
                   width: parent.width - Style.spacing.panelPadding * 2
                   text: root.emptyStateMessage()
                   textFormat: Text.PlainText
-                  color: Color.muted
+                  color: root.secondaryTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.body
                   horizontalAlignment: Text.AlignHCenter
@@ -1150,7 +1127,11 @@ Item {
                   id: loadMoreButton
                   anchors.centerIn: parent
                   visible: root.hasMoreStories
-                  label: "Load more (" + Math.max(0, root.totalStories - root.stories.length) + " remaining)"
+                  iconText: "↓"
+                  label: activeFocus
+                    ? "Press Enter to load " + Math.min(root.pageSize, Math.max(0, root.totalStories - root.stories.length)) + " more"
+                    : "Load more (" + Math.max(0, root.totalStories - root.stories.length) + " remaining)"
+                  tooltipText: "Down to focus · Enter to load the next page"
                   onClicked: {
                     root.loadMore()
                     navigationFocus.forceActiveFocus()
@@ -1162,7 +1143,7 @@ Item {
                   visible: !root.hasMoreStories
                   text: "All " + root.totalStories + " stories loaded"
                   textFormat: Text.PlainText
-                  color: Color.muted
+                  color: root.secondaryTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                 }
@@ -1216,7 +1197,7 @@ Item {
                   width: parent.width
                   text: visible ? "IMAGE  " + root.selectedStory.image.credit : ""
                   textFormat: Text.PlainText
-                  color: Color.muted
+                  color: root.secondaryTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   wrapMode: Text.WordWrap
@@ -1260,7 +1241,7 @@ Item {
                   width: parent.width
                   text: visible ? "OBSERVED  " + root.selectedStory.metricsObservedAt : ""
                   textFormat: Text.PlainText
-                  color: Color.muted
+                  color: root.secondaryTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   wrapMode: Text.WordWrap
@@ -1273,7 +1254,7 @@ Item {
                   width: parent.width
                   text: visible ? root.selectedStory.metricsCaveat : ""
                   textFormat: Text.PlainText
-                  color: Color.muted
+                  color: root.secondaryTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   wrapMode: Text.WordWrap
@@ -1298,7 +1279,7 @@ Item {
                       + "\nCOMPAT  " + root.selectedStory.compatibility.basis
                     : ""
                   textFormat: Text.PlainText
-                  color: Color.muted
+                  color: root.secondaryTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   wrapMode: Text.WrapAnywhere
@@ -1351,9 +1332,9 @@ Item {
           Text {
             Layout.fillWidth: true
             text: (root.generatedAt ? "Edition " + root.generatedAt : "No edition generated")
-              + " · v0.1.1 · independent community project"
+              + " · v0.1.2 · independent community project"
             textFormat: Text.PlainText
-            color: Color.muted
+            color: root.secondaryTextColor
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
             elide: Text.ElideRight
@@ -1401,7 +1382,7 @@ Item {
                 Layout.fillWidth: true
                 text: "Display preferences stay on this machine and are never sent to the feed or its sources."
                 textFormat: Text.PlainText
-                color: Color.muted
+                color: root.secondaryTextColor
                 font.family: Style.font.family
                 font.pixelSize: Style.font.bodySmall
                 wrapMode: Text.WordWrap
@@ -1448,7 +1429,7 @@ Item {
                     : "No stories in this edition include a validated image."
                   : "Images are hidden; every story remains available as text."
                 textFormat: Text.PlainText
-                color: Color.muted
+                color: root.secondaryTextColor
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 wrapMode: Text.WordWrap
@@ -1458,7 +1439,7 @@ Item {
                 Layout.fillWidth: true
                 text: "For You is built automatically from exact enabled plugin IDs detected on this machine."
                 textFormat: Text.PlainText
-                color: Color.muted
+                color: root.secondaryTextColor
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 wrapMode: Text.WordWrap
@@ -1525,70 +1506,6 @@ Item {
                   spacing: Style.spacing.panelGap
 
                   Text {
-                    text: "SECTION NAME"
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                  }
-
-                  RowLayout {
-                    Layout.fillWidth: true
-
-                    TextField {
-                      id: sectionNameField
-                      Layout.fillWidth: true
-                      maximumLength: 32
-                      placeholderText: "Section name"
-                      color: Color.popups.text
-                      placeholderTextColor: Color.muted
-                      selectionColor: Style.selectionFill
-                      selectedTextColor: Color.popups.text
-                      font.family: Style.font.family
-                      font.pixelSize: Style.font.body
-                      Accessible.name: "Section display name"
-                      background: BorderSurface {
-                        color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
-                        radius: Style.cornerRadius
-                        borderSpec: Border.controlSpec(sectionNameField.activeFocus ? "focus" : "normal", Color.foreground, Color.accent, Color.urgent)
-                      }
-                      Keys.onReturnPressed: root.saveSectionName()
-                      Keys.onEnterPressed: root.saveSectionName()
-                    }
-
-                    RadarButton {
-                      id: sectionNameApplyButton
-                      label: "Apply name"
-                      onClicked: root.saveSectionName()
-                    }
-                  }
-
-                  RowLayout {
-                    Layout.fillWidth: true
-                    Text {
-                      Layout.fillWidth: true
-                      text: "The display name is bounded local text. Icon, order, and source scope stay fixed."
-                      textFormat: Text.PlainText
-                      color: Color.muted
-                      font.family: Style.font.family
-                      font.pixelSize: Style.font.caption
-                      wrapMode: Text.WordWrap
-                    }
-                    RadarButton {
-                      id: sectionAppearanceResetButton
-                      label: "Reset name"
-                      onClicked: root.resetSectionProfile()
-                    }
-                  }
-
-                  Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Style.spacing.hairline
-                    color: Color.popups.border
-                  }
-
-                  Text {
                     Layout.fillWidth: true
                     text: "SOURCES · FIXED FOR THIS SECTION\n" + root.sectionSources
                     textFormat: Text.PlainText
@@ -1601,144 +1518,116 @@ Item {
                   }
 
                   Text {
-                    Layout.fillWidth: true
-                    text: "Source membership, icon, order, and background are fixed; the display name and filters remain local."
+                    text: "TIME WINDOW"
                     textFormat: Text.PlainText
-                    color: Color.muted
+                    color: Color.popups.text
                     font.family: Style.font.family
                     font.pixelSize: Style.font.caption
-                    wrapMode: Text.WordWrap
+                    font.bold: true
                   }
 
-              Text {
-                Layout.fillWidth: true
-                text: "BUILT-IN SECTION RULE\n" + root.sectionRule
-                textFormat: Text.PlainText
-                color: Color.muted
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.WordWrap
-              }
-
-              Text {
-                text: "TIME WINDOW"
-                textFormat: Text.PlainText
-                color: Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              RowLayout {
-                spacing: Style.spacing.controlGap
-                Repeater {
-                  model: [
-                    { id: "all", label: "Any time" },
-                    { id: "24h", label: "24 hours" },
-                    { id: "7d", label: "7 days" },
-                    { id: "30d", label: "30 days" }
-                  ]
-                  RadarButton {
-                    required property var modelData
-                    label: modelData.label
-                    selected: root.currentFilter.period === modelData.id
-                    onClicked: root.updateFilter("period", modelData.id)
+                  RowLayout {
+                    spacing: Style.spacing.controlGap
+                    Repeater {
+                      model: [
+                        { id: "all", label: "Any time" },
+                        { id: "24h", label: "24 hours" },
+                        { id: "7d", label: "7 days" },
+                        { id: "30d", label: "30 days" }
+                      ]
+                      RadarButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: root.currentFilter.period === modelData.id
+                        onClicked: root.updateFilter("period", modelData.id)
+                      }
+                    }
                   }
-                }
-              }
 
-              Text {
-                text: "SIGNIFICANCE"
-                textFormat: Text.PlainText
-                color: Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              RowLayout {
-                spacing: Style.spacing.controlGap
-                Repeater {
-                  model: [
-                    { id: "all", label: "All" },
-                    { id: "notable", label: "Notable + critical" },
-                    { id: "critical", label: "Critical only" }
-                  ]
-                  RadarButton {
-                    required property var modelData
-                    label: modelData.label
-                    selected: root.currentFilter.significance === modelData.id
-                    onClicked: root.updateFilter("significance", modelData.id)
+                  Text {
+                    text: "SIGNIFICANCE"
+                    textFormat: Text.PlainText
+                    color: Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                    font.bold: true
                   }
-                }
-              }
 
-              RowLayout {
-                Layout.fillWidth: true
-                spacing: Style.spacing.controlGap
-                RadarButton {
-                  id: unreadFilterButton
-                  label: "Unread only"
-                  selected: root.currentFilter.unreadOnly
-                  onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
-                }
-                RadarButton {
-                  label: "With images"
-                  selected: root.currentFilter.imagesOnly
-                  onClicked: root.updateFilter("imagesOnly", !root.currentFilter.imagesOnly)
-                }
-              }
-
-              Text {
-                text: "STORY TYPES"
-                textFormat: Text.PlainText
-                color: Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Flow {
-                Layout.fillWidth: true
-                Layout.preferredHeight: childrenRect.height
-                spacing: Style.spacing.controlGap
-
-                RadarButton {
-                  label: "All types"
-                  selected: (root.currentFilter.types || []).length === 0
-                  onClicked: root.updateFilter("types", [])
-                }
-
-                Repeater {
-                  model: root.filterOptions
-                  RadarButton {
-                    required property var modelData
-                    label: modelData.label
-                    selected: (root.currentFilter.types || []).indexOf(modelData.id) !== -1
-                    onClicked: root.toggleFilterType(modelData.id)
+                  RowLayout {
+                    spacing: Style.spacing.controlGap
+                    Repeater {
+                      model: [
+                        { id: "all", label: "All" },
+                        { id: "notable", label: "Notable + critical" },
+                        { id: "critical", label: "Critical only" }
+                      ]
+                      RadarButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: root.currentFilter.significance === modelData.id
+                        onClicked: root.updateFilter("significance", modelData.id)
+                      }
+                    }
                   }
-                }
-              }
 
-              Item { Layout.fillHeight: true }
+                  RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Style.spacing.controlGap
+                    RadarButton {
+                      id: unreadFilterButton
+                      label: "Unread only"
+                      selected: root.currentFilter.unreadOnly
+                      onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
+                    }
+                    RadarButton {
+                      label: "With images"
+                      selected: root.currentFilter.imagesOnly
+                      onClicked: root.updateFilter("imagesOnly", !root.currentFilter.imagesOnly)
+                    }
+                  }
 
-              RowLayout {
-                Layout.fillWidth: true
-                Text {
-                  Layout.fillWidth: true
-                  text: "Local-only · " + root.filterSummary
-                  textFormat: Text.PlainText
-                  color: Color.muted
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  elide: Text.ElideRight
-                }
-                RadarButton {
-                  id: filterResetButton
-                  label: "Reset section"
-                  onClicked: root.resetFilter()
-                }
-              }
+                  Text {
+                    text: "STORY TYPES"
+                    textFormat: Text.PlainText
+                    color: Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                    font.bold: true
+                  }
+
+                  Flow {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: childrenRect.height
+                    spacing: Style.spacing.controlGap
+
+                    RadarButton {
+                      label: "All types"
+                      selected: (root.currentFilter.types || []).length === 0
+                      onClicked: root.updateFilter("types", [])
+                    }
+
+                    Repeater {
+                      model: root.filterOptions
+                      RadarButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: (root.currentFilter.types || []).indexOf(modelData.id) !== -1
+                        onClicked: root.toggleFilterType(modelData.id)
+                      }
+                    }
+                  }
+
+                  Item { Layout.fillHeight: true }
+
+                  RowLayout {
+                    Layout.fillWidth: true
+                    Item { Layout.fillWidth: true }
+                    RadarButton {
+                      id: filterResetButton
+                      label: "Reset section"
+                      onClicked: root.resetFilter()
+                    }
+                  }
                 }
               }
             }

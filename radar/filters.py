@@ -1,4 +1,4 @@
-"""Pure local section-filter rules and user-facing descriptions."""
+"""Pure local section-filter rules."""
 
 from __future__ import annotations
 
@@ -7,14 +7,6 @@ from typing import Any, Iterable, Mapping
 
 from .constants import CLIENT_SECTIONS
 from .validation import parse_timestamp, validate_section_filter
-
-SECTION_RULES = {
-    "front-page": "Finite editorial mix: reviewed significance, the newest core release, installed-plugin matches, and a balanced routine sample.",
-    "for-you": "Matches exact enabled plugin IDs detected on this machine.",
-    "core": "Official published Omarchy release events.",
-    "plugins": "Marketplace additions, releases, retirements, and verification changes.",
-    "saved": "Stories saved on this machine that remain in the current edition.",
-}
 
 SECTION_EVENT_TYPES = {
     "front-page": (

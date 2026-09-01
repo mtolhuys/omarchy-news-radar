@@ -25,7 +25,7 @@ make site
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, exact enabled-plugin matching, front-page composition, and saved-item retention.
 - Explicit per-event read/unread overrides, migrated baseline semantics, indicator and section unread counts, unread-only filtering, read/unread reversal, pruning outside the current edition, and proof that close or refresh never bulk-marks unselected stories.
-- State-v1-through-v7-to-v8 migration, exact legacy/current object shapes, legacy-interest validation/removal, preference/filter/name/read-override bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, cross-process state-mutation serialization, and last-known-good preservation.
+- State-v1-through-v8-to-v9 migration, exact legacy/current object shapes, legacy-interest/profile validation and removal, preference/filter/read-override bounds, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, cross-process state-mutation serialization, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
@@ -38,7 +38,7 @@ make site
 
 - Explicit baseline with a maximum twelve-item recent/fourteen-day backfill and no historical event flood.
 - Added plugin, non-empty version change, unchanged version with repository activity, verification transition, explicit retirement, one-run absence, two-run confirmed absence, reappearance, multi-plugin repository, schema mismatch, and warnings.
-- Stars, views, commits, validation times, descriptions, tags, and preview changes do not create unsupported events.
+- Stars, views, commits, validation times, descriptions, tags, and preview changes do not create unsupported events; current validated catalog descriptions may refresh only an existing plugin-addition explanation.
 - Marketplace engagement schema/bounds, metric observation/source fields, release-asset download labels, repository stars, failed-source retention, and proof that metrics do not create or rank events.
 - A failed current snapshot preserves prior state and creates no mass retirement.
 
@@ -60,7 +60,7 @@ make site
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, and no-cache failure.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
 - Indicator unread/health output, due-check age bounds, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
-- Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, no public refresh while local mode is active, and purge of imported assets.
+- Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, published downgrade refusal, adoption of a newer published edition while local mode is active, and purge of imported assets.
 
 ### Shortcut helper
 
@@ -105,6 +105,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/acceptance.sh
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/local-latest.sh
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/public-install.sh
+./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/release-preview.sh
 ```
 
 `acceptance.sh` must prove with machine assertions and supporting screenshots:
@@ -116,13 +117,13 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 5. QMP `press meta_l-alt-n` opens the rendered Radar surface through the real global shortcut route.
 6. Cached fixture content and its same-origin raster appear without waiting for the network, focus is visible, image-off fallback is complete, and selected story fields match the validated fixture.
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
-8. `Tab` and `Shift+Tab` cycle the five sections; the Settings cogwheel renames one section while its icon, background, order, and scope remain canonical, displays its fixed sources and built-in rule, independently resets the name and filters, and Down then Enter focuses and expands Load more without another feed request before Down continues into the new page.
+8. `Tab` and `Shift+Tab` cycle the five sections; the Settings cogwheel shows fixed sources and only actionable filters, exposes no renaming/profile path or low-value explanatory filler, and independently resets filters. Down focuses Load more with an explicit Enter label; Enter expands it without another feed request before the next Down continues into the new page.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
-10. `j`, `k`, section keys, search, save, read/unread toggle, refresh, Tune, and source opening use rendered controls; every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
+10. `j`, `k`, section keys, search, save, read/unread toggle, refresh, Tune, and source opening use rendered controls; the keyboard guide is visible below search, Refresh exposes `R` on hover, every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Exact enabled-plugin matching places fixture events in For You without transmitting private inputs; no manual-interest UI, CLI argument, or current state field exists.
 12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
 13. Normal close does not change unselected stories; an event introduced during the session remains unread next time, one rendered action persists only that event as read, and `u` makes it unread again.
-14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, animated-refreshing, offline, invalid, and partial states remain unclipped and understandable; selected headlines, summaries, metadata, and metrics remain readable in both themes, and no empty Community destination is present.
+14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, animated-refreshing, offline, invalid, and partial states remain unclipped and understandable; selected and unselected headlines, summaries, metadata, metrics, and meaningful secondary copy remain readable in both themes, and no empty Community destination is present.
 15. AltTab and Omadock companion candidates resolve Radar's exact enabled `windowIdentity` to its local manifest name/icon, render the newspaper asset in their visible UI, and fall back for disabled, malformed, missing, or ambiguous declarations without relabeling unrelated Quickshell windows.
 16. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
 17. A same-path plugin update replaces the loaded panel and bar identities/behavior.
@@ -131,11 +132,13 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 
 `public-install.sh` separately proves the public GitHub URL clones the expected commit, validates and enables the panel, loads the fixed Pages edition, exposes durable per-story read state, supports documented launcher and shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`.
 
+`release-preview.sh` is a separate networked release-only journey. It installs the local candidate only in the disposable guest, refreshes the fixed public Pages edition, applies Omarchy's Matte Black theme, records exact `1240×740` window geometry below the desktop bar, captures the frame, and removes the candidate. Crop the retained `1280×800` console image by the recorded `[20,40]` origin; deterministic acceptance remains independent of this marketing proof.
+
 ## Visual review
 
 Review every captured state rather than merely checking that screenshots exist. Inspect clipping, overlap, reading order, focus, source labels, stale/offline disclosure, long text, contrast, scroll behavior, monitor fit, and visual hierarchy.
 
-The release matrix includes maintained light and dark themes, 1366×768-equivalent narrow space, a normal wide display, 200% text scaling, reduced motion, keyboard-only operation, long Unicode content, 100+ event virtualization, and no-cache/offline recovery. Screenshots use synthetic public-safe content only.
+The acceptance matrix includes maintained light and dark themes, 1366×768-equivalent narrow space, a normal wide display, 200% text scaling, reduced motion, keyboard-only operation, long Unicode content, 100+ event virtualization, and no-cache/offline recovery. Acceptance screenshots use synthetic public-safe content; the separately identified release preview uses only the validated public edition.
 
 ## Performance and resource boundaries
 

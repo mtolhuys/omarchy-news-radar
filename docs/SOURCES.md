@@ -47,7 +47,7 @@ When no prior marketplace snapshot exists, explicit bootstrap writes the complet
 - **Verification changed:** normalized marketplace verification status changed.
 - **Retired:** the source explicitly lists the plugin as retired, or the ID is absent in two consecutive complete successful catalog snapshots. A single absence never retires a plugin.
 
-Changes to description, tags, category, stars, views, hearts, copy counts, repository update time, observed commit, validation timestamp, preview image, or source fingerprint update the snapshot but do not create default news events.
+Changes to description, tags, category, stars, views, hearts, copy counts, repository update time, observed commit, validation timestamp, preview image, or source fingerprint update the snapshot but do not create default news events. A successful catalog refresh may replace the explanation on an existing plugin-addition event with that plugin's current validated bounded description; failure preserves the prior explanation, and the presentation change never affects event identity, time, order, significance, or curation.
 
 ### Preview mirroring
 

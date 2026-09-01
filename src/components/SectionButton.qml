@@ -82,7 +82,7 @@ FocusScope {
         ? Color.accent
         : root.selected
         ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
-        : Color.muted
+        : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
       font.family: Style.font.family
       font.pixelSize: Style.font.caption
     }

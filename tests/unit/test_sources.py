@@ -9,7 +9,7 @@ from pathlib import Path
 
 from radar.errors import ValidationError
 from radar.sources.community import community_events
-from radar.sources.marketplace import diff_marketplace, parse_marketplace
+from radar.sources.marketplace import diff_marketplace, enrich_plugin_descriptions, parse_marketplace
 from radar.sources.marketplace_engagement import parse_engagement
 from radar.sources.omarchy_releases import diff_releases, parse_releases
 
@@ -105,6 +105,12 @@ class SourceTests(unittest.TestCase):
             ["plugin-added", "plugin-released", "plugin-verification-changed"],
             sorted(item["type"] for item in events),
         )
+        addition = next(item for item in events if item["type"] == "plugin-added")
+        self.assertEqual("A small workspace note panel.", addition["summary"])
+        stale_addition = copy.deepcopy(addition)
+        stale_addition["summary"] = "Workspace Notes is now listed in the Omarchy plugin marketplace."
+        enriched = enrich_plugin_descriptions([stale_addition], current)
+        self.assertEqual("A small workspace note panel.", enriched[0]["summary"])
         noise_payload = self.payload("catalog-baseline.json")
         noise_payload["plugins"][0]["stars"] = 5000
         noise_payload["plugins"][0]["description"] = "Changed wording only."

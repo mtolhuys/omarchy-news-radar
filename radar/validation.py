@@ -502,7 +502,7 @@ def validate_state(value: Any) -> dict[str, Any]:
     preferences = require_mapping(state.get("preferences"), "preferences")
     require_exact_keys(
         preferences,
-        {"barVisible", "imagesVisible", "sectionFilters", "sectionProfiles"},
+        {"barVisible", "imagesVisible", "sectionFilters"},
         "preferences",
     )
     bar_visible = require_bool(preferences.get("barVisible"), "preferences.barVisible")
@@ -514,13 +514,6 @@ def validate_state(value: Any) -> dict[str, Any]:
         section: validate_section_filter(filters_raw[section])
         for section in CLIENT_SECTIONS
     }
-    profiles_raw = require_mapping(preferences.get("sectionProfiles"), "preferences.sectionProfiles")
-    if set(profiles_raw) != set(CLIENT_SECTIONS):
-        raise ValidationError("preferences.sectionProfiles must define every section")
-    section_profiles = {
-        section: validate_section_profile(profiles_raw[section])
-        for section in CLIENT_SECTIONS
-    }
     return {
         "schemaVersion": STATE_SCHEMA_VERSION,
         "readThrough": read_through,
@@ -530,7 +523,6 @@ def validate_state(value: Any) -> dict[str, Any]:
             "barVisible": bar_visible,
             "imagesVisible": images_visible,
             "sectionFilters": section_filters,
-            "sectionProfiles": section_profiles,
         },
     }
 

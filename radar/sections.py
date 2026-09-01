@@ -1,21 +1,9 @@
-"""Fixed section identities with local-only display names."""
+"""User-facing summaries for the fixed section source boundaries."""
 
 from __future__ import annotations
 
-from typing import Any
-
-from .constants import CLIENT_SECTIONS
-
-DEFAULT_SECTION_PROFILES: dict[str, dict[str, str]] = {
-    "front-page": {"name": "Front Page"},
-    "for-you": {"name": "For You"},
-    "core": {"name": "Core"},
-    "plugins": {"name": "Plugins"},
-    "saved": {"name": "Saved"},
-}
-
-# Membership remains editorially fixed. These strings are shown in the section
-# settings so a local display-name change cannot be mistaken for source changes.
+# Membership remains editorially fixed. These strings let Settings disclose the
+# source scope behind each canonical section.
 SECTION_SOURCE_SUMMARIES = {
     "front-page": "Official Omarchy releases · Omarchy Plugin Marketplace · repository-reviewed community links",
     "for-you": "The same fixed sources, narrowed locally by exact enabled plugin IDs",
@@ -23,9 +11,3 @@ SECTION_SOURCE_SUMMARIES = {
     "plugins": "Omarchy Plugin Marketplace and linked public repositories",
     "saved": "Stories you saved locally from the fixed sources above",
 }
-
-
-def default_section_profiles() -> dict[str, dict[str, Any]]:
-    """Return independent profile objects in canonical section order."""
-
-    return {section: dict(DEFAULT_SECTION_PROFILES[section]) for section in CLIENT_SECTIONS}

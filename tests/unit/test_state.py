@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
+from radar.constants import STATE_SCHEMA_VERSION
 from radar.errors import StorageError, ValidationError
 from radar.state import (
     RefreshLock,
@@ -28,12 +29,18 @@ from radar.state import (
     toggle_saved,
     update_preferences,
     update_section_filter,
-    update_section_profile,
     user_state_path,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
 CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
+LEGACY_PROFILES = {
+    "front-page": {"name": "Front Page"},
+    "for-you": {"name": "For You"},
+    "core": {"name": "Core"},
+    "plugins": {"name": "Plugins"},
+    "saved": {"name": "Saved"},
+}
 
 
 class StateTests(unittest.TestCase):
@@ -108,7 +115,7 @@ class StateTests(unittest.TestCase):
         )
         state, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(8, state["schemaVersion"])
+        self.assertEqual(STATE_SCHEMA_VERSION, state["schemaVersion"])
         self.assertEqual("2026-08-30T10:00:00Z", state["readThrough"])
         self.assertEqual({}, state["readOverrides"])
         self.assertTrue(state["preferences"]["barVisible"])
@@ -137,19 +144,7 @@ class StateTests(unittest.TestCase):
         self.assertEqual("all", filtered["preferences"]["sectionFilters"]["core"]["period"])
         with self.assertRaises(ValidationError):
             update_section_filter(state, "plugins", {"period": "forever"})
-
-        profiled = update_section_profile(
-            filtered,
-            "plugins",
-            {"name": "My Extensions"},
-        )
-        self.assertEqual(
-            {"name": "My Extensions"},
-            profiled["preferences"]["sectionProfiles"]["plugins"],
-        )
-        self.assertEqual("Core", profiled["preferences"]["sectionProfiles"]["core"]["name"])
-        with self.assertRaises(ValidationError):
-            update_section_profile(state, "plugins", {"name": "Bad", "icon": "remote"})
+        self.assertNotIn("sectionProfiles", filtered["preferences"])
 
         path.write_text(
             json.dumps({
@@ -167,7 +162,6 @@ class StateTests(unittest.TestCase):
 
         v3_preferences = default_state()["preferences"]
         v3_preferences["interests"] = []
-        del v3_preferences["sectionProfiles"]
         v3_preferences["sectionFilters"]["community"] = {
             "period": "all",
             "significance": "all",
@@ -187,9 +181,9 @@ class StateTests(unittest.TestCase):
         )
         v3, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(8, v3["schemaVersion"])
+        self.assertEqual(STATE_SCHEMA_VERSION, v3["schemaVersion"])
         self.assertEqual("30d", v3["preferences"]["sectionFilters"]["plugins"]["period"])
-        self.assertEqual("Plugins", v3["preferences"]["sectionProfiles"]["plugins"]["name"])
+        self.assertNotIn("sectionProfiles", v3["preferences"])
 
         v4_preferences = default_state()["preferences"]
         v4_preferences["interests"] = []
@@ -219,9 +213,8 @@ class StateTests(unittest.TestCase):
         )
         v4, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(8, v4["schemaVersion"])
-        self.assertEqual({"name": "My Extensions"}, v4["preferences"]["sectionProfiles"]["plugins"])
-        self.assertNotIn("community", v4["preferences"]["sectionProfiles"])
+        self.assertEqual(STATE_SCHEMA_VERSION, v4["schemaVersion"])
+        self.assertNotIn("sectionProfiles", v4["preferences"])
         self.assertNotIn("community", v4["preferences"]["sectionFilters"])
 
         v5_preferences = default_state()["preferences"]
@@ -235,6 +228,7 @@ class StateTests(unittest.TestCase):
             "imagesOnly": True,
             "types": ["community-link"],
         }
+        v5_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
         v5_preferences["sectionProfiles"]["community"] = {"name": "People"}
         v5_preferences["sectionProfiles"]["plugins"] = {"name": "Extensions"}
         path.write_text(
@@ -248,18 +242,18 @@ class StateTests(unittest.TestCase):
         )
         v5, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(8, v5["schemaVersion"])
+        self.assertEqual(STATE_SCHEMA_VERSION, v5["schemaVersion"])
         self.assertEqual("2026-08-30T10:00:00Z", v5["readThrough"])
         self.assertEqual(1, len(v5["saved"]))
         self.assertFalse(v5["preferences"]["barVisible"])
         self.assertFalse(v5["preferences"]["imagesVisible"])
         self.assertNotIn("interests", v5["preferences"])
-        self.assertEqual({"name": "Extensions"}, v5["preferences"]["sectionProfiles"]["plugins"])
-        self.assertNotIn("community", v5["preferences"]["sectionProfiles"])
+        self.assertNotIn("sectionProfiles", v5["preferences"])
         self.assertNotIn("community", v5["preferences"]["sectionFilters"])
 
         v6_preferences = copy.deepcopy(default_state()["preferences"])
         v6_preferences["interests"] = []
+        v6_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
         path.write_text(
             json.dumps({
                 "schemaVersion": 6,
@@ -271,12 +265,13 @@ class StateTests(unittest.TestCase):
         )
         v6, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(8, v6["schemaVersion"])
+        self.assertEqual(STATE_SCHEMA_VERSION, v6["schemaVersion"])
         self.assertEqual("2026-08-31T10:00:00Z", v6["readThrough"])
         self.assertEqual({}, v6["readOverrides"])
 
         v7_preferences = copy.deepcopy(default_state()["preferences"])
         v7_preferences["interests"] = ["security"]
+        v7_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
         path.write_text(
             json.dumps({
                 "schemaVersion": 7,
@@ -289,9 +284,30 @@ class StateTests(unittest.TestCase):
         )
         v7, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(8, v7["schemaVersion"])
+        self.assertEqual(STATE_SCHEMA_VERSION, v7["schemaVersion"])
         self.assertEqual({self.feed["events"][0]["id"]: True}, v7["readOverrides"])
         self.assertNotIn("interests", v7["preferences"])
+
+        v8_preferences = copy.deepcopy(default_state()["preferences"])
+        v8_preferences["sectionFilters"]["plugins"]["period"] = "7d"
+        v8_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
+        v8_preferences["sectionProfiles"]["plugins"] = {"name": "Extensions"}
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 8,
+                "readThrough": "2026-08-31T10:00:00Z",
+                "readOverrides": {self.feed["events"][0]["id"]: False},
+                "saved": {},
+                "preferences": v8_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v8, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(STATE_SCHEMA_VERSION, v8["schemaVersion"])
+        self.assertEqual("7d", v8["preferences"]["sectionFilters"]["plugins"]["period"])
+        self.assertEqual({self.feed["events"][0]["id"]: False}, v8["readOverrides"])
+        self.assertNotIn("sectionProfiles", v8["preferences"])
 
     def test_current_state_rejects_unknown_members_instead_of_normalizing_them_away(self) -> None:
         cases = []

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime
 import re
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from ..errors import ValidationError
 from ..model import event_id
-from ..validation import format_timestamp, normalize_text, parse_timestamp, validate_https_url
+from ..validation import format_timestamp, normalize_text, parse_timestamp, validate_event, validate_https_url
 
 CATALOG_URL = "https://raw.githubusercontent.com/omacom/omarchy-plugin-marketplace/main/site/catalog.json"
 MARKETPLACE_URL = "https://plugins.omarchy.org/"
@@ -210,6 +211,28 @@ def _base_event(
     return event
 
 
+def enrich_plugin_descriptions(
+    events: Iterable[Mapping[str, Any]], marketplace: Mapping[str, Any] | None
+) -> list[dict[str, Any]]:
+    """Refresh plugin-addition explanations from the validated catalog.
+
+    Description edits remain presentation enrichment: they update an existing
+    addition story but never create or reorder an event.
+    """
+
+    plugins = marketplace.get("plugins", {}) if marketplace is not None else {}
+    enriched: list[dict[str, Any]] = []
+    for raw_event in events:
+        event = deepcopy(dict(raw_event))
+        entity = event.get("entity")
+        if event.get("type") == "plugin-added" and isinstance(entity, Mapping):
+            plugin = plugins.get(entity.get("id"))
+            if isinstance(plugin, Mapping):
+                event["summary"] = plugin["description"]
+        enriched.append(validate_event(event))
+    return enriched
+
+
 def diff_marketplace(
     previous: Mapping[str, Any] | None,
     current: Mapping[str, Any],
@@ -271,7 +294,7 @@ def diff_marketplace(
                     occurred_at=plugin["addedAt"],
                     discovered_at=discovered_at,
                     title=f"{plugin['name']} joined the marketplace",
-                    summary=f"{plugin['name']} is now listed in the Omarchy plugin marketplace.",
+                    summary=plugin["description"],
                 )
             )
             continue

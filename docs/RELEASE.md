@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.1.1` is the release-hardening update to the first public preview. Do not describe the project as marketplace-available until the maintainers approve the submitted repository.
+Version `0.1.2` is the keyboard, content, settings, and contrast follow-up to the first public preview. Do not describe the project as marketplace-available until the maintainers approve the submitted repository.
 
 ## Candidate identity
 
@@ -16,17 +16,19 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
 - Front Page, For You, Core, Plugins, and Saved match the implemented model; reviewed community records remain an optional feed input rather than an empty dedicated section.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
-- `Tab`/`Shift+Tab`, bounded per-section names, canonical icons/order/backgrounds, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more behavior match the local projection model.
+- `Tab`/`Shift+Tab`, canonical section identity, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more behavior match the local projection model; the focused action labels Enter explicitly.
+- The complete keyboard guide is visible below search and Refresh exposes its existing `R` shortcut on hover.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
 - Every row visibly distinguishes `UNREAD` from `READ`; section and newspaper counts use the same exact per-event predicate; deliberate selection and `u` affect only one story; close/refresh do not bulk-mark; the default-on newspaper indicator, zero-gap hiding, Tune re-enable, animated refresh progress, health states, and no-notification boundary match the implementation.
-- For You uses only exact locally enabled plugin IDs; the removed manual-interest control, CLI argument, and state member are absent, and v2–v7 state migrates to v8 without losing supported data.
+- For You uses only exact locally enabled plugin IDs; manual interests and section profiles have no control, CLI route, or current state member, and v1–v8 state migrates to v9 without losing supported data.
 - No account, telemetry, AI summary, plugin installation action, or unsupported scraper is implied.
 
 ### Data and publication
 
 - First marketplace bootstrap emits at most twelve listings from the prior fourteen days and no historical flood.
 - Source adapters are bounded, allowlisted, deterministic, and fixture-tested.
+- Plugin-addition summaries use current validated marketplace descriptions when available; description changes enrich existing events without creating or reordering them.
 - Source failure preserves prior state and cannot create mass retirement.
 - JSON, RSS, HTML, archive, and snapshot validate and are byte-stable under a fixed clock.
 - Generated HTML/XML escapes hostile content and the site uses a restrictive static security policy.
@@ -48,7 +50,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 ### Visual and accessibility
 
 - Current Omarchy tokens drive color, spacing, typography, borders, focus, and monitor fit.
-- Selected primary and secondary text remain distinguishable from selected fill in maintained dark and light themes.
+- Selected and unselected primary/secondary text, status, summaries, metadata, and counts remain distinguishable from their surfaces in maintained dark and light themes.
 - Light/dark, narrow/wide, long text, empty/dense, cached/refreshing/offline/invalid/partial, and 200% text states are reviewed.
 - Visual columns preserve one semantic keyboard order.
 - Keyboard-only traversal, focus visibility, labels, counts, source health, and reduced motion pass.
@@ -58,6 +60,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 
 - `make test`, `make validate`, `make feed-fixture`, and `make site` pass from a clean clone without unapproved downloads; `make collect-live` separately proves the allowlisted live build.
 - Plugin Lab acceptance passes for the exact candidate with inspected logs and screenshots.
+- The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
 - Public clean-clone installation, shortcut setup/removal, update, and plugin removal pass once the remote exists.
 - Workflow actions are pinned and permissions are least privilege.
 - README, changelog, manifest, UI version, feed schema, screenshots, release notes, and evidence agree.
@@ -79,11 +82,11 @@ Normal plugin removal does not delete local state or run repository cleanup hook
 
 The owner explicitly authorized this procedure on 2026-09-01. It remains the required sequence for this release and any reproduction of it:
 
-1. Create the intended public repository at `https://github.com/mtolhuys/omarchy-news-radar`, push the reviewed clean candidate commit, and configure Pages to use GitHub Actions. Do not create a release or marketplace entry yet.
+1. Push the reviewed clean candidate commit to the existing public repository at `https://github.com/mtolhuys/omarchy-news-radar` and confirm Pages still uses GitHub Actions. Do not create the release or update the marketplace submission yet.
 2. Run the `Build and publish static edition` workflow manually with `bootstrap_marketplace` enabled only if the committed snapshot is empty. Confirm the published JSON, RSS, HTML, mirrored images, archive, build digest, and source-health metadata at the fixed Pages origin. The hourly minute-17 schedule can run after this proof.
 3. Download the workflow's `source-snapshot` artifact, replace `state/source-snapshot.json` with that exact reviewed file, run all four local source gates, commit it, and push it before running publication again. For every later publication, leave bootstrap disabled and repeat this snapshot-review commit step so the repository remains the explicit source baseline.
 4. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
-5. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.1` tag and release and update the existing Omarchy marketplace submission with the tested commit. Marketplace availability remains maintainer-controlled and must not be claimed from issue creation alone.
+5. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.2` tag and release and update the existing Omarchy marketplace submission with the tested commit. Marketplace availability remains maintainer-controlled and must not be claimed from issue creation alone.
 
 The workflow intentionally has no repository write permission. Snapshot advancement is a human-reviewed source change, not hidden CI state.
 

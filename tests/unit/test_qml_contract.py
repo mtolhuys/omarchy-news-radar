@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 
 from radar.constants import CLIENT_SECTIONS
-from radar.filters import SECTION_EVENT_TYPES, SECTION_RULES
-from radar.sections import DEFAULT_SECTION_PROFILES, SECTION_SOURCE_SUMMARIES
+from radar.filters import SECTION_EVENT_TYPES
+from radar.sections import SECTION_SOURCE_SUMMARIES
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -60,7 +60,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("panelWindow.maximized", qml)
         self.assertIn("startSystemResize", qml)
         self.assertIn("Load more", qml)
-        self.assertIn("BUILT-IN SECTION RULE", qml)
+        self.assertNotIn("BUILT-IN SECTION RULE", qml)
         self.assertIn("METRICS", qml)
         self.assertIn("MetricStrip", qml)
         self.assertIn("PanelActionButton", qml)
@@ -76,8 +76,12 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function loadMore() {\n    if (!hasMoreStories) return", qml)
         self.assertIn("loadMoreButton.forceActiveFocus(Qt.TabFocusReason)", qml)
         self.assertIn("loadMoreFocused: loadMoreButton.activeFocus", qml)
+        self.assertIn("loadMoreLabel: loadMoreButton.label", qml)
+        self.assertIn('"Press Enter to load "', qml)
+        self.assertIn('tooltipText: "Down to focus · Enter to load the next page"', qml)
         self.assertIn('iconText: root.refreshing ? "↻" : ""', qml)
         self.assertIn("iconSpinning: root.refreshing", qml)
+        self.assertIn('tooltipText: "Refresh feed (R)"', qml)
         self.assertIn('"set-read", "--event-id"', qml)
         self.assertIn('label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"', qml)
         self.assertNotIn("mark-seen", qml)
@@ -86,15 +90,17 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('label: "⚙ Settings"', qml)
         self.assertNotIn('label: "⚙ Filters"', qml)
         self.assertIn("function settingsGeometry()", qml)
+        self.assertIn("function refreshGeometry()", qml)
         self.assertIn("sectionSettingsOpen", qml)
         self.assertIn("SOURCES · FIXED FOR THIS SECTION", qml)
-        self.assertIn("set-section-profile", qml)
-        self.assertIn("sectionNameField", qml)
+        self.assertNotIn("set-section-profile", qml)
+        self.assertNotIn("sectionNameField", qml)
         self.assertNotIn("sectionIconSparkButton", qml)
         self.assertNotIn("sectionToneAccentButton", qml)
         self.assertNotIn("BACKGROUND · THEME-DERIVED", qml)
-        self.assertIn("Icon, order, and source scope stay fixed.", qml)
-        self.assertIn("Reset name", qml)
+        self.assertNotIn("display name", qml)
+        self.assertNotIn("Reset name", qml)
+        self.assertNotIn("Local-only ·", qml)
         self.assertNotIn("Apply interests", qml)
         self.assertNotIn("interestField", qml)
         self.assertNotIn("--interests-json", qml)
@@ -103,11 +109,15 @@ class QmlContractTests(unittest.TestCase):
         self.assertNotIn('id: "community"', qml)
         self.assertNotIn('currentSection === "community"', qml)
         self.assertIn("1–5 sections", qml)
+        self.assertIn("KEYBOARD  Tab/Shift+Tab sections", qml)
+        self.assertNotIn("Color.muted", qml)
         self.assertIn('readonly property string compositorWindowTitle: "📰 Omarchy News Radar"', qml)
         button = (ROOT / "src/components/RadarButton.qml").read_text(encoding="utf-8")
         self.assertIn("preventStealing: true", button)
         self.assertIn("onClicked: root.clicked()", button)
         self.assertIn("RotationAnimation on rotation", button)
+        self.assertIn('property string tooltipText: ""', button)
+        self.assertIn("PanelToolTip", button)
 
     def test_every_section_boundary_uses_the_same_canonical_five_ids(self) -> None:
         expected = list(CLIENT_SECTIONS)
@@ -115,9 +125,7 @@ class QmlContractTests(unittest.TestCase):
         qml_navigation = re.findall(r'Object\.assign\(\{ id: "([a-z-]+)" \}', qml)
 
         self.assertEqual(expected, qml_navigation)
-        self.assertEqual(set(expected), set(DEFAULT_SECTION_PROFILES))
         self.assertEqual(set(expected), set(SECTION_SOURCE_SUMMARIES))
-        self.assertEqual(set(expected), set(SECTION_RULES))
         self.assertEqual(set(expected), set(SECTION_EVENT_TYPES))
 
         story = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
@@ -128,6 +136,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("● UNREAD", story)
         self.assertIn("✓ READ", story)
         self.assertIn("story.isUnread", story)
+        self.assertNotIn("Color.muted", story)
         self.assertNotIn("signal hovered", story)
         self.assertNotIn("onHovered:", qml)
 
@@ -139,6 +148,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Style.font.iconLarge", section)
         self.assertIn("id: iconText", section)
         self.assertIn("property int unreadCount", section)
+        self.assertNotIn("Color.muted", section)
 
         metrics = (ROOT / "src/components/MetricStrip.qml").read_text(encoding="utf-8")
         for metric_id in (

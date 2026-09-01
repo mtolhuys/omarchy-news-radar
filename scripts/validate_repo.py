@@ -246,6 +246,28 @@ def optional_tools() -> list[str]:
         source = Path(omarchy_source)
         if not (source / "shell/services/PluginRegistry.qml").is_file():
             fail("OMARCHY_SOURCE is not a selected Omarchy checkout")
+        qmllint_help = subprocess.run(
+            [qmllint, "--help"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        warning_controls = [
+            "-W",
+            "0",
+            "--missing-property",
+            "disable",
+            "--unqualified",
+            "disable",
+            "--signal-handler-parameters",
+            "disable",
+        ]
+        if not all(
+            option in qmllint_help
+            for option in ("--missing-property", "--unqualified", "--signal-handler-parameters")
+        ):
+            warning_controls = []
         with tempfile.TemporaryDirectory(prefix="omarchy-news-radar-qml-") as temporary:
             import_root = Path(temporary)
             namespace = import_root / "qs"
@@ -256,14 +278,7 @@ def optional_tools() -> list[str]:
             subprocess.run(
                 [
                     qmllint,
-                    "-W",
-                    "0",
-                    "--missing-property",
-                    "disable",
-                    "--unqualified",
-                    "disable",
-                    "--signal-handler-parameters",
-                    "disable",
+                    *warning_controls,
                     "-I",
                     str(import_root),
                     *map(str, qml_files),

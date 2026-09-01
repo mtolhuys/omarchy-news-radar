@@ -33,6 +33,8 @@ The panel has four stable visual zones:
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
+A compact keyboard guide sits directly below search instead of at the bottom of the section rail. It includes section, story, source, save, read-state, pagination, and Refresh keys. The Refresh control also repeats `R` on hover. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
+
 ## Front page composition
 
 The front page is finite. The initial viewport should communicate the most important changes without requiring search or scrolling through routine events.
@@ -57,7 +59,7 @@ All behavior must remain reachable without a pointer:
 | `s` | Save or unsave selected story locally |
 | `u` | Mark the selected story read or unread locally |
 | `/` | Focus search/filter input |
-| `r` | Refresh the feed |
+| `r` | Refresh the feed; the Refresh button repeats this shortcut on hover |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
 | `1`–`5` | Switch between the five primary sections |
 | `Home` / `End` | Select first or last story in the current section |
@@ -66,17 +68,17 @@ Shortcuts must not fire while a text field is actively editing, except `Escape` 
 
 ## Section settings, filters, and pagination
 
-Each section exposes a cogwheel named **Settings**. Its options screen permits only a bounded plain-text display name with an exact per-section reset. The canonical icon, order, and visual background remain fixed so two sections cannot be made to look interchangeable or imply that their scope moved.
+Each section exposes a cogwheel named **Settings**. Names, icons, order, background, and source scope remain canonical so two sections cannot look interchangeable or imply that their editorial scope moved. The screen visibly lists that fixed source membership, then offers only actionable local refinements for time window, significance, unread-only, images-only, and relevant event types. There is no renaming control or explanatory filler.
 
-The same screen visibly lists source membership as read-only. Source membership remains dictated by the edition contract: customization cannot silently turn Core into marketplace news or Plugins into an arbitrary feed. The screen then shows the immutable built-in section rule and local refinements for time window, significance, unread-only, images-only, and relevant event types. Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
+Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection.
 
-The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final visible story visibly focuses the control, Up returns to the story list, and Enter expands the page while preserving the prior selection; the next Down reaches the first newly revealed story.
+The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final visible story focuses the control and changes its label to the explicit Enter action, Up returns to the story list, and Enter expands the page while preserving the prior selection; the next Down reaches the first newly revealed story.
 
 ## Read and saved semantics
 
 Every projected story has one explicit local `isUnread` fact. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation deliberately selects that story and marks only its event ID read. Pointer hover and the default selection on open do not count as reading. The inspector action and `u` key toggle the selected story in either direction.
 
-Closing, refreshing, or merely rendering a feed never marks unrelated stories read. State v8 retains state v7's migrated `readThrough` baseline and bounded canonical `readOverrides` map for exact per-event decisions while removing the obsolete interests field. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
+Closing, refreshing, or merely rendering a feed never marks unrelated stories read. State v9 retains state v7's migrated `readThrough` baseline and bounded canonical `readOverrides` map for exact per-event decisions while removing the obsolete interests and section-profile fields. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
 
 ## State model
 

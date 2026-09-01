@@ -7,9 +7,11 @@ FocusScope {
 
   property string label: ""
   property string iconText: ""
+  property string tooltipText: ""
   property bool iconSpinning: false
   property bool selected: false
   property bool danger: false
+  readonly property bool tooltipVisible: buttonToolTip.visible
   signal clicked()
 
   implicitWidth: buttonContent.implicitWidth + Style.spacing.controlPaddingX * 2
@@ -69,9 +71,16 @@ FocusScope {
   }
 
   HoverHandler { id: hover }
+  PanelToolTip {
+    id: buttonToolTip
+    visible: root.tooltipText !== "" && hover.hovered
+    text: root.tooltipText
+    fontFamily: Style.font.family
+  }
   MouseArea {
     anchors.fill: parent
     preventStealing: true
+    cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
     onClicked: root.clicked()
   }
   Keys.onReturnPressed: root.clicked()

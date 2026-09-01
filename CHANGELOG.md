@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 — 2026-09-01
+
+- Make keyboard pagination unmistakable: Down focuses **Load more**, its focused label says exactly what Enter will do, and the next Down continues into newly revealed stories.
+- Move the complete keyboard guide below search and expose the existing `R` Refresh shortcut on hover.
+- Remove section renaming, hidden profile state, built-in-rule filler, and redundant muted settings copy; state v9 strictly migrates v1–v8 while preserving filters, display preferences, reading state, and saves.
+- Derive meaningful secondary text from the panel foreground so summaries, status, metadata, and counts remain readable in maintained light and dark themes.
+- Refresh retained plugin-addition explanations from the current validated marketplace description without creating or reordering events.
+- Re-record the README preview in the disposable lab under Omarchy's Matte Black theme, with the complete window below the desktop bar.
+
 ## 0.1.1 — 2026-09-01
 
 - Fix local development editions becoming permanently pinned: Refresh now keeps an equal/newer owner-built edition, checks the live published feed, and atomically transitions back when publication advances.

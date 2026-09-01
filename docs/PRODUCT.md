@@ -37,7 +37,7 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel never bulk-marks the edition. Stories the user did not deliberately select remain unread across close, refresh, and restart.
 11. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
-12. The user can inspect the immutable built-in rule for each section, add local filters, and reveal further matching stories in finite twelve-item steps.
+12. The user can inspect each section's fixed source scope, add local filters, and reveal further matching stories in finite twelve-item steps.
 13. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images.
 
 Before the public static feed is authorized and published, an owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts, imports the complete validated edition and mirrored images into private cache, and labels the result “Local live edition.” Test fixtures must never masquerade as this mode.
@@ -60,7 +60,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Category and tag filters operate locally.
 - Saved items and bounded per-story read overrides remain local.
 - Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
-- Bounded display names are independently stored per section and remain local; icons, order, and fixed source membership retain their canonical section identity and are not user-editable in version 1.
+- Names, icons, order, and source scope are canonical section identity and are not user-editable; only the filters that change which stories are shown persist per section.
 - Front Page ordering is deterministic and auditable.
 - Manually notable items are visibly distinguished from routine activity.
 
@@ -68,12 +68,12 @@ Before the public static feed is authorized and published, an owner deliberately
 
 - Cached-first rendering.
 - Keyboard-first selection and source opening.
-- Plain-text summaries with source attribution.
-- Light and dark theme support using current Omarchy tokens.
+- Plain-text summaries with source attribution; plugin-addition explanations use the current validated marketplace description when available.
+- Light and dark theme support using current Omarchy tokens, with meaningful secondary text derived from the panel foreground rather than an ambient low-contrast muted token.
 - Useful empty, offline, partial-source, and invalid-feed states.
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
-- A compositor-managed resizable/maximizable window with ordinary task switching, arrow-key/Enter finite load-more controls, animated refresh progress, and selected-state text contrast across maintained themes.
+- A compositor-managed resizable/maximizable window with ordinary task switching, an always-visible keyboard guide, explicit arrow-key/Enter finite load-more controls, a hover-visible Refresh shortcut, animated refresh progress, and selected/secondary text contrast across maintained themes.
 - Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, and durable private reading state.
 - Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 

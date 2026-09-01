@@ -16,7 +16,15 @@ from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import atomic_write_json, canonical_json_bytes, read_json_bounded
 from .metrics import enrich_event_metrics
 from .model import canonical_events, make_feed
-from .sources import community_events, diff_marketplace, diff_releases, parse_engagement, parse_marketplace, parse_releases
+from .sources import (
+    community_events,
+    diff_marketplace,
+    diff_releases,
+    enrich_plugin_descriptions,
+    parse_engagement,
+    parse_marketplace,
+    parse_releases,
+)
 from .sources.marketplace import CATALOG_URL
 from .sources.marketplace_engagement import ENGAGEMENT_URL
 from .sources.omarchy_releases import API_URL, PUBLIC_URL
@@ -141,7 +149,7 @@ def collect_from_fixtures(
     retained_events.update({event["id"]: event for event in events})
     base_events = canonical_events(
         enrich_event_metrics(
-            retained_events.values(),
+            enrich_plugin_descriptions(retained_events.values(), marketplace),
             observed_at=checked_at,
             marketplace=marketplace,
             engagement=engagement,

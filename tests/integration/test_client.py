@@ -17,7 +17,6 @@ from radar.client import (
     set_event_read_state,
     set_preferences,
     set_section_filter,
-    set_section_profile,
     toggle_saved_state,
 )
 from radar.errors import ValidationError
@@ -131,7 +130,7 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertGreater(first["totalEvents"], 1)
         self.assertTrue(first["hasMore"])
         self.assertEqual("No extra filters", first["filterSummary"])
-        self.assertIn("sectionRule", first)
+        self.assertNotIn("sectionRule", first)
         self.assertIn("Official Omarchy releases", first["sectionSources"])
 
         plugins = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
@@ -175,19 +174,7 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertTrue(all(event["isUnread"] for event in unread["events"]))
         self.assertNotIn(read_id, {event["id"] for event in unread["events"]})
 
-        profiled = set_section_profile(
-            "plugins",
-            {"name": "My Extensions"},
-            self.environment,
-        )
-        self.assertEqual(
-            {"name": "My Extensions"},
-            profiled["state"]["preferences"]["sectionProfiles"]["plugins"],
-        )
-        self.assertEqual(
-            "Core",
-            profiled["state"]["preferences"]["sectionProfiles"]["core"]["name"],
-        )
+        self.assertNotIn("sectionProfiles", updated["state"]["preferences"])
 
         with self.assertRaisesRegex(ValidationError, "limit"):
             projection_model("plugins", "[]", "", self.environment, now=CLOCK, limit=0)

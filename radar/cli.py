@@ -25,7 +25,6 @@ from .client import (
     toggle_saved_state,
     set_preferences,
     set_section_filter,
-    set_section_profile,
 )
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
 from .errors import RadarError
@@ -71,9 +70,6 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     section_filter = commands.add_parser("set-section-filter")
     section_filter.add_argument("--section", required=True)
     section_filter.add_argument("--filter-json", required=True)
-    section_profile = commands.add_parser("set-section-profile")
-    section_profile.add_argument("--section", required=True)
-    section_profile.add_argument("--profile-json", required=True)
     args = parser.parse_args(argv)
     try:
         require_unprivileged()
@@ -110,16 +106,6 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             if not isinstance(filter_value, dict):
                 raise RadarError("section filter must be a JSON object")
             result = set_section_filter(args.section, filter_value)
-        elif args.command == "set-section-profile":
-            if len(args.profile_json) > 4096:
-                raise RadarError("section profile exceeds its bound")
-            try:
-                profile_value = json.loads(args.profile_json)
-            except json.JSONDecodeError as exc:
-                raise RadarError("section profile must be a JSON object") from exc
-            if not isinstance(profile_value, dict):
-                raise RadarError("section profile must be a JSON object")
-            result = set_section_profile(args.section, profile_value)
         elif args.command == "project":
             result = projection_model(args.section, args.installed_json, args.query, limit=args.limit)
         else:
