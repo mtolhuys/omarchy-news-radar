@@ -8,7 +8,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.1.5` is the current release candidate. Its source, live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public after publication. Marketplace verification is commit-specific compatibility evidence, not a security audit.
+Version `0.1.5` is the current public release. Its source, live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public. Marketplace verification is commit-specific compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
