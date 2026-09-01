@@ -246,7 +246,7 @@ omarchy_host_test() {
   log "Restoring the hidden newspaper from the rendered panel preference"
   press meta_l-alt-n
   wait_for_guest_state "shortcut opens the panel while its bar widget is hidden" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .localStateReady == true and .barVisiblePreference == false'" || return 1
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar showPreferences ''" >/dev/null || return 1
   wait_for_guest_state "Tune Your Radar is visibly open and ready" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true and .helperRunning == false'" || return 1

@@ -56,6 +56,7 @@ Item {
   property string editionMode: "published"
   property bool refreshing: false
   property bool pendingProjection: false
+  property bool localStateReady: false
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
   property string windowIntegrationStatus: "idle"
@@ -145,6 +146,8 @@ Item {
       refreshIndicatorVisible: refreshButton.iconSpinning,
       refreshTooltipVisible: refreshButton.tooltipVisible,
       helperRunning: anyHelperRunning,
+      localStateReady: localStateReady,
+      barVisiblePreference: preferences.barVisible !== false,
       searchFocused: searchField.activeFocus,
       unreadCount: Number(root.unreadCounts[currentSection] || 0),
       bulkReadInFlight: bulkReadInFlight,
@@ -291,6 +294,7 @@ Item {
     startProcess(windowProc, ["activate-window"])
     feedStatus = "Loading cache"
     statusDetail = "Reading the last-known-good local edition."
+    localStateReady = false
     preferencesOpen = false
     sectionSettingsOpen = false
     selectedIndex = 0
@@ -347,6 +351,7 @@ Item {
   function handleRead(raw) {
     var result = RadarModel.parseResponse(raw)
     userState = result.state || userState
+    localStateReady = true
     editionMode = String(result.editionMode || "published")
     editionTiming = result.timing || ({})
     if (result.feed) {
@@ -605,6 +610,7 @@ Item {
   }
 
   function showPreferences() {
+    if (!localStateReady || stateMutationPending) return
     preferencesOpen = true
     Qt.callLater(function() { barPreferenceButton.forceActiveFocus() })
   }
@@ -964,6 +970,7 @@ Item {
 
               RadarButton {
                 label: "Tune"
+                enabled: root.localStateReady && !root.stateMutationPending
                 onClicked: root.showPreferences()
               }
 
