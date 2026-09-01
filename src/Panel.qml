@@ -105,7 +105,7 @@ Item {
     || Object.keys(pendingReadChanges).length > 0
   readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight
   readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
-    || installedProc.running || stateMutationPending || readMutationPending
+    || installedProc.running || preferencesProc.running || stateMutationPending || readMutationPending
     || openSourceProc.running || windowProc.running
 
   function runtimeIdentity() {
@@ -313,6 +313,7 @@ Item {
     refreshProc.running = false
     projectProc.running = false
     installedProc.running = false
+    preferencesProc.running = false
     stateProc.running = false
     openSourceProc.running = false
     windowProc.running = false
@@ -610,9 +611,8 @@ Item {
   }
 
   function showPreferences() {
-    if (!localStateReady || stateMutationPending) return
-    preferencesOpen = true
-    Qt.callLater(function() { barPreferenceButton.forceActiveFocus() })
+    if (!localStateReady || stateMutationPending || preferencesProc.running) return
+    startProcess(preferencesProc, ["read"])
   }
 
   function showSectionSettings() {
@@ -691,6 +691,20 @@ Item {
   Process {
     id: installedProc
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleInstalled(text) }
+  }
+
+  Process {
+    id: preferencesProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        if (!root.opened || !result.state) return
+        root.userState = result.state
+        root.preferencesOpen = true
+        Qt.callLater(function() { barPreferenceButton.forceActiveFocus() })
+      }
+    }
   }
 
   Process {
@@ -970,7 +984,7 @@ Item {
 
               RadarButton {
                 label: "Tune"
-                enabled: root.localStateReady && !root.stateMutationPending
+                enabled: root.localStateReady && !root.stateMutationPending && !preferencesProc.running
                 onClicked: root.showPreferences()
               }
 

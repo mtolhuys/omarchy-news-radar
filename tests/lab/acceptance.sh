@@ -246,10 +246,18 @@ omarchy_host_test() {
   log "Restoring the hidden newspaper from the rendered panel preference"
   press meta_l-alt-n
   wait_for_guest_state "shortcut opens the panel while its bar widget is hidden" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .localStateReady == true and .barVisiblePreference == false'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .localStateReady == true'" || {
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-tune-open-failure.json" 2>&1 || true
+      ssh_session "cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" >"$RUN_DIR/news-radar-tune-open-state.json" 2>&1 || true
+      return 1
+    }
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar showPreferences ''" >/dev/null || return 1
   wait_for_guest_state "Tune Your Radar is visibly open and ready" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true and .helperRunning == false'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true and .helperRunning == false and .barVisiblePreference == false'" || {
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-tune-ready-failure.json" 2>&1 || true
+      ssh_session "cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" >"$RUN_DIR/news-radar-tune-ready-state.json" 2>&1 || true
+      return 1
+    }
   capture_console "success-news-radar-00-tune-hidden"
   radar_control_geometry tuneNewspaperGeometry || return 1
   tune_x="$control_x"
