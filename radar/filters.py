@@ -104,7 +104,8 @@ def apply_section_filter(
     events: Iterable[Mapping[str, Any]],
     value: Mapping[str, Any],
     *,
-    seen_through: str,
+    read_through: str,
+    read_overrides: Mapping[str, bool],
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     current = validate_section_filter(value)
@@ -125,7 +126,8 @@ def apply_section_filter(
             continue
         if current["significance"] == "critical" and significance != "critical":
             continue
-        if current["unreadOnly"] and event["occurredAt"] <= seen_through:
+        is_read = read_overrides.get(event["id"], event["occurredAt"] <= read_through)
+        if current["unreadOnly"] and is_read:
             continue
         if current["imagesOnly"] and not isinstance(event.get("image"), dict):
             continue

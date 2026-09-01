@@ -13,15 +13,6 @@ function parseResponse(raw) {
   }
 }
 
-function greatestTimestamp(events) {
-  var through = ""
-  for (var index = 0; index < events.length; index++) {
-    var value = String(events[index].occurredAt || "")
-    if (value > through) through = value
-  }
-  return through
-}
-
 function sourceHealth(feed) {
   if (!feed || !Array.isArray(feed.sources)) return "No validated source status"
   var failed = []

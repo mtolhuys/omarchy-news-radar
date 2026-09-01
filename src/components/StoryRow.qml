@@ -9,7 +9,6 @@ FocusScope {
   property bool selected: false
   property bool lead: false
   signal activated()
-  signal hovered()
 
   readonly property bool hasImage: !!story && !!story.imageUrl
   // A selected surface must never keep the ambient muted token: some themes
@@ -19,9 +18,6 @@ FocusScope {
   readonly property color secondaryTextColor: selected
     ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
     : Color.muted
-  readonly property color selectedLabelColor: selected
-    ? Color.popups.text
-    : story && story.classification.significance === "critical" ? Color.urgent : Color.accent
   implicitHeight: Math.max(
     storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2,
     hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0
@@ -29,7 +25,9 @@ FocusScope {
   activeFocusOnTab: true
 
   Accessible.role: Accessible.ListItem
-  Accessible.name: story ? story.title + ". " + story.summary : "Story"
+  Accessible.name: story
+    ? (story.isUnread ? "Unread. " : "Read. ") + story.title + ". " + story.summary
+    : "Story"
   Accessible.selected: selected
   Accessible.focusable: true
   Accessible.onPressAction: root.activated()
@@ -64,11 +62,14 @@ FocusScope {
 
       Text {
         width: parent.width
-        text: root.story ? String(root.story.classification.section).toUpperCase() + (root.story.isNew ? " · NEW" : "") : ""
+        text: root.story
+          ? String(root.story.classification.section).toUpperCase()
+            + (root.story.isUnread ? " · ● UNREAD" : " · ✓ READ")
+          : ""
         textFormat: Text.PlainText
-        color: root.selectedLabelColor
+        color: root.story && root.story.isUnread ? Color.accent : root.secondaryTextColor
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         font.bold: true
         elide: Text.ElideRight
       }
@@ -134,7 +135,6 @@ FocusScope {
 
   HoverHandler {
     id: hoverHandler
-    onHoveredChanged: if (hovered) root.hovered()
   }
   TapHandler { onTapped: root.activated() }
   Keys.onReturnPressed: root.activated()

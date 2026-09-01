@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,14 +15,16 @@ from unittest import mock
 from radar.errors import StorageError, ValidationError
 from radar.state import (
     RefreshLock,
+    StateLock,
     default_state,
+    event_is_read,
     feed_path,
     load_feed,
     load_state,
-    mark_seen,
     purge,
     save_feed,
     save_state,
+    set_event_read,
     toggle_saved,
     update_preferences,
     update_section_filter,
@@ -65,13 +68,34 @@ class StateTests(unittest.TestCase):
         self.assertIsNotNone(load_feed(self.environment, now=CLOCK))
         self.assertEqual(sorted(["feed.json", "state.json", str(quarantine)]), purge(self.environment))
 
-    def test_seen_is_monotonic_and_save_is_independent(self) -> None:
-        state = mark_seen(default_state(), "2026-08-31T10:00:00Z")
-        state = mark_seen(state, "2026-08-30T10:00:00Z")
-        self.assertEqual("2026-08-31T10:00:00Z", state["seenThrough"])
+    def test_per_event_read_overrides_are_explicit_bounded_and_save_is_independent(self) -> None:
+        event = self.feed["events"][0]
+        event_ids = {item["id"] for item in self.feed["events"]}
+        state = default_state()
+        self.assertFalse(event_is_read(state, event))
+        with self.assertRaisesRegex(ValidationError, "boolean"):
+            set_event_read(state, event, 1, current_event_ids=event_ids)  # type: ignore[arg-type]
+        state = set_event_read(state, event, True, current_event_ids=event_ids)
+        self.assertTrue(event_is_read(state, event))
+        self.assertEqual({event["id"]: True}, state["readOverrides"])
+
+        state = set_event_read(state, event, False, current_event_ids=event_ids)
+        self.assertFalse(event_is_read(state, event))
+        self.assertEqual({}, state["readOverrides"])
+
+        state["readThrough"] = "2026-08-31T14:00:00Z"
+        self.assertTrue(event_is_read(state, event))
+        state = set_event_read(state, event, False, current_event_ids=event_ids)
+        self.assertFalse(event_is_read(state, event))
+        self.assertEqual({event["id"]: False}, state["readOverrides"])
+
+        state["readOverrides"]["evt_ffffffffffffffffffffffff"] = True
+        state = set_event_read(state, event, True, current_event_ids=event_ids)
+        self.assertEqual({}, state["readOverrides"])
+
         updated, saved = toggle_saved(state, self.feed["events"][0], now=CLOCK)
         self.assertTrue(saved)
-        self.assertEqual("2026-08-31T10:00:00Z", updated["seenThrough"])
+        self.assertEqual(state["readOverrides"], updated["readOverrides"])
         updated, saved = toggle_saved(updated, self.feed["events"][0], now=CLOCK)
         self.assertFalse(saved)
 
@@ -84,7 +108,9 @@ class StateTests(unittest.TestCase):
         )
         state, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(6, state["schemaVersion"])
+        self.assertEqual(7, state["schemaVersion"])
+        self.assertEqual("2026-08-30T10:00:00Z", state["readThrough"])
+        self.assertEqual({}, state["readOverrides"])
         self.assertTrue(state["preferences"]["barVisible"])
         self.assertEqual(
             {"period": "all", "significance": "all", "unreadOnly": False, "imagesOnly": False, "types": []},
@@ -163,7 +189,7 @@ class StateTests(unittest.TestCase):
         )
         v3, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(6, v3["schemaVersion"])
+        self.assertEqual(7, v3["schemaVersion"])
         self.assertEqual("30d", v3["preferences"]["sectionFilters"]["plugins"]["period"])
         self.assertEqual("Plugins", v3["preferences"]["sectionProfiles"]["plugins"]["name"])
 
@@ -194,7 +220,7 @@ class StateTests(unittest.TestCase):
         )
         v4, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(6, v4["schemaVersion"])
+        self.assertEqual(7, v4["schemaVersion"])
         self.assertEqual({"name": "My Extensions"}, v4["preferences"]["sectionProfiles"]["plugins"])
         self.assertNotIn("community", v4["preferences"]["sectionProfiles"])
         self.assertNotIn("community", v4["preferences"]["sectionFilters"])
@@ -223,8 +249,8 @@ class StateTests(unittest.TestCase):
         )
         v5, quarantine = load_state(self.environment)
         self.assertIsNone(quarantine)
-        self.assertEqual(6, v5["schemaVersion"])
-        self.assertEqual("2026-08-30T10:00:00Z", v5["seenThrough"])
+        self.assertEqual(7, v5["schemaVersion"])
+        self.assertEqual("2026-08-30T10:00:00Z", v5["readThrough"])
         self.assertEqual(1, len(v5["saved"]))
         self.assertFalse(v5["preferences"]["barVisible"])
         self.assertFalse(v5["preferences"]["imagesVisible"])
@@ -233,12 +259,38 @@ class StateTests(unittest.TestCase):
         self.assertNotIn("community", v5["preferences"]["sectionProfiles"])
         self.assertNotIn("community", v5["preferences"]["sectionFilters"])
 
+        v6_preferences = copy.deepcopy(default_state()["preferences"])
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 6,
+                "seenThrough": "2026-08-31T10:00:00Z",
+                "saved": {},
+                "preferences": v6_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v6, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(7, v6["schemaVersion"])
+        self.assertEqual("2026-08-31T10:00:00Z", v6["readThrough"])
+        self.assertEqual({}, v6["readOverrides"])
+
     def test_current_state_rejects_unknown_members_instead_of_normalizing_them_away(self) -> None:
         cases = []
 
         extra_state = default_state()
         extra_state["unexpected"] = True
         cases.append(extra_state)
+
+        invalid_read_override = default_state()
+        invalid_read_override["readOverrides"]["not-an-event"] = True
+        cases.append(invalid_read_override)
+
+        too_many_read_overrides = default_state()
+        too_many_read_overrides["readOverrides"] = {
+            f"evt_{index:024x}": True for index in range(501)
+        }
+        cases.append(too_many_read_overrides)
 
         extra_preferences = default_state()
         extra_preferences["preferences"]["unexpected"] = True
@@ -349,6 +401,8 @@ class StateTests(unittest.TestCase):
             with self.assertRaises(StorageError):
                 with RefreshLock(self.environment):
                     pass
+        with StateLock(self.environment):
+            self.assertTrue((Path(self.environment["XDG_STATE_HOME"]) / "omarchy-news-radar/state.lock").is_file())
 
         root = Path(self.temporary.name)
         symlink_environment = dict(self.environment)
@@ -394,6 +448,9 @@ class StateTests(unittest.TestCase):
             text=True,
         )
         try:
+            self.assertIsNotNone(process.stdout)
+            self.assertIsNotNone(process.stderr)
+            assert process.stdout is not None
             self.assertEqual("locked", process.stdout.readline().strip())
             with self.assertRaisesRegex(StorageError, "already running"):
                 with RefreshLock(self.environment):
@@ -410,6 +467,32 @@ class StateTests(unittest.TestCase):
                 process.stdout.close()
             if process.stderr is not None:
                 process.stderr.close()
+
+    def test_state_lock_serializes_cross_process_mutations(self) -> None:
+        command = [
+            sys.executable,
+            "-c",
+            (
+                "from radar.state import StateLock; "
+                "lock = StateLock(); lock.__enter__(); "
+                "print('locked', flush=True); lock.__exit__(None, None, None)"
+            ),
+        ]
+        environment = {**os.environ, **self.environment}
+        with StateLock(self.environment):
+            process = subprocess.Popen(
+                command,
+                cwd=ROOT,
+                env=environment,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            time.sleep(0.1)
+            self.assertIsNone(process.poll())
+        stdout, stderr = process.communicate(timeout=5)
+        self.assertEqual("locked", stdout.strip())
+        self.assertEqual("", stderr)
 
 
 if __name__ == "__main__":

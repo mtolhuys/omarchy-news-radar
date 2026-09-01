@@ -83,6 +83,7 @@ omarchy_host_test() {
     control_y=$((window_y + local_y))
   }
   start_epoch="$(date +%s)"
+  ssh_session "pkill -x hypridle >/dev/null 2>&1 || true; ! pgrep -x hypridle" || return 1
 
   log "Staging the exact News Radar candidate in the disposable guest"
   tar -C "$product_root" --exclude=.git --exclude=dist --exclude='__pycache__' -cf - . | ssh_guest \
@@ -337,6 +338,8 @@ omarchy_host_test() {
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered Restore control returns the normal window" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.maximized == false'" || return 1
+  wait_for_guest_state "restored window publishes stable compositor geometry" 10 ssh_session \
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and (.at | length) == 2 and (.size | length) == 2 and (.at[] | type) == \"number\" and (.size[] | type) == \"number\")'" || return 1
 
   window_before_width="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .size[0]'")" || return 1
   window_x="$(ssh_session "hyprctl -j clients | jq -r '.[] | select(.title == \"📰 Omarchy News Radar\") | .at[0]'")" || return 1
@@ -391,7 +394,7 @@ omarchy_host_test() {
   radar_control_geometry sectionNameApplyGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered section name persists locally" 10 ssh_session \
-    "jq -e '.schemaVersion == 6 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"} and (.preferences.sectionProfiles | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+    "jq -e '.schemaVersion == 7 and .preferences.sectionProfiles.plugins == {name:\"Extensions\"} and (.preferences.sectionProfiles | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
      ! grep -q 'BACKGROUND · THEME-DERIVED\|sectionIconSparkButton\|sectionToneAccentButton' $plugin_dir/src/Panel.qml" || return 1
   capture_console "success-news-radar-03-section-identity-fixed"
   radar_control_geometry sectionAppearanceResetGeometry || return 1
@@ -409,7 +412,7 @@ omarchy_host_test() {
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
-    "jq -e '.schemaVersion == 6 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "jq -e '.schemaVersion == 7 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   radar_control_geometry filterResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered reset restores the exact section defaults" 10 ssh_session \
@@ -463,20 +466,32 @@ omarchy_host_test() {
   press esc
   capture_console "success-news-radar-03-keyboard-source-save"
 
-  log "Proving the rendered session cutoff across an in-session refresh"
+  log "Proving explicit per-story read state across refresh and close"
   ssh_guest "cp /tmp/news-radar-fixtures/later.json /tmp/news-radar-fixtures/current.json"
   press r
-  wait_for_guest_state "new event arrives without changing the open session cutoff" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\" and .sessionThrough == \"2026-08-31T14:00:00Z\"'" || return 1
+  wait_for_guest_state "new event arrives without becoming implicitly read" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Current\"' && \
+     jq -e '.schemaVersion == 7 and .readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press esc
-  wait_for_guest_state "normal close advances seen state only to the captured cutoff" 15 ssh_session \
-    "jq -e '.seenThrough == \"2026-08-31T14:00:00Z\"' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  wait_for_guest_state "normal close does not bulk-mark unseen stories" 15 ssh_session \
+    "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press meta_l-alt-n
   wait_for_guest_state "the next panel session is current and ready for navigation" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"Current\" and .searchFocused == false'" || return 1
   press 2
-  wait_for_guest_state "event introduced during the prior session remains new" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedTitle == \"An event that arrived during the open session\" and .selectedIsNew == true'" || return 1
+  wait_for_guest_state "event introduced during the prior session is visibly unread" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedTitle == \"An event that arrived during the open session\" and .selectedIsUnread == true and .unreadCount > 0'" || return 1
+  capture_console "success-news-radar-03-unread-story"
+  radar_control_geometry readStateGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "the rendered read action persists only the selected event" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == false' && \
+     jq -e '.readOverrides[\"evt_000000000000000000000abc\"] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  capture_console "success-news-radar-03-read-story"
+  press u
+  wait_for_guest_state "keyboard toggle restores the selected story to unread" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == true' && \
+     jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
 
   log "Proving malformed, oversized, partial, offline, empty, long, and dense states"
   ssh_guest "cp /tmp/news-radar-fixtures/malformed.json /tmp/news-radar-fixtures/current.json"
@@ -516,12 +531,15 @@ omarchy_host_test() {
   radar_control_geometry loadMoreGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered Load more reveals the next finite page" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 24 and .totalStories == 120 and .hasMoreStories == true'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 24 and .totalStories == 120 and .hasMoreStories == true'" || {
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+        >"$RUN_DIR/news-radar-load-more-failure.json" 2>&1 || true
+      return 1
+    }
   dense_ready_ms="$(date +%s%3N)"
   capture_console "success-news-radar-08-dense"
-  # The load-more click leaves the synthetic pointer over the story list. Move
-  # it off the Radar before replacing the model so hover selection cannot race
-  # the keyboard's explicit Home selection.
+  # Move the synthetic pointer off Radar before replacing the model so it
+  # cannot obscure a later visual checkpoint.
   qmp_pointer_move "$viewport_width" "$viewport_height" 4 4 || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/long.json /tmp/news-radar-fixtures/current.json"
   press r

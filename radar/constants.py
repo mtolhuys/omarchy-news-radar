@@ -5,7 +5,7 @@ from __future__ import annotations
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
 BUILD_ID = "news-radar-0.1.0"
 FEED_SCHEMA_VERSION = 1
-STATE_SCHEMA_VERSION = 6
+STATE_SCHEMA_VERSION = 7
 HELPER_PROTOCOL_VERSION = 1
 
 FEED_URL = "https://mtolhuys.github.io/omarchy-news-radar/events.json"
@@ -15,6 +15,7 @@ CATALOG_MAX_BYTES = 8 * 1024 * 1024
 GITHUB_MAX_BYTES = 4 * 1024 * 1024
 ENGAGEMENT_MAX_BYTES = 2 * 1024 * 1024
 MAX_EVENTS = 500
+MAX_READ_OVERRIDES = MAX_EVENTS
 MAX_SAVED = 250
 MAX_INTERESTS = 12
 MAX_DIAGNOSTIC_BYTES = 64 * 1024

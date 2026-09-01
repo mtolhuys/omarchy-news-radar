@@ -6,7 +6,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.1.0` is a complete local release candidate, not a public release. The source, tests, workflows, and disposable Plugin Lab scenario are implemented. The intended GitHub repository and Pages feed do not exist yet, so the public URL, public clean-clone proof, tag, release, and marketplace submission remain deliberately pending owner authorization.
+Version `0.1.0` is a public release candidate, not yet a tagged release or marketplace listing. The source repository and live Pages edition exist; exact-commit public-clone acceptance, final evidence, the release tag, and marketplace review remain gated on the per-story read-state work introduced before first release.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -15,14 +15,14 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A standard-library Python collector for published Omarchy releases, bounded marketplace catalog diffs, official anonymous marketplace engagement aggregates, and reviewed repository-owned community records.
 - A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
-- A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, atomic private XDG state, corrupt-state quarantine, save/seen state, and explicit purge.
+- A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, serialized atomic private XDG state, corrupt-state quarantine, saved items, bounded per-story read overrides, and explicit purge.
 - A resizable, maximizable theme-native QML window with normal `Alt+Tab`, contrast-safe selection, images, icon metrics, human-facing marketplace links, Front Page, For You, Core, Plugins, and Saved, private interests, bounded section display names, fixed section identity, per-section filters, finite load-more pagination, search, keyboard/pointer controls, source opening, visible health/recovery states, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
 - A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free; it never displaces Editor or another action.
 - An explicit XDG application-launcher helper that exposes Radar in Omarchy's Apps menu, updates only its receipt-backed desktop entry and icon, and preserves modified or unrelated files.
-- Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and eventual public-clone acceptance.
+- Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and exact public-clone acceptance.
 
 ## Review the local candidate
 
@@ -57,13 +57,13 @@ When you deliberately want to run this checkout on your daily desktop, use:
 make local-latest
 ```
 
-The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and collect a new local edition. The panel labels this mode “Local live edition” because the public Pages feed does not exist yet; rerun the command whenever you want newer news.
+The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and collect a new local edition. The panel labels this mode “Local live edition” because it is an intentional checkout-built edition rather than the Pages publication; rerun the command whenever you want newer news.
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install after publication
+## Install after the v0.1.0 release
 
-These commands become usable only after the owner creates and publishes the intended repository:
+After the exact candidate is tagged and listed, install it with:
 
 ```bash
 omarchy plugin add https://github.com/mtolhuys/omarchy-news-radar --enable --yes
@@ -106,6 +106,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections.
 - `j` / `k` or arrow keys: move the selected story.
 - `Home` / `End`: first or last story.
+- `u`: mark the selected story read or unread locally.
 - `/`: focus local search; `Escape` returns to panel navigation.
 - `o` or `Enter`: open the selected validated HTTPS source.
 - `s`: save or unsave the selected story locally.
@@ -114,6 +115,8 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell toggle io
 - `Tune`: enable/disable the top-bar newspaper and images, and save up to twelve comma-separated private interests.
 - `⚙ Settings`: customize only the section's bounded plain-text display name, inspect its fixed icon, order, sources, and built-in rule, then locally refine time, significance, unread/image state, and story types.
 - `Load more`: reveal the next twelve matching stories from the already validated bounded edition.
+
+Every row explicitly says `● UNREAD` or `✓ READ`. Deliberate pointer selection, `j`/`k`, `Home`/`End`, and source activation mark only that story read; hover, opening the panel, refreshing, and closing do not mark the rest of the edition. The section rail and top-bar newspaper use the same durable local unread predicate, and **Mark read / Mark unread** in the inspector mirrors the `u` key.
 
 The window uses the normal desktop window model: drag the masthead to move it, resize from an edge, use Maximize/Restore, and switch to or from it with `Alt+Tab`. Radar intentionally omits its unreliable minimize control.
 
@@ -144,7 +147,7 @@ ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json
 ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/launcher.json
 ```
 
-Normal disablement and removal preserve the cache, seen cutoff, and saved items. Remove in this order while the helper still exists:
+Normal disablement and removal preserve the cache, per-story reading state, and saved items. Remove in this order while the helper still exists:
 
 ```bash
 ~/.config/omarchy/plugins/io.github.mtolhuys.news-radar/bin/news-radar-shortcut remove

@@ -74,7 +74,7 @@
 
 ## D010 — Keep personalization local
 
-**Decision:** Installed-plugin matching, up to twelve explicit interests, seen state, saves, filters, and preferences stay on the device.
+**Decision:** Installed-plugin matching, up to twelve explicit interests, reading state, saves, filters, and preferences stay on the device.
 
 **Why:** Server personalization is unnecessary for a generic public feed and would create accounts, identifiers, storage, and trust obligations.
 
@@ -96,7 +96,7 @@
 
 **Consequence:** Bootstrap is explicit and auditable. Invalid or missing listing timestamps are excluded, historical version/verification/retirement changes never backfill, and the twelve-item cap is tested. A baseline reset remains a maintenance operation.
 
-## D013 — Advance seen state to the rendered session cutoff
+## D013 — Advance seen state to the rendered session cutoff (superseded by D027)
 
 **Decision:** Closing advances `seenThrough` only to the greatest event timestamp captured when that session rendered a valid edition.
 
@@ -207,3 +207,11 @@
 **Why:** Production has no accepted reviewed records, so the Community tab was permanently empty and consumed navigation, settings, keyboard numbering, and explanation space without helping the reader. Keeping an empty placeholder is not useful product behavior.
 
 **Consequence:** State v6 validates and atomically migrates v5, preserving saved items, seen state, global preferences, and every remaining section's name/filter while discarding only Community's profile/filter. A future reviewed record may still enter Front Page and local For You through the existing deterministic rules. Numeric navigation is `1`–`5`, Saved is `5`, and no empty Community state or settings surface remains.
+
+## D027 — Track deliberate per-story reading instead of rendered sessions
+
+**Decision:** State v7 supersedes D013's session-wide cutoff. Every story is explicitly `UNREAD` or `READ`; deliberate keyboard or pointer selection marks only that event read, and the inspector or `u` key can reverse it. Hover, default selection, refresh, and close never bulk-mark stories.
+
+**Why:** A session cutoff can report an article as seen merely because it existed somewhere in an open edition. The bar count then cannot answer the user's essential question: which exact articles remain unread?
+
+**Consequence:** The prior `seenThrough` value migrates once to a fixed `readThrough` compatibility baseline. A bounded canonical boolean override map records only decisions that differ from that baseline and prunes IDs outside the current edition on mutation. Rows, section badges, accessible names, filters, and the top-bar count consume the same predicate. Cross-process state changes are serialized so a bar preference, save, filter, or read action cannot overwrite another local mutation.

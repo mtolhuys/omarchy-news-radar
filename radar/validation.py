@@ -20,6 +20,7 @@ from .constants import (
     MARKETPLACE_TRUST,
     METRIC_IDS,
     MAX_EVENTS,
+    MAX_READ_OVERRIDES,
     MAX_SAVED,
     FEED_SCHEMA_VERSION,
     MAX_INTERESTS,
@@ -463,13 +464,21 @@ def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     require_exact_keys(
         state,
-        {"schemaVersion", "seenThrough", "saved", "preferences"},
+        {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences"},
         "state",
     )
     if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
         raise ValidationError("unsupported state schemaVersion")
-    seen = require_string(state.get("seenThrough"), "seenThrough", 20, 20)
-    parse_timestamp(seen, "seenThrough")
+    read_through = require_string(state.get("readThrough"), "readThrough", 20, 20)
+    parse_timestamp(read_through, "readThrough")
+    overrides_raw = require_mapping(state.get("readOverrides"), "readOverrides")
+    if len(overrides_raw) > MAX_READ_OVERRIDES:
+        raise ValidationError("read overrides exceed item bound")
+    read_overrides: dict[str, bool] = {}
+    for event_id, raw in sorted(overrides_raw.items()):
+        if not EVENT_ID_RE.fullmatch(event_id):
+            raise ValidationError("read override event ID is invalid")
+        read_overrides[event_id] = require_bool(raw, "read override")
     saved_raw = require_mapping(state.get("saved"), "saved")
     if len(saved_raw) > MAX_SAVED:
         raise ValidationError("saved state exceeds item bound")
@@ -508,7 +517,8 @@ def validate_state(value: Any) -> dict[str, Any]:
     }
     return {
         "schemaVersion": STATE_SCHEMA_VERSION,
-        "seenThrough": seen,
+        "readThrough": read_through,
+        "readOverrides": read_overrides,
         "saved": saved,
         "preferences": {
             "barVisible": bar_visible,

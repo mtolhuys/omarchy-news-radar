@@ -11,13 +11,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from .constants import FEED_MAX_BYTES, MAX_SAVED, STATE_SCHEMA_VERSION
+from .constants import (
+    CLIENT_SECTIONS,
+    FEED_MAX_BYTES,
+    MAX_READ_OVERRIDES,
+    MAX_SAVED,
+    STATE_SCHEMA_VERSION,
+)
 from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
 from .validation import (
     format_timestamp,
     migrate_section_profile_v4,
-    parse_timestamp,
     require_exact_keys,
     require_mapping,
     validate_feed,
@@ -43,6 +48,7 @@ LEGACY_PREFERENCE_KEYS = {
     3: {"barVisible", "imagesVisible", "interests", "sectionFilters"},
     4: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
     5: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
+    6: {"barVisible", "imagesVisible", "interests", "sectionFilters", "sectionProfiles"},
 }
 
 
@@ -65,7 +71,8 @@ def state_root(environment: Mapping[str, str] | None = None) -> Path:
 def default_state() -> dict[str, Any]:
     return {
         "schemaVersion": STATE_SCHEMA_VERSION,
-        "seenThrough": EPOCH,
+        "readThrough": EPOCH,
+        "readOverrides": {},
         "saved": {},
         "preferences": {
             "barVisible": True,
@@ -120,10 +127,10 @@ def _quarantine(path: Path) -> Path:
 
 
 def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate one published legacy shape before converting it to v6."""
+    """Validate one published legacy shape before converting it to v7."""
 
     old_version = raw.get("schemaVersion")
-    if old_version not in {1, 2, 3, 4, 5}:
+    if old_version not in {1, 2, 3, 4, 5, 6}:
         raise ValidationError("unsupported legacy state schemaVersion")
     expected_state_keys = LEGACY_STATE_KEYS if old_version >= 2 else LEGACY_STATE_KEYS - {"preferences"}
     require_exact_keys(raw, expected_state_keys, f"state v{old_version}")
@@ -146,7 +153,7 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             )
             require_exact_keys(
                 old_filters,
-                LEGACY_CLIENT_SECTIONS,
+                CLIENT_SECTIONS if old_version == 6 else LEGACY_CLIENT_SECTIONS,
                 f"state v{old_version} section filters",
             )
             preferences["sectionFilters"] = {
@@ -161,7 +168,7 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             )
             require_exact_keys(
                 old_profiles,
-                LEGACY_CLIENT_SECTIONS,
+                CLIENT_SECTIONS if old_version == 6 else LEGACY_CLIENT_SECTIONS,
                 f"state v{old_version} section profiles",
             )
             profile_validator = migrate_section_profile_v4 if old_version == 4 else validate_section_profile
@@ -173,19 +180,27 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
     return validate_state(
         {
             "schemaVersion": STATE_SCHEMA_VERSION,
-            "seenThrough": raw.get("seenThrough"),
+            "readThrough": raw.get("seenThrough"),
+            "readOverrides": {},
             "saved": raw.get("saved"),
             "preferences": preferences,
         }
     )
 
 
-def load_state(environment: Mapping[str, str] | None = None) -> tuple[dict[str, Any], str | None]:
+def load_state(
+    environment: Mapping[str, str] | None = None,
+    *,
+    serialized: bool = True,
+) -> tuple[dict[str, Any], str | None]:
+    if serialized:
+        with StateLock(environment):
+            return load_state(environment, serialized=False)
     refuse_symlink(state_root(environment))
     path = user_state_path(environment)
     try:
         raw = read_json_bounded(path, 512 * 1024)
-        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5}:
+        if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5, 6}:
             migrated = _migrate_legacy_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
@@ -207,13 +222,44 @@ def save_state(state: Mapping[str, Any], environment: Mapping[str, str] | None =
     return validated
 
 
-def mark_seen(state: Mapping[str, Any], through: str) -> dict[str, Any]:
+def event_is_read(state: Mapping[str, Any], event: Mapping[str, Any]) -> bool:
+    """Return the durable local reading state for one validated cached event."""
+
+    override = state["readOverrides"].get(event["id"])
+    if override is not None:
+        return bool(override)
+    return event["occurredAt"] <= state["readThrough"]
+
+
+def set_event_read(
+    state: Mapping[str, Any],
+    event: Mapping[str, Any],
+    read: bool,
+    *,
+    current_event_ids: set[str],
+) -> dict[str, Any]:
+    """Set one event explicitly while pruning overrides outside the current edition."""
+
     current = validate_state(dict(state))
-    candidate = parse_timestamp(through, "through")
-    existing = parse_timestamp(current["seenThrough"], "seenThrough")
-    if candidate > existing:
-        current["seenThrough"] = through
-    return current
+    if not isinstance(read, bool):
+        raise ValidationError("read state must be a boolean")
+    event_id = str(event["id"])
+    if event_id not in current_event_ids:
+        raise ValidationError("event is not present in the validated cache")
+    overrides = {
+        key: value
+        for key, value in current["readOverrides"].items()
+        if key in current_event_ids
+    }
+    default_read = event["occurredAt"] <= current["readThrough"]
+    if read == default_read:
+        overrides.pop(event_id, None)
+    else:
+        overrides[event_id] = read
+    if len(overrides) > MAX_READ_OVERRIDES:
+        raise ValidationError("read override limit reached")
+    current["readOverrides"] = dict(sorted(overrides.items()))
+    return validate_state(current)
 
 
 def saved_record(event: Mapping[str, Any], saved_at: datetime) -> dict[str, Any]:
@@ -284,14 +330,24 @@ def update_section_profile(
     return validate_state(current)
 
 
-class RefreshLock:
-    """A crash-safe per-user lock that rejects concurrent refresh helpers."""
+class _OwnedFileLock:
+    """Crash-safe per-user serialization for one private state transition."""
 
-    def __init__(self, environment: Mapping[str, str] | None = None) -> None:
-        self.path = cache_root(environment) / "refresh.lock"
+    def __init__(
+        self,
+        path: Path,
+        *,
+        label: str,
+        contention_message: str,
+        nonblocking: bool,
+    ) -> None:
+        self.path = path
+        self.label = label
+        self.contention_message = contention_message
+        self.nonblocking = nonblocking
         self.descriptor: int | None = None
 
-    def __enter__(self) -> "RefreshLock":
+    def __enter__(self) -> "_OwnedFileLock":
         ensure_private_directory(self.path.parent)
         refuse_symlink(self.path)
         flags = os.O_CREAT | os.O_RDWR
@@ -300,21 +356,22 @@ class RefreshLock:
             self.descriptor = os.open(self.path, flags, 0o600)
             info = os.fstat(self.descriptor)
             if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
-                raise OSError("refresh lock is not an owned regular file")
+                raise OSError(f"{self.label} lock is not an owned regular file")
             os.fchmod(self.descriptor, 0o600)
             try:
-                fcntl.flock(self.descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                operation = fcntl.LOCK_EX | (fcntl.LOCK_NB if self.nonblocking else 0)
+                fcntl.flock(self.descriptor, operation)
             except OSError as exc:
                 if exc.errno in {errno.EACCES, errno.EAGAIN}:
                     os.close(self.descriptor)
                     self.descriptor = None
-                    raise StorageError("a refresh is already running") from exc
+                    raise StorageError(self.contention_message) from exc
                 raise
 
             payload = f"{os.getpid()} {int(time.time())}\n".encode("ascii")
             os.ftruncate(self.descriptor, 0)
             if os.write(self.descriptor, payload) != len(payload):
-                raise OSError("short refresh-lock write")
+                raise OSError(f"short {self.label}-lock write")
             os.fsync(self.descriptor)
         except StorageError:
             raise
@@ -322,13 +379,37 @@ class RefreshLock:
             if self.descriptor is not None:
                 os.close(self.descriptor)
                 self.descriptor = None
-            raise StorageError("cannot create refresh lock") from exc
+            raise StorageError(f"cannot create {self.label} lock") from exc
         return self
 
     def __exit__(self, _exc_type: object, _exc: object, _traceback: object) -> None:
         if self.descriptor is not None:
             os.close(self.descriptor)
             self.descriptor = None
+
+
+class RefreshLock(_OwnedFileLock):
+    """Reject concurrent refresh helpers without leaving a stale lock."""
+
+    def __init__(self, environment: Mapping[str, str] | None = None) -> None:
+        super().__init__(
+            cache_root(environment) / "refresh.lock",
+            label="refresh",
+            contention_message="a refresh is already running",
+            nonblocking=True,
+        )
+
+
+class StateLock(_OwnedFileLock):
+    """Serialize cross-process state read/modify/write transitions."""
+
+    def __init__(self, environment: Mapping[str, str] | None = None) -> None:
+        super().__init__(
+            state_root(environment) / "state.lock",
+            label="state",
+            contention_message="local state is already being changed",
+            nonblocking=False,
+        )
 
 
 def purge(environment: Mapping[str, str] | None = None) -> list[str]:

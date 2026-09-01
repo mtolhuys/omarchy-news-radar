@@ -40,7 +40,7 @@ Tests may inject a fixture file or loopback endpoint through an explicit test bo
 
 Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename.
 
-The state parser accepts only its own bounded schema. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
+The state parser accepts only its own bounded schema. Per-story read overrides are keyed only by validated event IDs, capped at the feed bound, and never transmitted. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
 
 Section filters are validated local state. They select only from closed enums and booleans, never become query parameters, and never alter collector or feed requests. Load more changes only a bounded local projection limit.
 
@@ -52,7 +52,7 @@ The optional application launcher uses one fixed desktop-entry name and one fixe
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
 
-At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. The kernel releases that lock even if closing the panel terminates its helper abruptly, so a dead helper cannot strand future refreshes. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private lock serializes every state read/modify/write transition across panel and bar helpers, preventing a concurrent read toggle, save, filter, or visibility change from overwriting another mutation. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` at startup and every 30 minutes only while its local visibility preference is true; hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
 ## Local checkout synchronization
 
@@ -91,7 +91,7 @@ RSS/XML generation escapes every remote value and uses canonical HTTPS links. XM
 
 ## Privacy
 
-The feed host receives ordinary generic feed and same-origin image GET requests and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, explicit interests, filters, saves, and seen state never leave the machine.
+The feed host receives ordinary generic feed and same-origin image GET requests and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Radar adds no identifier or personalization. Local installed-plugin matching, explicit interests, filters, saves, and per-story reading state never leave the machine.
 
 The project must not claim perfect anonymity, sandboxing, or security auditing.
 

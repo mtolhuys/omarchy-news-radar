@@ -84,7 +84,8 @@ omarchy-news-radar/
 │   ├── state-v3.schema.json
 │   ├── state-v4.schema.json
 │   ├── state-v5.schema.json
-│   └── state-v6.schema.json
+│   ├── state-v6.schema.json
+│   └── state-v7.schema.json
 ├── share/
 │   └── applications/
 │       └── io.github.mtolhuys.news-radar.desktop
@@ -132,16 +133,16 @@ Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar l
 
 `open()` follows this order:
 
-1. Establish one session identity and reset transient error state.
+1. Reset transient error state without changing reading state.
 2. Ask the client helper for the validated local cache and local user state.
-3. Render cached events immediately when available and capture `sessionThrough` from that exact model.
+3. Render cached events immediately with explicit per-story `isUnread` decoration.
 4. Query `omarchy-shell shell listPlugins` to derive locally installed plugin IDs.
 5. Start at most one bounded refresh helper.
 6. Validate the candidate feed completely before atomically replacing cache or the visible current model.
 7. Preserve the cached model and surface a recoverable status if refresh fails.
 8. Prime keyboard focus only after the visible model exists.
 
-`close()` and component destruction must cancel or terminate the owned refresh helper, persist `seenThrough` no later than the captured session boundary, persist saved items atomically, release the panel window, and leave no child process.
+`close()` and component destruction must cancel or terminate owned network/model helpers, drain any already-requested per-story reading mutation, release the panel window, and leave no child process. Close never bulk-marks a session or edition. All cross-process state read/modify/write operations use one private kernel-backed lock so panel and bar mutations cannot overwrite each other.
 
 ## Client helper
 
@@ -152,7 +153,7 @@ news-radar-client read
 news-radar-client refresh
 news-radar-client refresh-if-due --minimum-age <seconds>
 news-radar-client indicator
-news-radar-client mark-seen --through <UTC timestamp>
+news-radar-client set-read --event-id <id> --read true|false
 news-radar-client toggle-saved --event-id <id>
 news-radar-client set-preferences [--bar-visible true|false] [--images-visible true|false] [--interests-json <array>]
 news-radar-client purge
@@ -171,7 +172,7 @@ Follow XDG ownership:
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |
-| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Seen-through timestamp, saved items, local preferences/interests, and schema version |
+| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local preferences/interests, and schema version |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/diagnostics.log` | Optional bounded local diagnostics without feed bodies or private paths |
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.

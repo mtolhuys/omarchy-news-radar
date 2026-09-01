@@ -70,6 +70,13 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('iconText: "×"', qml)
         self.assertIn('label: "Plugin page"', qml)
         self.assertIn("function pluginPageGeometry()", qml)
+        self.assertIn("function readStateGeometry()", qml)
+        self.assertIn("function restoreStoryViewport()", qml)
+        self.assertIn("storyList.positionViewAtEnd()", qml)
+        self.assertIn("function loadMore() {\n    if (!hasMoreStories) return", qml)
+        self.assertIn('"set-read", "--event-id"', qml)
+        self.assertIn('label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"', qml)
+        self.assertNotIn("mark-seen", qml)
         self.assertNotIn("metricSources", qml)
         self.assertIn("SECTION SETTINGS", qml)
         self.assertIn('label: "⚙ Settings"', qml)
@@ -90,6 +97,9 @@ class QmlContractTests(unittest.TestCase):
         self.assertNotIn('currentSection === "community"', qml)
         self.assertIn("1–5 sections", qml)
         self.assertIn('readonly property string compositorWindowTitle: "📰 Omarchy News Radar"', qml)
+        button = (ROOT / "src/components/RadarButton.qml").read_text(encoding="utf-8")
+        self.assertIn("preventStealing: true", button)
+        self.assertIn("onClicked: root.clicked()", button)
 
     def test_every_section_boundary_uses_the_same_canonical_five_ids(self) -> None:
         expected = list(CLIENT_SECTIONS)
@@ -107,6 +117,11 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Color.popups.text", story)
         self.assertIn("textFormat: Text.PlainText", story)
         self.assertIn("MetricStrip", story)
+        self.assertIn("● UNREAD", story)
+        self.assertIn("✓ READ", story)
+        self.assertIn("story.isUnread", story)
+        self.assertNotIn("signal hovered", story)
+        self.assertNotIn("onHovered:", qml)
 
         section = (ROOT / "src/components/SectionButton.qml").read_text(encoding="utf-8")
         self.assertIn("property string icon", section)
@@ -115,6 +130,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Color.foreground", section)
         self.assertIn("Style.font.iconLarge", section)
         self.assertIn("id: iconText", section)
+        self.assertIn("property int unreadCount", section)
 
         metrics = (ROOT / "src/components/MetricStrip.qml").read_text(encoding="utf-8")
         for metric_id in (
@@ -142,6 +158,7 @@ class QmlContractTests(unittest.TestCase):
             "Keys.onEscapePressed",
             'event.text === "/"',
             'toLowerCase() === "s"',
+            'toLowerCase() === "u"',
             'toLowerCase() === "r"',
         ):
             self.assertIn(key, qml)

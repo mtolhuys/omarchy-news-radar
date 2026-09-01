@@ -14,6 +14,7 @@ from radar.client import (
     projection_model,
     read_model,
     refresh,
+    set_event_read_state,
     set_preferences,
     set_section_filter,
     set_section_profile,
@@ -87,7 +88,9 @@ class ClientIntegrationTests(unittest.TestCase):
 
     def test_saved_state_roundtrip_uses_only_validated_cache_event(self) -> None:
         refresh(self.environment, now=CLOCK)
-        event_id = self.feed["events"][0]["id"]
+        event_id = projection_model(
+            "front-page", "[]", "", self.environment, now=CLOCK
+        )["events"][0]["id"]
         saved = toggle_saved_state(event_id, self.environment, now=CLOCK)
         self.assertTrue(saved["saved"])
         projected = projection_model("saved", "[]", "", self.environment, now=CLOCK)
@@ -97,6 +100,20 @@ class ClientIntegrationTests(unittest.TestCase):
         refresh(self.environment, now=CLOCK)
         indicator = indicator_model(self.environment, now=CLOCK)
         self.assertGreater(indicator["unread"], 0)
+        event_id = projection_model(
+            "front-page", "[]", "", self.environment, now=CLOCK
+        )["events"][0]["id"]
+        reading = set_event_read_state(event_id, True, self.environment, now=CLOCK)
+        self.assertTrue(reading["read"])
+        self.assertEqual(indicator["unread"] - 1, indicator_model(self.environment, now=CLOCK)["unread"])
+        projected_read = projection_model("front-page", "[]", "", self.environment, now=CLOCK)
+        decorated = next(event for event in projected_read["events"] if event["id"] == event_id)
+        self.assertFalse(decorated["isUnread"])
+        self.assertGreaterEqual(projected_read["unreadCounts"]["front-page"], 0)
+
+        reading = set_event_read_state(event_id, False, self.environment, now=CLOCK)
+        self.assertFalse(reading["read"])
+        self.assertEqual(indicator["unread"], indicator_model(self.environment, now=CLOCK)["unread"])
         tuned = set_preferences(
             bar_visible=False,
             images_visible=False,
@@ -149,6 +166,16 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertTrue(all(event["type"] == "plugin-released" for event in filtered["events"]))
         self.assertEqual("No extra filters", projection_model("core", "[]", "", self.environment, now=CLOCK)["filterSummary"])
 
+        unread_filter = copy.deepcopy(updated["state"]["preferences"]["sectionFilters"]["plugins"])
+        unread_filter["unreadOnly"] = True
+        set_section_filter("plugins", unread_filter, self.environment)
+        plugins_before = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        read_id = plugins_before["events"][0]["id"]
+        set_event_read_state(read_id, True, self.environment, now=CLOCK)
+        unread = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertTrue(all(event["isUnread"] for event in unread["events"]))
+        self.assertNotIn(read_id, {event["id"] for event in unread["events"]})
+
         profiled = set_section_profile(
             "plugins",
             {"name": "My Extensions"},
@@ -167,7 +194,13 @@ class ClientIntegrationTests(unittest.TestCase):
             projection_model("plugins", "[]", "", self.environment, now=CLOCK, limit=0)
 
     def test_installed_plugin_discovery_fails_closed_on_unexpected_shell_shapes(self) -> None:
-        invalid_shapes = [None, {}, {"plugins": None}, {"plugins": {}}, "plugins"]
+        invalid_shapes: list[object] = [
+            None,
+            {},
+            {"plugins": None},
+            {"plugins": {}},
+            "plugins",
+        ]
         for payload in invalid_shapes:
             completed = mock.Mock(returncode=0, stdout=json.dumps(payload))
             with self.subTest(payload=payload), mock.patch(

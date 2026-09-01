@@ -4,7 +4,8 @@
 
 - Implement the deterministic release, marketplace, and reviewed-community collector.
 - Publish a bounded JSON feed, RSS projection, archive, and framework-free static site.
-- Add the cached-first image-capable Omarchy window and state-v6 local preferences/interests/per-section-filter/name helper with atomic v1/v2/v3/v4/v5 migration; v4 names survive while configurable icons and backgrounds are deliberately retired, and v5 Community preferences are removed without disturbing remaining local state.
+- Add the cached-first image-capable Omarchy window and state-v7 local preferences/interests/per-section-filter/name helper with atomic v1-through-v6 migration; the prior seen cutoff becomes a compatibility baseline, v4 names survive while configurable icons and backgrounds are deliberately retired, and v5 Community preferences are removed without disturbing remaining local state.
+- Replace session-wide seen marking with bounded per-story read overrides, explicit `UNREAD`/`READ` rows, section unread badges, inspector and `u` toggles, exact indicator counts, and serialized cross-process state mutations.
 - Make the window movable, resizable, maximizable, monitor-bounded with reachable wrapping controls at large text sizes, and available through normal `Alt+Tab`; remove its unreliable minimize control, add a bundled application mark and newspaper-prefixed compositor title, and add `Tab` section cycling, wrapping narrow actions, finite Load more controls, and contrast-safe selected text.
 - Add strictly validated icon-based marketplace interaction, repository-star, and release-asset-download metrics without changing event identity or ranking; keep raw metric endpoints out of the reader and link plugin stories to human marketplace pages.
 - Keep bounded per-section display names with exact reset, while fixing each section's icon, order, and source scope; expose visible read-only source membership through the clearly named Settings control.

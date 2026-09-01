@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# This scenario intentionally stays pending until the owner creates a public
-# repository. It never substitutes a local path for the public clone proof.
+# This scenario proves the authorized public repository and fixed Pages feed.
+# It never substitutes a local path for the public clone proof.
 
 omarchy_host_test() {
-  local public_url expected_commit plugin_dir shortcut launcher actual_commit start_epoch
+  local public_url expected_commit plugin_dir shortcut launcher actual_commit selected_id start_epoch
   public_url="${OMARCHY_NEWS_RADAR_PUBLIC_URL:-}"
   expected_commit="${OMARCHY_NEWS_RADAR_EXPECTED_COMMIT:-}"
   if [[ -z $public_url || -z $expected_commit ]]; then
@@ -47,7 +47,16 @@ omarchy_host_test() {
   press ret
   wait_for_guest_state "public Apps entry opens the installed panel" 20 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
+  wait_for_guest_state "public panel loads the fixed published edition with explicit unread state" 30 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .selectedIsUnread == true and .unreadCount > 0 and (.status == \"Current\" or .status == \"Cached\")'" || return 1
   capture_console "success-news-radar-public-app-launcher"
+  selected_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedId'")" || return 1
+  [[ $selected_id =~ ^evt_[0-9a-f]{24}$ ]] || return 1
+  press u
+  wait_for_guest_state "public reader persists only the selected story as read" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == false' && \
+     jq -e --arg id '$selected_id' '.schemaVersion == 7 and .readOverrides[\$id] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  capture_console "success-news-radar-public-read-state"
   press esc
   wait_for_guest_state "Apps-launched public panel closes" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1

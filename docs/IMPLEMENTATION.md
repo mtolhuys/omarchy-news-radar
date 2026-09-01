@@ -36,7 +36,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 3 — Build the client helper
 
 1. Implement fixed-origin bounded HTTPS refresh, redirect policy, candidate validation, cache locking, and atomic last-known-good replacement.
-2. Implement state read, v1/v2/v3/v4/v5-to-v6 migration, session cutoff, saved toggle, private bar/image/interest preferences, strict per-section filters and bounded display names, canonical section identities, indicator model, quarantine, and explicit purge.
+2. Implement state read, v1–v6-to-v7 migration, bounded per-event read overrides, saved toggle, private bar/image/interest preferences, strict per-section filters and bounded display names, canonical section identities, indicator model, quarantine, cross-process state locking, and explicit purge.
 3. Return small versioned JSON responses designed for QML rather than exposing internal exceptions.
 4. Add loopback integration tests for success, timeout, redirect, oversize, truncation, invalid schema, concurrent refresh, and offline cache.
 
@@ -86,7 +86,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Create product-owned lab fixtures and `tests/lab/acceptance.sh` using lab helpers rather than another VM controller.
 2. Install the exact candidate, set deterministic guest-only feed/cache fixtures, and expose source/installed/runtime identities.
 3. Send `Super+Alt+N` through QMP and assert the rendered panel, not just IPC state; also prove the Editor binding remains live before, during, and after Radar setup.
-4. Drive keyboard and pointer journeys, window resize/maximize/restore/`Alt+Tab`, Apps-menu launch, bar hide/restore, image on/off, icon metrics, human plugin-page opening, section name/fixed-identity/source/filter options, load-more pagination, installed and interest relevance, source opening through an inert guest shim, refresh transitions, seen cutoff, save state, dark/light selected-row contrast, narrow layout, error recovery, close teardown, hot update, disable, re-enable, launcher/shortcut removal, and plugin removal.
+4. Drive keyboard and pointer journeys, window resize/maximize/restore/`Alt+Tab`, Apps-menu launch, bar hide/restore, image on/off, icon metrics, human plugin-page opening, section name/fixed-identity/source/filter options, load-more pagination, installed and interest relevance, source opening through an inert guest shim, refresh transitions, exact per-story read/unread state, save state, dark/light selected-row contrast, narrow layout, error recovery, close teardown, hot update, disable, re-enable, launcher/shortcut removal, and plugin removal.
 5. Inspect shell logs and every visual checkpoint.
 6. Prove `make local-latest` in a separate guest scenario: clean first install, exact source origin/revision, receipt-backed Apps entry, committed fast-forward, validated pictured local-edition import, idempotence, dirty-source refusal without installed-state change, exact panel-only placement migration with canonical visuals, explicit launcher cleanup, and plugin removal.
 

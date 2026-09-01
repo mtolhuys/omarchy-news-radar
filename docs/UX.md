@@ -40,7 +40,7 @@ The front page is finite. The initial viewport should communicate the most impor
 - One lead item may receive the largest treatment.
 - Up to six secondary items may appear above the fold.
 - Remaining activity is grouped by section and date.
-- The interface states exactly what “since last read” means.
+- Every story row states `UNREAD` or `READ`, section badges expose unread counts, and the inspector exposes the exact selected-story toggle.
 - No autoplay, carousel, ticker, infinite scroll, or continuously moving decoration is allowed. A visible Load more control may reveal the next twelve matches from the already downloaded edition, up to the feed bound.
 
 ## Keyboard model
@@ -55,6 +55,7 @@ All behavior must remain reachable without a pointer:
 | `k` / `Up` | Select previous story |
 | `Enter` or `o` | Open selected original source |
 | `s` | Save or unsave selected story locally |
+| `u` | Mark the selected story read or unread locally |
 | `/` | Focus search/filter input |
 | `r` | Refresh the feed |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
@@ -71,11 +72,11 @@ The same screen visibly lists source membership as read-only. Source membership 
 
 The initial projection contains at most twelve stories. Load more increases that local limit by twelve, never performs a network request, and states when all matching stories are loaded.
 
-## Seen and saved semantics
+## Read and saved semantics
 
-“New” means an event occurred after the locally stored `seenThrough` timestamp. When a populated panel opens, it captures the greatest event timestamp in that exact edition as `sessionThrough`. Closing normally advances `seenThrough` to at most `sessionThrough`; a newer event fetched after the session cutoff must remain new on the next open.
+Every projected story has one explicit local `isUnread` fact. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation deliberately selects that story and marks only its event ID read. Pointer hover and the default selection on open do not count as reading. The inspector action and `u` key toggle the selected story in either direction.
 
-Opening an original source is not required to mark the edition seen. Saved state is independent from seen state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
+Closing, refreshing, or merely rendering a feed never marks unrelated stories read. State v7 retains a migrated `readThrough` baseline for previously acknowledged v1–v6 stories and a bounded canonical `readOverrides` map for exact per-event decisions. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
 
 ## State model
 

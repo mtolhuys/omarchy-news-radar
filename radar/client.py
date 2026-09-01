@@ -20,12 +20,14 @@ from .local_edition import local_edition_metadata, local_image_url
 from .model import project_section
 from .state import (
     RefreshLock,
+    StateLock,
+    event_is_read,
     load_feed,
     load_state,
-    mark_seen,
     purge,
     save_feed,
     save_state,
+    set_event_read,
     toggle_saved,
     update_preferences,
     update_section_filter,
@@ -135,12 +137,6 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
         )
 
 
-def mark_seen_state(through: str, environment: Mapping[str, str] | None = None) -> dict[str, Any]:
-    state, _ = load_state(environment)
-    updated = save_state(mark_seen(state, through), environment)
-    return response("ok", state=updated)
-
-
 def toggle_saved_state(event_id: str, environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
     feed = load_feed(environment, now=now)
     if feed is None:
@@ -148,10 +144,39 @@ def toggle_saved_state(event_id: str, environment: Mapping[str, str] | None = No
     event = next((item for item in feed["events"] if item["id"] == event_id), None)
     if event is None:
         raise ValidationError("event is not present in the validated cache")
-    state, _ = load_state(environment)
-    updated, saved = toggle_saved(state, event, now=now)
-    save_state(updated, environment)
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        updated, saved = toggle_saved(state, event, now=now)
+        save_state(updated, environment)
     return response("ok", saved=saved, state=updated)
+
+
+def set_event_read_state(
+    event_id: str,
+    read: bool,
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Persist one explicit story state against the validated current edition."""
+
+    feed = load_feed(environment, now=now)
+    if feed is None:
+        raise ValidationError("cannot change reading state without a valid cached feed")
+    events_by_id = {item["id"]: item for item in feed["events"]}
+    event = events_by_id.get(event_id)
+    if event is None:
+        raise ValidationError("event is not present in the validated cache")
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        updated = set_event_read(
+            state,
+            event,
+            read,
+            current_event_ids=set(events_by_id),
+        )
+        saved = save_state(updated, environment)
+    return response("ok", read=event_is_read(saved, event), state=saved)
 
 
 def set_preferences(
@@ -161,14 +186,16 @@ def set_preferences(
     interests: list[str] | None = None,
     environment: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
-    state, _ = load_state(environment)
-    updated = update_preferences(
-        state,
-        bar_visible=bar_visible,
-        images_visible=images_visible,
-        interests=interests,
-    )
-    return response("ok", state=save_state(updated, environment))
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        updated = update_preferences(
+            state,
+            bar_visible=bar_visible,
+            images_visible=images_visible,
+            interests=interests,
+        )
+        saved = save_state(updated, environment)
+    return response("ok", state=saved)
 
 
 def set_section_filter(
@@ -178,9 +205,11 @@ def set_section_filter(
 ) -> dict[str, Any]:
     """Persist one strictly validated, local-only section filter."""
 
-    state, _ = load_state(environment)
-    updated = update_section_filter(state, section, value)
-    return response("ok", state=save_state(updated, environment))
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        updated = update_section_filter(state, section, value)
+        saved = save_state(updated, environment)
+    return response("ok", state=saved)
 
 
 def set_section_profile(
@@ -190,9 +219,11 @@ def set_section_profile(
 ) -> dict[str, Any]:
     """Persist one strictly validated, local-only section presentation profile."""
 
-    state, _ = load_state(environment)
-    updated = update_section_profile(state, section, value)
-    return response("ok", state=save_state(updated, environment))
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        updated = update_section_profile(state, section, value)
+        saved = save_state(updated, environment)
+    return response("ok", state=saved)
 
 
 def indicator_model(
@@ -209,7 +240,7 @@ def indicator_model(
             barVisible=preferences["barVisible"],
             quarantine=quarantined,
         )
-    unread = sum(event["occurredAt"] > state["seenThrough"] for event in feed["events"])
+    unread = sum(not event_is_read(state, event) for event in feed["events"])
     health = "partial" if any(source["status"] == "failed" for source in feed["sources"]) else "stale" if any(source["status"] == "stale" for source in feed["sources"]) else "current"
     return response(
         "ok",
@@ -311,6 +342,7 @@ def projection_model(
             section=section,
             events=[],
             counts={name: 0 for name in names},
+            unreadCounts={name: 0 for name in names},
             totalEvents=0,
             hasMore=False,
             limit=limit,
@@ -323,6 +355,7 @@ def projection_model(
     saved_ids = set(state["saved"])
     interests = state["preferences"]["interests"]
     counts: dict[str, int] = {}
+    unread_counts: dict[str, int] = {}
     for name in names:
         section_events = project_section(
             feed,
@@ -331,13 +364,16 @@ def projection_model(
             saved_ids=saved_ids,
             interests=interests,
         )
-        counts[name] = len(
-            apply_section_filter(
-                section_events,
-                filters[name],
-                seen_through=state["seenThrough"],
-                now=now,
-            )
+        filtered_events = apply_section_filter(
+            section_events,
+            filters[name],
+            read_through=state["readThrough"],
+            read_overrides=state["readOverrides"],
+            now=now,
+        )
+        counts[name] = len(filtered_events)
+        unread_counts[name] = sum(
+            not event_is_read(state, event) for event in filtered_events
         )
     events = apply_section_filter(
         project_section(
@@ -349,12 +385,12 @@ def projection_model(
             query=query,
         ),
         current_filter,
-        seen_through=state["seenThrough"],
+        read_through=state["readThrough"],
+        read_overrides=state["readOverrides"],
         now=now,
     )
     total_events = len(events)
     events = events[:limit]
-    seen = state["seenThrough"]
     env = dict(environment or os.environ)
     image_base = FEED_URL
     local = local_edition_metadata(feed, env)
@@ -371,7 +407,7 @@ def projection_model(
     metric_order = tuple(metric_labels)
     for event in events:
         item = dict(event)
-        item["isNew"] = item["occurredAt"] > seen
+        item["isUnread"] = not event_is_read(state, item)
         item["isSaved"] = item["id"] in saved_ids
         image = item.get("image")
         if state["preferences"]["imagesVisible"] and isinstance(image, dict) and "path" in image:
@@ -420,7 +456,8 @@ def projection_model(
         section=section,
         events=decorated,
         counts=counts,
-        seenThrough=seen,
+        unreadCounts=unread_counts,
+        readThrough=state["readThrough"],
         totalEvents=total_events,
         hasMore=total_events > len(decorated),
         limit=limit,
@@ -445,7 +482,9 @@ def open_source(url: str) -> dict[str, Any]:
 
 
 def purge_state(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
-    return response("ok", removed=purge(environment))
+    with StateLock(environment):
+        removed = purge(environment)
+    return response("ok", removed=removed)
 
 
 def require_unprivileged() -> None:

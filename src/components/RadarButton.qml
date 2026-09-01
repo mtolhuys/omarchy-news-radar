@@ -42,7 +42,11 @@ FocusScope {
   }
 
   HoverHandler { id: hover }
-  TapHandler { onTapped: root.clicked() }
+  MouseArea {
+    anchors.fill: parent
+    preventStealing: true
+    onClicked: root.clicked()
+  }
   Keys.onReturnPressed: root.clicked()
   Keys.onEnterPressed: root.clicked()
   Keys.onSpacePressed: root.clicked()

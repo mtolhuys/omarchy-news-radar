@@ -24,8 +24,8 @@ make site
 - Required fields, closed enums, UTC timestamps, URL rules, text normalization, bounds, duplicate IDs, and unsupported schema versions.
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, installed-plugin/private-interest matching, front-page composition, and saved-item retention.
-- Monotonic `seenThrough` and session-cutoff semantics, including events arriving during an open session.
-- State-v1/v2/v3/v4/v5-to-v6 migration, exact legacy/current object shapes, preference/interest/filter/name bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, and last-known-good preservation.
+- Explicit per-event read/unread overrides, migrated baseline semantics, indicator and section unread counts, unread-only filtering, read/unread reversal, pruning outside the current edition, and proof that close or refresh never bulk-marks unselected stories.
+- State-v1-through-v6-to-v7 migration, exact legacy/current object shapes, preference/interest/filter/name/read-override bounds, v4 name preservation with retired icon/tone removal, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, cross-process state-mutation serialization, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
 ### Omarchy releases
@@ -118,10 +118,10 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 7. The normal window resizes by a real edge gesture, maximizes/restores, survives `Alt+Tab` away and back, and a window-manager close follows the shell lifecycle without leaving helpers.
 8. `Tab` and `Shift+Tab` cycle the five sections; the Settings cogwheel renames one section while its icon, background, order, and scope remain canonical, displays its fixed sources and built-in rule, independently resets the name and filters, and Load more expands a dense local projection without another feed request.
 9. Icon metrics, accessible metric labels, observed time, marketplace caveat, and a human-facing plugin detail link render from the validated fixture; raw metric endpoint links are absent and metrics do not change Front Page order.
-10. `j`, `k`, section keys, search, save, refresh, Tune, and source opening use rendered controls; a guest-only inert browser shim captures the exact validated HTTPS URL.
+10. `j`, `k`, section keys, search, save, read/unread toggle, refresh, Tune, and source opening use rendered controls; every story row visibly states `UNREAD` or `READ`, section badges expose unread counts, and a guest-only inert browser shim captures the exact validated HTTPS URL.
 11. Installed-plugin and explicit-interest matching place fixture events in For You without transmitting private inputs.
 12. Refresh succeeds once, then offline, malformed, oversized, and partial-source fixtures preserve the last-known-good edition with accurate recovery labels.
-13. Normal close advances `seenThrough` only to the session cutoff; an event introduced during the session remains new next time.
+13. Normal close does not change unselected stories; an event introduced during the session remains unread next time, one rendered action persists only that event as read, and `u` makes it unread again.
 14. Maintained dark and light themes, narrow resolution, long text, empty section, first-use, cached, refreshing, offline, invalid, and partial states remain unclipped and understandable; selected headlines, summaries, metadata, and metrics remain readable in both themes, and no empty Community destination is present.
 15. AltTab and Omadock companion candidates resolve Radar's exact enabled `windowIdentity` to its local manifest name/icon, render the newspaper asset in their visible UI, and fall back for disabled, malformed, missing, or ambiguous declarations without relabeling unrelated Quickshell windows.
 16. Escape closes the panel, no panel helper remains, the hidden bar performs no network refresh, and no shell/Hyprland/QML error occurs after the close boundary.
@@ -129,7 +129,7 @@ cd "$OMARCHY_PLUGIN_LAB_ROOT"
 18. Installing the receipt-backed XDG launcher makes **Omarchy News Radar** searchable with its newspaper icon in the real Apps menu; selecting that visible row summons Radar, and explicit launcher removal makes the row disappear without touching another application.
 19. Shortcut removal deletes only the owned block, releases `Super+Alt+N`, and leaves the live Editor action intact; plugin disable, re-enable, and removal cleanly unload runtime while preserving local state.
 
-`public-install.sh` separately proves the eventual public GitHub URL clones the expected commit, validates and enables the panel, supports documented launcher and shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`. Keep this scenario pending until a public repository exists; do not fake success with a local URL.
+`public-install.sh` separately proves the public GitHub URL clones the expected commit, validates and enables the panel, loads the fixed Pages edition, exposes durable per-story read state, supports documented launcher and shortcut setup/removal, and removes through plugin ID `io.github.mtolhuys.news-radar`.
 
 ## Visual review
 

@@ -25,12 +25,11 @@ Item {
   property bool opened: false
   property bool closingFromHost: false
   readonly property string compositorWindowTitle: "📰 Omarchy News Radar"
-  property string sessionIdentity: ""
-  property string sessionThrough: ""
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 6,
-    seenThrough: "1970-01-01T00:00:00Z",
+    schemaVersion: 7,
+    readThrough: "1970-01-01T00:00:00Z",
+    readOverrides: ({}),
     saved: ({}),
     preferences: ({
       barVisible: true,
@@ -49,6 +48,9 @@ Item {
   property var installedPluginIds: []
   property var stories: []
   property var counts: ({})
+  property var unreadCounts: ({})
+  property var pendingReadChanges: ({})
+  property bool readChangeInFlight: false
   property int sectionIndex: 0
   property int selectedIndex: 0
   property string feedStatus: "First use"
@@ -98,7 +100,7 @@ Item {
       : ({ period: "all", significance: "all", unreadOnly: false, imagesOnly: false, types: [] })
   readonly property int availableImageCount: countEditionImages(cachedFeed)
   readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
-    || installedProc.running || stateProc.running || openSourceProc.running || windowProc.running
+    || installedProc.running || stateProc.running || readChangeInFlight || openSourceProc.running || windowProc.running
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
@@ -120,12 +122,13 @@ Item {
       opened: opened,
       section: currentSection,
       selectedIndex: selectedIndex,
+      selectedId: selectedStory ? selectedStory.id : "",
       selectedTitle: selectedStory ? selectedStory.title : "",
       selectedHasImage: selectedStory ? !!selectedStory.imageUrl : false,
       selectedMetricIds: selectedStory && selectedStory.metricItems
         ? selectedStory.metricItems.map(function(metric) { return metric.id }) : [],
       selectedMarketplaceUrl: selectedStory ? String(selectedStory.marketplaceUrl || "") : "",
-      selectedIsNew: selectedStory ? selectedStory.isNew === true : false,
+      selectedIsUnread: selectedStory ? selectedStory.isUnread === true : false,
       storyCount: stories.length,
       status: feedStatus,
       editionMode: editionMode,
@@ -133,11 +136,14 @@ Item {
       refreshing: refreshing,
       helperRunning: anyHelperRunning,
       searchFocused: searchField.activeFocus,
-      sessionThrough: sessionThrough,
+      unreadCount: Number(root.unreadCounts[currentSection] || 0),
       preferencesOpen: preferencesOpen,
       sectionSettingsOpen: sectionSettingsOpen,
       totalStories: totalStories,
       hasMoreStories: hasMoreStories,
+      sectionLimit: Number(sectionLimits[currentSection] || pageSize),
+      pendingProjection: pendingProjection,
+      projecting: projectProc.running,
       filterSummary: filterSummary,
       sectionName: currentProfile.name,
       sectionSources: sectionSources,
@@ -166,11 +172,16 @@ Item {
   function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
   function settingsGeometry() { return itemGeometry(settingsButton, settingsButton.visible) }
   function loadMoreGeometry() {
-    return itemGeometry(storyList.footerItem, !!storyList.footerItem && hasMoreStories)
+    return itemGeometry(loadMoreButton, loadMoreButton.visible)
   }
   function filterUnreadGeometry() { return itemGeometry(unreadFilterButton, unreadFilterButton.visible) }
   function filterResetGeometry() { return itemGeometry(filterResetButton, filterResetButton.visible) }
   function pluginPageGeometry() { return itemGeometry(pluginPageButton, pluginPageButton.visible) }
+  function readStateGeometry() {
+    return keySurface.narrow
+      ? itemGeometry(narrowReadButton, narrowReadButton.visible)
+      : itemGeometry(readStateButton, readStateButton.visible)
+  }
   function sectionNameGeometry() { return itemGeometry(sectionNameField, sectionNameField.visible) }
   function sectionNameApplyGeometry() { return itemGeometry(sectionNameApplyButton, sectionNameApplyButton.visible) }
   function sectionAppearanceResetGeometry() { return itemGeometry(sectionAppearanceResetButton, sectionAppearanceResetButton.visible) }
@@ -187,7 +198,10 @@ Item {
     }
     if (process.running) process.running = false
     process.command = [helperPath].concat(argumentsList)
-    Qt.callLater(function() { if (root.opened || process === stateProc || process === openSourceProc) process.running = true })
+    Qt.callLater(function() {
+      if (root.opened || process === stateProc || process === readingProc || process === openSourceProc)
+        process.running = true
+    })
   }
 
   function countEditionImages(feed) {
@@ -222,8 +236,6 @@ Item {
 
   function open(payloadJson) {
     closingFromHost = false
-    sessionIdentity = String(Date.now()) + "-" + String(Math.random()).slice(2)
-    sessionThrough = ""
     feedStatus = "Loading cache"
     statusDetail = "Reading the last-known-good local edition."
     opened = true
@@ -242,11 +254,6 @@ Item {
     })
   }
 
-  function persistSeen() {
-    if (!helperPath || !sessionThrough) return
-    Quickshell.execDetached([helperPath, "mark-seen", "--through", sessionThrough])
-  }
-
   function stopOwnedProcesses() {
     searchTimer.stop()
     readProc.running = false
@@ -261,7 +268,7 @@ Item {
 
   function close() {
     closingFromHost = true
-    persistSeen()
+    flushReadChanges()
     opened = false
     preferencesOpen = false
     sectionSettingsOpen = false
@@ -297,7 +304,6 @@ Item {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
       sourceHealth = RadarModel.sourceHealth(result.feed)
-      sessionThrough = RadarModel.greatestTimestamp(result.feed.events || [])
       feedStatus = "Cached"
       statusDetail = "Showing the validated local edition while Radar refreshes."
     } else {
@@ -365,11 +371,20 @@ Item {
     ])
   }
 
+  function restoreStoryViewport() {
+    if (!stories.length || selectedIndex < 0) return
+    if (hasMoreStories && selectedIndex === stories.length - 1)
+      storyList.positionViewAtEnd()
+    else
+      storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
+  }
+
   function handleProjection(raw) {
     var result = RadarModel.parseResponse(raw)
     if (result.status === "ok" || result.status === "first-use") {
       stories = result.events || []
       counts = result.counts || ({})
+      unreadCounts = result.unreadCounts || ({})
       totalStories = Number(result.totalEvents || 0)
       hasMoreStories = result.hasMore === true
       filterSummary = String(result.filterSummary || "No extra filters")
@@ -377,6 +392,7 @@ Item {
       sectionSources = String(result.sectionSources || "")
       filterOptions = result.filterOptions || []
       selectedIndex = stories.length ? Math.min(Math.max(0, selectedIndex), stories.length - 1) : -1
+      Qt.callLater(root.restoreStoryViewport)
     } else {
       stories = []
       totalStories = 0
@@ -417,7 +433,7 @@ Item {
   }
 
   function loadMore() {
-    if (!hasMoreStories || projectProc.running) return
+    if (!hasMoreStories) return
     var limits = Object.assign({}, sectionLimits)
     limits[currentSection] = Math.min(500, Number(limits[currentSection] || pageSize) + pageSize)
     sectionLimits = limits
@@ -426,17 +442,51 @@ Item {
 
   function moveSelection(delta) {
     if (!stories.length) return
-    selectedIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
+    selectStory(Math.max(0, Math.min(stories.length - 1, selectedIndex + delta)), true)
     storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
+  }
+
+  function selectStory(index, markRead) {
+    if (index < 0 || index >= stories.length) return
+    selectedIndex = index
+    if (markRead) queueStoryRead(stories[index], true)
+  }
+
+  function queueStoryRead(story, read) {
+    if (!story || !story.id) return
+    var changes = Object.assign({}, pendingReadChanges)
+    changes[String(story.id)] = read === true
+    pendingReadChanges = changes
+    flushReadChanges()
+  }
+
+  function flushReadChanges() {
+    if (!helperPath || readChangeInFlight) return
+    var ids = Object.keys(pendingReadChanges).sort()
+    if (!ids.length) return
+    var eventId = ids[0]
+    var read = pendingReadChanges[eventId] === true
+    var remaining = Object.assign({}, pendingReadChanges)
+    delete remaining[eventId]
+    pendingReadChanges = remaining
+    readChangeInFlight = true
+    startProcess(readingProc, ["set-read", "--event-id", eventId, "--read", read ? "true" : "false"])
+  }
+
+  function toggleSelectedRead() {
+    if (!selectedStory || readChangeInFlight) return
+    queueStoryRead(selectedStory, selectedStory.isUnread === true)
   }
 
   function openSelected() {
     if (!selectedStory) return
+    queueStoryRead(selectedStory, true)
     openUrl(String(selectedStory.source.url))
   }
 
   function openMarketplacePage() {
     if (!selectedStory || !selectedStory.marketplaceUrl) return
+    queueStoryRead(selectedStory, true)
     openUrl(String(selectedStory.marketplaceUrl))
   }
 
@@ -575,7 +625,8 @@ Item {
   Process {
     id: projectProc
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleProjection(text) }
-    onExited: function() {
+    onRunningChanged: function() {
+      if (running) return
       if (root.pendingProjection) Qt.callLater(root.requestProjection)
     }
   }
@@ -594,6 +645,27 @@ Item {
           root.statusDetail = result.message || "Saved state could not be changed."
         }
       }
+    }
+  }
+
+  Process {
+    id: readingProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        if (result.status === "ok") {
+          root.userState = result.state || root.userState
+          if (root.opened) root.requestProjection()
+        } else if (root.opened) {
+          root.feedStatus = "Failed"
+          root.statusDetail = result.message || "Reading state could not be changed."
+        }
+      }
+    }
+    onExited: function() {
+      root.readChangeInFlight = false
+      Qt.callLater(root.flushReadChanges)
     }
   }
 
@@ -671,6 +743,9 @@ Item {
         if ((event.text || "").toLowerCase() === "s") {
           root.toggleSaved(); event.accepted = true; return
         }
+        if ((event.text || "").toLowerCase() === "u") {
+          root.toggleSelectedRead(); event.accepted = true; return
+        }
         if ((event.text || "").toLowerCase() === "r") {
           root.refreshFeed(); event.accepted = true; return
         }
@@ -678,10 +753,13 @@ Item {
           searchField.forceActiveFocus(); event.accepted = true; return
         }
         if (event.key === Qt.Key_Home) {
-          root.selectedIndex = root.stories.length ? 0 : -1; event.accepted = true; return
+          if (root.stories.length) root.selectStory(0, true)
+          else root.selectedIndex = -1
+          event.accepted = true; return
         }
         if (event.key === Qt.Key_End) {
-          root.selectedIndex = root.stories.length - 1
+          if (root.stories.length) root.selectStory(root.stories.length - 1, true)
+          else root.selectedIndex = -1
           storyList.positionViewAtEnd()
           Qt.callLater(function() {
             var footer = storyList.footerItem
@@ -912,6 +990,7 @@ Item {
                   icon: root.sectionIcon(modelData.icon)
                   tone: modelData.tone
                   count: Number(root.counts[modelData.id] || 0)
+                  unreadCount: Number(root.unreadCounts[modelData.id] || 0)
                   selected: root.sectionIndex === index
                   onClicked: root.selectSection(index)
                 }
@@ -921,7 +1000,7 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: "Tab/Shift+Tab sections\n1–5 sections\nj/k stories\no source\ns save\nr refresh"
+                text: "Tab/Shift+Tab sections\n1–5 sections\nj/k stories\nu read/unread\no source\ns save\nr refresh"
                 textFormat: Text.PlainText
                 color: Color.muted
                 font.family: Style.font.family
@@ -984,7 +1063,8 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: root.filterSummary + " · " + root.totalStories + " stories"
+                text: root.filterSummary + " · " + root.totalStories + " stories · "
+                  + Number(root.unreadCounts[root.currentSection] || 0) + " unread"
                 textFormat: Text.PlainText
                 color: Color.muted
                 font.family: Style.font.family
@@ -1000,6 +1080,13 @@ Item {
                 Layout.preferredHeight: visible ? childrenRect.height : 0
                 spacing: Style.spacing.controlGap
 
+                RadarButton {
+                  id: narrowReadButton
+                  label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"
+                  selected: !!root.selectedStory && !root.selectedStory.isUnread
+                  enabled: !!root.selectedStory && !root.readChangeInFlight
+                  onClicked: root.toggleSelectedRead()
+                }
                 RadarButton {
                   label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
                   enabled: !!root.selectedStory
@@ -1035,35 +1122,7 @@ Item {
                   story: modelData
                   selected: index === root.selectedIndex
                   lead: root.currentSection === "front-page" && index === 0
-                  onHovered: root.selectedIndex = index
-                  onActivated: root.selectedIndex = index
-                }
-
-                footer: Item {
-                  width: storyList.width
-                  height: root.stories.length ? Style.space(54) : 0
-                  visible: root.stories.length > 0
-
-                  RadarButton {
-                    id: loadMoreButton
-                    anchors.centerIn: parent
-                    visible: root.hasMoreStories
-                    label: "Load more (" + Math.max(0, root.totalStories - root.stories.length) + " remaining)"
-                    onClicked: {
-                      root.loadMore()
-                      navigationFocus.forceActiveFocus()
-                    }
-                  }
-
-                  Text {
-                    anchors.centerIn: parent
-                    visible: !root.hasMoreStories
-                    text: "All " + root.totalStories + " stories loaded"
-                    textFormat: Text.PlainText
-                    color: Color.muted
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                  }
+                  onActivated: root.selectStory(index, true)
                 }
 
                 Text {
@@ -1079,6 +1138,33 @@ Item {
                   wrapMode: Text.WordWrap
                   Accessible.role: Accessible.StaticText
                   Accessible.name: text
+                }
+              }
+
+              Item {
+                visible: root.stories.length > 0
+                Layout.fillWidth: true
+                Layout.preferredHeight: visible ? Style.space(54) : 0
+
+                RadarButton {
+                  id: loadMoreButton
+                  anchors.centerIn: parent
+                  visible: root.hasMoreStories
+                  label: "Load more (" + Math.max(0, root.totalStories - root.stories.length) + " remaining)"
+                  onClicked: {
+                    root.loadMore()
+                    navigationFocus.forceActiveFocus()
+                  }
+                }
+
+                Text {
+                  anchors.centerIn: parent
+                  visible: !root.hasMoreStories
+                  text: "All " + root.totalStories + " stories loaded"
+                  textFormat: Text.PlainText
+                  color: Color.muted
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
                 }
               }
             }
@@ -1233,6 +1319,13 @@ Item {
                 Flow {
                   width: parent.width
                   spacing: Style.spacing.controlGap
+                  RadarButton {
+                    id: readStateButton
+                    label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"
+                    selected: !!root.selectedStory && !root.selectedStory.isUnread
+                    enabled: !!root.selectedStory && !root.readChangeInFlight
+                    onClicked: root.toggleSelectedRead()
+                  }
                   RadarButton {
                     label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
                     enabled: !!root.selectedStory

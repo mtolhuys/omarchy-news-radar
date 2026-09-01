@@ -14,7 +14,6 @@ from typing import Any, Sequence
 from .client import (
     installed_plugins,
     indicator_model,
-    mark_seen_state,
     open_source,
     projection_model,
     purge_state,
@@ -22,6 +21,7 @@ from .client import (
     refresh,
     refresh_if_due,
     require_unprivileged,
+    set_event_read_state,
     toggle_saved_state,
     set_preferences,
     set_section_filter,
@@ -53,8 +53,9 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("installed")
     commands.add_parser("purge")
     commands.add_parser("ensure-window-floating")
-    seen = commands.add_parser("mark-seen")
-    seen.add_argument("--through", required=True)
+    reading = commands.add_parser("set-read")
+    reading.add_argument("--event-id", required=True)
+    reading.add_argument("--read", required=True, choices=("true", "false"))
     saved = commands.add_parser("toggle-saved")
     saved.add_argument("--event-id", required=True)
     preferences = commands.add_parser("set-preferences")
@@ -89,8 +90,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = installed_plugins()
         elif args.command == "ensure-window-floating":
             result = ensure_window_floating()
-        elif args.command == "mark-seen":
-            result = mark_seen_state(args.through)
+        elif args.command == "set-read":
+            result = set_event_read_state(args.event_id, args.read == "true")
         elif args.command == "toggle-saved":
             result = toggle_saved_state(args.event_id)
         elif args.command == "set-preferences":

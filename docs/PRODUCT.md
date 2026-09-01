@@ -31,11 +31,11 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 3. The user may run the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change.
 4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper opens the latest cached edition immediately when available, while Omarchy's `Super+Shift+N` Editor action remains unchanged.
 5. Radar refreshes one bounded static feed without blocking the cached edition.
-6. The front page explains how many core and plugin changes occurred since the last completed reading session; any accepted reviewed link joins that finite edition without creating a separate empty lane.
+6. The front page and section rail show exactly how many stories remain unread; every row says `UNREAD` or `READ`, and any accepted reviewed link joins that finite edition without creating a separate empty lane.
 7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, and Saved, with `Tab` and `Shift+Tab` cycling sections.
-8. Selecting an item exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics.
+8. Deliberately selecting an item marks only that story read and exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics. The inspector and `u` shortcut can mark it unread again.
 9. Opening a source launches the default browser only after explicit activation.
-10. Closing the panel records the newest event timestamp that was actually present in that session. Events arriving later remain new.
+10. Closing the panel never bulk-marks the edition. Stories the user did not deliberately select remain unread across close, refresh, and restart.
 11. Offline or failed refreshes preserve the last-known-good edition and clearly label its age.
 12. The user can inspect the immutable built-in rule for each section, add local filters, and reveal further matching stories in finite twelve-item steps.
 13. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images and private interest phrases.
@@ -58,7 +58,7 @@ Before the public static feed is authorized and published, an owner deliberately
 
 - “For You” matches events against locally installed plugin IDs and up to twelve explicit local interest words or phrases.
 - Category and tag filters operate locally.
-- Saved items and seen-through state remain local.
+- Saved items and bounded per-story read overrides remain local.
 - Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
 - Bounded display names are independently stored per section and remain local; icons, order, and fixed source membership retain their canonical section identity and are not user-editable in version 1.
 - Front Page ordering is deterministic and auditable.
@@ -74,6 +74,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
 - A compositor-managed resizable/maximizable window with ordinary task switching, finite load-more controls, and selected-state text contrast across maintained themes.
+- Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, and durable private reading state.
 - Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 
 ## What “interesting” means
@@ -108,4 +109,4 @@ Automated activity and editorial significance are separate facts. The collector 
 
 ## Milestone success criterion
 
-The first release succeeds when a clean Omarchy Quattro guest can install the plugin, see a correctly sized newspaper indicator, hide it without a gap, restore it from the panel, confirm that `Super+Alt+N` is free, install Radar's exact managed binding without changing the Editor shortcut, open a polished image-capable cached front page, tune local interests, refresh from a deterministic fixture, identify a relevant item, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its managed binding so the chord is free again, and uninstall without shell or Hyprland errors.
+The first release succeeds when a clean Omarchy Quattro guest can install the plugin, see a correctly sized newspaper indicator, hide it without a gap, restore it from the panel, confirm that `Super+Alt+N` is free, install Radar's exact managed binding without changing the Editor shortcut, open a polished image-capable cached front page, distinguish every read story from every unread story, mark one story read and unread without changing its neighbors, close without bulk-marking the edition, tune local interests, refresh from a deterministic fixture, identify a relevant item, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its managed binding so the chord is free again, and uninstall without shell or Hyprland errors.

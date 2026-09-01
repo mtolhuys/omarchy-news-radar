@@ -19,7 +19,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - `Tab`/`Shift+Tab`, bounded per-section names, canonical icons/order/backgrounds, fixed-source disclosure, independent filters, exact resets, and finite Load more behavior match the local projection model.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
-- The default-on newspaper indicator, zero-gap hiding, Tune re-enable, unread/health states, and no-notification boundary match the implementation.
+- Every row visibly distinguishes `UNREAD` from `READ`; section and newspaper counts use the same exact per-event predicate; deliberate selection and `u` affect only one story; close/refresh do not bulk-mark; the default-on newspaper indicator, zero-gap hiding, Tune re-enable, health states, and no-notification boundary match the implementation.
 - No account, telemetry, AI summary, plugin installation action, or unsupported scraper is implied.
 
 ### Data and publication
@@ -36,7 +36,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 
 - Manifest and every declared entry point validate.
 - Remote text remains plain data, image decoding is limited to validated same-origin rasters, and source opening is explicit.
-- Cache/state writes are private, bounded, symlink-safe, atomic, and recoverable.
+- Cache/state writes are private, bounded, symlink-safe, atomic, recoverable, and serialized across panel/bar helper processes.
 - Application launcher/icon writes are bounded, receipt-backed, symlink-safe, atomic, reversible, and never overwrite user-modified or unrelated files.
 - One refresh process maximum per entry point plus a cross-instance lock; the panel tears down on close and bar refresh polling stops when hidden.
 - Shortcut install/remove preserves unrelated Lua exactly and rolls back on reload or config error.
@@ -70,7 +70,7 @@ Document removal in this order:
 1. Run the shortcut helper's `remove` command while the plugin checkout still exists.
 2. Run the launcher helper's `remove` command while the plugin checkout still exists.
 3. Remove the plugin through `omarchy plugin remove io.github.mtolhuys.news-radar`.
-4. Optionally run the explicit purge command before removal when the user wants local cache, seen state, and saved items deleted.
+4. Optionally run the explicit purge command before removal when the user wants local cache, reading state, and saved items deleted.
 
 Normal plugin removal does not delete local state or run repository cleanup hooks. Removing the plugin before its binding leaves a harmless unresolved shell IPC binding; removing it before launcher cleanup leaves a stale XDG row. Reinstall the exact checkout to run the corresponding helper, or remove only the documented owned files after verifying them manually.
 

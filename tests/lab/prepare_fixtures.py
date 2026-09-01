@@ -87,7 +87,7 @@ def main() -> int:
     newest["title"] = "An event that arrived during the open session"
     newest["entity"] = {"kind": "plugin", "id": "io.github.mtolhuys.disk-lens", "name": "Omarchy Disk Lens", "version": "0.4.2", "repository": "https://github.com/mtolhuys/omarchy-disk-lens"}
     newest["source"] = {"label": "Synthetic release", "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/v0.4.2"}
-    newest["summary"] = "This synthetic event proves that a refresh cannot move the open session's seen-through cutoff."
+    newest["summary"] = "This synthetic event proves that refresh and close cannot mark an unselected story as read."
     later["events"].insert(0, newest)
     write(output / "later.json", later)
 

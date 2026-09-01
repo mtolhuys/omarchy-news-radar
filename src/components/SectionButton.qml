@@ -9,6 +9,7 @@ FocusScope {
   property string icon: ""
   property string tone: "clear"
   property int count: 0
+  property int unreadCount: 0
   property bool selected: false
   signal clicked()
 
@@ -26,7 +27,7 @@ FocusScope {
   activeFocusOnTab: true
 
   Accessible.role: Accessible.RadioButton
-  Accessible.name: label + ", " + count + " stories"
+  Accessible.name: label + ", " + count + " stories, " + unreadCount + " unread"
   Accessible.checked: selected
   Accessible.focusable: true
   Accessible.onPressAction: root.clicked()
@@ -75,9 +76,11 @@ FocusScope {
       anchors.right: parent.right
       anchors.rightMargin: Style.spacing.controlPaddingX
       anchors.verticalCenter: parent.verticalCenter
-      text: String(root.count)
+      text: root.unreadCount > 0 ? "● " + String(root.unreadCount) : String(root.count)
       textFormat: Text.PlainText
-      color: root.selected
+      color: root.unreadCount > 0
+        ? Color.accent
+        : root.selected
         ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
         : Color.muted
       font.family: Style.font.family

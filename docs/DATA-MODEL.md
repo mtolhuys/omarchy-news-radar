@@ -167,8 +167,11 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 6,
-  "seenThrough": "2026-08-31T14:00:00Z",
+  "schemaVersion": 7,
+  "readThrough": "1970-01-01T00:00:00Z",
+  "readOverrides": {
+    "evt_8cb067f9ef7da216bcab4781": true
+  },
   "saved": {
     "evt_8cb067f9ef7da216bcab4781": {
       "savedAt": "2026-08-31T14:05:00Z",
@@ -202,9 +205,9 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 Saved records intentionally duplicate a small bounded subset so a bookmark survives the rolling feed window. Cap saved items at 250 with explicit UI before refusing another; never silently discard a saved item.
 
-`seenThrough` is monotonic. It advances only to the greatest event timestamp captured in a successfully rendered session and never to wall-clock “now.” Corrupt state is quarantined and replaced by defaults without modifying feed cache.
+`readThrough` is a migration baseline, not a session cursor. An event is read when its boolean `readOverrides[eventId]` exists and is true, unread when that override exists and is false, and otherwise read only when `occurredAt <= readThrough`. New installations use the Unix epoch baseline, so every current event starts unread. The panel never advances the baseline; deliberate per-story actions create or remove the smallest necessary override. Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v6 retains the strict filters and one normalized 1–32-character plain-text display name for each of the five client sections. Valid v1, v2, and v3 states migrate atomically with saved, seen, existing preferences, and remaining filters preserved. Valid v4 state also migrates atomically: each remaining display name survives, while the retired configurable icon and tone fields are validated and then discarded. Valid v5 state preserves all non-Community preferences and discards only the removed Community filter/profile. Canonical icons and backgrounds remain code-owned rather than hidden mutable state, and no migration data is sent over the network.
+State v7 retains the strict filters and one normalized 1–32-character plain-text display name for each of the five client sections. Valid v1–v6 states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, v4's retired icon/tone fields are validated and discarded, and v5's removed Community filter/profile stay removed. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical icons and backgrounds remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
 
 Source membership is not part of the profile. The stable client sections are `front-page`, `for-you`, `core`, `plugins`, and `saved`; they continue to own the fixed projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections. Changing a display name cannot make one section assume another section's scope.
 

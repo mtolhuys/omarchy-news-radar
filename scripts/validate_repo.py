@@ -11,9 +11,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -23,7 +23,7 @@ from radar.io import canonical_json_bytes  # noqa: E402
 from radar.validation import validate_feed  # noqa: E402
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(f"error: {message}")
 
 
@@ -109,10 +109,35 @@ def validate_manifest() -> None:
     if not icon_path.is_file():
         fail("manifest icon does not exist")
     try:
-        icon_root = ET.fromstring(icon_path.read_text(encoding="utf-8"))
-    except (OSError, ET.ParseError) as exc:
-        fail(f"manifest icon is invalid SVG: {exc}")
-    if icon_root.tag != "{http://www.w3.org/2000/svg}svg" or icon_root.get("viewBox") != "0 0 128 128":
+        icon_bytes = icon_path.read_bytes()
+        if len(icon_bytes) > 64 * 1024:
+            fail("manifest icon exceeds its 64 KiB bound")
+        icon_text = icon_bytes.decode("utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        fail(f"manifest icon is invalid UTF-8 SVG: {exc}")
+    lowered_icon = icon_text.casefold()
+    forbidden_icon_tokens = (
+        "<!",
+        "<script",
+        "<style",
+        "<image",
+        "<foreignobject",
+        "href=",
+        "url(",
+    )
+    if any(token in lowered_icon for token in forbidden_icon_tokens):
+        fail("manifest icon must be inert self-contained SVG geometry")
+    root_match = re.match(r"\s*<svg\s+([^>]*)>", icon_text)
+    if root_match is None or not icon_text.rstrip().endswith("</svg>"):
+        fail("manifest icon has an invalid SVG root")
+    attribute_pairs = [
+        (match.group(1), match.group(3))
+        for match in re.finditer(r"([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*(['\"])(.*?)\2", root_match.group(1))
+    ]
+    if len(attribute_pairs) != len({name for name, _ in attribute_pairs}):
+        fail("manifest icon root attributes must be unique")
+    attributes = dict(attribute_pairs)
+    if attributes.get("xmlns") != "http://www.w3.org/2000/svg" or attributes.get("viewBox") != "0 0 128 128":
         fail("manifest icon must be a bounded 128-unit SVG")
     qml = entries["panel"].read_text(encoding="utf-8")
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
