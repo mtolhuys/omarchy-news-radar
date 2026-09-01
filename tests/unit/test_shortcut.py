@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+import io
+import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
 
 from radar.errors import ShortcutError
+from radar.shortcut_cli import main as shortcut_main
 from radar.shortcut import (
+    LEGACY_MANAGED_BLOCK,
     MANAGED_BLOCK,
     RADAR_COMMAND,
     RADAR_DESCRIPTION,
+    ShortcutStatus,
     inspect,
     install,
     remove,
@@ -32,7 +38,7 @@ class ShortcutTests(unittest.TestCase):
 
     def live(self):
         text = self.bindings.read_text(encoding="utf-8")
-        if MANAGED_BLOCK in text:
+        if MANAGED_BLOCK in text or LEGACY_MANAGED_BLOCK in text:
             return [{"key": "N", "modmask": 72, "description": RADAR_DESCRIPTION, "dispatcher": "exec", "arg": RADAR_COMMAND}]
         return []
 
@@ -41,6 +47,17 @@ class ShortcutTests(unittest.TestCase):
             status = inspect(self.environment)
         self.assertEqual("free", status.classification)
         self.assertEqual(self.original, self.bindings.read_bytes())
+
+    def test_cli_success_uses_the_shared_helper_protocol(self) -> None:
+        with (
+            mock.patch("radar.shortcut_cli.inspect") as inspect_mock,
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            inspect_mock.return_value = ShortcutStatus("free", self.bindings, (), "free")
+            self.assertEqual(0, shortcut_main(["status"]))
+        result = json.loads(output.getvalue())
+        self.assertEqual(1, result["protocolVersion"])
+        self.assertEqual("ok", result["status"])
 
     def test_install_preserves_surrounding_bytes_and_remove_releases_chord(self) -> None:
         with (
@@ -61,6 +78,53 @@ class ShortcutTests(unittest.TestCase):
         backups = list(self.bindings.parent.glob("bindings.lua.news-radar-backup-*"))
         self.assertGreaterEqual(len(backups), 2)
         self.assertTrue(all((path.stat().st_mode & 0o777) == 0o600 for path in backups))
+
+    def test_exact_legacy_owned_block_is_reported_and_migrated(self) -> None:
+        self.bindings.write_bytes(self.original + LEGACY_MANAGED_BLOCK.encode("utf-8"))
+        with (
+            mock.patch("radar.shortcut._live_bindings", side_effect=self.live),
+            mock.patch("radar.shortcut._reload_expect"),
+        ):
+            before = inspect(self.environment)
+            self.assertEqual("owned-legacy", before.classification)
+            self.assertIn("migration", before.message.lower())
+            migrated = install(self.environment)
+            self.assertEqual("migrated", migrated["status"])
+            self.assertEqual("owned", migrated["classification"])
+
+        candidate = self.bindings.read_bytes()
+        self.assertTrue(candidate.startswith(self.original))
+        self.assertEqual(1, candidate.decode("utf-8").count(MANAGED_BLOCK))
+        self.assertNotIn(LEGACY_MANAGED_BLOCK.encode("utf-8"), candidate)
+
+    def test_legacy_migration_failure_restores_exact_original(self) -> None:
+        legacy = self.original + LEGACY_MANAGED_BLOCK.encode("utf-8")
+        self.bindings.write_bytes(legacy)
+        with (
+            mock.patch("radar.shortcut._live_bindings", side_effect=self.live),
+            mock.patch("radar.shortcut._reload_expect", side_effect=[ShortcutError("config error"), None]),
+        ):
+            with self.assertRaisesRegex(ShortcutError, "original bindings were restored"):
+                install(self.environment)
+        self.assertEqual(legacy, self.bindings.read_bytes())
+
+    def test_remove_accepts_exact_legacy_owned_block(self) -> None:
+        self.bindings.write_bytes(self.original + LEGACY_MANAGED_BLOCK.encode("utf-8"))
+        with (
+            mock.patch("radar.shortcut._live_bindings", side_effect=self.live),
+            mock.patch("radar.shortcut._reload_expect"),
+        ):
+            removed = remove(self.environment)
+        self.assertEqual("removed", removed["status"])
+        self.assertEqual(self.original, self.bindings.read_bytes())
+
+    def test_legacy_lookalikes_are_not_claimed(self) -> None:
+        edited = LEGACY_MANAGED_BLOCK.replace("Omarchy News Radar", "Personal Radar")
+        self.bindings.write_text(self.original.decode() + edited, encoding="utf-8")
+        with mock.patch("radar.shortcut._live_bindings", return_value=self.live()):
+            self.assertEqual("ambiguous", inspect(self.environment).classification)
+            with self.assertRaises(ShortcutError):
+                install(self.environment)
 
     def test_personal_multiple_and_unknown_conflicts_are_refused(self) -> None:
         self.bindings.write_text('o.bind("SUPER+ALT + N", "Mine", "mine")\n', encoding="utf-8")

@@ -16,9 +16,11 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.4+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.5+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
+  readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
+    ? String(manifest.__sourceDir) + "/bin/news-radar-shortcut" : ""
   readonly property string pluginId: manifest && manifest.id
     ? String(manifest.id) : "io.github.mtolhuys.news-radar"
 
@@ -60,6 +62,9 @@ Item {
   property bool localStateReady: false
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
+  property string shortcutAction: ""
+  property string shortcutState: "unknown"
+  property string shortcutMessage: ""
   property string windowIntegrationStatus: "idle"
   property int totalStories: 0
   property bool hasMoreStories: false
@@ -107,7 +112,7 @@ Item {
   readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight
   readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
     || installedProc.running || preferencesProc.running || stateMutationPending || readMutationPending
-    || openSourceProc.running || windowProc.running
+    || openSourceProc.running || windowProc.running || shortcutProc.running
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
@@ -169,6 +174,8 @@ Item {
       windowHeight: panelWindow.height,
       maximized: panelWindow.maximized,
       windowIntegrationStatus: windowIntegrationStatus,
+      shortcutState: shortcutState,
+      shortcutMessage: shortcutMessage,
       emptyStateMessage: emptyStateMessage()
     })
   }
@@ -203,6 +210,9 @@ Item {
   }
   function tuneNewspaperGeometry() {
     return itemGeometry(barPreferenceButton, preferencesOpen && barPreferenceButton.visible)
+  }
+  function shortcutMigrationGeometry() {
+    return itemGeometry(shortcutMigrationButton, shortcutNotice.visible && shortcutMigrationButton.visible)
   }
 
   function storyViewportState() {
@@ -243,6 +253,23 @@ Item {
       if (root.opened || process === stateProc || process === readingProc || process === openSourceProc)
         process.running = true
     })
+  }
+
+  function runShortcutHelper(action) {
+    if (!shortcutHelperPath || shortcutProc.running) return
+    shortcutAction = action
+    shortcutProc.command = [shortcutHelperPath, action]
+    shortcutProc.running = true
+  }
+
+  function inspectShortcut() {
+    runShortcutHelper("status")
+  }
+
+  function migrateShortcut() {
+    shortcutState = "updating"
+    shortcutMessage = "Updating the exact Radar-owned shortcut…"
+    runShortcutHelper("install")
   }
 
   function countEditionImages(feed) {
@@ -299,6 +326,7 @@ Item {
     storyViewportAnchorIndex = 0
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
+    inspectShortcut()
     Qt.callLater(function() {
       if (root.opened) {
         navigationFocus.forceActiveFocus()
@@ -316,6 +344,7 @@ Item {
     stateProc.running = false
     openSourceProc.running = false
     windowProc.running = false
+    shortcutProc.running = false
     refreshing = false
     bulkReadInFlight = false
   }
@@ -802,6 +831,32 @@ Item {
     }
   }
 
+  Process {
+    id: shortcutProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        if (result.classification === "owned-legacy") {
+          root.shortcutState = "needs-update"
+          root.shortcutMessage = "Your Radar-owned Super+Alt+N shortcut still uses the old close-on-repeat action."
+        } else if (root.shortcutAction === "install" && result.status === "migrated") {
+          root.shortcutState = "updated"
+          root.shortcutMessage = "Super+Alt+N now raises Radar without closing it."
+        } else {
+          root.shortcutState = "current"
+          root.shortcutMessage = ""
+        }
+      }
+    }
+    onExited: function(exitCode) {
+      if (exitCode !== 0 && root.shortcutAction === "install") {
+        root.shortcutState = "failed"
+        root.shortcutMessage = "Shortcut update was refused because the binding is no longer an exact Radar-owned block."
+      }
+    }
+  }
+
   Timer {
     id: searchTimer
     interval: 160
@@ -1062,6 +1117,50 @@ Item {
             elide: Text.ElideRight
             Accessible.role: Accessible.StaticText
             Accessible.name: text
+          }
+
+          BorderSurface {
+            id: shortcutNotice
+            Layout.fillWidth: true
+            Layout.preferredHeight: shortcutNoticeRow.implicitHeight + Style.spacing.controlPaddingY * 2
+            visible: root.shortcutState === "needs-update" || root.shortcutState === "updating"
+              || root.shortcutState === "updated" || root.shortcutState === "failed"
+            color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
+            radius: Style.cornerRadius
+            borderSpec: Border.controlSpec(
+              root.shortcutState === "failed" ? "focus" : "normal",
+              Color.popups.text, Color.accent, Color.urgent)
+
+            RowLayout {
+              id: shortcutNoticeRow
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.spacing.controlPaddingX
+              anchors.rightMargin: Style.spacing.controlPaddingX
+              spacing: Style.spacing.controlGap
+
+              Text {
+                Layout.fillWidth: true
+                text: root.shortcutMessage
+                textFormat: Text.PlainText
+                color: root.shortcutState === "failed" ? Color.urgent : Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+                wrapMode: Text.WordWrap
+                Accessible.role: Accessible.StaticText
+                Accessible.name: text
+              }
+
+              RadarButton {
+                id: shortcutMigrationButton
+                visible: root.shortcutState === "needs-update" || root.shortcutState === "failed"
+                label: root.shortcutState === "failed" ? "Retry shortcut update" : "Update shortcut"
+                tooltipText: "Replace only Radar's exact managed toggle binding with summon activation"
+                enabled: !shortcutProc.running
+                onClicked: root.migrateShortcut()
+              }
+            }
           }
 
           TextField {
@@ -1522,8 +1621,8 @@ Item {
                 + " · collected " + String(root.editionTiming.collectedAt || root.generatedAt)
                 + " · published " + String(root.editionTiming.publishedAt || root.generatedAt)
                 + " · cached " + String(root.editionTiming.cachedAt || "this session")
-                + " · Pages cache ≤10m · v0.1.4"
-              : "No edition generated · v0.1.4 · independent community project"
+                + " · Pages cache ≤10m · v0.1.5"
+              : "No edition generated · v0.1.5 · independent community project"
             textFormat: Text.PlainText
             color: root.secondaryTextColor
             font.family: Style.font.family

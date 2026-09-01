@@ -20,17 +20,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "status":
-            result = {"status": "ok", **inspect().public()}
+            result = {"protocolVersion": 1, "status": "ok", **inspect().public()}
         elif args.command == "install":
-            result = install()
+            result = {"protocolVersion": 1, **install()}
         else:
-            result = remove()
+            result = {"protocolVersion": 1, **remove()}
         print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
         return 0
     except ShortcutError as exc:
-        print(json.dumps({"status": "refused", "message": str(exc)}, sort_keys=True, indent=2), file=sys.stderr)
+        print(
+            json.dumps({"protocolVersion": 1, "status": "refused", "message": str(exc)}, sort_keys=True, indent=2),
+            file=sys.stderr,
+        )
         print("Manual fallback: choose a free key in ~/.config/hypr/bindings.lua; Radar remains openable through shell IPC.", file=sys.stderr)
         return 2
 
 
-raise SystemExit(main())
+if __name__ == "__main__":
+    raise SystemExit(main())

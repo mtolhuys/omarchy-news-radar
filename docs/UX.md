@@ -10,7 +10,7 @@ The newspaper metaphor is visual and organizational, not nostalgic decoration. A
 
 The recommended global shortcut is `Super+Alt+N` for “news.” Audited Omarchy Quattro defaults and the disposable live binding set leave that chord free, while `Super+Shift+N` remains the Editor launcher. Radar never displaces Editor or any other action.
 
-Shortcut installation is a separate, explicit setup action after plugin enablement. `status` performs a read-only inspection. `install` may add one managed Radar binding only when the live binding table and personal override file both show that `Super+Alt+N` is free. The setup tool refuses every conflict, writes only its owned managed block, validates a Hyprland reload, and supports exact removal. Removing the block releases `Super+Alt+N`; the Editor binding is unchanged throughout.
+Shortcut installation is a separate, explicit setup action after plugin enablement. `status` performs a read-only inspection. `install` may add one managed Radar binding only when the live binding table and personal override file both show that `Super+Alt+N` is free. It may also migrate the one exact unmodified Radar-owned 0.1.3 block from `toggle` to `summon`. Version 0.1.5 exposes that legacy state in the panel with an explicit **Update shortcut** action; merely opening Radar never changes the configuration. The setup tool refuses every conflict, writes only its owned managed block, validates a Hyprland reload, and supports exact removal. Removing either exact current or legacy block releases `Super+Alt+N`; the Editor binding is unchanged throughout.
 
 The plugin must remain openable through documented shell IPC even without the shortcut:
 

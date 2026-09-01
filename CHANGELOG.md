@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 — 2026-09-02
+
+- Repair the missed 0.1.3 upgrade path: an exact Radar-owned `toggle` shortcut is now identified as legacy instead of ambiguous and can be explicitly migrated to `summon` with the same private backup, atomic reload validation, and rollback guarantees.
+- Surface that migration inside Radar with a focused **Update shortcut** action; opening the panel remains read-only and edited, personal, conflicting, or ambiguous bindings are still never changed.
+- Add a permanent disposable-VM upgrade journey that installs 0.1.3, proves its failure mode, fast-forwards to the candidate, drives the rendered migration action, and verifies real QMP shortcut and newspaper activation while obscured and foreground.
+
 ## 0.1.4 — 2026-09-01
 
 - Replace the single hourly GitHub schedule with four off-peak best-effort opportunities per hour, record artifact publication time, and distinguish publisher lag, source checks, Pages propagation, and local cache age with a 90-minute stale-publication threshold.

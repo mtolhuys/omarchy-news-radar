@@ -8,7 +8,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.1.4` is the current public release. Its source, live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public. Marketplace verification is commit-specific compatibility evidence, not a security audit.
+Version `0.1.5` is the current release candidate. Its source, live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public after publication. Marketplace verification is commit-specific compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -22,7 +22,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
 - A theme-native bar newspaper with unread count and health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
-- A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free; it never displaces Editor or another action.
+- A narrowly scoped shortcut helper that installs `Super+Alt+N` only when the personal configuration and live binding table show that it is free, and explicitly migrates only Radar's exact unmodified 0.1.3-owned block; it never displaces Editor or another action.
 - An explicit XDG application-launcher helper that exposes Radar in Omarchy's Apps menu, updates only its receipt-backed desktop entry and icon, and preserves modified or unrelated files.
 - Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and exact public-clone acceptance.
 
@@ -63,7 +63,7 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install v0.1.4
+## Install v0.1.5
 
 Install the tagged public release directly with:
 
@@ -95,6 +95,8 @@ If `status` reports `classification: free`, install the owned Radar binding:
 ```
 
 The helper refuses personal, multiple, unknown, symlinked, unowned, or ambiguous configuration. It creates a timestamped backup, writes one clearly marked bind-only Radar block, reloads Hyprland, validates the live action and config errors, and rolls back on failure. There is no unbind, Editor replacement, or force flag.
+
+If an earlier Radar version installed the old close-on-repeat binding, opening 0.1.5 through the newspaper, Apps row, or documented IPC shows **Update shortcut**. That action changes only the exact unmodified Radar-owned block from `toggle` to `summon`; opening the panel itself is read-only. The same explicit migration is available from the command above: `status` reports `owned-legacy`, then `install` performs the backed-up migration. Edited or personal blocks remain refused.
 
 To choose another free chord, skip the helper and add your own reviewed line to `~/.config/hypr/bindings.lua`, for example:
 

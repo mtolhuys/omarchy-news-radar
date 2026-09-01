@@ -69,17 +69,17 @@ Global shortcut setup is an explicit user action and is not run by plugin instal
 1. Refuse UID `0`.
 2. Resolve the expected user config path without following a symlink; if the file is symlinked or unusually owned, stop and provide the manual binding line.
 3. Query the live binding table through `hyprctl binds -j` and detect `Super+Alt+N` semantically, not by fragile source grep alone.
-4. Inspect the user's personal override file. Classify the chord as `free`, `owned`, `personal-conflict`, or `ambiguous`; fail closed when classification is uncertain.
-5. Mutate only when the chord is `free`; refuse personal, unknown, multiple, or ambiguous bindings without an override or force path.
+4. Inspect the user's personal override file. Classify the chord as `free`, `owned`, `owned-legacy`, `personal-conflict`, or `ambiguous`; fail closed when classification is uncertain. `owned-legacy` requires the one byte-exact 0.1.3 managed block, one marker pair, and one live Radar-described action.
+5. Mutate only when the chord is `free` or the exact `owned-legacy` block is being explicitly migrated; refuse personal, unknown, multiple, edited, or ambiguous bindings without an override or force path.
 6. Be idempotent when its exact managed binding already exists.
-7. Add one clearly delimited managed block containing only Radar's `o.bind("SUPER + ALT + N", ...)` statement without reformatting any other byte of the file.
+7. Add one clearly delimited managed block containing only Radar's `o.bind("SUPER + ALT + N", ...)` statement without reformatting any other byte of the file. Legacy migration replaces only that exact managed block and preserves every surrounding byte.
 8. Create a private timestamped backup before change.
 9. Write atomically.
 10. Run `hyprctl reload`, then require empty `hyprctl configerrors` and exactly one live Radar action for the chord.
 11. Restore the backup and reload again when validation fails.
 12. Report the exact changed file, binding, backup, and recovery result.
 
-`status` is read-only. `remove` deletes only an exact unmodified managed block, uses the same backup/atomic/reload/rollback process, refuses ambiguous or user-edited blocks, and verifies that `Super+Alt+N` is free again. It also leaves the separate `Super+Shift+N` Editor action untouched. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
+`status` and the panel-open inspection are read-only. The panel runs migration only after the user activates its visible **Update shortcut** control. `remove` deletes only an exact unmodified current or legacy managed block, uses the same backup/atomic/reload/rollback process, refuses ambiguous or user-edited blocks, and verifies that `Super+Alt+N` is free again. It also leaves the separate `Super+Shift+N` Editor action untouched. Removing the plugin before removing the binding leaves a harmless unresolved IPC action; public removal instructions must tell users to remove the shortcut first.
 
 Never expose a force-overwrite or action-replacement flag in version 1. Users with any conflict receive manual guidance for choosing and configuring a different free key.
 

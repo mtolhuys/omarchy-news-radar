@@ -19,11 +19,17 @@ CHORD = "SUPER + ALT + N"
 MODMASK = 72
 RADAR_DESCRIPTION = "Omarchy News Radar"
 RADAR_COMMAND = "omarchy-shell shell summon io.github.mtolhuys.news-radar"
+LEGACY_RADAR_COMMAND = "omarchy-shell shell toggle io.github.mtolhuys.news-radar"
 BEGIN = "-- BEGIN OMARCHY NEWS RADAR MANAGED SHORTCUT"
 END = "-- END OMARCHY NEWS RADAR MANAGED SHORTCUT"
 MANAGED_BLOCK = (
     f"\n{BEGIN}\n"
     f'o.bind("{CHORD}", "{RADAR_DESCRIPTION}", "{RADAR_COMMAND}")\n'
+    f"{END}\n"
+)
+LEGACY_MANAGED_BLOCK = (
+    f"\n{BEGIN}\n"
+    f'o.bind("{CHORD}", "{RADAR_DESCRIPTION}", "{LEGACY_RADAR_COMMAND}")\n'
     f"{END}\n"
 )
 
@@ -145,6 +151,7 @@ def inspect(environment: Mapping[str, str] | None = None) -> ShortcutStatus:
     begin_count = personal.count(BEGIN)
     end_count = personal.count(END)
     block_count = personal.count(MANAGED_BLOCK)
+    legacy_block_count = personal.count(LEGACY_MANAGED_BLOCK)
     mentions = _active_personal_mentions(personal)
     if block_count == 1 and begin_count == 1 and end_count == 1 and len(live) == 1:
         item = live[0]
@@ -155,6 +162,16 @@ def inspect(environment: Mapping[str, str] | None = None) -> ShortcutStatus:
         if str(item.get("description") or "") == RADAR_DESCRIPTION:
             return ShortcutStatus("owned", bindings_file, live, "Radar owns the exact managed shortcut block.")
         return ShortcutStatus("ambiguous", bindings_file, live, "The managed block exists but the live action differs; no mutation is safe.")
+    if legacy_block_count == 1 and begin_count == 1 and end_count == 1 and len(live) == 1:
+        item = live[0]
+        if str(item.get("description") or "") == RADAR_DESCRIPTION:
+            return ShortcutStatus(
+                "owned-legacy",
+                bindings_file,
+                live,
+                "Radar owns the exact legacy toggle shortcut; run install to complete its summon migration.",
+            )
+        return ShortcutStatus("ambiguous", bindings_file, live, "The legacy managed block exists but the live action differs; no mutation is safe.")
     if begin_count or end_count:
         return ShortcutStatus("ambiguous", bindings_file, live, "A partial or edited Radar managed block exists; restore it manually.")
     if len(live) > 1:
@@ -236,25 +253,31 @@ def install(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     status = inspect(environment)
     if status.classification == "owned":
         return {"status": "unchanged", **status.public()}
-    if status.classification != "free":
+    if status.classification not in {"free", "owned-legacy"}:
         raise ShortcutError(status.message)
 
     info = _owned_regular_file(status.bindings_file)
     original = status.bindings_file.read_bytes()
     backup = _backup(status.bindings_file, original)
-    candidate = original + MANAGED_BLOCK.encode("utf-8")
+    if status.classification == "owned-legacy":
+        original_text = original.decode("utf-8")
+        if original_text.count(LEGACY_MANAGED_BLOCK) != 1:
+            raise ShortcutError("legacy managed block is edited or ambiguous; migration refused")
+        candidate = original_text.replace(LEGACY_MANAGED_BLOCK, MANAGED_BLOCK, 1).encode("utf-8")
+    else:
+        candidate = original + MANAGED_BLOCK.encode("utf-8")
     try:
         _atomic_preserving(status.bindings_file, candidate, info.st_mode)
         _reload_expect(radar=True)
     except Exception as exc:
         _atomic_preserving(status.bindings_file, original, info.st_mode)
         try:
-            _reload_expect(radar=False)
+            _reload_expect(radar=status.classification == "owned-legacy")
         except ShortcutError as recovery:
             raise ShortcutError(f"shortcut installation failed and recovery validation failed: {recovery}") from exc
         raise ShortcutError("shortcut installation failed; original bindings were restored") from exc
     return {
-        "status": "installed",
+        "status": "migrated" if status.classification == "owned-legacy" else "installed",
         **inspect(environment).public(),
         "backup": str(backup),
     }
@@ -266,14 +289,15 @@ def remove(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     status = inspect(environment)
     if status.classification == "free":
         return {"status": "unchanged", **status.public()}
-    if status.classification != "owned":
+    if status.classification not in {"owned", "owned-legacy"}:
         raise ShortcutError("Radar does not own one exact unmodified managed block; removal refused")
     info = _owned_regular_file(status.bindings_file)
     original = status.bindings_file.read_bytes()
     text = original.decode("utf-8")
-    if text.count(MANAGED_BLOCK) != 1:
+    managed_block = LEGACY_MANAGED_BLOCK if status.classification == "owned-legacy" else MANAGED_BLOCK
+    if text.count(managed_block) != 1:
         raise ShortcutError("managed block is edited or ambiguous; removal refused")
-    candidate_text = text.replace(MANAGED_BLOCK, "", 1)
+    candidate_text = text.replace(managed_block, "", 1)
     backup = _backup(status.bindings_file, original)
     try:
         _atomic_preserving(status.bindings_file, candidate_text.encode("utf-8"), info.st_mode)
