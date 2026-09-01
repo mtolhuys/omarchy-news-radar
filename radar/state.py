@@ -9,7 +9,7 @@ import stat
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from .constants import (
     CLIENT_SECTIONS,
@@ -256,7 +256,7 @@ def set_event_read(
 
 def set_events_read(
     state: Mapping[str, Any],
-    events: list[Mapping[str, Any]],
+    events: Sequence[Mapping[str, Any]],
     read: bool,
     *,
     current_event_ids: set[str],
