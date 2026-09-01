@@ -179,7 +179,11 @@ omarchy_host_test() {
   press esc
   wait_for_guest_state "Apps-launched Radar closes through the normal lifecycle" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && \
-     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == false and .windowVisible == false'" || return 1
+     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == false and .windowVisible == false'" || {
+      ssh_session "hyprctl -j clients" >"$RUN_DIR/news-radar-app-close-failure-clients.json" 2>&1 || true
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-app-close-failure-debug.json" 2>&1 || true
+      return 1
+    }
 
   log "Proving the default newspaper placement and native geometry"
   wait_for_guest_state "newspaper occupies one visible right-section slot" 20 ssh_session \

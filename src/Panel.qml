@@ -334,7 +334,7 @@ Item {
 
   function dismiss() {
     if (shell && typeof shell.hide === "function") shell.hide(pluginId)
-    if (opened) close()
+    close()
   }
 
   function handleEscape() {
