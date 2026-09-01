@@ -8,6 +8,1142 @@
         "tags": [
           "bar",
           "quickshell",
+          "widgets"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "jampick.ferries",
+        "kind": "plugin",
+        "name": "Ferries",
+        "repository": "https://github.com/jampick/omarchy-ferries",
+        "version": "1.0.0"
+      },
+      "id": "evt_91d6b1c1738175eb3a9b31d5",
+      "image": {
+        "alt": "Ferries plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 720,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/7-jampick-omarchy-ferries-card.webp",
+        "width": 533
+      },
+      "metrics": [
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/jampick/omarchy-ferries",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T01:38:43Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/jampick/omarchy-ferries"
+      },
+      "summary": "Ferries is now listed in the Omarchy plugin marketplace.",
+      "title": "Ferries joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "ogibon.homelab",
+        "kind": "plugin",
+        "name": "Homelab Status",
+        "repository": "https://github.com/ogrt/omarchy-homelab-status",
+        "version": "0.1.0"
+      },
+      "id": "evt_6c05c147d5e3eab0a528617b",
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 9
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/ogrt/omarchy-homelab-status",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T01:30:57Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/ogrt/omarchy-homelab-status"
+      },
+      "summary": "Homelab Status is now listed in the Omarchy plugin marketplace.",
+      "title": "Homelab Status joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "hyprland",
+          "launcher",
+          "widgets"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "io.github.joeyvigil.taskbar",
+        "kind": "plugin",
+        "name": "Taskbar",
+        "repository": "https://github.com/joeyvigil/omarchy-taskbar",
+        "version": "0.3.0"
+      },
+      "id": "evt_3f6655e008b9714a0e19cfa3",
+      "image": {
+        "alt": "Taskbar plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 62,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/9-joeyvigil-omarchy-taskbar-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 1
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 13
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/joeyvigil/omarchy-taskbar",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T01:26:18Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/joeyvigil/omarchy-taskbar"
+      },
+      "summary": "Taskbar is now listed in the Omarchy plugin marketplace.",
+      "title": "Taskbar joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "media",
+          "quickshell",
+          "widgets"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "io.github.ollieedgeley.cliamp-visualiser",
+        "kind": "plugin",
+        "name": "Cliamp Visualiser",
+        "repository": "https://github.com/ollieedgeley/quickshell-cliamp-visualiser",
+        "version": "1.0.1"
+      },
+      "id": "evt_618529199eecc7148964591b",
+      "image": {
+        "alt": "Cliamp Visualiser plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 363,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/12-ollieedgeley-quickshell-cliamp-visualiser-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 10
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/ollieedgeley/quickshell-cliamp-visualiser",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T01:24:32Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/ollieedgeley/quickshell-cliamp-visualiser/tree/v1.0.1"
+      },
+      "summary": "Cliamp Visualiser is now listed in the Omarchy plugin marketplace.",
+      "title": "Cliamp Visualiser joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "appearance",
+          "education",
+          "quickshell",
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "io.github.expri-commits.anki-theme",
+        "kind": "plugin",
+        "name": "Anki Theme for Omarchy",
+        "repository": "https://github.com/Expri-commits/omarchy-anki-theme",
+        "version": "0.1.0"
+      },
+      "id": "evt_8c4bf912d5340ddd432fb4fa",
+      "image": {
+        "alt": "Anki Theme for Omarchy plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 196,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/13-expri-commits-omarchy-anki-theme-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 15
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/Expri-commits/omarchy-anki-theme",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T01:16:59Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/Expri-commits/omarchy-anki-theme/releases/tag/v0.1.0"
+      },
+      "summary": "Anki Theme for Omarchy is now listed in the Omarchy plugin marketplace.",
+      "title": "Anki Theme for Omarchy joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "desktop",
+          "education",
+          "media",
+          "quickshell"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "max.piano",
+        "kind": "plugin",
+        "name": "Quick Piano",
+        "repository": "https://github.com/JarlMaxi/omarchy-quick-piano",
+        "version": "1.0.0"
+      },
+      "id": "evt_242c1f2bf2f36409c0da453c",
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 11
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/JarlMaxi/omarchy-quick-piano",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T01:01:35Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/JarlMaxi/omarchy-quick-piano"
+      },
+      "summary": "Quick Piano is now listed in the Omarchy plugin marketplace.",
+      "title": "Quick Piano joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "hyprland",
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "oliverlukschander.vi-mode",
+        "kind": "plugin",
+        "name": "Vi Mode",
+        "repository": "https://github.com/oliverlukschander/omarchy-vi-mode",
+        "version": "1.0.0"
+      },
+      "id": "evt_1bc58080f9a53910d0c0a002",
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 29
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/oliverlukschander/omarchy-vi-mode",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:59:41Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/oliverlukschander/omarchy-vi-mode"
+      },
+      "summary": "Vi Mode is now listed in the Omarchy plugin marketplace.",
+      "title": "Vi Mode joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "ai",
+          "hyprland",
+          "productivity",
+          "quickshell"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "io.github.smatheusblu.handwriting",
+        "kind": "plugin",
+        "name": "Handwriting",
+        "repository": "https://github.com/smatheusblu/omarchy-handwriting",
+        "version": "0.1.0"
+      },
+      "id": "evt_1619740878f29255814790f4",
+      "image": {
+        "alt": "Handwriting plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 382,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/11-smatheusblu-omarchy-handwriting-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 13
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/smatheusblu/omarchy-handwriting",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:53:13Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/smatheusblu/omarchy-handwriting/releases/tag/v0.1.0"
+      },
+      "summary": "Handwriting is now listed in the Omarchy plugin marketplace.",
+      "title": "Handwriting joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "widgets"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "slatermoore.pixel-whale",
+        "kind": "plugin",
+        "name": "Pixel Whale",
+        "repository": "https://github.com/SlaterMoore/omarchy-pixel-whale",
+        "version": "1.0.0"
+      },
+      "id": "evt_2aa8e9bc6b8d13ee23655bdd",
+      "image": {
+        "alt": "Pixel Whale plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 15,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/11-slatermoore-omarchy-pixel-whale-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 2
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 1
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 40
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/SlaterMoore/omarchy-pixel-whale",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:51:18Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/SlaterMoore/omarchy-pixel-whale"
+      },
+      "summary": "Pixel Whale is now listed in the Omarchy plugin marketplace.",
+      "title": "Pixel Whale joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "developer-tools",
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "remi.reload",
+        "kind": "plugin",
+        "name": "Reload",
+        "repository": "https://github.com/remigius-labs/omarchy-reload",
+        "version": "1.0.0"
+      },
+      "id": "evt_87e424125cd20dacd2d93bbc",
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 3
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 1
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 11
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/remigius-labs/omarchy-reload",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:49:11Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/remigius-labs/omarchy-reload"
+      },
+      "summary": "Reload is now listed in the Omarchy plugin marketplace.",
+      "title": "Reload joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "hyprland",
+          "productivity",
+          "system",
+          "workspaces"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "pmpinto.any-workspace",
+        "kind": "plugin",
+        "name": "Any Workspace",
+        "repository": "https://github.com/pmpinto/omarchy-any-workspace",
+        "version": "1.0.0"
+      },
+      "id": "evt_306358e8bc32c867e15809ef",
+      "image": {
+        "alt": "Any Workspace plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 487,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/7-pmpinto-omarchy-any-workspace-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 22
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/pmpinto/omarchy-any-workspace",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:47:17Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/pmpinto/omarchy-any-workspace"
+      },
+      "summary": "Any Workspace is now listed in the Omarchy plugin marketplace.",
+      "title": "Any Workspace joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "ai",
+          "bar",
+          "developer-tools",
+          "quickshell"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "io.github.ramous19.copilot-companion",
+        "kind": "plugin",
+        "name": "Copilot Companion",
+        "repository": "https://github.com/ramous19/omarchy-copilot-companion",
+        "version": "1.0.0"
+      },
+      "id": "evt_1454c65870a2d9e807a50e07",
+      "image": {
+        "alt": "Copilot Companion plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 720,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/8-ramous19-omarchy-copilot-companion-card.webp",
+        "width": 432
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 1
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 9
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/ramous19/omarchy-copilot-companion",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:45:25Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/ramous19/omarchy-copilot-companion"
+      },
+      "summary": "Copilot Companion is now listed in the Omarchy plugin marketplace.",
+      "title": "Copilot Companion joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "hardware",
+          "media",
+          "quickshell"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "io.github.jzuijlek.omarchybuds",
+        "kind": "plugin",
+        "name": "Galaxy Buds",
+        "repository": "https://github.com/jzuijlek/omarchy-buds",
+        "version": "0.2.0"
+      },
+      "id": "evt_3ede4e8ea4d33142026306b1",
+      "image": {
+        "alt": "Galaxy Buds plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 374,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/8-jzuijlek-omarchy-buds-card.webp",
+        "width": 380
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 9
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/jzuijlek/omarchy-buds",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:43:26Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/jzuijlek/omarchy-buds"
+      },
+      "summary": "Galaxy Buds is now listed in the Omarchy plugin marketplace.",
+      "title": "Galaxy Buds joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "appearance",
+          "bar",
+          "hyprland",
+          "quickshell"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "chaz.bar-autohide",
+        "kind": "plugin",
+        "name": "Auto-Hide Status Bar",
+        "repository": "https://github.com/ChazPounder78/Chaz-Auto-Hide-Statusbar",
+        "version": "0.1.1"
+      },
+      "id": "evt_863a0f61e0e62efae8d26ebe",
+      "image": {
+        "alt": "Auto-Hide Status Bar plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 720,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/13-chazpounder78-chaz-auto-hide-statusbar-card.webp",
+        "width": 348
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 8
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/ChazPounder78/Chaz-Auto-Hide-Statusbar",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:40:09Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/ChazPounder78/Chaz-Auto-Hide-Statusbar/tree/v0.1.1"
+      },
+      "summary": "Auto-Hide Status Bar is now listed in the Omarchy plugin marketplace.",
+      "title": "Auto-Hide Status Bar joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "productivity",
+          "quickshell"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "ninepointlabs.hey-calendar",
+        "kind": "plugin",
+        "name": "HEY Calendar",
+        "repository": "https://github.com/ninepointlabs/omarchy-hey-calendar",
+        "version": "0.1.0"
+      },
+      "id": "evt_10dbb853ed8f1d168d781fd6",
+      "image": {
+        "alt": "HEY Calendar plugin preview",
+        "credit": "Omarchy Plugin Marketplace",
+        "height": 428,
+        "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/13-ninepointlabs-omarchy-hey-calendar-card.webp",
+        "width": 720
+      },
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 21
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/ninepointlabs/omarchy-hey-calendar",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:26:05Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/ninepointlabs/omarchy-hey-calendar"
+      },
+      "summary": "HEY Calendar is now listed in the Omarchy plugin marketplace.",
+      "title": "HEY Calendar joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "system"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "joao.kbd-backlight",
+        "kind": "plugin",
+        "name": "Samsung Book Keyboard Backlight",
+        "repository": "https://github.com/JoaoVicenteBaptista/omarchy-samsung-keyboard-backlight",
+        "version": "1.0.0"
+      },
+      "id": "evt_32d20c95beacf79a894ea6bc",
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 2
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/JoaoVicenteBaptista/omarchy-samsung-keyboard-backlight",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:20:35Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/JoaoVicenteBaptista/omarchy-samsung-keyboard-backlight"
+      },
+      "summary": "Samsung Book Keyboard Backlight is now listed in the Omarchy plugin marketplace.",
+      "title": "Samsung Book Keyboard Backlight joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "hyprland",
+          "widgets",
+          "workspaces"
+        ]
+      },
+      "compatibility": {
+        "basis": "unknown",
+        "channels": []
+      },
+      "discoveredAt": "2026-09-01T01:45:06Z",
+      "entity": {
+        "id": "selmant.local-workspaces",
+        "kind": "plugin",
+        "name": "Local Workspaces",
+        "repository": "https://github.com/selmant/omarchy-local-workspaces",
+        "version": "1.0.0"
+      },
+      "id": "evt_5e2723ecae1ecb99c41ea21e",
+      "metrics": [
+        {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 18
+        },
+        {
+          "id": "repository-stars",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://github.com/selmant/omarchy-local-workspaces",
+          "value": 0
+        }
+      ],
+      "occurredAt": "2026-09-01T00:18:24Z",
+      "source": {
+        "label": "Plugin source",
+        "url": "https://github.com/selmant/omarchy-local-workspaces"
+      },
+      "summary": "Local Workspaces is now listed in the Omarchy plugin marketplace.",
+      "title": "Local Workspaces joined the marketplace",
+      "trust": {
+        "marketplace": "verified",
+        "securityAudit": false
+      },
+      "type": "plugin-added"
+    },
+    {
+      "classification": {
+        "curated": false,
+        "section": "plugins",
+        "significance": "routine",
+        "tags": [
+          "bar",
+          "quickshell",
           "system"
         ]
       },
@@ -34,25 +1170,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 148
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 5
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 655
+          "value": 657
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/VillainRU/omarchy-panel-resources",
           "value": 0
         }
@@ -105,25 +1241,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 2901
+          "value": 2914
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 200
+          "value": 201
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 8267
+          "value": 8304
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/crmne/omarchy-hyprmoncfg",
           "value": 63
         }
@@ -176,25 +1312,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 24
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 14
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 135
+          "value": 141
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/leofle/omarchy-workspace-preview",
           "value": 1
         }
@@ -247,25 +1383,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 28
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 1147
+          "value": 1150
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/MoizIbnYousaf/Omarchy-Whatsapp",
           "value": 3
         }
@@ -316,25 +1452,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 280
+          "value": 282
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 18
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 1155
+          "value": 1160
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/ifubaraboye/omarchy-dock",
           "value": 3
         }
@@ -379,8 +1515,26 @@
       "id": "evt_b072fdcdbbaa945da87f6002",
       "metrics": [
         {
+          "id": "marketplace-copies",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-hearts",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 0
+        },
+        {
+          "id": "marketplace-views",
+          "observedAt": "2026-09-01T01:45:06Z",
+          "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
+          "value": 10
+        },
+        {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/tcballard/omarchy-premonition",
           "value": 1
         }
@@ -433,25 +1587,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 0
+          "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 4
+          "value": 87
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/AnubisQuantumCipher/sia",
           "value": 0
         }
@@ -503,25 +1657,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 0
+          "value": 7
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 1
+          "value": 34
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/Comm4nd0/youtube-floater",
           "value": 0
         }
@@ -566,25 +1720,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 5
+          "value": 21
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/spicybackend/omarchy-bongo-cat",
           "value": 0
         }
@@ -637,25 +1791,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 1
+          "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 22
+          "value": 84
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/mtolhuys/omarchy-sidecar",
           "value": 0
         }
@@ -700,25 +1854,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 2
+          "value": 5
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/cschaba/omaipsum",
           "value": 1
         }
@@ -769,25 +1923,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 10
+          "value": 18
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/Praveensenpai/omarchy-japanese-ime",
           "value": 0
         }
@@ -833,25 +1987,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 27
+          "value": 36
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/jondkinney/hyprcorrect",
           "value": 5
         }
@@ -903,25 +2057,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 25
+          "value": 36
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/jondkinney/omarchy-bazecor-lens",
           "value": 0
         }
@@ -974,25 +2128,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 64
+          "value": 88
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/data-goblin/omgato",
           "value": 3
         }
@@ -1043,25 +2197,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 2
+          "value": 5
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 44
+          "value": 56
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/velibor1013/omarchy-BT-quick-connect",
           "value": 0
         }
@@ -1114,25 +2268,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 12
+          "value": 13
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 68
+          "value": 91
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/mscurtescu/omarchy-island-bar",
           "value": 0
         }
@@ -1184,25 +2338,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 10
+          "value": 17
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 3
+          "value": 4
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 73
+          "value": 102
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/linuts/desktop-icons",
           "value": 0
         }
@@ -1246,25 +2400,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 2
+          "value": 3
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 23
+          "value": 30
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/pablohc/omarchy-audio-plus",
           "value": 0
         }
@@ -1316,25 +2470,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 20
+          "value": 24
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/lab81io/omarchy-monday",
           "value": 1
         }
@@ -1387,25 +2541,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 67
+          "value": 86
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/njpatel/omaherdr",
           "value": 3
         }
@@ -1450,25 +2604,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 43
+          "value": 50
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/VisorDTE/WindowsPlease",
           "value": 0
         }
@@ -1514,25 +2668,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 27
+          "value": 36
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/warfollowsme/omarchy-pixel-player",
           "value": 0
         }
@@ -1584,25 +2738,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 4
+          "value": 8
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 24
+          "value": 33
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/rubenmeza/omarchy-ports",
           "value": 0
         }
@@ -1654,25 +2808,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 11
+          "value": 13
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 4
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 109
+          "value": 120
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/eduardodallecort/omarchy-roost",
           "value": 0
         }
@@ -1723,25 +2877,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 6
+          "value": 7
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 167
+          "value": 179
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/austrasien/omarchy-workspaces",
           "value": 0
         }
@@ -1786,25 +2940,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 3
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 71
+          "value": 72
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/pooriaarab/content-rabbit-omarchy",
           "value": 0
         }
@@ -1855,25 +3009,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 17
+          "value": 19
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 123
+          "value": 139
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/nerddotdad/tamomarchy",
           "value": 0
         }
@@ -1926,25 +3080,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 26
+          "value": 31
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 3
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 132
+          "value": 142
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/jankeesvw/omarchy-downloads",
           "value": 10
         }
@@ -1997,25 +3151,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 22
+          "value": 24
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 121
+          "value": 133
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/anttiak/omarchy-lofeline",
           "value": 0
         }
@@ -2067,25 +3221,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 9
+          "value": 10
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 81
+          "value": 90
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/shilai-li/omarchy-eye-break",
           "value": 0
         }
@@ -2138,25 +3292,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 12
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 103
+          "value": 115
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/cyprusad/omakeez",
           "value": 5
         }
@@ -2209,25 +3363,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 3
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 24
+          "value": 26
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/wkuehler/omarchy-amateur-radio-exam-quiz",
           "value": 1
         }
@@ -2280,25 +3434,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 19
+          "value": 22
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 71
+          "value": 79
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/Majkelll/omarchy-docker",
           "value": 1
         }
@@ -2350,25 +3504,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 41
+          "value": 47
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 83
+          "value": 96
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/andreireanu/omarchy-minimal-monitor",
           "value": 0
         }
@@ -2419,25 +3573,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 3
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 18
+          "value": 19
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/gladimdim/omarchy-today-reminders",
           "value": 0
         }
@@ -2489,25 +3643,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 24
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 2
+          "value": 3
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 159
+          "value": 162
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens",
           "value": 1
         }
@@ -2560,25 +3714,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 27
+          "value": 30
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 160
+          "value": 169
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/rtome85/omarchy-audio-plus",
           "value": 0
         }
@@ -2629,25 +3783,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 31
+          "value": 32
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 146
+          "value": 155
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/idr4n/omarchy-clipboard-plus",
           "value": 0
         }
@@ -2700,25 +3854,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 28
+          "value": 29
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/akdubey707/omarchy-docker-links",
           "value": 0
         }
@@ -2764,25 +3918,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 3
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 41
+          "value": 44
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/flathack/omarchy-otp",
           "value": 0
         }
@@ -2835,25 +3989,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 71
+          "value": 73
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/pjgeutjens/omarchy-omaplex",
           "value": 0
         }
@@ -2906,25 +4060,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 48
+          "value": 50
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 4
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 268
+          "value": 287
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/jcarcinogen/omarchy-rice-bar",
           "value": 0
         }
@@ -2976,25 +4130,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 4
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 103
+          "value": 107
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/josephbriones/omarchy-clearread",
           "value": 0
         }
@@ -3047,25 +4201,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 82
+          "value": 90
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/josephbriones/omarchy-live-captions",
           "value": 0
         }
@@ -3116,25 +4270,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 12
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 62
+          "value": 64
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/spaceXrace/omarchy-f1",
           "value": 0
         }
@@ -3185,25 +4339,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 32
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 159
+          "value": 162
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/iuliansafta/omarchy-apple-music",
           "value": 0
         }
@@ -3255,25 +4409,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 7
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 195
+          "value": 198
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/mohPYdev/Downlodarchy",
           "value": 0
         }
@@ -3325,25 +4479,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 2
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 110
+          "value": 112
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/paulpitchford/omarchy-garmin-insights",
           "value": 0
         }
@@ -3396,25 +4550,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 10
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 66
+          "value": 67
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/p145085/omarchy-uptime-kuma",
           "value": 0
         }
@@ -3467,25 +4621,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 0
+          "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 149
+          "value": 157
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/tobiasz-p/vision-hub",
           "value": 0
         }
@@ -3529,25 +4683,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 81
+          "value": 84
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/MatyiFKBT/omarchy-steamguard",
           "value": 0
         }
@@ -3599,25 +4753,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 50
+          "value": 51
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 7
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 212
+          "value": 217
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/OldJobobo/omatype",
           "value": 2
         }
@@ -3662,25 +4816,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 11
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 1
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 110
+          "value": 111
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/majesticio/omarchy-voxtype-pulse-plugin",
           "value": 0
         }
@@ -3733,25 +4887,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 26
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 4
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 144
+          "value": 146
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/nerdyworm/omarchy-easyeffects-presets",
           "value": 0
         }
@@ -3803,25 +4957,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 98
+          "value": 101
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 3
+          "value": 4
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 306
+          "value": 321
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/Coding-Sparrow/omarchy-systempulse",
           "value": 0
         }
@@ -3872,25 +5026,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 30
+          "value": 31
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 0
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 140
+          "value": 143
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/lucasjr76/omarchy-workspace-icons",
           "value": 0
         }
@@ -3942,25 +5096,25 @@
       "metrics": [
         {
           "id": "marketplace-copies",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 6
         },
         {
           "id": "marketplace-hearts",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
           "value": 4
         },
         {
           "id": "marketplace-views",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://api.omarchyplugins.com/v1/stats",
-          "value": 65
+          "value": 66
         },
         {
           "id": "repository-stars",
-          "observedAt": "2026-09-01T00:17:41Z",
+          "observedAt": "2026-09-01T01:45:06Z",
           "sourceUrl": "https://github.com/dfrost90/omarchy-ukraine-air-alert",
           "value": 0
         }
@@ -4170,7 +5324,7 @@
       "recordIds": []
     },
     "marketplace": {
-      "generatedAt": "2026-09-01T00:12:54Z",
+      "generatedAt": "2026-09-01T01:38:43Z",
       "plugins": {
         "37signals.basecamp": {
           "absenceCount": 0,
@@ -8469,6 +9623,31 @@
           ],
           "verification": "verified",
           "version": "1.0.0"
+        },
+        "chaz.bar-autohide": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:40:09Z",
+          "category": "Appearance",
+          "description": "Auto-hide the Omarchy status bar unless the pointer is over its edge. A bar icon toggles it and opens a menu with on/off, edge sensitivity, hide/show delay sliders and an optional animated hide/show.",
+          "listingDated": true,
+          "name": "Auto-Hide Status Bar",
+          "preview": {
+            "height": 720,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/13-chazpounder78-chaz-auto-hide-statusbar-card.webp",
+            "width": 348
+          },
+          "repository": "https://github.com/ChazPounder78/Chaz-Auto-Hide-Statusbar",
+          "retired": false,
+          "sourceUrl": "https://github.com/ChazPounder78/Chaz-Auto-Hide-Statusbar/tree/v0.1.1",
+          "stars": 0,
+          "tags": [
+            "appearance",
+            "bar",
+            "hyprland",
+            "quickshell"
+          ],
+          "verification": "verified",
+          "version": "0.1.1"
         },
         "chispes.agent-gemini": {
           "absenceCount": 0,
@@ -21396,6 +22575,31 @@
           "verification": "verified",
           "version": "1.1.3"
         },
+        "io.github.expri-commits.anki-theme": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T01:16:59Z",
+          "category": "Appearance",
+          "description": "Recolor Anki live in the active Omarchy palette: deck browser, reviewer, editor, and dialogs follow every theme switch, no restart.",
+          "listingDated": true,
+          "name": "Anki Theme for Omarchy",
+          "preview": {
+            "height": 196,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/13-expri-commits-omarchy-anki-theme-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/Expri-commits/omarchy-anki-theme",
+          "retired": false,
+          "sourceUrl": "https://github.com/Expri-commits/omarchy-anki-theme/releases/tag/v0.1.0",
+          "stars": 0,
+          "tags": [
+            "appearance",
+            "education",
+            "quickshell",
+            "system"
+          ],
+          "verification": "verified",
+          "version": "0.1.0"
+        },
         "io.github.fabean.burrowtime": {
           "absenceCount": 0,
           "addedAt": "2026-08-18T05:02:38Z",
@@ -24160,6 +25364,31 @@
           "verification": "verified",
           "version": "1.0.0"
         },
+        "io.github.joeyvigil.taskbar": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T01:26:18Z",
+          "category": "Widgets",
+          "description": "Pinned app icons in the bar with running-state indicators; pin and unpin from the bar itself",
+          "listingDated": true,
+          "name": "Taskbar",
+          "preview": {
+            "height": 62,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/9-joeyvigil-omarchy-taskbar-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/joeyvigil/omarchy-taskbar",
+          "retired": false,
+          "sourceUrl": "https://github.com/joeyvigil/omarchy-taskbar",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "hyprland",
+            "launcher",
+            "widgets"
+          ],
+          "verification": "verified",
+          "version": "0.3.0"
+        },
         "io.github.jonathanriche.omarchy-blink": {
           "absenceCount": 0,
           "addedAt": "2026-08-28T15:34:25Z",
@@ -24736,6 +25965,31 @@
           ],
           "verification": "verified",
           "version": "1.0.0"
+        },
+        "io.github.jzuijlek.omarchybuds": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:43:26Z",
+          "category": "Hardware",
+          "description": "Galaxy Buds in the Omarchy bar: per-bud and case battery, listening mode and wear state, from the original Buds through Buds 4 Pro.",
+          "listingDated": true,
+          "name": "Galaxy Buds",
+          "preview": {
+            "height": 374,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/8-jzuijlek-omarchy-buds-card.webp",
+            "width": 380
+          },
+          "repository": "https://github.com/jzuijlek/omarchy-buds",
+          "retired": false,
+          "sourceUrl": "https://github.com/jzuijlek/omarchy-buds",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "hardware",
+            "media",
+            "quickshell"
+          ],
+          "verification": "verified",
+          "version": "0.2.0"
         },
         "io.github.kallupx.oma-mullvad": {
           "absenceCount": 0,
@@ -27612,6 +28866,31 @@
           "verification": "verified",
           "version": "0.7.0"
         },
+        "io.github.ollieedgeley.cliamp-visualiser": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T01:24:32Z",
+          "category": "Widgets",
+          "description": "Mirrors Cliamp's live visualisers and colours in the Omarchy bar.",
+          "listingDated": true,
+          "name": "Cliamp Visualiser",
+          "preview": {
+            "height": 363,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/12-ollieedgeley-quickshell-cliamp-visualiser-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/ollieedgeley/quickshell-cliamp-visualiser",
+          "retired": false,
+          "sourceUrl": "https://github.com/ollieedgeley/quickshell-cliamp-visualiser/tree/v1.0.1",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "media",
+            "quickshell",
+            "widgets"
+          ],
+          "verification": "verified",
+          "version": "1.0.1"
+        },
         "io.github.omadeezer": {
           "absenceCount": 0,
           "addedAt": "2026-08-23T13:13:18Z",
@@ -28806,6 +30085,31 @@
           ],
           "verification": "verified",
           "version": "0.2.0"
+        },
+        "io.github.ramous19.copilot-companion": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:45:25Z",
+          "category": "Developer Tools",
+          "description": "GitHub Copilot AI credit usage, burn-rate pace, and per-model statistics in a themed Omarchy bar panel.",
+          "listingDated": true,
+          "name": "Copilot Companion",
+          "preview": {
+            "height": 720,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/8-ramous19-omarchy-copilot-companion-card.webp",
+            "width": 432
+          },
+          "repository": "https://github.com/ramous19/omarchy-copilot-companion",
+          "retired": false,
+          "sourceUrl": "https://github.com/ramous19/omarchy-copilot-companion",
+          "stars": 0,
+          "tags": [
+            "ai",
+            "bar",
+            "developer-tools",
+            "quickshell"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
         },
         "io.github.randazraik.hijri-date": {
           "absenceCount": 0,
@@ -31023,6 +32327,31 @@
           ],
           "verification": "verified",
           "version": "0.3.2"
+        },
+        "io.github.smatheusblu.handwriting": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:53:13Z",
+          "category": "Productivity",
+          "description": "Write with a drawing tablet, recognize with Codex GPT-5.5 Fast or offline OCR, and insert into the focused application.",
+          "listingDated": true,
+          "name": "Handwriting",
+          "preview": {
+            "height": 382,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/11-smatheusblu-omarchy-handwriting-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/smatheusblu/omarchy-handwriting",
+          "retired": false,
+          "sourceUrl": "https://github.com/smatheusblu/omarchy-handwriting/releases/tag/v0.1.0",
+          "stars": 0,
+          "tags": [
+            "ai",
+            "hyprland",
+            "productivity",
+            "quickshell"
+          ],
+          "verification": "verified",
+          "version": "0.1.0"
         },
         "io.github.smillunchick.aether-wallpapers": {
           "absenceCount": 0,
@@ -34420,6 +35749,30 @@
           "verification": "verified",
           "version": "5.0.0"
         },
+        "jampick.ferries": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T01:38:43Z",
+          "category": "Widgets",
+          "description": "Next ferry, the one after it, whether it is late, how many car spaces are left, where the boats are, terminal cameras and route alerts in the Omarchy bar. Washington State Ferries first, other systems drop in as providers.",
+          "listingDated": true,
+          "name": "Ferries",
+          "preview": {
+            "height": 720,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/7-jampick-omarchy-ferries-card.webp",
+            "width": 533
+          },
+          "repository": "https://github.com/jampick/omarchy-ferries",
+          "retired": false,
+          "sourceUrl": "https://github.com/jampick/omarchy-ferries",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "quickshell",
+            "widgets"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
         "jampick.protonvpn": {
           "absenceCount": 0,
           "addedAt": "2026-08-25T17:59:05Z",
@@ -35255,6 +36608,23 @@
             "desktop",
             "hyprland",
             "workspaces"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
+        "joao.kbd-backlight": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:20:35Z",
+          "category": "System",
+          "description": "Enable and manage keyboard backlight on Samsung Galaxy Book laptops (on/off, intensity, ambient auto). Implemented and tested on a Galaxy Book 2 Pro SE.",
+          "listingDated": true,
+          "name": "Samsung Book Keyboard Backlight",
+          "repository": "https://github.com/JoaoVicenteBaptista/omarchy-samsung-keyboard-backlight",
+          "retired": false,
+          "sourceUrl": "https://github.com/JoaoVicenteBaptista/omarchy-samsung-keyboard-backlight",
+          "stars": 0,
+          "tags": [
+            "system"
           ],
           "verification": "verified",
           "version": "1.0.0"
@@ -38199,6 +39569,26 @@
           "verification": "verified",
           "version": "0.3.0"
         },
+        "max.piano": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T01:01:35Z",
+          "category": "Desktop",
+          "description": "A two-octave piano overlay for quickly finding and playing notes while reading music.",
+          "listingDated": true,
+          "name": "Quick Piano",
+          "repository": "https://github.com/JarlMaxi/omarchy-quick-piano",
+          "retired": false,
+          "sourceUrl": "https://github.com/JarlMaxi/omarchy-quick-piano",
+          "stars": 0,
+          "tags": [
+            "desktop",
+            "education",
+            "media",
+            "quickshell"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
         "max.scene": {
           "absenceCount": 0,
           "addedAt": "2026-08-31T01:00:13Z",
@@ -40213,6 +41603,30 @@
           "verification": "unverified",
           "version": "1.0.0"
         },
+        "ninepointlabs.hey-calendar": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:26:05Z",
+          "category": "Productivity",
+          "description": "Native Omarchy calendar — Today, Week, Month and Year views, day detail with events and journal — backed by the HEY CLI.",
+          "listingDated": true,
+          "name": "HEY Calendar",
+          "preview": {
+            "height": 428,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/13-ninepointlabs-omarchy-hey-calendar-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/ninepointlabs/omarchy-hey-calendar",
+          "retired": false,
+          "sourceUrl": "https://github.com/ninepointlabs/omarchy-hey-calendar",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "productivity",
+            "quickshell"
+          ],
+          "verification": "verified",
+          "version": "0.1.0"
+        },
         "nino.tailscale": {
           "absenceCount": 0,
           "addedAt": "2026-08-19T17:07:44Z",
@@ -40955,6 +42369,24 @@
           "verification": "verified",
           "version": "1.6.1"
         },
+        "ogibon.homelab": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T01:30:57Z",
+          "category": "System",
+          "description": "Polls self-hosted services over HTTP/TCP from this machine and shows one colored health dot per service in the bar.",
+          "listingDated": true,
+          "name": "Homelab Status",
+          "repository": "https://github.com/ogrt/omarchy-homelab-status",
+          "retired": false,
+          "sourceUrl": "https://github.com/ogrt/omarchy-homelab-status",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "system"
+          ],
+          "verification": "verified",
+          "version": "0.1.0"
+        },
         "oled.guard": {
           "absenceCount": 0,
           "addedAt": "2026-08-17T04:15:58Z",
@@ -40975,6 +42407,25 @@
             "bar",
             "power-management",
             "quickshell",
+            "system"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
+        "oliverlukschander.vi-mode": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:59:41Z",
+          "category": "System",
+          "description": "System-wide Caps Lock + hjkl arrow keys. Caps Lock itself is disabled.",
+          "listingDated": true,
+          "name": "Vi Mode",
+          "repository": "https://github.com/oliverlukschander/omarchy-vi-mode",
+          "retired": false,
+          "sourceUrl": "https://github.com/oliverlukschander/omarchy-vi-mode",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "hyprland",
             "system"
           ],
           "verification": "verified",
@@ -41887,7 +43338,7 @@
         },
         "omarchy.active-window": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Title of the focused window",
           "listingDated": false,
@@ -41904,7 +43355,7 @@
         },
         "omarchy.agents": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Claude Code, Codex, and Fireworks usage, limits, and pace in a native Omarchy bar panel.",
           "listingDated": false,
@@ -41922,7 +43373,7 @@
         },
         "omarchy.audio": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Volume slider, output picker, per-app mixer",
           "listingDated": false,
@@ -41939,7 +43390,7 @@
         },
         "omarchy.background": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Desktop background renderer with click handling and transitions",
           "listingDated": false,
@@ -41956,7 +43407,7 @@
         },
         "omarchy.bar": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bars",
           "description": "Status bar with widgets",
           "listingDated": false,
@@ -41973,7 +43424,7 @@
         },
         "omarchy.battery": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Low battery warning service",
           "listingDated": false,
@@ -41990,7 +43441,7 @@
         },
         "omarchy.bluetooth": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Bluetooth device list with connect/disconnect",
           "listingDated": false,
@@ -42007,7 +43458,7 @@
         },
         "omarchy.clipboard": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Overlays",
           "description": "A clipboard manager to view and paste history",
           "listingDated": false,
@@ -42024,7 +43475,7 @@
         },
         "omarchy.clock": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Date/time label with a calendar popup",
           "listingDated": false,
@@ -42041,7 +43492,7 @@
         },
         "omarchy.disk-speedtest": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Panels",
           "description": "Live disk write and read speed dials. Summon with: omarchy-shell shell summon omarchy.disk-speedtest",
           "listingDated": false,
@@ -42058,7 +43509,7 @@
         },
         "omarchy.dropbox": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Dropbox status, storage usage, login, and recent synced files in the Omarchy bar.",
           "listingDated": false,
@@ -42075,7 +43526,7 @@
         },
         "omarchy.emojis": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Overlays",
           "description": "Search, copy, and type emojis",
           "listingDated": false,
@@ -42092,7 +43543,7 @@
         },
         "omarchy.idle": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Quickshell-based idle detection for screensaver, lock, and display wake.",
           "listingDated": false,
@@ -42109,7 +43560,7 @@
         },
         "omarchy.image-picker": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Overlays",
           "description": "Image-grid selector overlay used for wallpapers, themes, and any other directory of images",
           "listingDated": false,
@@ -42126,7 +43577,7 @@
         },
         "omarchy.indicators": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Manual state indicators",
           "listingDated": false,
@@ -42143,7 +43594,7 @@
         },
         "omarchy.keyboard-layout": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Current xkb layout, click cycles",
           "listingDated": false,
@@ -42160,7 +43611,7 @@
         },
         "omarchy.lock": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Quickshell session lock with separate password and fingerprint PAM flows.",
           "listingDated": false,
@@ -42177,7 +43628,7 @@
         },
         "omarchy.media": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "MPRIS media control service",
           "listingDated": false,
@@ -42195,7 +43646,7 @@
         },
         "omarchy.menu": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Menus",
           "description": "Quickshell-powered Omarchy command menu",
           "listingDated": false,
@@ -42213,7 +43664,7 @@
         },
         "omarchy.microphone": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Mic input state and mute toggle",
           "listingDated": false,
@@ -42230,7 +43681,7 @@
         },
         "omarchy.monitor": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Brightness slider and laptop display controls",
           "listingDated": false,
@@ -42247,7 +43698,7 @@
         },
         "omarchy.network": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Wi-Fi list and connection state",
           "listingDated": false,
@@ -42264,7 +43715,7 @@
         },
         "omarchy.nightlight": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Owns the hyprsunset night light temperature for the bar indicator and CLI.",
           "listingDated": false,
@@ -42281,7 +43732,7 @@
         },
         "omarchy.notifications": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Notification daemon, popups, DND, and history",
           "listingDated": false,
@@ -42298,7 +43749,7 @@
         },
         "omarchy.osd": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Panels",
           "description": "Quickshell volume, brightness, and status overlays.",
           "listingDated": false,
@@ -42315,7 +43766,7 @@
         },
         "omarchy.polkit": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Services",
           "description": "Theme-aware authentication dialog for privileged actions.",
           "listingDated": false,
@@ -42333,7 +43784,7 @@
         },
         "omarchy.power": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Battery, power profile, and system stats",
           "listingDated": false,
@@ -42350,7 +43801,7 @@
         },
         "omarchy.reminders": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Overlays",
           "description": "Interactive reminder setup flow",
           "listingDated": false,
@@ -42367,7 +43818,7 @@
         },
         "omarchy.spacer": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Configurable blank space",
           "listingDated": false,
@@ -42384,7 +43835,7 @@
         },
         "omarchy.speedtest": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Panels",
           "description": "Internet speed test with download and upload dials",
           "listingDated": false,
@@ -42401,7 +43852,7 @@
         },
         "omarchy.system-update": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Indicates available Omarchy updates",
           "listingDated": false,
@@ -42418,7 +43869,7 @@
         },
         "omarchy.tailscale": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Tailscale status, connection switching, machine browsing, and quick copy actions in the Omarchy bar.",
           "listingDated": false,
@@ -42435,7 +43886,7 @@
         },
         "omarchy.tray": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Status notifier items",
           "listingDated": false,
@@ -42452,7 +43903,7 @@
         },
         "omarchy.weather": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Weather pill with detail popup",
           "listingDated": false,
@@ -42469,7 +43920,7 @@
         },
         "omarchy.wifiqr": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Panels",
           "description": "Share the connected Wi-Fi network as a scannable QR code",
           "listingDated": false,
@@ -42486,7 +43937,7 @@
         },
         "omarchy.workspaces": {
           "absenceCount": 0,
-          "addedAt": "2026-09-01T00:12:54Z",
+          "addedAt": "2026-09-01T01:38:43Z",
           "category": "Bar widgets",
           "description": "Workspace number indicators",
           "listingDated": false,
@@ -43658,6 +45109,31 @@
           "verification": "unverified",
           "version": "1.0.0"
         },
+        "pmpinto.any-workspace": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:47:17Z",
+          "category": "Productivity",
+          "description": "Visual prompt to go to or move a window to any numbered workspace",
+          "listingDated": true,
+          "name": "Any Workspace",
+          "preview": {
+            "height": 487,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/7-pmpinto-omarchy-any-workspace-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/pmpinto/omarchy-any-workspace",
+          "retired": false,
+          "sourceUrl": "https://github.com/pmpinto/omarchy-any-workspace",
+          "stars": 0,
+          "tags": [
+            "hyprland",
+            "productivity",
+            "system",
+            "workspaces"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
         "pnkm0nk.omodoro": {
           "absenceCount": 0,
           "addedAt": "2026-08-19T22:38:42Z",
@@ -44620,6 +46096,25 @@
             "bar",
             "power-management",
             "quickshell",
+            "system"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
+        "remi.reload": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:49:11Z",
+          "category": "Developer Tools",
+          "description": "One bar icon that restarts the Omarchy shell. For plugin tinkerers who reload constantly.",
+          "listingDated": true,
+          "name": "Reload",
+          "repository": "https://github.com/remigius-labs/omarchy-reload",
+          "retired": false,
+          "sourceUrl": "https://github.com/remigius-labs/omarchy-reload",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "developer-tools",
             "system"
           ],
           "verification": "verified",
@@ -46116,6 +47611,26 @@
           "verification": "verified",
           "version": "1.0.0"
         },
+        "selmant.local-workspaces": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:18:24Z",
+          "category": "Widgets",
+          "description": "Niri-style compact, per-monitor workspaces for Hyprland.",
+          "listingDated": true,
+          "name": "Local Workspaces",
+          "repository": "https://github.com/selmant/omarchy-local-workspaces",
+          "retired": false,
+          "sourceUrl": "https://github.com/selmant/omarchy-local-workspaces",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "hyprland",
+            "widgets",
+            "workspaces"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
+        },
         "sergiotapia.omarchy-timezone-bar": {
           "absenceCount": 0,
           "addedAt": "2026-08-31T12:21:57Z",
@@ -46938,6 +48453,29 @@
           ],
           "verification": "unverified",
           "version": "0.3.1"
+        },
+        "slatermoore.pixel-whale": {
+          "absenceCount": 0,
+          "addedAt": "2026-09-01T00:51:18Z",
+          "category": "Widgets",
+          "description": "A tiny pixel whale swims back and forth in its own bar lane, chasing something smaller. Click it to switch species.",
+          "listingDated": true,
+          "name": "Pixel Whale",
+          "preview": {
+            "height": 15,
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/11-slatermoore-omarchy-pixel-whale-card.webp",
+            "width": 720
+          },
+          "repository": "https://github.com/SlaterMoore/omarchy-pixel-whale",
+          "retired": false,
+          "sourceUrl": "https://github.com/SlaterMoore/omarchy-pixel-whale",
+          "stars": 0,
+          "tags": [
+            "bar",
+            "widgets"
+          ],
+          "verification": "verified",
+          "version": "1.0.0"
         },
         "slcode777.omaconv": {
           "absenceCount": 0,
@@ -51777,7 +53315,7 @@
       }
     },
     "marketplace-engagement": {
-      "pluginCount": 2052,
+      "pluginCount": 2069,
       "schemaVersion": 1
     },
     "omarchy-releases": {
