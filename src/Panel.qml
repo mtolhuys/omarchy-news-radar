@@ -278,18 +278,15 @@ Item {
     closingFromHost = false
     if (opened && panelWindow.visible) {
       panelWindow.visible = true
-      panelWindow.requestActivate()
       windowIntegrationStatus = "waiting"
       startProcess(windowProc, ["activate-window"])
       Qt.callLater(function() {
-        panelWindow.requestActivate()
         navigationFocus.forceActiveFocus()
       })
       return
     }
     opened = true
     panelWindow.visible = true
-    panelWindow.requestActivate()
     windowIntegrationStatus = "waiting"
     startProcess(windowProc, ["activate-window"])
     feedStatus = "Loading cache"
@@ -333,8 +330,8 @@ Item {
   }
 
   function dismiss() {
+    root.close()
     if (shell && typeof shell.hide === "function") shell.hide(pluginId)
-    close()
   }
 
   function handleEscape() {

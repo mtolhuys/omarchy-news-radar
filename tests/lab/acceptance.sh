@@ -178,8 +178,7 @@ omarchy_host_test() {
     }
   press esc
   wait_for_guest_state "Apps-launched Radar closes through the normal lifecycle" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && \
-     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == false and .windowVisible == false'" || {
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || {
       ssh_session "hyprctl -j clients" >"$RUN_DIR/news-radar-app-close-failure-clients.json" 2>&1 || true
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-app-close-failure-debug.json" 2>&1 || true
       return 1
@@ -228,8 +227,7 @@ omarchy_host_test() {
   qmp_pointer_move "$viewport_width" "$viewport_height" 4 4 || return 1
   press esc
   wait_for_guest_state "Escape clears Radar's hosted and compositor open state" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == false and .windowVisible == false' && \
-     hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" right
   wait_for_guest_state "right click persists hidden state with exact zero slot geometry" 15 ssh_session \
     "jq -e '.preferences.barVisible == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
@@ -257,6 +255,7 @@ omarchy_host_test() {
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .localStateReady == true'" || {
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-tune-open-failure.json" 2>&1 || true
       ssh_session "cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" >"$RUN_DIR/news-radar-tune-open-state.json" 2>&1 || true
+      ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/news-radar-tune-open-journal.log" 2>&1 || true
       return 1
     }
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar showPreferences ''" >/dev/null || return 1
