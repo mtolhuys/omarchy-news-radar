@@ -57,7 +57,11 @@ class WindowIntegrationTests(unittest.TestCase):
             runner.commands[-2],
         )
         self.assertEqual(
-            ["hyprctl", "dispatch", "focuswindow", "address:0xA02f"],
+            [
+                "hyprctl",
+                "dispatch",
+                'hl.dsp.focus({ window = "address:0xA02f" })',
+            ],
             runner.commands[-1],
         )
 
@@ -118,7 +122,15 @@ class WindowIntegrationTests(unittest.TestCase):
         self.assertEqual(("focused", "focused"), (first["outcome"], second["outcome"]))
         self.assertEqual(
             2,
-            sum(command[:3] == ["hyprctl", "dispatch", "focuswindow"] for command in runner.commands),
+            sum(
+                command
+                == [
+                    "hyprctl",
+                    "dispatch",
+                    'hl.dsp.focus({ window = "address:0x77" })',
+                ]
+                for command in runner.commands
+            ),
         )
 
 

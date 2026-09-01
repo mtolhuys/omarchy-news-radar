@@ -85,7 +85,8 @@ def activate_window(
                 _run(["hyprctl", "dispatch", lua_action], runner=runner)
             except RadarError:
                 _run(["hyprctl", "dispatch", "togglefloating", f"address:{address}"], runner=runner)
-        _run(["hyprctl", "dispatch", "focuswindow", f"address:{address}"], runner=runner)
+        focus_action = 'hl.dsp.focus({ window = "address:' + address + '" })'
+        _run(["hyprctl", "dispatch", focus_action], runner=runner)
         return {
             "protocolVersion": 1,
             "status": "ok",
