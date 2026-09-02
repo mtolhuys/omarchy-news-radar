@@ -227,9 +227,15 @@ def validate_manifest() -> None:
 
 
 def validate_workflows() -> None:
-    workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))
+    workflows_dir = ROOT / ".github" / "workflows"
+    workflows = list(workflows_dir.glob("*.yml"))
     if not workflows:
         fail("GitHub Actions workflows are missing")
+    if (workflows_dir / "publication.yml").exists():
+        fail("publication.yml must remain removed; Forge Laravel owns live publication")
+    test_workflow = workflows_dir / "test.yml"
+    if not test_workflow.is_file():
+        fail("test.yml workflow is missing")
     for workflow in workflows:
         text = workflow.read_text(encoding="utf-8")
         for reference in re.findall(r"(?m)^\s*uses:\s*([^\s#]+)", text):
@@ -237,20 +243,6 @@ def validate_workflows() -> None:
                 fail(f"workflow action is not pinned to an immutable SHA: {reference}")
         if "contents: write" in text:
             fail(f"workflow requests repository write permission: {workflow.name}")
-    publish = (ROOT / ".github" / "workflows" / "publication.yml").read_text(encoding="utf-8")
-    for required in (
-        "actions: read",
-        "audit-marketplace-additions",
-        "contents: read",
-        "pages: write",
-        "id-token: write",
-        "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
-        "state/source-snapshot.json",
-    ):
-        if required not in publish:
-            fail(f"publish workflow lacks required least-privilege/state contract: {required}")
-    if any(f'cron: "{minute} * * * *"' not in publish for minute in (8, 23, 38, 53)):
-        fail("publish workflow lacks the four-times-hourly off-peak recovery schedule")
 
 
 def optional_tools() -> list[str]:

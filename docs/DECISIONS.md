@@ -258,6 +258,8 @@
 
 ## D033 — Treat publication as best effort and expose its real age
 
+**Superseded (publisher):** Live publishing moved to Forge Laravel `news-radar:publish` every 10 minutes at `https://mtolhuijs.nl/news-radar/events.json`; GitHub Pages/Actions publication is retired. Stale-after-90-minutes and distinct timestamp facts still apply.
+
 **Decision:** Keep the bounded static GitHub Pages architecture, request workflow schedules at minutes 8, 23, 38, and 53, retain manual dispatch for recovery, and define publication as stale only when artifact `publishedAt` is more than 90 minutes old. Record and present source `checkedAt`, collection `generatedAt`, artifact `publishedAt`, the documented Pages cache window, and local cache time as different facts.
 
 **Why:** On 1 September 2026 GitHub stopped delivering the hourly schedule after 13:31 UTC while two manual runs succeeded. Collection, validation, and Pages deployment were healthy when invoked; the single best-effort trigger was the unreliable link. GitHub documents that scheduled runs may be delayed or dropped under load and recommends avoiding high-load hour boundaries. More off-peak opportunities provide recovery without another account, secret, service, or server, but cannot create a guarantee.
@@ -323,6 +325,8 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Consequence:** Reverse navigation never selects a clipped or invisible story. Held Up produces monotonic selection and one-row viewport steps, while single Up presses within the visible block do not move the viewport. Disposable-lab acceptance holds the physical Up key through QMP, samples geometry throughout the repeat interval, and requires every sampled selected row to remain fully visible.
 
 ## D041 — Advance source state from the latest successful deployment
+
+**Superseded (publisher):** Continuity now advances in Forge Laravel storage between `news-radar:publish` runs rather than Actions/Pages deployment artifacts.
 
 **Decision:** Every scheduled or manually dispatched publication restores the exact validated source snapshot artifact from the latest successfully completed publication run before collection. The next snapshot is uploaded under the current run ID and becomes authoritative only if the whole build and Pages deployment succeed. Repository contents remain read-only. Missing, expired, malformed, or unsupported continuity stops publication. `make local-latest` independently selects and advances a private validated source snapshot only after its matching edition imports successfully.
 

@@ -32,10 +32,10 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Source adapters are bounded, allowlisted, deterministic, and fixture-tested.
 - Every plugin-event summary uses the current validated marketplace description when available; description changes enrich existing events without creating or reordering them.
 - Source failure preserves prior state and cannot create mass retirement.
-- Four off-peak best-effort schedule opportunities are configured each hour, workflow concurrency does not cancel an active publication, and two consecutive post-merge `event=schedule` runs prove the live trigger path.
-- Every build restores the exact source-state artifact from the latest successfully deployed run with read-only Actions access; missing or invalid continuity fails closed, event first-observation timestamps are immutable, and the tracked v2 transition seed is accepted only while fresh.
+- Forge Laravel `news-radar:publish` is scheduled every 10 minutes without overlapping; live feed is `https://mtolhuijs.nl/news-radar/events.json`. GitHub Actions publication and Pages are retired.
+- Every publish restores continuity state from Laravel storage (tracked transition seed only on first run); missing or invalid continuity fails closed, event first-observation timestamps are immutable, and the tracked v2 transition seed is accepted only while fresh.
 - Front Page selects the newest official release once, then current plugin/community activity; it never fills an artificial Core quota with older releases.
-- Feed metadata and internal client state separately identify source check, collection, artifact publication, Pages/CDN propagation allowance, and local cache time. Normal successful reading exposes none of that pipeline telemetry as content.
+- Feed metadata and internal client state separately identify source check, collection, artifact publication, and local cache time. Normal successful reading exposes none of that pipeline telemetry as content.
 - JSON, RSS, HTML, archive, and snapshot validate and are byte-stable under a fixed clock.
 - Generated HTML/XML escapes hostile content and the site uses a restrictive static security policy.
 - Live feed size, event count, archive policy, and source-health metadata match the documented contract.
@@ -71,7 +71,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Workflow actions are pinned and permissions are least privilege.
 - README, changelog, manifest, UI version, feed schema, screenshots, release notes, and evidence agree.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
-- No push, tag, GitHub Pages enablement, release, marketplace submission, domain change, or external announcement occurs without owner authorization.
+- No push, tag, release, marketplace submission, domain change, or external announcement occurs without owner authorization. GitHub Pages is not the live publication path.
 
 ## Removal contract
 
@@ -86,17 +86,16 @@ Normal plugin removal does not delete local state or run repository cleanup hook
 
 ## Owner-authorized publication procedure
 
-The owner explicitly authorized this procedure on 2026-09-01. It remains the required sequence for this release and any reproduction of it:
+Live publication is owned by Forge Laravel on the maintainer host. GitHub Actions `publication.yml` and GitHub Pages are retired as the publication path. The feed clients fetch is always `https://mtolhuijs.nl/news-radar/events.json`.
 
-1. Push the reviewed clean candidate commit to the existing public repository at `https://github.com/mtolhuys/omarchy-news-radar` and confirm Pages still uses GitHub Actions. Do not create the release or update the marketplace snapshot yet.
-2. Run the `Build and publish static edition` workflow manually with `bootstrap_marketplace` disabled. The one-time v1-to-v2 path must download the latest successful v1 artifact, reject its contaminated discovery ledger, and use the committed v2 transition baseline only while that marketplace state is no more than six hours old. Its restored-to-successor audit must report equal new and represented plugin counts. Confirm the published JSON, RSS, HTML, mirrored images, archive, build digest, source health, collection time, publication time, and v2 source-state artifact at the fixed Pages origin.
-3. Run the workflow a second time without changing the repository. It must select the prior successful run ID, restore that exact v2 artifact, publish no repeated event ID with a changed occurrence/discovery time, and upload the next state under its own run ID. Do not commit routine scheduled snapshots to the source branch.
-4. Wait for two consecutive genuine `event=schedule` workflow runs on the merged four-times-hourly schedule. Both must pass build and deploy. After Pages/CDN propagation, verify `events.json`, RSS, HTML, build metadata, all source states/timestamps, event count, newest event, image count, schema, artifact SHA-256, and that public `publishedAt` matches the deployed build. A manual run does not satisfy this trigger proof.
-5. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
-6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.2.2` tag and release.
-7. Use the marketplace's **Plugin verification** form with **Verify and publish a newer upstream commit**, the exact plugin ID, repository root URL, and full 40-character release SHA. The existing snapshot remains live while compatibility validation, the Automated Security Baseline, maintainer approval, testing, and deployment remain maintainer-controlled. Do not represent issue creation as promotion or as a security audit.
+1. Push the reviewed clean candidate commit to the existing public repository at `https://github.com/mtolhuys/omarchy-news-radar`. Ensure Forge's `NEWS_RADAR_PATH` checkout can fast-forward or pull that commit before the next publish. Do not create the release or update the marketplace snapshot yet.
+2. Confirm Laravel schedule lists only `news-radar:publish` (every 10 minutes, without overlapping). Optionally run `php artisan news-radar:publish -v` once on the Forge host and verify the public JSON, RSS, HTML, mirrored images, build digest, source health, collection time, and `publishedAt` at `https://mtolhuijs.nl/news-radar/`.
+3. Wait for at least one successful scheduled Forge publish after the candidate is on the host checkout. Confirm continuity advanced in Laravel storage (no replay of the committed baseline as fresh news) and that public `publishedAt` matches the deployed build.
+4. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
+5. Review the release checklist and evidence record against that exact commit. Only then create the release tag.
+6. Use the marketplace's **Plugin verification** form with **Verify and publish a newer upstream commit**, the exact plugin ID, repository root URL, and full 40-character release SHA. The existing snapshot remains live while compatibility validation, the Automated Security Baseline, maintainer approval, testing, and deployment remain maintainer-controlled. Do not represent issue creation as promotion or as a security audit.
 
-The workflow intentionally has no repository write permission. Normal snapshot advancement is a validated handoff between successful deployment artifacts. The tracked snapshot is only a reviewed transition/recovery seed; using it again requires a new explicit schema transition and fresh source audit rather than a silent fallback. If scheduled activity exceeds 45 minutes, publication age exceeds 90 minutes, Pages remains behind a successful deployment for more than its documented ten-minute propagation window, a source check lags publication materially, or continuity restoration fails, recovery is to inspect the exact prior run/artifact and restore that chain before dispatching again. Never bypass continuity by replaying an old repository snapshot.
+Normal snapshot advancement is a validated handoff in Laravel storage between successful Forge publishes. The tracked repository snapshot is only a reviewed transition/recovery seed; using it again requires a new explicit schema transition and fresh source audit rather than a silent fallback. If publication age exceeds 90 minutes, a source check lags publication materially, or continuity restoration fails, recover by inspecting the prior storage snapshot and restoring that chain before the next publish. Never bypass continuity by replaying an old repository snapshot.
 
 ## Evidence record template
 

@@ -34,19 +34,13 @@ class ReleaseContractTests(unittest.TestCase):
             (ROOT / "src" / "Panel.qml").read_text(encoding="utf-8"),
         )
 
-    def test_schedule_has_four_off_peak_recovery_opportunities_per_hour(self) -> None:
-        workflow = (ROOT / ".github/workflows/publication.yml").read_text(encoding="utf-8")
-        for minute in (8, 23, 38, 53):
-            self.assertIn(f'cron: "{minute} * * * *"', workflow)
-        self.assertNotIn('cron: "8,23,38,53 * * * *"', workflow)
-        self.assertNotIn('cron: "17 * * * *"', workflow)
-        self.assertIn("actions: read", workflow)
-        self.assertIn("actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093", workflow)
-        self.assertIn("--status success", workflow)
-        self.assertIn("news-radar-source-snapshot-${{ steps.previous_state.outputs.run_id }}", workflow)
-        self.assertIn("refusing to replay the committed baseline", workflow)
-        self.assertIn("audit-marketplace-additions", workflow)
-        self.assertIn("Prove every new marketplace plugin became news", workflow)
+    def test_forge_owns_publication_not_github_actions(self) -> None:
+        workflows = ROOT / ".github/workflows"
+        self.assertFalse((workflows / "publication.yml").exists())
+        self.assertTrue((workflows / "test.yml").is_file())
+        constants = (ROOT / "radar" / "constants.py").read_text(encoding="utf-8")
+        self.assertIn('FEED_URL = "https://mtolhuijs.nl/news-radar/events.json"', constants)
+        self.assertIn('FEED_ORIGIN = "https://mtolhuijs.nl"', constants)
 
     def test_every_public_launcher_uses_summon_activation(self) -> None:
         command = "omarchy-shell shell summon io.github.mtolhuys.news-radar"

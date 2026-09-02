@@ -1,5 +1,8 @@
 # Dated contract research
 
+
+> **Publisher note (2026-09-02):** Live feed publication is now Forge Laravel `news-radar:publish` every 10 minutes at `https://mtolhuijs.nl/news-radar/events.json`. Historical Actions/Pages schedule findings below are retained as research context only.
+
 This document records the environment audited while writing the initial specification. It is evidence for current decisions, not a permanent upstream guarantee. Revalidate each unstable fact before implementation and public release.
 
 ## Audit date

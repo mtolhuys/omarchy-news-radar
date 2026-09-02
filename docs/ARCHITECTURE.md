@@ -3,8 +3,8 @@
 ## System overview
 
 ```text
-GitHub Actions
-  └─ Python collector
+Forge Laravel (news-radar:publish every 10 minutes)
+  └─ Python collector on maintainer host
        ├─ Omarchy release adapter
        ├─ marketplace catalog adapter
        ├─ marketplace engagement adapter
@@ -13,7 +13,7 @@ GitHub Actions
        └─ bounded feed + RSS + static-site build
                         │
                         ▼
-              GitHub Pages over HTTPS
+     https://mtolhuijs.nl/news-radar/events.json
                         │
                         ▼
 Omarchy shell
@@ -27,9 +27,9 @@ Omarchy shell
        └─ explicit HTTPS source opening
 ```
 
-The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API. The visible bar widget owns one due-checked refresh timer inside the existing shell process.
+The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. Live collect → build → serve is owned by Forge Laravel on the maintainer host; the plugin remains a read-only HTTPS client with no application server, database, account service, background daemon, or bidirectional client API of its own. The visible bar widget owns one due-checked refresh timer inside the existing shell process. GitHub Pages is no longer the publication path (optional legacy only).
 
-The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images. Only after that complete import succeeds does it advance the private source baseline. A matching bounded marker makes the client project those assets as local file URLs. **Check for updates** still fetches the fixed Pages feed: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images. Only after that complete import succeeds does it advance the private source baseline. A matching bounded marker makes the client project those assets as local file URLs. **Check for updates** still fetches the fixed live feed at `https://mtolhuijs.nl/news-radar/events.json`: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
 
 ## Target repository layout
 
@@ -97,11 +97,10 @@ omarchy-news-radar/
 │   ├── integration/
 │   └── lab/
 └── .github/workflows/
-    ├── test.yml
-    └── publication.yml
+    └── test.yml
 ```
 
-Generated deployment output belongs in `dist/` and stays untracked. The tracked source snapshot is a reviewed transition/recovery seed. Normal scheduled continuity comes from the validated snapshot artifact attached to the latest successfully deployed workflow run, and the next snapshot is attached to the new run. Snapshot contents are public normalized source facts only, never tokens, response headers containing secrets, or deployment evidence.
+Generated deployment output belongs in `dist/` and stays untracked. The tracked source snapshot is a reviewed transition/recovery seed. Normal scheduled continuity comes from Laravel storage on the Forge host between `news-radar:publish` runs. Snapshot contents are public normalized source facts only, never tokens, response headers containing secrets, or deployment evidence.
 
 ## Plugin contract
 
@@ -211,14 +210,14 @@ A partial source outage may produce a feed with explicit source-health metadata,
 
 Event identity also protects occurrence history. If a lagging source state rediscovers an event whose deterministic ID already exists in the retained ledger, its original `occurredAt` and `discoveredAt` remain authoritative; only explicitly supported description and metric enrichment may refresh.
 
-The publication workflow retains the restored snapshot separately through collection, then runs `audit-marketplace-additions` against the successor. The gate requires nondecreasing catalog generation time and a `plugin-added` event for every newly appearing canonical plugin ID before either publication artifact is uploaded.
+Each Forge publish retains the restored snapshot separately through collection, then runs `audit-marketplace-additions` against the successor. The gate requires nondecreasing catalog generation time and a `plugin-added` event for every newly appearing canonical plugin ID before the public tree is swapped into place.
 
 ## Static publication
 
-GitHub Actions runs tests first, then builds an immutable deployment artifact containing at least:
+Forge Laravel `news-radar:publish` (every 10 minutes, without overlapping) collects and builds an immutable edition tree containing at least:
 
 ```text
-dist/
+dist/  (then served under /news-radar/)
 ├── index.html
 ├── events.json
 ├── feed.xml
@@ -227,11 +226,13 @@ dist/
 └── archive/
 ```
 
+Live feed URL: `https://mtolhuijs.nl/news-radar/events.json`. GitHub Actions `test.yml` still CI-tests the repository; `publication.yml` and GitHub Pages are retired as the publication path.
+
 The site contains no runtime framework, cookies, analytics, user input, service worker, external font, or client-side content fetch required for the initial page. Publisher output must escape every remote string for its destination context and use a strict Content Security Policy compatible with a static site.
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 
-The workflow requests four best-effort schedules per hour at minutes 8, 23, 38, and 53. These offsets avoid the top-of-hour load peak and provide recovery opportunities after a delayed or dropped invocation; they are not a delivery guarantee. Workflow concurrency does not cancel an in-progress publication. Before collection, the build uses read-only Actions access to select the latest successful workflow run, downloads that run's exact source-state artifact, and validates it before replacement. Missing or invalid state stops the build rather than replaying a stale repository seed. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. GitHub Pages/CDN propagation may add up to ten minutes after deployment. Publication and cache timing remain available to validation, debug state, the bounded bar-health model, and external monitoring; they do not occupy the normal reader while validated news is available.
+Before collection, publish restores continuity state from Laravel storage (or a tracked transition seed on first run) and validates it before replacement. Missing or invalid state stops the build rather than replaying a stale repository seed. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. Publication and cache timing remain available to validation, debug state, the bounded bar-health model, and external monitoring; they do not occupy the normal reader while validated news is available.
 
 ## Installed-plugin relevance
 
