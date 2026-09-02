@@ -70,6 +70,7 @@ Item {
   property int pendingViewportAnchorIndex: -1
   property real pendingViewportAnchorTop: 0
   property int pendingViewportRevision: -1
+  property int pendingViewportAttempts: 0
   property bool localStateReady: false
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
@@ -251,6 +252,11 @@ Item {
         available: false,
         fullyVisible: false,
         topAligned: false,
+        viewportHeight: storyList.height,
+        contentY: storyList.contentY,
+        contentHeight: storyList.contentHeight,
+        listCount: storyList.count,
+        anchorIndex: storyViewportAnchorIndex,
         scrolling: storyScrollAnimation.running
       })
     }
@@ -545,6 +551,7 @@ Item {
     pendingViewportAnchorIndex = anchorIndex
     pendingViewportAnchorTop = anchorTop
     pendingViewportRevision = revision
+    pendingViewportAttempts = 12
     Qt.callLater(root.applyPendingViewportPreservation)
   }
 
@@ -552,12 +559,19 @@ Item {
     if (!pendingViewportPreservation) return
     if (pendingViewportRevision !== storyViewportRevision) {
       pendingViewportPreservation = false
+      pendingViewportAttempts = 0
       return
     }
     if (storyScrollAnimation.running) return
     var targetContentY = pendingViewportContentY
     var anchorRow = pendingViewportAnchorIndex >= 0
       ? storyList.itemAtIndex(pendingViewportAnchorIndex) : null
+    if (pendingViewportAnchorIndex >= 0 && !anchorRow && pendingViewportAttempts > 0) {
+      pendingViewportAttempts--
+      storyList.positionViewAtIndex(pendingViewportAnchorIndex, ListView.Beginning)
+      Qt.callLater(root.applyPendingViewportPreservation)
+      return
+    }
     if (anchorRow) targetContentY = anchorRow.y - pendingViewportAnchorTop
     var maximumContentY = storyList.originY
       + Math.max(0, storyList.contentHeight - storyList.height)
@@ -566,6 +580,7 @@ Item {
       Math.min(targetContentY, maximumContentY)
     )
     pendingViewportPreservation = false
+    pendingViewportAttempts = 0
   }
 
   function storyIndexById(eventId) {
