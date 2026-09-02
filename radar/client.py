@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlencode, urljoin, urlsplit
 
-from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION
+from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary
 from .freshness import edition_timing, update_message
@@ -618,13 +618,18 @@ def projection_model(
         item["isUnread"] = not event_is_read(state, item)
         item["isSaved"] = item["id"] in saved_ids
         image = item.get("image")
-        if state["preferences"]["imagesVisible"] and isinstance(image, dict) and "path" in image:
-            if local is not None:
-                cached_url = local_image_url(str(image["path"]), env)
-                if cached_url:
-                    item["imageUrl"] = cached_url
-            else:
-                item["imageUrl"] = urljoin(image_base, image["path"])
+        if state["preferences"]["imagesVisible"] and isinstance(image, dict):
+            source_url = image.get("sourceUrl")
+            if isinstance(source_url, str) and source_url.startswith(MARKETPLACE_IMAGE_ORIGIN + "/"):
+                item["imageUrl"] = source_url
+            elif "path" in image:
+                # Legacy mirrored editions / local private caches.
+                if local is not None:
+                    cached_url = local_image_url(str(image["path"]), env)
+                    if cached_url:
+                        item["imageUrl"] = cached_url
+                else:
+                    item["imageUrl"] = urljoin(image_base, image["path"])
         entity = item.get("entity")
         if isinstance(entity, dict) and entity.get("kind") == "plugin":
             item["marketplaceUrl"] = validate_https_url(

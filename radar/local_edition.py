@@ -90,6 +90,11 @@ def import_local_edition(
         image = event.get("image")
         if not isinstance(image, dict):
             continue
+        source_url = image.get("sourceUrl")
+        if isinstance(source_url, str):
+            # Pass-through marketplace previews: no private raster copy required.
+            imported_images.append(source_url)
+            continue
         relative = str(image["path"])
         source = root / relative
         refuse_symlink(source.parent.parent)

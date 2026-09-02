@@ -67,7 +67,8 @@ class PublisherTests(unittest.TestCase):
                 (destination / "BUILD-INFO.txt").read_text(encoding="utf-8"),
             )
 
-    def test_allowlisted_images_are_mirrored_and_unsafe_media_is_omitted(self) -> None:
+
+    def test_allowlisted_images_pass_through_and_unsafe_media_is_omitted(self) -> None:
         png = base64.b64decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
         )
@@ -89,9 +90,16 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(1, result["images"])
             published = json.loads((destination / "events.json").read_text(encoding="utf-8"))
             image = published["events"][0]["image"]
-            self.assertTrue(image["path"].startswith("assets/images/"))
-            self.assertTrue((destination / image["path"]).is_file())
-            self.assertIn('<img src="assets/images/', (destination / "index.html").read_text(encoding="utf-8"))
+            self.assertEqual(
+                "https://plugins.omarchy.org/assets/img/plugins/fixture.png",
+                image["sourceUrl"],
+            )
+            self.assertNotIn("path", image)
+            self.assertFalse((destination / "assets" / "images").exists())
+            self.assertIn(
+                '<img src="https://plugins.omarchy.org/assets/img/plugins/fixture.png"',
+                (destination / "index.html").read_text(encoding="utf-8"),
+            )
 
             rejected = publish(
                 feed,
@@ -102,6 +110,7 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(1, len(rejected["imageFailures"]))
             public = json.loads((destination / "events.json").read_text(encoding="utf-8"))
             self.assertNotIn("image", public["events"][0])
+
 
     def test_raster_inspector_rejects_truncated_jpeg_and_animated_webp(self) -> None:
         with self.assertRaisesRegex(ValidationError, "JPEG ending"):

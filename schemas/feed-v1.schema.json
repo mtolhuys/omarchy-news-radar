@@ -172,18 +172,35 @@
         },
         "image": {
           "additionalProperties": false,
-          "properties": {
-            "alt": { "maxLength": 180, "minLength": 1, "type": "string" },
-            "credit": { "maxLength": 120, "minLength": 1, "type": "string" },
-            "height": { "maximum": 4096, "minimum": 1, "type": "integer" },
-            "path": {
-              "pattern": "^assets/images/[0-9a-f]{64}\\.(jpg|png|webp)$",
-              "type": "string"
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "alt": { "maxLength": 180, "minLength": 1, "type": "string" },
+                "credit": { "maxLength": 120, "minLength": 1, "type": "string" },
+                "height": { "maximum": 4096, "minimum": 1, "type": "integer" },
+                "sourceUrl": { "$ref": "#/$defs/httpsUrl" },
+                "width": { "maximum": 4096, "minimum": 1, "type": "integer" }
+              },
+              "required": ["sourceUrl", "alt", "credit", "width", "height"],
+              "type": "object"
             },
-            "width": { "maximum": 4096, "minimum": 1, "type": "integer" }
-          },
-          "required": ["path", "alt", "credit", "width", "height"],
-          "type": "object"
+            {
+              "additionalProperties": false,
+              "properties": {
+                "alt": { "maxLength": 180, "minLength": 1, "type": "string" },
+                "credit": { "maxLength": 120, "minLength": 1, "type": "string" },
+                "height": { "maximum": 4096, "minimum": 1, "type": "integer" },
+                "path": {
+                  "pattern": "^assets/images/[0-9a-f]{64}\\.(jpg|png|webp)$",
+                  "type": "string"
+                },
+                "width": { "maximum": 4096, "minimum": 1, "type": "integer" }
+              },
+              "required": ["path", "alt", "credit", "width", "height"],
+              "type": "object"
+            }
+          ]
         },
         "occurredAt": {
           "$ref": "#/$defs/timestamp"

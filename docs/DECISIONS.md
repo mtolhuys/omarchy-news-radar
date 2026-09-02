@@ -120,13 +120,13 @@
 
 **Consequence:** Modules remain independently testable. A future consumer or hosted feed can split out without rewriting the event contract.
 
-## D016 — Mirror only official marketplace preview rasters
+## D016 — Pass through allowlisted marketplace preview URLs (supersedes same-origin mirroring)
 
-**Decision:** An event caused by a supported marketplace fact may include the catalog's preview thumbnail after publication mirrors it to a same-origin SHA-256 path. No arbitrary or direct remote image URL reaches clients.
+**Decision:** An event caused by a supported marketplace fact may include the catalog's preview thumbnail as an HTTPS `sourceUrl` on the fixed marketplace image origin (`https://plugins.omarchy.org/assets/img/plugins/…`). The publisher validates type/size/dimensions at build time and does **not** mirror rasters onto the feed host. Clients load only that allowlisted origin (plus legacy same-origin `path` assets from older caches).
 
-**Why:** Images make ecosystem activity immediately legible, but direct third-party loads create privacy, availability, tracking, and decoder boundaries. The official marketplace already provides bounded thumbnails and dimensions.
+**Why:** Hosting hundreds of content-addressed WebPs on a small Forge VPS wastes disk and bandwidth. The official marketplace already serves bounded thumbnails; repeating them on mtolhuijs.nl adds operational risk without a proportional trust gain once the URL family is closed.
 
-**Consequence:** The publisher uses a closed origin/path family, 1.5 MiB body limit, PNG/JPEG/WebP magic and structure checks, static-only enforcement, 4,096-pixel side/12-million-pixel bounds, and exact metadata dimension matching. SVG is forbidden. Image failures are visible build warnings and degrade to a complete text-only story.
+**Consequence:** Publication still uses a closed origin/path family, 1.5 MiB body limit, PNG/JPEG/WebP magic and structure checks, static-only enforcement, 4,096-pixel side/12-million-pixel bounds, and exact metadata dimension matching. SVG is forbidden. Validation failures omit the image. The public feed and static HTML reference `sourceUrl` directly; CSP allows `img-src 'self' https://plugins.omarchy.org`. Forge publish deletes any leftover `assets/images` tree and never accumulates mirrored rasters.
 
 ## D017 — Make local checkout synchronization explicit and commit-based
 

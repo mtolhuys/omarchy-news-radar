@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — 2026-09-02
+
+- Point `FEED_URL` at the rate-limited Laravel feed `https://mtolhuijs.nl/news-radar/events.json`.
+- Pass through allowlisted marketplace preview HTTPS URLs (`image.sourceUrl`) instead of mirroring rasters onto the feed host; clients load `https://plugins.omarchy.org/assets/img/plugins/…` only.
+- Update RSS/HTML edition links to `https://mtolhuijs.nl/news-radar/` and allow that marketplace origin in the static CSP `img-src`.
+- Forge `news-radar:publish` keeps writing a minimal public tree (no `assets/images`) and purges leftover mirrored rasters.
+
 ## 0.2.3 — 2026-09-02
 
 - Serve the live JSON/RSS/HTML edition from `https://mtolhuijs.nl/storage/news-radar/` so Forge owns collect → build → serve.

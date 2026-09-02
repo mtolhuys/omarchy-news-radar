@@ -20,7 +20,7 @@ from .images import MAX_IMAGE_BYTES, inspect_raster
 from .model import front_page
 from .validation import format_timestamp, parse_timestamp, validate_feed
 
-CSP = "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+CSP = "default-src 'none'; style-src 'self'; img-src 'self' https://plugins.omarchy.org; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 
 
 def render_rss(feed: Mapping[str, Any]) -> bytes:
@@ -28,7 +28,7 @@ def render_rss(feed: Mapping[str, Any]) -> bytes:
     rss = ET.Element("rss", {"version": "2.0"})
     channel = ET.SubElement(rss, "channel")
     ET.SubElement(channel, "title").text = "Omarchy News Radar"
-    ET.SubElement(channel, "link").text = "https://mtolhuijs.nl/storage/news-radar/"
+    ET.SubElement(channel, "link").text = "https://mtolhuijs.nl/news-radar/"
     ET.SubElement(channel, "description").text = "Source-linked Omarchy ecosystem activity. Independent community project."
     last_build = str(validated.get("publishedAt", validated["generatedAt"]))
     ET.SubElement(channel, "lastBuildDate").text = datetime.strptime(last_build, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
@@ -54,12 +54,14 @@ def _story(event: Mapping[str, Any], *, lead: bool = False) -> str:
     class_name = "story lead" if lead else "story"
     image = event.get("image")
     image_html = ""
-    if isinstance(image, dict) and isinstance(image.get("path"), str):
-        image_html = (
-            f'<img src="{html.escape(image["path"], quote=True)}" '
-            f'alt="{html.escape(str(image["alt"]), quote=True)}" '
-            f'width="{int(image["width"])}" height="{int(image["height"])}" loading="lazy">\n  '
-        )
+    if isinstance(image, dict):
+        src = image.get("sourceUrl") if isinstance(image.get("sourceUrl"), str) else image.get("path")
+        if isinstance(src, str):
+            image_html = (
+                f'<img src="{html.escape(src, quote=True)}" '
+                f'alt="{html.escape(str(image["alt"]), quote=True)}" '
+                f'width="{int(image["width"])}" height="{int(image["height"])}" loading="lazy">\n  '
+            )
     return f'''<article class="{class_name}">
   {image_html}<div class="copy">
   <p class="kicker">{section} · {occurred}</p>
@@ -121,8 +123,13 @@ def _fetch_image(url: str) -> tuple[bytes, str]:
 def materialize_images(
     feed: Mapping[str, Any], asset_directory: Path, *, image_fetcher: ImageFetcher = _fetch_image
 ) -> tuple[dict[str, Any], list[str]]:
-    """Mirror allowlisted source previews into same-origin content-addressed assets."""
+    """Validate allowlisted marketplace previews and publish their HTTPS URLs.
 
+    Rasters are not mirrored onto the feed host. ``asset_directory`` is retained
+    for call-site compatibility; only ``assets/site.css`` is written by publish().
+    """
+
+    del asset_directory  # no longer used for hosted rasters
     candidate = validate_feed(dict(feed), now=parse_timestamp(feed["generatedAt"]))
     public_feed = deepcopy(candidate)
     failures: list[str] = []
@@ -135,12 +142,8 @@ def materialize_images(
             info = inspect_raster(data, content_type)
             if (info.width, info.height) != (image["width"], image["height"]):
                 raise ValidationError("image dimensions differ from marketplace metadata")
-            digest = hashlib.sha256(data).hexdigest()
-            path = f"assets/images/{digest}.{info.extension}"
-            (asset_directory / "images").mkdir(exist_ok=True)
-            (asset_directory.parent / path).write_bytes(data)
             event["image"] = {
-                "path": path,
+                "sourceUrl": image["sourceUrl"],
                 "alt": image["alt"],
                 "credit": image["credit"],
                 "width": info.width,

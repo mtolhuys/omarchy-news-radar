@@ -13,10 +13,10 @@
   ],
   "name": "Omarchy News Radar",
   "schemaVersion": 1,
-  "version": "0.2.3",
+  "version": "0.3.0",
   "windowIdentity": {
     "appId": "org.quickshell",
-    "title": "\ud83d\udcf0 Omarchy News Radar"
+    "title": "📰 Omarchy News Radar"
   },
   "barWidget": {
     "allowMultiple": false,

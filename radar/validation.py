@@ -143,6 +143,7 @@ def validate_tags(value: Any) -> list[str]:
 
 
 def validate_image(value: Any, *, public_only: bool) -> dict[str, Any]:
+    _ = public_only  # public feeds now accept allowlisted sourceUrl as well as legacy path
     image = require_mapping(value, "event.image")
     locator = "path" if "path" in image else "sourceUrl"
     require_exact_keys(
@@ -162,13 +163,12 @@ def validate_image(value: Any, *, public_only: bool) -> dict[str, Any]:
         raise ValidationError("event.image pixel count exceeds its bound")
     normalized = {"alt": alt, "credit": credit, "width": width, "height": height}
     if "path" in image:
+        # Legacy mirrored assets (older editions / local caches). New publications use sourceUrl.
         path = require_string(image["path"], "event.image.path", 1, 128)
         if not IMAGE_PATH_RE.fullmatch(path):
             raise ValidationError("event.image.path is not a content-addressed feed asset")
         normalized["path"] = path
         return normalized
-    if public_only:
-        raise ValidationError("public feed images must be same-origin content-addressed assets")
     source_url = validate_https_url(image.get("sourceUrl"), "event.image.sourceUrl")
     parsed = urlsplit(source_url)
     if (

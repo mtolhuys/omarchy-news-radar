@@ -51,7 +51,7 @@ class LocalEditionIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def test_import_projects_private_image_and_refuses_published_downgrade(self) -> None:
+    def test_import_projects_marketplace_image_url_and_refuses_published_downgrade(self) -> None:
         result = import_local_edition(self.edition, self.environment, now=NOW)
         self.assertEqual(6, result["events"])
         self.assertEqual(1, result["images"])
@@ -59,8 +59,10 @@ class LocalEditionIntegrationTests(unittest.TestCase):
 
         projected = projection_model("plugins", "[]", "", self.environment, now=NOW)
         pictured = next(event for event in projected["events"] if "image" in event)
-        self.assertTrue(pictured["imageUrl"].startswith("file://"))
-        self.assertTrue(Path(pictured["imageUrl"].removeprefix("file://")).is_file())
+        self.assertEqual(
+            "https://plugins.omarchy.org/assets/img/plugins/local.png",
+            pictured["imageUrl"],
+        )
 
         with mock.patch("radar.client._fetch_feed", return_value=self.published_feed) as fetch:
             current = refresh(self.environment, now=NOW)
@@ -87,8 +89,10 @@ class LocalEditionIntegrationTests(unittest.TestCase):
     def test_invalid_reimport_preserves_the_complete_previous_edition(self) -> None:
         import_local_edition(self.edition, self.environment, now=NOW)
         before = feed_path(self.environment).read_bytes()
-        image = next((self.edition / "assets" / "images").iterdir())
-        image.write_bytes(b"not an image")
+        events = json.loads((self.edition / "events.json").read_text(encoding="utf-8"))
+        pictured = next(event for event in events["events"] if "image" in event)
+        pictured["image"]["sourceUrl"] = "https://evil.example/assets/img/plugins/local.png"
+        (self.edition / "events.json").write_text(json.dumps(events), encoding="utf-8")
         with self.assertRaises(ValidationError):
             import_local_edition(self.edition, self.environment, now=NOW)
         self.assertEqual(before, feed_path(self.environment).read_bytes())
@@ -122,7 +126,6 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         removed = purge(self.environment)
         self.assertIn("feed.json", removed)
         self.assertIn("local-edition.json", removed)
-        self.assertIn(next((self.edition / "assets" / "images").iterdir()).name, removed)
         self.assertFalse(marker_path(self.environment).exists())
 
 
