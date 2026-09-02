@@ -12,8 +12,10 @@ from radar.client import projection_model, read_model, refresh
 from radar.errors import ValidationError
 from radar.local_edition import import_local_edition, marker_path
 from radar.io import atomic_write_json
+from radar.model import canonical_events
 from radar.publisher import publish
 from radar.state import feed_path, purge
+from radar.sources.youtube import youtube_events
 
 ROOT = Path(__file__).resolve().parents[2]
 NOW = datetime(2026, 8, 31, 14, 5, tzinfo=timezone.utc)
@@ -85,6 +87,57 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         self.assertEqual("published", current["editionMode"])
         self.assertEqual("published", read_model(self.environment, now=NOW)["editionMode"])
         self.assertEqual("2026-08-31T14:04:00Z", current["feed"]["generatedAt"])
+
+
+    def test_published_feed_with_youtube_replaces_local_without_it(self) -> None:
+        """Local live editions without YouTube adopt an older Forge feed that has it."""
+        import_local_edition(self.edition, self.environment, now=NOW)
+        self.assertEqual(
+            0,
+            sum(1 for event in self.published_feed["events"] if event["type"] == "youtube-video"),
+        )
+
+        older = json.loads(json.dumps(self.published_feed))
+        older["generatedAt"] = "2026-08-31T13:50:00Z"
+        older["publishedAt"] = "2026-08-31T13:50:00Z"
+        older["window"]["through"] = "2026-08-31T13:50:00Z"
+        videos = json.loads((ROOT / "tests/fixtures/youtube-baseline.json").read_text(encoding="utf-8"))["videos"]
+        youtube = youtube_events(
+            videos,
+            discovered_at=datetime(2026, 8, 31, 13, 50, tzinfo=timezone.utc),
+        )
+        older["events"] = canonical_events(older["events"] + youtube)
+        older["sources"] = list(older.get("sources", [])) + [
+            {
+                "id": "youtube",
+                "status": "current",
+                "checkedAt": "2026-08-31T13:50:00Z",
+                "sourceUrl": "https://www.youtube.com",
+            }
+        ]
+
+        with mock.patch("radar.client._fetch_feed", return_value=older) as fetch:
+            current = refresh(self.environment, now=NOW)
+
+        fetch.assert_called_once()
+        self.assertEqual("updated", current["status"])
+        self.assertEqual("published", current["editionMode"])
+        self.assertGreater(
+            sum(1 for event in current["feed"]["events"] if event["type"] == "youtube-video"),
+            0,
+        )
+
+        # Ordinary D029 downgrade still holds when the published candidate also lacks YouTube.
+        import_local_edition(self.edition, self.environment, now=NOW)
+        older_without = json.loads(json.dumps(self.published_feed))
+        older_without["generatedAt"] = "2026-08-31T13:40:00Z"
+        older_without["publishedAt"] = "2026-08-31T13:40:00Z"
+        older_without["window"]["through"] = "2026-08-31T13:40:00Z"
+        with mock.patch("radar.client._fetch_feed", return_value=older_without) as fetch:
+            refused = refresh(self.environment, now=NOW)
+        fetch.assert_called_once()
+        self.assertEqual("local-current", refused["status"])
+        self.assertEqual("local", refused["editionMode"])
 
     def test_invalid_reimport_preserves_the_complete_previous_edition(self) -> None:
         import_local_edition(self.edition, self.environment, now=NOW)

@@ -366,3 +366,10 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 
 **Consequence:** Forge must provision `YOUTUBE_API_KEY` out of band. Clients on feed schema 1 fail closed until updated. Numeric navigation is `1`–`6`, Saved is `6`, and Settings discloses the YouTube source boundary like every other fixed section.
 
+## D046 — Fill YouTube immediately from empty snapshots and published Forge feeds
+
+**Decision:** The YouTube six-hour collect cadence applies only after a successful snapshot with a non-empty `videoIds` list. Missing, malformed, or empty YouTube snapshots refresh on the next collect. Fail-closed retention of prior YouTube events on key/transport/validation failure is unchanged. Separately, **Check for updates** may adopt an equal-or-older validated published edition when a digest-matched local live edition has zero `youtube-video` events and the published candidate has at least one. Ordinary D029 downgrade refusal remains for every other case.
+
+**Why:** `make local-latest` often lacks `YOUTUBE_API_KEY`, so a newer owner-built edition can pin clients to an empty YouTube section while Forge already publishes a filled lane. The cadence gate also delayed empty→filled transitions after a first unsuccessful or empty populate.
+
+**Consequence:** Clients rejoin the shared published YouTube lane as soon as Check for updates runs; Forge continuity (D041) and fail-closed retention are unchanged. The exception is YouTube-empty-local only and never demotes a local edition that already carries YouTube stories.

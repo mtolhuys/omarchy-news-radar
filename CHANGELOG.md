@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.7 — 2026-09-02
+
+### Fixed
+- YouTube's six-hour collect cadence no longer blocks the first populate: an empty or missing `videoIds` snapshot refreshes immediately while fail-closed retention of prior events is unchanged.
+- **Check for updates** on a newer local live edition that lacks YouTube adopts the published Forge feed when it already has `youtube-video` events (narrow D029 exception; D046), so clients fill the YouTube section ASAP.
+
+### Notes
+- No feed or local-state schema bump. Icon contrast remains the 0.4.6 asset.
+
 ## 0.4.6 — 2026-09-02
 
 ### Changed
