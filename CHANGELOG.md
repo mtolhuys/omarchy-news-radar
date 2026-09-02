@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.11 — 2026-09-02
+
+### Fixed
+- Panel header icon chip on Lupine light: keep opaque `Color.popups.background` plate and add a visible `Color.popups.border` so the squircle reads as a chip (not same-color-as-header wash).
+- Light themes (popup bg luminance > ~0.5) load `assets/io.github.mtolhuys.news-radar-light.svg` with Omarchy green glyph opacity ~0.80 and slightly stronger amber; dark/Matte Black keep the 0.4.10 transparent SVG.
+
+### Changed
+- Apps-menu / XDG launcher still use the manifest dark-tuned transparent SVG (unchanged; acceptable compositing).
+
+No feed or local-state schema bump.
+
+
 ## 0.4.10 — 2026-09-02
 
 ### Fixed

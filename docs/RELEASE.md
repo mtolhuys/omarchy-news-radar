@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.10` fixes light-theme contrast (luminance-aware secondary/quiet floors and foreground modal scrims) and makes the panel icon badge opaque theme-colored behind a transparent SVG (no hardcoded `#111`), without a feed or state schema bump. Earlier 0.4.9 dropped the Apps-menu amber outer rim; 0.4.7 filled YouTube ASAP. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.11` makes the panel header icon chip read on Lupine light: opaque `Color.popups.background` plate, visible `Color.popups.border`, and a light-tuned SVG with stronger Omarchy green (~0.80) and amber; dark keeps the 0.4.10 transparent SVG. No feed or state schema bump. Earlier 0.4.10 added luminance-aware text floors and theme-tinted badge; 0.4.9 dropped the Apps-menu amber outer rim. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
