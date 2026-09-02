@@ -1,10 +1,332 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Omarchy News Radar">
-  <rect x="5" y="5" width="118" height="118" rx="26" fill="#111111" stroke="#f59e0b" stroke-width="6"/>
-  <path d="M29 27h70a9 9 0 0 1 9 9v60a11 11 0 0 1-11 11H31a11 11 0 0 1-11-11V36a9 9 0 0 1 9-9Z" fill="#f5f5f4"/>
-  <path d="M29 27h70a9 9 0 0 1 9 9v13H20V36a9 9 0 0 1 9-9Z" fill="#f59e0b"/>
-  <circle cx="39" cy="38" r="5" fill="#111111"/>
-  <path d="M50 38h40" stroke="#111111" stroke-width="6" stroke-linecap="round"/>
-  <path d="M33 64h24v24H33z" fill="#111111"/>
-  <path d="M67 66h27M67 78h27M33 97h61" stroke="#111111" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="45" cy="76" r="4" fill="#f59e0b"/>
+  <rect x="2" y="2" width="124" height="124" rx="28" fill="#111111"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="4.6" xml:space="preserve">
+    <text x="64" y="15.5" fill="#4a4a4a" font-size="4.2" letter-spacing="0.8" text-anchor="middle">== Omarchy ==</text>
+    <text x="10" y="24.0" fill="#4a4a4a">········</text>
+    <text x="86" y="24.0" fill="#4a4a4a">········</text>
+    <text x="10" y="29.2" fill="#4a4a4a">--------</text>
+    <text x="86" y="29.2" fill="#4a4a4a">--------</text>
+    <text x="10" y="34.4" fill="#4a4a4a">·· ·····</text>
+    <text x="86" y="34.4" fill="#4a4a4a">·· ·····</text>
+    <text x="10" y="39.6" fill="#4a4a4a">--------</text>
+    <text x="86" y="39.6" fill="#4a4a4a">--------</text>
+    <text x="10" y="44.8" fill="#4a4a4a">···· ···</text>
+    <text x="86" y="44.8" fill="#4a4a4a">···· ···</text>
+    <text x="10" y="50.0" fill="#4a4a4a">--------</text>
+    <text x="86" y="50.0" fill="#4a4a4a">--------</text>
+    <text x="10" y="55.2" fill="#4a4a4a">··· ····</text>
+    <text x="86" y="55.2" fill="#4a4a4a">··· ····</text>
+    <text x="10" y="60.4" fill="#4a4a4a">--------</text>
+    <text x="86" y="60.4" fill="#4a4a4a">--------</text>
+    <text x="10" y="65.6" fill="#4a4a4a">······ ·</text>
+    <text x="86" y="65.6" fill="#4a4a4a">······ ·</text>
+    <text x="10" y="70.8" fill="#4a4a4a">--------</text>
+    <text x="86" y="70.8" fill="#4a4a4a">--------</text>
+    <text x="10" y="76.0" fill="#4a4a4a">· ······</text>
+    <text x="86" y="76.0" fill="#4a4a4a">· ······</text>
+    <text x="10" y="81.2" fill="#4a4a4a">--------</text>
+    <text x="86" y="81.2" fill="#4a4a4a">--------</text>
+    <text x="10" y="86.4" fill="#4a4a4a">···· ···</text>
+    <text x="86" y="86.4" fill="#4a4a4a">···· ···</text>
+    <text x="10" y="91.6" fill="#4a4a4a">--------</text>
+    <text x="86" y="91.6" fill="#4a4a4a">--------</text>
+    <text x="10" y="96.8" fill="#4a4a4a">··· ····</text>
+    <text x="86" y="96.8" fill="#4a4a4a">··· ····</text>
+    <text x="10" y="102.0" fill="#4a4a4a">--------</text>
+    <text x="86" y="102.0" fill="#4a4a4a">--------</text>
+    <text x="10" y="107.2" fill="#4a4a4a">········</text>
+    <text x="86" y="107.2" fill="#4a4a4a">········</text>
+    <text x="86.00" y="65.50" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="85.52" y="70.07" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="84.10" y="74.45" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="81.80" y="78.43" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="78.72" y="81.85" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="75.00" y="84.55" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="70.80" y="86.42" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="66.30" y="87.38" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="61.70" y="87.38" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="57.20" y="86.42" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="53.00" y="84.55" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="49.28" y="81.85" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="46.20" y="78.43" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="43.90" y="74.45" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="42.48" y="70.07" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="42.00" y="65.50" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="42.48" y="60.93" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="43.90" y="56.55" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="46.20" y="52.57" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="49.28" y="49.15" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="53.00" y="46.45" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="57.20" y="44.58" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="61.70" y="43.62" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="66.30" y="43.62" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="70.80" y="44.58" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="75.00" y="46.45" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="78.72" y="49.15" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="81.80" y="52.57" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="84.10" y="56.55" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="85.52" y="60.93" fill="#c4893a" fill-opacity="0.55" font-size="5.2" text-anchor="middle">·</text>
+    <text x="98.00" y="65.50" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="97.58" y="70.82" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="96.34" y="76.01" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="94.29" y="80.94" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="91.51" y="85.48" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="88.04" y="89.54" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="83.98" y="93.01" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="79.44" y="95.79" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="74.51" y="97.84" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="69.32" y="99.08" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="64.00" y="99.50" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="58.68" y="99.08" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="53.49" y="97.84" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="48.56" y="95.79" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="44.02" y="93.01" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="39.96" y="89.54" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="36.49" y="85.48" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="33.71" y="80.94" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="31.66" y="76.01" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="30.42" y="70.82" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="30.00" y="65.50" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="30.42" y="60.18" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="31.66" y="54.99" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="33.71" y="50.06" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="36.49" y="45.52" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="39.96" y="41.46" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="44.02" y="37.99" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="48.56" y="35.21" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="53.49" y="33.16" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="58.68" y="31.92" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="64.00" y="31.50" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="69.32" y="31.92" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="74.51" y="33.16" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="79.44" y="35.21" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="83.98" y="37.99" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="88.04" y="41.46" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="91.51" y="45.52" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="94.29" y="50.06" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="96.34" y="54.99" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="97.58" y="60.18" fill="#c4893a" fill-opacity="0.6" font-size="5.2" text-anchor="middle">·</text>
+    <text x="110.00" y="65.50" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="109.66" y="71.11" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="108.63" y="76.63" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="106.94" y="81.98" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="104.62" y="87.10" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="101.68" y="91.88" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="98.18" y="96.28" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="94.18" y="100.22" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="89.72" y="103.64" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="84.88" y="106.49" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="79.73" y="108.73" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="74.35" y="110.32" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="68.81" y="111.25" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="63.20" y="111.49" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="57.60" y="111.05" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="52.09" y="109.93" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="46.77" y="108.15" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="41.70" y="105.73" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="36.96" y="102.71" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="32.63" y="99.14" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="28.76" y="95.07" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="25.42" y="90.55" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="22.66" y="85.67" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="20.51" y="80.48" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="19.01" y="75.06" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="18.18" y="69.51" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="18.03" y="63.89" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="18.57" y="58.30" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="19.78" y="52.82" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="21.66" y="47.53" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="24.16" y="42.50" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="27.26" y="37.82" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="30.91" y="33.55" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="35.05" y="29.75" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="39.62" y="26.49" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="44.56" y="23.81" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="49.79" y="21.75" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="55.22" y="20.35" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="60.79" y="19.61" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="66.41" y="19.56" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="71.99" y="20.20" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="77.45" y="21.51" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="82.71" y="23.48" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="87.69" y="26.07" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="92.32" y="29.25" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="96.53" y="32.97" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="100.25" y="37.18" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="103.43" y="41.81" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="106.02" y="46.79" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="107.99" y="52.05" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="109.30" y="57.51" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="109.94" y="63.09" fill="#c4893a" fill-opacity="0.65" font-size="5.4" text-anchor="middle">·</text>
+    <text x="22" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="27" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="32" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="37" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="42" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="47" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="52" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="72" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="77" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="82" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="87" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="92" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="97" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="102" y="65.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">-</text>
+    <text x="64.0" y="23.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="28.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="33.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="38.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="43.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="48.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="53.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="73.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="78.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="83.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="88.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="93.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="98.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="103.4" fill="#c4893a" fill-opacity="0.4" font-size="5" text-anchor="middle">|</text>
+    <text x="64.0" y="65.6" fill="#c4893a" fill-opacity="0.75" font-size="6" text-anchor="middle">+</text>
+    <text x="70.55" y="60.91" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="71.00" y="61.62" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="71.36" y="62.37" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="71.65" y="63.16" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="71.85" y="63.97" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="71.97" y="64.80" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="72.00" y="65.64" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="71.94" y="66.47" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="71.79" y="67.30" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="71.56" y="68.10" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="73.01" y="59.19" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="73.62" y="60.17" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="74.13" y="61.20" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="74.52" y="62.28" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="74.80" y="63.40" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="74.96" y="64.54" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="75.00" y="65.69" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="74.92" y="66.84" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="74.72" y="67.97" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="74.40" y="69.08" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="75.47" y="57.47" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="76.24" y="58.71" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="76.89" y="60.03" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="77.39" y="61.41" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="77.74" y="62.83" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="77.95" y="64.28" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="78.00" y="65.74" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="77.90" y="67.21" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="77.64" y="68.65" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="77.24" y="70.06" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="77.93" y="55.75" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="78.87" y="57.26" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="79.65" y="58.86" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="80.26" y="60.53" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="80.69" y="62.26" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="80.94" y="64.02" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="81.00" y="65.80" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="80.87" y="67.57" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="80.56" y="69.32" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="80.07" y="71.03" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="80.38" y="54.03" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="81.49" y="55.80" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="82.41" y="57.69" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="83.13" y="59.65" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="83.63" y="61.68" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="83.92" y="63.76" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="84.00" y="65.85" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="83.85" y="67.94" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="83.49" y="70.00" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="82.91" y="72.01" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="82.84" y="52.31" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="84.12" y="54.35" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="85.17" y="56.51" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="86.00" y="58.78" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="86.58" y="61.11" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="86.91" y="63.50" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="87.00" y="65.90" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="86.83" y="68.30" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="86.41" y="70.67" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="85.75" y="72.99" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="85.30" y="50.59" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="86.74" y="52.89" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="87.93" y="55.34" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="88.86" y="57.90" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="89.52" y="60.54" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="89.90" y="63.23" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="90.00" y="65.95" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="89.81" y="68.67" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="89.33" y="71.35" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="88.58" y="73.96" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="87.76" y="48.87" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="89.36" y="51.44" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="90.69" y="54.17" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="91.73" y="57.02" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="92.47" y="59.97" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="92.89" y="62.97" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="93.00" y="66.01" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="92.78" y="69.03" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="92.26" y="72.02" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="91.42" y="74.94" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="90.21" y="47.15" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="91.99" y="49.99" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="93.46" y="53.00" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="94.60" y="56.14" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="95.41" y="59.39" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="95.88" y="62.71" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="96.00" y="66.06" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="95.76" y="69.40" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="95.18" y="72.70" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="94.26" y="75.92" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="92.67" y="45.42" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="94.61" y="48.53" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="96.22" y="51.82" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="97.47" y="55.27" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="98.36" y="58.82" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="98.87" y="62.45" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="98.99" y="66.11" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="98.74" y="69.77" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="98.10" y="73.37" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="97.09" y="76.89" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="95.13" y="43.70" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="97.24" y="47.08" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="98.98" y="50.65" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="100.34" y="54.39" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="101.30" y="58.25" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="101.86" y="62.19" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="101.99" y="66.16" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="101.72" y="70.13" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="101.03" y="74.05" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="99.93" y="77.87" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="97.59" y="41.98" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="99.86" y="45.62" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="101.74" y="49.48" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="103.21" y="53.51" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="104.25" y="57.68" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="104.84" y="61.93" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="104.99" y="66.22" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="104.69" y="70.50" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="103.95" y="74.72" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="102.77" y="78.85" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="100.04" y="40.26" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="102.48" y="44.17" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="104.50" y="48.31" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="106.08" y="52.64" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="107.19" y="57.10" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="107.83" y="61.67" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="107.99" y="66.27" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="107.67" y="70.86" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="106.87" y="75.40" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="105.60" y="79.82" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="102.50" y="38.54" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="105.11" y="42.71" fill="#c4893a" fill-opacity="0.15" font-size="5.2" text-anchor="middle">·</text>
+    <text x="107.26" y="47.14" fill="#c4893a" fill-opacity="0.20" font-size="5.2" text-anchor="middle">·</text>
+    <text x="108.95" y="51.76" fill="#c4893a" fill-opacity="0.30" font-size="5.2" text-anchor="middle">·</text>
+    <text x="110.14" y="56.53" fill="#c4893a" fill-opacity="0.40" font-size="5.2" text-anchor="middle">·</text>
+    <text x="110.82" y="61.40" fill="#c4893a" fill-opacity="0.50" font-size="5.2" text-anchor="middle">:</text>
+    <text x="110.99" y="66.32" fill="#c4893a" fill-opacity="0.60" font-size="5.2" text-anchor="middle">:</text>
+    <text x="110.65" y="71.23" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="109.80" y="76.07" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="108.44" y="80.80" fill="#c4893a" fill-opacity="0.70" font-size="5.2" text-anchor="middle">:</text>
+    <text x="96.34" y="76.51" fill="#c4893a" fill-opacity="0.9" font-size="7" text-anchor="middle">*</text>
+  </g>
 </svg>

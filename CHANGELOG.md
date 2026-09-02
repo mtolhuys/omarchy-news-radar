@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.5 — 2026-09-02
+
+### Changed
+- Refresh the plugin icon to an ASCII-art radar face with an **Omarchy** masthead for the Apps menu and marketplace listing.
+
+### Notes
+- No feed or local-state schema bump.
+
 ## 0.4.4 — 2026-09-02
 
 ### Changed
