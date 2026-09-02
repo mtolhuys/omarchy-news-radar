@@ -103,6 +103,13 @@ Item {
     onStopped: root.applyPendingViewportPreservation()
   }
 
+  Timer {
+    id: viewportPreservationTimer
+    interval: 16
+    repeat: true
+    onTriggered: root.applyPendingViewportPreservation()
+  }
+
   readonly property var preferences: userState && userState.preferences
     ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionFilters: ({}) })
 
@@ -398,6 +405,10 @@ Item {
   function close() {
     closingFromHost = true
     flushReadChanges()
+    viewportPreservationTimer.stop()
+    pendingViewportPreservation = false
+    pendingViewportAttempts = 0
+    forcedTopAnchorIndex = -1
     opened = false
     preferencesOpen = false
     sectionSettingsOpen = false
@@ -554,7 +565,7 @@ Item {
     pendingViewportAnchorTop = forcedTopAnchorIndex === anchorIndex ? 0 : anchorTop
     pendingViewportRevision = revision
     pendingViewportAttempts = 24
-    Qt.callLater(root.applyPendingViewportPreservation)
+    viewportPreservationTimer.start()
   }
 
   function applyPendingViewportPreservation() {
@@ -562,6 +573,7 @@ Item {
     if (pendingViewportRevision !== storyViewportRevision) {
       pendingViewportPreservation = false
       pendingViewportAttempts = 0
+      viewportPreservationTimer.stop()
       return
     }
     if (storyScrollAnimation.running) return
@@ -571,7 +583,6 @@ Item {
     if (pendingViewportAnchorIndex >= 0 && !anchorRow && pendingViewportAttempts > 0) {
       pendingViewportAttempts--
       storyList.positionViewAtIndex(pendingViewportAnchorIndex, ListView.Beginning)
-      Qt.callLater(root.applyPendingViewportPreservation)
       return
     }
     if (anchorRow) targetContentY = anchorRow.y - pendingViewportAnchorTop
@@ -583,11 +594,11 @@ Item {
     )
     if (anchorRow && pendingViewportAttempts > 0) {
       pendingViewportAttempts--
-      Qt.callLater(root.applyPendingViewportPreservation)
       return
     }
     pendingViewportPreservation = false
     pendingViewportAttempts = 0
+    viewportPreservationTimer.stop()
   }
 
   function storyIndexById(eventId) {
