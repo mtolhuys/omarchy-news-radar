@@ -32,6 +32,7 @@ SECTION_EVENT_TYPES = {
         "plugin-retired",
         "plugin-verification-changed",
     ),
+    "youtube": ("youtube-video",),
     "saved": (
         "omarchy-released",
         "plugin-added",
@@ -39,6 +40,7 @@ SECTION_EVENT_TYPES = {
         "plugin-retired",
         "plugin-verification-changed",
         "community-link",
+        "youtube-video",
     ),
 }
 
@@ -49,6 +51,7 @@ TYPE_LABELS = {
     "plugin-retired": "Retirements",
     "plugin-verification-changed": "Verification changes",
     "community-link": "Community links",
+    "youtube-video": "YouTube videos",
 }
 
 

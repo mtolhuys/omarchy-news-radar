@@ -9,5 +9,6 @@ SECTION_SOURCE_SUMMARIES = {
     "for-you": "The same fixed sources, narrowed locally by exact enabled plugin IDs",
     "core": "Official Omarchy GitHub releases",
     "plugins": "Omarchy Plugin Marketplace and linked public repositories",
+    "youtube": "Omarchy-related YouTube videos collected through the YouTube Data API",
     "saved": "Stories you saved locally from the fixed sources above",
 }

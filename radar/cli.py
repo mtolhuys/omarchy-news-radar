@@ -213,6 +213,7 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
                 now=clock,
                 bootstrap_marketplace=args.bootstrap_marketplace,
                 github_token=os.environ.get("GITHUB_TOKEN"),
+                youtube_api_key=os.environ.get("YOUTUBE_API_KEY"),
             )
             revision = os.environ.get("GITHUB_SHA", os.environ.get("SOURCE_REVISION", "working-tree"))
             result = publish(

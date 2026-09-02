@@ -23,7 +23,8 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
 - Every row visibly distinguishes `UNREAD` from `READ`; section and newspaper counts use the same exact per-event predicate; the newspaper deduplicates unread IDs across all current persistent section projections and never advertises stories hidden by every section; deliberate selection and `u` affect only one story; the explicit filtered-section action atomically includes unloaded matches while close/refresh never bulk-mark; the default-on newspaper adopts and displays unread arrivals with the panel closed, uses the documented 15-minute success/five-minute failure cadence, and its zero-gap hiding, Tune re-enable, animated refresh progress, health states, and no-desktop-pop-up boundary match the implementation.
-- For You uses only exact locally enabled plugin IDs; manual interests and section profiles have no control, CLI route, or current state member, and v1–v8 state migrates to v9 without losing supported data.
+- For You uses only exact locally enabled plugin IDs; manual interests and section profiles have no control, CLI route, or current state member, and v1–v9 state migrates to v10 without losing supported data.
+- YouTube collection on Forge requires optional `YOUTUBE_API_KEY`; CI remains fixture-only and never calls the live API.
 - No account, telemetry, AI summary, plugin installation action, or unsupported scraper is implied.
 
 ### Data and publication

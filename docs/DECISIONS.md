@@ -357,3 +357,12 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** A global raw-feed count could remain nonzero after every visible section reported zero unread. In the reported production state, the Plugins **With images** filter hid eight image-less unread events while the bar still advertised all eight, leaving no visible destination for the badge.
 
 **Consequence:** A story hidden by every persistent section filter cannot keep the badge active, overlap between sections never double-counts it, and changing a filter can reveal and begin advertising previously hidden unread stories. The bar resolves local enabled-plugin IDs before every coalesced indicator request, so an enablement change cannot leave a lifetime-stale relevance snapshot, and continues to send no private state over the network.
+
+## D045 — Add an allowlisted YouTube lane without changing Front Page significance
+
+**Decision:** Version 0.4.0 adds a Forge-collected YouTube Data API v3 source as a D007 exception for one allowlisted HTTPS origin (`https://www.googleapis.com/youtube/v3/...`). The client gains a sixth rail section, YouTube, between Plugins and Saved. Events use type `youtube-video`, classification section `youtube`, optional metrics `youtube-views`/`youtube-likes`, and allowlisted `https://i.ytimg.com/vi/<id>/hqdefault.jpg` thumbnails. Feed schema version 2 is required to emit YouTube events; schema version 1 never carries them. Local state schema v10 adds the YouTube filter. Views/likes/recent interleaving ranks only inside the YouTube section and never influences significance, Front Page composition, or event identity (D008/D020). Collection is fail-closed: a missing `YOUTUBE_API_KEY`, transport failure, or invalid payload records a failed `youtube` source health entry and retains the prior YouTube snapshot. CI uses fixtures only. Opening a story uses the existing browser-open path; Radar does not scrape watch pages or embed players. The empty Community reader section remains removed (D026).
+
+**Why:** Omarchy-related videos are meaningful ecosystem activity that users already open in a browser, but they are not marketplace or release facts and must not dilute the Front Page significance model.
+
+**Consequence:** Forge must provision `YOUTUBE_API_KEY` out of band. Clients on feed schema 1 fail closed until updated. Numeric navigation is `1`–`6`, Saved is `6`, and Settings discloses the YouTube source boundary like every other fixed section.
+

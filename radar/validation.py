@@ -17,6 +17,7 @@ from .constants import (
     FILTER_PERIODS,
     FILTER_SIGNIFICANCE,
     FUTURE_SKEW_SECONDS,
+    MARKETPLACE_IMAGE_ORIGIN,
     MARKETPLACE_TRUST,
     METRIC_IDS,
     MAX_EVENTS,
@@ -30,6 +31,7 @@ from .constants import (
     SOURCE_REASON_CODES,
     SOURCE_STATUSES,
     STATE_SCHEMA_VERSION,
+    YOUTUBE_IMAGE_ORIGIN,
 )
 from .errors import ValidationError
 LEGACY_SECTION_ICON_IDS = frozenset(
@@ -44,6 +46,7 @@ TAG_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,31})$")
 INTEREST_RE = re.compile(r"^[a-z0-9](?:[a-z0-9 -]{0,30}[a-z0-9])?$")
 IMAGE_PATH_RE = re.compile(r"^assets/images/[0-9a-f]{64}\.(?:jpg|png|webp)$")
 IMAGE_SOURCE_PATH_RE = re.compile(r"^/assets/img/plugins/[A-Za-z0-9._-]+\.(?:webp|png|jpg|jpeg)$")
+YOUTUBE_IMAGE_PATH_RE = re.compile(r"^/vi/[A-Za-z0-9_-]{11}/hqdefault\.jpg$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
 
 
@@ -171,13 +174,21 @@ def validate_image(value: Any, *, public_only: bool) -> dict[str, Any]:
         return normalized
     source_url = validate_https_url(image.get("sourceUrl"), "event.image.sourceUrl")
     parsed = urlsplit(source_url)
-    if (
-        parsed.netloc.lower() != "plugins.omarchy.org"
-        or not IMAGE_SOURCE_PATH_RE.fullmatch(parsed.path)
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise ValidationError("event.image.sourceUrl is outside the marketplace image path boundary")
+    host = parsed.netloc.lower()
+    marketplace_ok = (
+        host == urlsplit(MARKETPLACE_IMAGE_ORIGIN).netloc
+        and IMAGE_SOURCE_PATH_RE.fullmatch(parsed.path) is not None
+        and not parsed.query
+        and not parsed.fragment
+    )
+    youtube_ok = (
+        host == urlsplit(YOUTUBE_IMAGE_ORIGIN).netloc
+        and YOUTUBE_IMAGE_PATH_RE.fullmatch(parsed.path) is not None
+        and not parsed.query
+        and not parsed.fragment
+    )
+    if not marketplace_ok and not youtube_ok:
+        raise ValidationError("event.image.sourceUrl is outside the allowlisted image path boundary")
     normalized["sourceUrl"] = source_url
     return normalized
 
@@ -240,7 +251,7 @@ def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
     compatibility = require_mapping(event.get("compatibility"), "event.compatibility")
 
     entity_kind = require_string(entity.get("kind"), "entity.kind", 1, 32)
-    if entity_kind not in {"omarchy", "plugin", "community"}:
+    if entity_kind not in {"omarchy", "plugin", "community", "youtube"}:
         raise ValidationError("entity.kind is unsupported")
     entity_id = require_string(entity.get("id"), "entity.id", 1, 160)
     if not ENTITY_ID_RE.fullmatch(entity_id):

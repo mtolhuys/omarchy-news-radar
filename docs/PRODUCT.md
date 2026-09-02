@@ -20,7 +20,7 @@ A larger stream would increase the problem. Radar must reduce cognitive load.
 
 ## Target user
 
-The primary user runs Omarchy Quattro, installs community plugins, and occasionally wants to catch up without becoming an ecosystem maintainer. The user is comfortable with keyboard shortcuts but should not need GitHub expertise.
+The primary user runs Omarchy Quattro, installs community plugins, and occasionally wants to catch up on releases, plugins, community links, and Omarchy-related YouTube videos without becoming an ecosystem maintainer. The user is comfortable with keyboard shortcuts but should not need GitHub expertise.
 
 Maintainers, newsletter authors, and external feed consumers are secondary users. Their needs must not make the local reading experience heavier.
 

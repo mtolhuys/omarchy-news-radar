@@ -36,7 +36,7 @@ class ValidationTests(unittest.TestCase):
     def test_rejects_schema_duplicate_order_enum_and_future(self) -> None:
         cases = []
         unsupported = copy.deepcopy(self.feed)
-        unsupported["schemaVersion"] = 2
+        unsupported["schemaVersion"] = 1
         cases.append(unsupported)
         duplicate = copy.deepcopy(self.feed)
         duplicate["events"].append(copy.deepcopy(duplicate["events"][-1]))

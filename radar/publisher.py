@@ -20,7 +20,7 @@ from .images import MAX_IMAGE_BYTES, inspect_raster
 from .model import front_page
 from .validation import format_timestamp, parse_timestamp, validate_feed
 
-CSP = "default-src 'none'; style-src 'self'; img-src 'self' https://plugins.omarchy.org; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+CSP = "default-src 'none'; style-src 'self'; img-src 'self' https://plugins.omarchy.org https://i.ytimg.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 
 
 def render_rss(feed: Mapping[str, Any]) -> bytes:
@@ -137,13 +137,24 @@ def materialize_images(
         image = event.get("image")
         if not isinstance(image, dict) or "sourceUrl" not in image:
             continue
+        source_url = str(image["sourceUrl"])
+        # YouTube hqdefault URLs are allowlisted by shape; no scrape/mirror.
+        if source_url.startswith("https://i.ytimg.com/vi/") and source_url.endswith("/hqdefault.jpg"):
+            event["image"] = {
+                "sourceUrl": source_url,
+                "alt": image["alt"],
+                "credit": image["credit"],
+                "width": image["width"],
+                "height": image["height"],
+            }
+            continue
         try:
-            data, content_type = image_fetcher(str(image["sourceUrl"]))
+            data, content_type = image_fetcher(source_url)
             info = inspect_raster(data, content_type)
             if (info.width, info.height) != (image["width"], image["height"]):
                 raise ValidationError("image dimensions differ from marketplace metadata")
             event["image"] = {
-                "sourceUrl": image["sourceUrl"],
+                "sourceUrl": source_url,
                 "alt": image["alt"],
                 "credit": image["credit"],
                 "width": info.width,
