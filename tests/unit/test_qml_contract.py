@@ -114,6 +114,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("var nextRowBeforeSelection = storyList.itemAtIndex(nextIndex)", qml)
         self.assertIn("if (delta > 0 && !nextRowBeforeSelection)", qml)
         self.assertIn("geometry that Qt\n      // has not created", qml)
+        self.assertIn("queueViewportPreservation(\n        storyList.contentY,\n        nextIndex,\n        0,", qml)
         self.assertIn("function animateStoryPosition(index, alignAtTop, initialContentY, fallbackTargetY)", qml)
         self.assertIn("currentRow.y + currentRow.height + storyList.spacing", qml)
         self.assertIn("fallbackTargetY !== undefined && fallbackTargetY >= 0", qml)

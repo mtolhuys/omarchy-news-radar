@@ -775,6 +775,12 @@ Item {
       selectStory(nextIndex, true)
       storyViewportAnchorIndex = nextIndex
       storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
+      queueViewportPreservation(
+        storyList.contentY,
+        nextIndex,
+        0,
+        viewportRevision
+      )
       Qt.callLater(function() {
         if (root.selectedIndex === nextIndex
             && root.storyViewportRevision === viewportRevision)
