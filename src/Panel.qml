@@ -287,6 +287,8 @@ Item {
       viewportHeight: storyList.height,
       contentY: storyList.contentY,
       contentHeight: storyList.contentHeight,
+      originY: storyList.originY,
+      rowY: row.y,
       anchorIndex: storyViewportAnchorIndex,
       anchorAvailable: !!anchorRow,
       anchorTop: anchorTop,
@@ -1675,6 +1677,11 @@ Item {
                 Layout.fillHeight: true
                 model: renderedStoryModel
                 spacing: Style.spacing.sm
+                // Keep the immediately adjacent screen instantiated. Keyboard
+                // navigation can then animate to real row geometry after
+                // pagination instead of asking ListView to estimate a
+                // virtualized delegate's position.
+                cacheBuffer: height
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
