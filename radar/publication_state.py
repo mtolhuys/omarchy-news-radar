@@ -19,6 +19,52 @@ TRUSTWORTHY_TRANSITION_EVENT_TYPES = frozenset(
 )
 
 
+def _load_audit_snapshot(path: Path) -> dict[str, Any]:
+    raw = read_json_bounded(path, PUBLICATION_SNAPSHOT_MAX_BYTES)
+    if not isinstance(raw, Mapping) or raw.get("schemaVersion") not in {1, SNAPSHOT_SCHEMA}:
+        raise ValidationError("publication source state is unsupported")
+    candidate = dict(raw)
+    candidate["schemaVersion"] = SNAPSHOT_SCHEMA
+    return validate_snapshot(candidate)
+
+
+def audit_marketplace_additions(previous: Path, current: Path) -> dict[str, Any]:
+    """Fail if a newly observed catalog ID lacks its addition story."""
+
+    prior = _load_audit_snapshot(previous)
+    candidate = _load_audit_snapshot(current)
+    prior_marketplace = prior["sources"].get("marketplace")
+    current_marketplace = candidate["sources"].get("marketplace")
+    if not isinstance(prior_marketplace, Mapping) or not isinstance(current_marketplace, Mapping):
+        raise ValidationError("publication source state lacks marketplace continuity")
+    prior_plugins = prior_marketplace.get("plugins")
+    current_plugins = current_marketplace.get("plugins")
+    if not isinstance(prior_plugins, Mapping) or not isinstance(current_plugins, Mapping):
+        raise ValidationError("publication marketplace plugin state is invalid")
+    if _marketplace_generated_at(candidate) < _marketplace_generated_at(prior):
+        raise ValidationError("marketplace generation time moved backwards")
+    additions = set(current_plugins) - set(prior_plugins)
+    represented = {
+        str(event["entity"]["id"])
+        for event in candidate["events"]
+        if event.get("type") == "plugin-added"
+        and isinstance(event.get("entity"), Mapping)
+        and event["entity"].get("kind") == "plugin"
+    }
+    missing = sorted(additions - represented)
+    if missing:
+        sample = ", ".join(missing[:5])
+        raise ValidationError(
+            f"{len(missing)} new marketplace plugin(s) lack addition stories: {sample}"
+        )
+    return {
+        "previousPlugins": len(prior_plugins),
+        "currentPlugins": len(current_plugins),
+        "newPlugins": len(additions),
+        "representedNewPlugins": len(additions),
+    }
+
+
 def migrate_legacy_source_snapshot(source: Path, destination: Path) -> dict[str, Any]:
     """Reset replay-contaminated discovery events while preserving dated facts."""
 

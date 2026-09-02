@@ -58,6 +58,7 @@ make site
 - CSP and external-link attributes remain present.
 - Generated-file drift fails validation.
 - Marketplace preview origin/path, byte/content-type agreement, PNG/JPEG/WebP structure, static-only, size/dimension/pixel bounds, SHA-256 naming, same-origin projection, SVG rejection, graceful omission, and no upstream URL in public feed.
+- Restored-to-successor marketplace coverage: nondecreasing catalog generation time and one validated addition story for every canonical plugin ID absent from the prior successful snapshot.
 
 ### Client helper
 

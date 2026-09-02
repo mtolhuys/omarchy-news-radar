@@ -76,6 +76,11 @@ jobs:
             bootstrap=(--bootstrap-marketplace)
           fi
           python3 -m radar collect "${bootstrap[@]}"
+      - name: Prove every new marketplace plugin became news
+        run: |
+          PYTHONPATH=. python3 -m radar audit-marketplace-additions \
+            --previous .publication-state/source-snapshot.json \
+            --current state/source-snapshot.json
       - name: Retain the next tracked source baseline
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:

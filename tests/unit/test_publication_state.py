@@ -10,6 +10,7 @@ from pathlib import Path
 from radar.errors import ValidationError
 from radar.io import atomic_write_json
 from radar.publication_state import (
+    audit_marketplace_additions,
     migrate_legacy_source_snapshot,
     restore_publication_source_snapshot,
 )
@@ -87,6 +88,43 @@ class PublicationStateTests(unittest.TestCase):
             restore_publication_source_snapshot(
                 self.previous, self.tracked, self.output, now=CLOCK
             )
+
+    def test_marketplace_audit_requires_news_for_every_new_plugin(self) -> None:
+        previous = deepcopy(self.snapshot)
+        atomic_write_json(self.previous, previous)
+        current = deepcopy(self.snapshot)
+        current["sources"]["marketplace"]["plugins"]["org.example.notes"] = deepcopy(
+            current["sources"]["marketplace"]["plugins"]["org.example.focus"]
+        )
+        feed = json.loads((ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8"))
+        addition = next(event for event in feed["events"] if event["type"] == "plugin-added")
+        current["events"].append(addition)
+        current["events"].sort(
+            key=lambda event: (event["occurredAt"], event["id"]), reverse=True
+        )
+        atomic_write_json(self.tracked, current)
+        result = audit_marketplace_additions(self.previous, self.tracked)
+        self.assertEqual(1, result["newPlugins"])
+        self.assertEqual(1, result["representedNewPlugins"])
+
+        missing = deepcopy(current)
+        missing["events"].remove(addition)
+        atomic_write_json(self.output, missing)
+        with self.assertRaisesRegex(ValidationError, "lack addition stories"):
+            audit_marketplace_additions(self.previous, self.output)
+
+    def test_marketplace_audit_accepts_legacy_previous_state_and_rejects_time_reversal(self) -> None:
+        legacy = deepcopy(self.snapshot)
+        legacy["schemaVersion"] = 1
+        atomic_write_json(self.previous, legacy)
+        result = audit_marketplace_additions(self.previous, self.tracked)
+        self.assertEqual(0, result["newPlugins"])
+
+        current = deepcopy(self.snapshot)
+        current["sources"]["marketplace"]["generatedAt"] = "2026-08-31T13:59:59Z"
+        atomic_write_json(self.output, current)
+        with self.assertRaisesRegex(ValidationError, "moved backwards"):
+            audit_marketplace_additions(self.previous, self.output)
 
 
 if __name__ == "__main__":

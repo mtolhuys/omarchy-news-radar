@@ -51,6 +51,8 @@ Changes to description, tags, category, stars, views, hearts, copy counts, repos
 
 Scheduled collection always diffs against the validated snapshot from the latest successfully deployed edition. The next snapshot becomes eligible only after that workflow run completes successfully. A missing or invalid continuity artifact fails publication; it never falls back silently to an older tracked snapshot. Rediscovery of an existing deterministic event ID retains its first observed occurrence/discovery times.
 
+After collection, publication compares the restored and successor snapshots. Every catalog ID that appears for the first time must have a validated `plugin-added` event in the successor ledger, and marketplace generation time may not move backwards. A missing addition fails the build before artifact upload or Pages deployment.
+
 ### Preview mirroring
 
 An event created by a supported marketplace diff may carry its catalog preview thumbnail. Publication fetches only `https://plugins.omarchy.org/assets/img/plugins/...` through the closed redirect policy, caps each response at 1.5 MiB, requires matching PNG/JPEG/WebP Content-Type and magic, validates static image structure and declared dimensions up to 4,096 per side/12 million pixels, rejects SVG and animation, then names the asset by SHA-256. A fetch or validation failure removes only the optional image. Clients never receive the upstream preview URL.

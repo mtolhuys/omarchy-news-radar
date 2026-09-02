@@ -214,6 +214,7 @@ def validate_workflows() -> None:
     publish = (ROOT / ".github" / "workflows" / "publication.yml").read_text(encoding="utf-8")
     for required in (
         "actions: read",
+        "audit-marketplace-additions",
         "contents: read",
         "pages: write",
         "id-token: write",

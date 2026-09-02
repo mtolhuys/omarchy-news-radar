@@ -25,6 +25,8 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn("--status success", workflow)
         self.assertIn("news-radar-source-snapshot-${{ steps.previous_state.outputs.run_id }}", workflow)
         self.assertIn("refusing to replay the committed baseline", workflow)
+        self.assertIn("audit-marketplace-additions", workflow)
+        self.assertIn("Prove every new marketplace plugin became news", workflow)
 
     def test_every_public_launcher_uses_summon_activation(self) -> None:
         command = "omarchy-shell shell summon io.github.mtolhuys.news-radar"

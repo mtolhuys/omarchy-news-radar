@@ -33,7 +33,11 @@ from .io import atomic_write_json
 from .local_edition import import_local_edition
 from .local_collection import commit_local_source_snapshot, prepare_local_source_snapshot
 from .publisher import publish
-from .publication_state import migrate_legacy_source_snapshot, restore_publication_source_snapshot
+from .publication_state import (
+    audit_marketplace_additions,
+    migrate_legacy_source_snapshot,
+    restore_publication_source_snapshot,
+)
 from .validation import parse_timestamp, validate_feed
 from .window import activate_window
 
@@ -181,6 +185,9 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
     publication_migrate = commands.add_parser("migrate-source-snapshot-v2")
     publication_migrate.add_argument("--source", type=Path, required=True)
     publication_migrate.add_argument("--output", type=Path, required=True)
+    publication_audit = commands.add_parser("audit-marketplace-additions")
+    publication_audit.add_argument("--previous", type=Path, required=True)
+    publication_audit.add_argument("--current", type=Path, required=True)
     collect = commands.add_parser("collect")
     collect.add_argument("--snapshot", type=Path, default=ROOT / "state/source-snapshot.json")
     collect.add_argument("--output", type=Path, default=ROOT / "dist")
@@ -236,9 +243,12 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
                 args.previous, args.tracked, args.output
             )
             _print({"status": "ok", **restored})
-        else:
+        elif args.command == "migrate-source-snapshot-v2":
             migrated = migrate_legacy_source_snapshot(args.source, args.output)
             _print({"status": "ok", **migrated})
+        else:
+            audited = audit_marketplace_additions(args.previous, args.current)
+            _print({"status": "ok", **audited})
         return 0
     except (RadarError, OSError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)

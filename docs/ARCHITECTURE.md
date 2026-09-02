@@ -211,6 +211,8 @@ A partial source outage may produce a feed with explicit source-health metadata,
 
 Event identity also protects occurrence history. If a lagging source state rediscovers an event whose deterministic ID already exists in the retained ledger, its original `occurredAt` and `discoveredAt` remain authoritative; only explicitly supported description and metric enrichment may refresh.
 
+The publication workflow retains the restored snapshot separately through collection, then runs `audit-marketplace-additions` against the successor. The gate requires nondecreasing catalog generation time and a `plugin-added` event for every newly appearing canonical plugin ID before either publication artifact is uploaded.
+
 ## Static publication
 
 GitHub Actions runs tests first, then builds an immutable deployment artifact containing at least:
