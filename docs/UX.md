@@ -27,9 +27,9 @@ Version 1 is an on-demand normal desktop window paired with a default-on, option
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar and compact window/update actions.
-2. **Section rail:** Front Page, For You, Core, Plugins, and Saved with bounded counts.
-3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
-4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action.
+2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; kept compact (preferred ~13% wide / ~20% narrow, capped) so it does not grow empty gutters beside labels.
+3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid; the list receives most freed width from a tightened rail (list-first).
+4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action; slightly narrower than the list but remains readable for actions and metadata.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 

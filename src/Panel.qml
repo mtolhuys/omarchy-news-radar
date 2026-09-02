@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.1+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.2+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -1547,7 +1547,11 @@ Item {
             spacing: Style.spacing.panelGap
 
             ColumnLayout {
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.24 : card.width * 0.16
+              // List-first: keep the SECTIONS rail compact (labels+counts) and
+              // cap it so wide windows do not grow empty gutters beside the count.
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.20 : card.width * 0.13
+              Layout.minimumWidth: Style.space(128)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.28 : Style.space(168)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1588,7 +1592,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.7 : card.width * 0.46
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.74 : card.width * 0.52
               spacing: Style.spacing.md
 
               GridLayout {
@@ -1878,7 +1882,8 @@ Item {
             Flickable {
               visible: !keySurface.narrow
               Layout.fillHeight: true
-              Layout.preferredWidth: card.width * 0.29
+              Layout.preferredWidth: card.width * 0.27
+              Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight
               clip: true

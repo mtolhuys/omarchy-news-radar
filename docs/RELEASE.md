@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.1` is the QoL candidate that adds a per-section header **All ↔ Unread only** toggle, keyboard `f`, and a subtle collapsible **Keys** legend on top of the 0.4.0 YouTube lane, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.2` is the layout QoL candidate that tightens the SECTIONS rail and widens the center story list on top of 0.4.1, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
@@ -60,7 +60,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Current Omarchy tokens drive color, spacing, typography, borders, focus, and monitor fit.
 - Selected and unselected primary/secondary text, status, summaries, metadata, and counts remain distinguishable from their surfaces in maintained dark and light themes.
 - Light/dark, narrow/wide, long text, empty/dense, cached/refreshing/offline/invalid/partial, and 200% text states are reviewed.
-- Visual columns preserve one semantic keyboard order.
+- Visual columns preserve one semantic keyboard order; the SECTIONS rail stays compact (capped) and the center list is list-first wider than the inspector.
 - Keyboard-only traversal, focus visibility, labels, counts, source health, and reduced motion pass.
 - Assistive-technology claims do not exceed actual evidence.
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2 — 2026-09-02
+
+### Changed
+- Tighten the left **SECTIONS** rail (lower preferred width, min/max caps) so labels and unread counts fit without large empty gutters on wide windows.
+- Give the center story list more of the freed width; the detail inspector shrinks slightly but keeps actions and metadata readable.
+- Narrow breakpoint still hides the inspector and keeps a usable sections share; no feed or local-state schema bump.
+
 ## 0.4.1 — 2026-09-02
 
 ### Added
