@@ -580,6 +580,8 @@ Item {
     var result = RadarModel.parseResponse(raw)
     if (result.status === "ok" || result.status === "first-use") {
       var preserveViewport = activeProjectionViewportMode === "preserve"
+      var resumeTopAlignment = preserveViewport && storyScrollAnimation.running
+      if (resumeTopAlignment) storyScrollAnimation.stop()
       var preservedContentY = storyList.contentY
       var preservedSelectedId = selectedStory && selectedStory.id
         ? String(selectedStory.id) : ""
@@ -618,16 +620,39 @@ Item {
         : -1
       if (preserveViewport) {
         // Replacing a ListView model may reset contentY while delegates settle.
-        // Keep the reader at the exact live offset; an in-flight keyboard
-        // animation remains authoritative and continues toward its target.
+        // Keep the reader at the exact live visual anchor. If a read-state
+        // projection completed during a keyboard scroll, stop the obsolete
+        // animation target, restore the current on-screen position against
+        // the replacement delegates, then continue toward the new row's top.
         storyList.contentY = preservedContentY
         var preservedRevision = storyViewportRevision
-        queueViewportPreservation(
-          preservedContentY,
-          storyViewportAnchorIndex,
-          preservedAnchorTop,
-          preservedRevision
-        )
+        if (resumeTopAlignment) {
+          var resumeAnchorIndex = storyViewportAnchorIndex
+          Qt.callLater(function() {
+            if (preservedRevision !== root.storyViewportRevision) return
+            var resumeRow = storyList.itemAtIndex(resumeAnchorIndex)
+            if (resumeRow) {
+              var resumeMaximumY = storyList.originY
+                + Math.max(0, storyList.contentHeight - storyList.height)
+              storyList.contentY = Math.max(
+                storyList.originY,
+                Math.min(resumeRow.y - preservedAnchorTop, resumeMaximumY)
+              )
+            }
+            root.animateStoryPosition(
+              resumeAnchorIndex,
+              true,
+              storyList.contentY
+            )
+          })
+        } else {
+          queueViewportPreservation(
+            preservedContentY,
+            storyViewportAnchorIndex,
+            preservedAnchorTop,
+            preservedRevision
+          )
+        }
       } else {
         storyViewportRevision++
         var restoreRevision = storyViewportRevision

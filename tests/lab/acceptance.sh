@@ -755,7 +755,13 @@ omarchy_host_test() {
   fi
   press down
   wait_for_guest_state "Down continues smoothly into the first newly loaded story" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.selectedIndex == 12 and .fullyVisible == true and .topAligned == true and .scrolling == false'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.selectedIndex == 12 and .fullyVisible == true and .topAligned == true and .scrolling == false'" || {
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+        >"$RUN_DIR/news-radar-post-load-down-failure.json" 2>&1 || true
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState ''" \
+        >"$RUN_DIR/news-radar-post-load-down-viewport.json" 2>&1 || true
+      return 1
+    }
   post_load_content_y="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }' | jq -r '.contentY'")" || return 1
   press down
   wait_for_guest_state "A second Down after Load more keeps the anchored viewport stable" 10 ssh_session \
