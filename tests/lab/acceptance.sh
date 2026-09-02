@@ -726,6 +726,7 @@ omarchy_host_test() {
   capture_console "success-news-radar-09-load-more-focus"
   viewport_state="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'")" || return 1
   pre_load_content_y="$(jq -r '.contentY' <<<"$viewport_state")" || return 1
+  pre_load_top="$(jq -r '.top' <<<"$viewport_state")" || return 1
   press up
   wait_for_guest_state "Up from Load more returns focus without moving or reselecting the final story" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIndex == 11 and .loadMoreFocused == false' && \
@@ -746,10 +747,10 @@ omarchy_host_test() {
       return 1
     }
   wait "$load_more_probe_pid" || return 1
-  if ! jq -s -e --argjson retainedY "$pre_load_content_y" \
-    'length > 4 and all(.[]; .selectedIndex == 11 and ((.contentY - $retainedY) | fabs) <= 1 and .scrolling == false)' \
+  if ! jq -s -e --argjson retainedTop "$pre_load_top" \
+    'length > 4 and all(.[]; .selectedIndex == 11 and .fullyVisible == true and ((.top - $retainedTop) | fabs) <= 1 and .scrolling == false)' \
     "$RUN_DIR/news-radar-load-more-scroll-probes.jsonl" >/dev/null; then
-    log "Load more moved or animated the retained story viewport"
+    log "Load more moved or animated the retained story on screen"
     return 1
   fi
   press down

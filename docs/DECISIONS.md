@@ -306,11 +306,13 @@
 
 ## D039 — Preserve the live viewport across pagination and read projections
 
-**Decision:** Projection requests declare either `reset` or `preserve` viewport semantics. Section, search, and filter changes deliberately rebuild from their canonical anchor. **Load more**, edition refresh, installed-plugin discovery, and per-story reading updates retain the live `contentY`, stable selected event ID, and current keyboard animation. A monotonic viewport revision invalidates deferred positioning from superseded navigation.
+**Decision:** Projection requests declare either `reset` or `preserve` viewport semantics. Section, search, and filter changes deliberately rebuild from their canonical anchor. **Load more**, edition refresh, installed-plugin discovery, and per-story reading updates retain the stable selected event ID, its live on-screen anchor, and the current keyboard animation. A monotonic viewport revision invalidates deferred positioning from superseded navigation.
 
 **Why:** Expanding a 12-story projection replaced the ListView model and then ran the generic anchor restoration. That anchor described an earlier viewport block, so pagination jumped upward. The selected story's asynchronous read write could immediately request another projection while the 140 ms keyboard animation was active, making multiple valid operations fight over `contentY` and producing visible oscillation.
 
 **Consequence:** Pagination does not move or animate the retained story viewport. The next Down top-aligns the first newly revealed row when it crosses the viewport, and the following Down keeps that anchor while moving normally. Stable event identity survives a refreshed projection, active animation remains authoritative, and only explicit context changes reset the viewport. Disposable-lab acceptance continuously samples pagination geometry and asserts both post-load navigation steps.
+
+The invariant is the rendered anchor rather than the raw `ListView.contentY` number. When a replaced variable-height delegate settles at a different internal `y`, preservation adjusts `contentY` by the same amount to keep the selected story at the identical screen position. Acceptance therefore samples the selected row's on-screen top, full visibility, and animation state; treating the compensating internal offset as motion would reject a visually stable result.
 
 ## D040 — Keep reverse key-repeat synchronized with selection
 
