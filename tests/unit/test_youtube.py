@@ -74,8 +74,33 @@ class YouTubeSourceTests(unittest.TestCase):
         self.assertEqual(1, len(events))
         self.assertEqual("youtube-video", events[0]["type"])
         self.assertEqual("youtube", events[0]["classification"]["section"])
+        self.assertEqual("yt:dQwOmarchy1", events[0]["entity"]["id"])
         self.assertTrue(events[0]["image"]["sourceUrl"].startswith("https://i.ytimg.com/vi/"))
 
+
+    def test_youtube_entity_id_accepts_leading_underscore_video_ids(self) -> None:
+        payload = {
+            "items": [
+                {
+                    "id": "_CuibYl_Fh0",
+                    "snippet": {
+                        "title": "Omarchy interview",
+                        "description": "About Omarchy",
+                        "channelTitle": "Channel",
+                        "publishedAt": "2026-08-30T12:00:00Z",
+                    },
+                    "statistics": {"viewCount": "10", "likeCount": "2"},
+                }
+            ]
+        }
+        videos = parse_videos(payload)
+        events = youtube_events(videos, discovered_at=CLOCK)
+        self.assertEqual("yt:_CuibYl_Fh0", events[0]["entity"]["id"])
+        self.assertTrue(events[0]["source"]["url"].endswith("watch?v=_CuibYl_Fh0"))
+        from radar.validation import validate_feed
+        # Build a minimal validated path via collect fixture is heavy; validate_event through feed helper.
+        from radar.validation import validate_event
+        validate_event(events[0])
 
     def test_parse_videos_truncates_long_or_empty_description(self) -> None:
         long_description = ("Omarchy notes. " * 80).strip()

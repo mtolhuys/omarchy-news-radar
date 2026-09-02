@@ -12,6 +12,7 @@
 
 ### Fixed
 - Truncate or fall back YouTube descriptions when building summaries so long/empty API descriptions do not fail the whole YouTube source.
+- Prefix YouTube entity IDs with `yt:` so Data API video IDs that start with `_` or `-` satisfy entity ID validation.
 
 ### Notes
 - Missing or failed YouTube collection fails closed and retains the prior YouTube snapshot. CI uses fixtures only—no live YouTube API.

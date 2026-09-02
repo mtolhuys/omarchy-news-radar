@@ -252,9 +252,11 @@ def youtube_events(
     events: list[dict[str, Any]] = []
     for video in rank_youtube_videos(videos):
         video_id = str(video["id"])
+        # ENTITY_ID_RE requires an alphanumeric first character; YouTube IDs may start with _/-.
+        entity_id = f"yt:{video_id}"
         source = watch_url(video_id)
         event = {
-            "id": event_id("youtube-video", "youtube", video_id, video_id, source),
+            "id": event_id("youtube-video", "youtube", entity_id, video_id, source),
             "type": "youtube-video",
             "occurredAt": str(video["publishedAt"]),
             "discoveredAt": format_timestamp(clock),
@@ -263,7 +265,7 @@ def youtube_events(
             "source": {"label": "YouTube", "url": source},
             "entity": {
                 "kind": "youtube",
-                "id": video_id,
+                "id": entity_id,
                 "name": str(video["channelTitle"]),
             },
             "classification": {
