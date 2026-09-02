@@ -108,6 +108,32 @@ def _fetch_feed(*, timeout: float = 12.0) -> dict[str, Any]:
     )
     return decode_json(data, label="feed")
 
+def _youtube_event_count(feed: Mapping[str, Any] | None) -> int:
+    if not isinstance(feed, Mapping):
+        return 0
+    events = feed.get("events")
+    if not isinstance(events, list):
+        return 0
+    return sum(1 for event in events if isinstance(event, Mapping) and event.get("type") == "youtube-video")
+
+
+def _should_adopt_published_for_youtube(
+    cached: Mapping[str, Any] | None,
+    validated: Mapping[str, Any],
+    *,
+    local_edition: bool,
+) -> bool:
+    """Adopt an older published edition when a local live edition lacks YouTube.
+
+    D029 still refuses ordinary published downgrades. This narrow exception only
+    applies while a digest-matched local edition has zero youtube-video events
+    and the validated published candidate has at least one, so Check for updates
+    can fill the YouTube section from Forge without waiting for generatedAt.
+    """
+    if not local_edition or cached is None:
+        return False
+    return _youtube_event_count(cached) == 0 and _youtube_event_count(validated) > 0
+
 
 def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
     env = dict(environment or os.environ)
@@ -129,7 +155,12 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
                 parse_timestamp(validated["generatedAt"])
                 > parse_timestamp(cached["generatedAt"])
             )
-            if candidate_is_newer:
+            adopt_for_youtube = _should_adopt_published_for_youtube(
+                cached,
+                validated,
+                local_edition=local is not None,
+            )
+            if candidate_is_newer or adopt_for_youtube:
                 previous_ids = {event["id"] for event in cached["events"]} if cached else set()
                 new_stories = sum(event["id"] not in previous_ids for event in validated["events"])
                 selected = save_feed(validated, env, now=clock)

@@ -180,11 +180,25 @@ class YouTubeSourceTests(unittest.TestCase):
 
     def test_refresh_cadence_and_schema_gate(self) -> None:
         self.assertTrue(should_refresh_youtube(None, now=CLOCK))
-        self.assertFalse(
-            should_refresh_youtube({"checkedAt": "2026-08-31T10:00:00Z"}, now=CLOCK)
+        self.assertTrue(
+            should_refresh_youtube({"checkedAt": "2026-08-31T10:00:00Z", "videoIds": []}, now=CLOCK),
+            "empty youtube snapshot must refresh immediately",
         )
         self.assertTrue(
-            should_refresh_youtube({"checkedAt": "2026-08-31T07:00:00Z"}, now=CLOCK)
+            should_refresh_youtube({"checkedAt": "2026-08-31T10:00:00Z"}, now=CLOCK),
+            "missing videoIds must refresh immediately",
+        )
+        self.assertFalse(
+            should_refresh_youtube(
+                {"checkedAt": "2026-08-31T10:00:00Z", "videoIds": ["yt:dQwOmarchy1"]},
+                now=CLOCK,
+            )
+        )
+        self.assertTrue(
+            should_refresh_youtube(
+                {"checkedAt": "2026-08-31T07:00:00Z", "videoIds": ["yt:dQwOmarchy1"]},
+                now=CLOCK,
+            )
         )
         with self.assertRaises(ValidationError):
             parse_search_video_ids({"items": [{"id": {"videoId": "short"}}]})

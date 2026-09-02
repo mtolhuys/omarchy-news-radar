@@ -307,7 +307,16 @@ def should_refresh_youtube(
     *,
     now: datetime,
 ) -> bool:
+    """Return True when YouTube should be fetched again.
+
+    The six-hour cadence conserves quota only after a successful non-empty
+    snapshot. Missing, malformed, or empty ``videoIds`` always refresh so the
+    first populate (and empty→filled) is never delayed by the gate.
+    """
     if not isinstance(previous_source, Mapping):
+        return True
+    video_ids = previous_source.get("videoIds")
+    if not isinstance(video_ids, list) or len(video_ids) == 0:
         return True
     checked_at = previous_source.get("checkedAt")
     if not isinstance(checked_at, str):

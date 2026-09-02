@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.6` raises ASCII Omarchy icon contrast (brighter masthead/paper/amber) without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.7` fills YouTube ASAP (empty-snapshot collect refresh + Check for updates prefers published YouTube over a newer local edition without it) and keeps the higher-contrast 0.4.6 icon, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
