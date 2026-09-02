@@ -8,7 +8,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.4.3` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
+Version `0.4.4` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -63,7 +63,7 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install the published v0.4.3
+## Install the published v0.4.4
 
 Install the tagged public release directly with:
 

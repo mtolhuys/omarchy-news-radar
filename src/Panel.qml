@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.3+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.4+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -31,6 +31,8 @@ Item {
   readonly property string compositorWindowTitle: "📰 Omarchy News Radar"
   readonly property color secondaryTextColor: Qt.rgba(
     Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
+  readonly property color quietTextColor: Qt.rgba(
+    Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.48)
   property var cachedFeed: null
   property var userState: ({
     schemaVersion: 10,
@@ -1552,12 +1554,11 @@ Item {
             spacing: Style.spacing.panelGap
 
             ColumnLayout {
-              // Comfortable SECTIONS rail (between old 16% and cramped 13%):
-              // labels+counts padded, still capped so wide windows avoid empty gutters.
-              // Freed list width goes to the detail inspector (the news itself).
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.15
+              // SECTIONS rail stays compact; slight trim feeds the detail pane.
+              // List is the skimmable index; selected story gets the reading width.
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.14
               Layout.minimumWidth: Style.space(128)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(184)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(176)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1591,17 +1592,49 @@ Item {
               ColumnLayout {
                 id: keysLegend
                 Layout.fillWidth: true
-                spacing: Style.spacing.sm
+                spacing: Style.space(4)
 
-                RadarButton {
+                FocusScope {
                   id: keysLegendToggle
                   Layout.fillWidth: true
-                  label: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
-                  tooltipText: root.keysLegendOpen
-                    ? "Hide keyboard shortcuts (?)"
-                    : "Show keyboard shortcuts (?)"
-                  selected: root.keysLegendOpen
-                  onClicked: root.keysLegendOpen = !root.keysLegendOpen
+                  implicitHeight: Math.max(Style.space(18), keysToggleLabel.implicitHeight + Style.space(2))
+                  activeFocusOnTab: true
+                  Accessible.role: Accessible.Button
+                  Accessible.name: keysToggleLabel.text
+                  Accessible.focusable: true
+                  Accessible.onPressAction: root.keysLegendOpen = !root.keysLegendOpen
+
+                  Text {
+                    id: keysToggleLabel
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
+                    textFormat: Text.PlainText
+                    color: keysToggleHover.hovered || parent.activeFocus
+                      ? root.secondaryTextColor
+                      : root.quietTextColor
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                    font.bold: false
+                  }
+
+                  HoverHandler { id: keysToggleHover }
+                  PanelToolTip {
+                    visible: keysToggleHover.hovered
+                    text: root.keysLegendOpen
+                      ? "Hide keyboard shortcuts (?)"
+                      : "Show keyboard shortcuts (?)"
+                    fontFamily: Style.font.family
+                  }
+                  MouseArea {
+                    anchors.fill: parent
+                    preventStealing: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.keysLegendOpen = !root.keysLegendOpen
+                  }
+                  Keys.onReturnPressed: root.keysLegendOpen = !root.keysLegendOpen
+                  Keys.onEnterPressed: root.keysLegendOpen = !root.keysLegendOpen
+                  Keys.onSpacePressed: root.keysLegendOpen = !root.keysLegendOpen
                 }
 
                 Text {
@@ -1609,7 +1642,7 @@ Item {
                   Layout.fillWidth: true
                   text: "Esc/q · j/k · ↵/o · s · u · a · f · / · r · Tab · 1–6 · Home/End · ?"
                   textFormat: Text.PlainText
-                  color: root.secondaryTextColor
+                  color: root.quietTextColor
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   wrapMode: Text.WordWrap
@@ -1622,7 +1655,7 @@ Item {
                   visible: root.keysLegendOpen
                   Layout.fillWidth: true
                   Layout.preferredHeight: visible ? childrenRect.height : 0
-                  spacing: Style.spacing.controlGap
+                  spacing: Style.space(4)
                   Accessible.role: Accessible.StaticText
                   Accessible.name: "Keyboard shortcuts"
 
@@ -1645,39 +1678,31 @@ Item {
                     Row {
                       required property var modelData
                       required property int index
-                      spacing: Style.space(6)
+                      spacing: Style.space(4)
 
-                      BorderSurface {
+                      Text {
+                        id: keycapText
                         anchors.verticalCenter: parent.verticalCenter
-                        implicitWidth: keycapText.implicitWidth + Style.spacing.controlPaddingX
-                        implicitHeight: Math.max(Style.space(22), keycapText.implicitHeight + Style.space(6))
-                        radius: Style.cornerRadius
-                        color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
-                        borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
-
-                        Text {
-                          id: keycapText
-                          anchors.centerIn: parent
-                          text: modelData.keys
-                          textFormat: Text.PlainText
-                          color: Color.popups.text
-                          font.family: Style.font.family
-                          font.pixelSize: Style.font.caption
-                          font.bold: true
-                        }
+                        text: modelData.keys
+                        textFormat: Text.PlainText
+                        color: root.secondaryTextColor
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.caption
+                        font.bold: false
                       }
 
                       Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.action + (index < 12 ? " ·" : "")
                         textFormat: Text.PlainText
-                        color: root.secondaryTextColor
+                        color: root.quietTextColor
                         font.family: Style.font.family
                         font.pixelSize: Style.font.caption
                       }
                     }
                   }
                 }
+              }
               }
             }
 
@@ -1690,7 +1715,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.48
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.45
               spacing: Style.spacing.md
 
               GridLayout {
@@ -1885,7 +1910,7 @@ Item {
             Flickable {
               visible: !keySurface.narrow
               Layout.fillHeight: true
-              Layout.preferredWidth: card.width * 0.31
+              Layout.preferredWidth: card.width * 0.36
               Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight

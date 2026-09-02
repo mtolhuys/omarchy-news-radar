@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.3` corrects the 0.4.2 layout (Keys under SECTIONS, roomier rail, slimmer list, roomier detail) and adds keyboard `a` for Mark all as read, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.4` softens the SECTIONS-rail Keys legend and widens the detail inspector further (list slightly slimmer), without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
