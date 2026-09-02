@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.6 — 2026-09-02
+
+### Changed
+- Raise icon contrast: brighter masthead (`#c8c8c8`), paper (`#9a9a9a`), and amber (`#e0a04a`) fills so the ASCII Omarchy radar is readable in the Apps menu (was invisibly dim in 0.4.5).
+
+### Notes
+- No feed or local-state schema bump.
+
 ## 0.4.5 — 2026-09-02
 
 ### Changed
