@@ -751,6 +751,22 @@ Item {
       }
       return
     }
+    var nextRowBeforeSelection = storyList.itemAtIndex(nextIndex)
+    if (delta > 0 && !nextRowBeforeSelection) {
+      // The first row revealed by pagination can still be virtualized just
+      // outside the clip. Do not ask an animation to target geometry that Qt
+      // has not created: select the canonical index and place it directly at
+      // the top. Its read-state projection then preserves this real anchor.
+      selectStory(nextIndex, true)
+      storyViewportAnchorIndex = nextIndex
+      storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
+      Qt.callLater(function() {
+        if (root.selectedIndex === nextIndex
+            && root.storyViewportRevision === viewportRevision)
+          storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
+      })
+      return
+    }
     var initialContentY = storyList.contentY
     var currentRow = delta > 0 ? storyList.itemAtIndex(selectedIndex) : null
     var fallbackNextTop = currentRow
