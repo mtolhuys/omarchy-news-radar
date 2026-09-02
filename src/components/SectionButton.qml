@@ -13,13 +13,21 @@ FocusScope {
   property bool selected: false
   signal clicked()
 
+  readonly property bool popupBgIsLight: (
+    0.2126 * Color.popups.background.r
+    + 0.7152 * Color.popups.background.g
+    + 0.0722 * Color.popups.background.b) > 0.5
+
   function toneFill() {
+    // Light-only local bump; do not override Omarchy shell.toml alphas.
+    var accentA = root.popupBgIsLight ? 0.18 : 0.14
+    var inkA = root.popupBgIsLight ? 0.14 : 0.11
     if (root.tone === "soft")
       return Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
     if (root.tone === "accent")
-      return Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.14)
+      return Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, accentA)
     if (root.tone === "ink")
-      return Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.11)
+      return Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, inkA)
     return "transparent"
   }
 
@@ -81,8 +89,10 @@ FocusScope {
       color: root.unreadCount > 0
         ? Color.accent
         : root.selected
-        ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
-        : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
+        ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+                  root.popupBgIsLight ? 0.88 : 0.78)
+        : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+                  root.popupBgIsLight ? 0.82 : 0.72)
       font.family: Style.font.family
       font.pixelSize: Style.font.caption
     }

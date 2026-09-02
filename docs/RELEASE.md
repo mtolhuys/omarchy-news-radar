@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.9` drops the Apps-menu icon amber outer rim (black-fill squircle + green Omarchy glyph + amber radar) and ignores local `.tmp/` scratch, without a feed or state schema bump. Earlier 0.4.7 filled YouTube ASAP (empty-snapshot collect refresh + Check for updates prefers published YouTube over a newer local edition without it). The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.10` fixes light-theme contrast (luminance-aware secondary/quiet floors and foreground modal scrims) and makes the panel icon badge opaque theme-colored behind a transparent SVG (no hardcoded `#111`), without a feed or state schema bump. Earlier 0.4.9 dropped the Apps-menu amber outer rim; 0.4.7 filled YouTube ASAP. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 

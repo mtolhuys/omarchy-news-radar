@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.10 — 2026-09-02
+
+### Fixed
+- Light-theme contrast on Lupine and similar popup surfaces: luminance-aware secondary (≥0.82) and quiet (≥0.64) text floors; dark keeps ~0.72 / ~0.52 so Matte Black stays intentional.
+- Modal Tune/Settings scrims dim with foreground alpha (light 0.22 / dark 0.45) instead of `Color.background` @ 0.82 white-wash on light.
+- Keys idle chrome rides the raised quiet floor on light (≥0.64).
+- Panel header mark no longer paints an opaque `#111` squircle: SVG is transparent; an opaque `Color.popups.background` rounded badge sits behind the Image so light/dark themes tint the icon.
+
+### Changed
+- Apps-menu / XDG launcher still ships the single transparent SVG (best-effort compositing; no QML theme fill there). Panel and companions that draw the asset can supply their own opaque theme badge.
+
+No feed or local-state schema bump.
+
 ## 0.4.9 — 2026-09-02
 
 ### Changed

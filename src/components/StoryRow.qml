@@ -15,9 +15,15 @@ FocusScope {
   // intentionally make that token close to their selection fill.  Derive all
   // selected text tiers from the popup foreground so the pair stays legible.
   readonly property color primaryTextColor: Color.popups.text
+  readonly property bool popupBgIsLight: (
+    0.2126 * Color.popups.background.r
+    + 0.7152 * Color.popups.background.g
+    + 0.0722 * Color.popups.background.b) > 0.5
   readonly property color secondaryTextColor: selected
-    ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.78)
-    : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
+    ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+              popupBgIsLight ? 0.88 : 0.78)
+    : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+              popupBgIsLight ? 0.82 : 0.72)
   implicitHeight: Math.max(
     storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2,
     hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0

@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.9+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.10+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -29,10 +29,22 @@ Item {
   property bool opened: false
   property bool closingFromHost: false
   readonly property string compositorWindowTitle: "📰 Omarchy News Radar"
+  // Matte-Black-tuned alphas read as ghostly on light popup surfaces (e.g. Lupine).
+  // Floor secondary/quiet by popup-background luminance; keep dark near prior values.
+  readonly property bool popupBgIsLight: (
+    0.2126 * Color.popups.background.r
+    + 0.7152 * Color.popups.background.g
+    + 0.0722 * Color.popups.background.b) > 0.5
   readonly property color secondaryTextColor: Qt.rgba(
-    Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
+    Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+    popupBgIsLight ? 0.82 : 0.72)
   readonly property color quietTextColor: Qt.rgba(
-    Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.48)
+    Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+    popupBgIsLight ? 0.64 : 0.52)
+  // Dim with foreground so light themes get a real wash (not white-on-white).
+  readonly property color modalScrimColor: Qt.rgba(
+    Color.foreground.r, Color.foreground.g, Color.foreground.b,
+    popupBgIsLight ? 0.22 : 0.45)
   property var cachedFeed: null
   property var userState: ({
     schemaVersion: 10,
@@ -1361,15 +1373,23 @@ Item {
               Layout.fillWidth: true
               spacing: Style.spacing.controlGap
 
-              Image {
+              // Opaque theme badge behind a transparent SVG so light/dark popup
+              // backgrounds tint the mark (Apps-menu still uses the bare SVG).
+              Rectangle {
                 Layout.preferredWidth: Style.space(42)
                 Layout.preferredHeight: Style.space(42)
-                source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
-                sourceSize: Qt.size(Style.space(84), Style.space(84))
-                fillMode: Image.PreserveAspectFit
-                mipmap: true
+                radius: Math.round(width * 28 / 128)
+                color: Color.popups.background
                 Accessible.role: Accessible.Graphic
                 Accessible.name: "Omarchy News Radar newspaper mark"
+
+                Image {
+                  anchors.fill: parent
+                  source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
+                  sourceSize: Qt.size(Style.space(84), Style.space(84))
+                  fillMode: Image.PreserveAspectFit
+                  mipmap: true
+                }
               }
 
               Item {
@@ -2085,7 +2105,7 @@ Item {
           anchors.fill: parent
           visible: root.preferencesOpen
           z: 20
-          color: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.82)
+          color: root.modalScrimColor
           MouseArea { anchors.fill: parent; onClicked: root.preferencesOpen = false }
 
           BorderSurface {
@@ -2191,7 +2211,7 @@ Item {
           anchors.fill: parent
           visible: root.sectionSettingsOpen
           z: 21
-          color: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.82)
+          color: root.modalScrimColor
           MouseArea { anchors.fill: parent; onClicked: root.sectionSettingsOpen = false }
 
           BorderSurface {
