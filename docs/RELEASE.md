@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.2.0` is an unpublished local candidate that fixes the post-pagination viewport race and publication-state replay defect while retaining the 0.1.6 update-path repair, conflict-free shortcut setup, and deterministic summon-to-focus behavior. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.2.1` is the corrective candidate that keeps the 0.2.0 navigation, unread-only, background-adoption, and publication-continuity fixes while removing normal-operation pipeline diagnostics and correcting public release/install documentation. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
@@ -18,7 +18,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Front Page, For You, Core, Plugins, and Saved match the implemented model; reviewed community records remain an optional feed input rather than an empty dedicated section.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
 - `Tab`/`Shift+Tab`, canonical section identity, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more behavior match the local projection model; the focused action labels Enter explicitly.
-- The complete keyboard guide is visible below search and **Check for updates** exposes its existing `R` shortcut on hover.
+- No permanent keyboard or publication-diagnostics strip occupies the reading surface; search exposes `/` and **Check for updates** exposes `R` on hover.
 - Bar click, `Super+Alt+N`, and Apps launch all summon one window; closed, obscured, foreground, rapid-repeat, Alt+Tab, explicit close, and reopen states are machine-asserted with real QMP input.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
@@ -35,7 +35,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Four off-peak best-effort schedule opportunities are configured each hour, workflow concurrency does not cancel an active publication, and two consecutive post-merge `event=schedule` runs prove the live trigger path.
 - Every build restores the exact source-state artifact from the latest successfully deployed run with read-only Actions access; missing or invalid continuity fails closed, event first-observation timestamps are immutable, and the tracked v2 transition seed is accepted only while fresh.
 - Front Page selects the newest official release once, then current plugin/community activity; it never fills an artificial Core quota with older releases.
-- Feed metadata and client output separately identify source check, collection, artifact publication, Pages/CDN propagation allowance, and local cache time. Publication older than 90 minutes is never labelled current.
+- Feed metadata and internal client state separately identify source check, collection, artifact publication, Pages/CDN propagation allowance, and local cache time. Normal successful reading exposes none of that pipeline telemetry as content.
 - JSON, RSS, HTML, archive, and snapshot validate and are byte-stable under a fixed clock.
 - Generated HTML/XML escapes hostile content and the site uses a restrictive static security policy.
 - Live feed size, event count, archive policy, and source-health metadata match the documented contract.
@@ -51,7 +51,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Shortcut install/migrate/remove preserves unrelated Lua exactly and rolls back on reload or config error; the automatic update command cannot install a free chord.
 - Disable and removal preserve user state; explicit purge removes only validated Radar-owned paths.
 - No runtime package installation, privilege escalation, arbitrary command, or background daemon exists.
-- The local path identifies itself as a local live edition, revalidates imported feed/images, advances its private source state only after complete import, never presents fixtures or rediscovered old diffs as current news, refuses a published downgrade, adopts a newer published edition on refresh, and migrates only the exact old panel-only placement.
+- The local path revalidates imported feed/images, advances its private source state only after complete import, never presents fixtures or rediscovered old diffs as current news, refuses a published downgrade, adopts a newer published edition on refresh, and migrates only the exact old panel-only placement. Its origin remains internal rather than persistent reader copy.
 
 ### Visual and accessibility
 
@@ -93,7 +93,7 @@ The owner explicitly authorized this procedure on 2026-09-01. It remains the req
 3. Run the workflow a second time without changing the repository. It must select the prior successful run ID, restore that exact v2 artifact, publish no repeated event ID with a changed occurrence/discovery time, and upload the next state under its own run ID. Do not commit routine scheduled snapshots to the source branch.
 4. Wait for two consecutive genuine `event=schedule` workflow runs on the merged four-times-hourly schedule. Both must pass build and deploy. After Pages/CDN propagation, verify `events.json`, RSS, HTML, build metadata, all source states/timestamps, event count, newest event, image count, schema, artifact SHA-256, and that public `publishedAt` matches the deployed build. A manual run does not satisfy this trigger proof.
 5. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
-6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.2.0` tag and release.
+6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.2.1` tag and release.
 7. Use the marketplace's **Plugin verification** form with **Verify and publish a newer upstream commit**, the exact plugin ID, repository root URL, and full 40-character release SHA. The existing snapshot remains live while compatibility validation, the Automated Security Baseline, maintainer approval, testing, and deployment remain maintainer-controlled. Do not represent issue creation as promotion or as a security audit.
 
 The workflow intentionally has no repository write permission. Normal snapshot advancement is a validated handoff between successful deployment artifacts. The tracked snapshot is only a reviewed transition/recovery seed; using it again requires a new explicit schema transition and fresh source audit rather than a silent fallback. If scheduled activity exceeds 45 minutes, publication age exceeds 90 minutes, Pages remains behind a successful deployment for more than its documented ten-minute propagation window, a source check lags publication materially, or continuity restoration fails, recovery is to inspect the exact prior run/artifact and restore that chain before dispatching again. Never bypass continuity by replaying an old repository snapshot.

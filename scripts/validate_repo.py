@@ -95,6 +95,30 @@ def validate_manifest() -> None:
         fail("manifest is missing required fields")
     if manifest["schemaVersion"] != 1 or manifest["id"] != "io.github.mtolhuys.news-radar":
         fail("manifest identity is invalid")
+    version = manifest.get("version")
+    if not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        fail("manifest version is invalid")
+    package_version = re.search(
+        r'^__version__ = "([^"]+)"$',
+        (ROOT / "radar" / "__init__.py").read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    build_version = re.search(
+        r'^BUILD_ID = "news-radar-([^"]+)"$',
+        (ROOT / "radar" / "constants.py").read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    if package_version is None or build_version is None:
+        fail("runtime version identity is missing")
+    if version != package_version.group(1) or version != build_version.group(1):
+        fail("manifest, package, and helper versions disagree")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    if f"## Install the published v{version}" not in readme:
+        fail("README installation heading does not match the manifest version")
+    if f"Version `{version}` is the current release." not in readme:
+        fail("README release status does not match the manifest version")
+    if not (ROOT / "docs" / "release-notes" / f"{version}.md").is_file():
+        fail("release notes do not match the manifest version")
     if manifest["kinds"] != ["panel", "bar-widget"] or set(manifest["entryPoints"]) != {"panel", "barWidget"}:
         fail("manifest must pair its panel with the optional bar widget")
     if manifest.get("keepLoaded") is not None or manifest.get("barWidget", {}).get("defaultSection") != "right":
@@ -143,6 +167,8 @@ def validate_manifest() -> None:
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
         if required_text not in qml:
             fail(f"panel entry point lacks {required_text}")
+    if f'news-radar-{version}+identity-1' not in qml:
+        fail("panel runtime identity does not match the manifest version")
     forbidden = ("Text.RichText", "Qt.openUrlExternally", "shell -c", "bash -c")
     for value in forbidden:
         if value in qml:

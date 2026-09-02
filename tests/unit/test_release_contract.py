@@ -14,6 +14,26 @@ CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
 
 
 class ReleaseContractTests(unittest.TestCase):
+    def test_public_version_identity_and_install_heading_agree(self) -> None:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        version = manifest["version"]
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn(f"Version `{version}` is the current release.", readme)
+        self.assertIn(f"## Install the published v{version}", readme)
+        self.assertTrue((ROOT / "docs" / "release-notes" / f"{version}.md").is_file())
+        self.assertIn(
+            f'BUILD_ID = "news-radar-{version}"',
+            (ROOT / "radar" / "constants.py").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            f'__version__ = "{version}"',
+            (ROOT / "radar" / "__init__.py").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            f'news-radar-{version}+identity-1',
+            (ROOT / "src" / "Panel.qml").read_text(encoding="utf-8"),
+        )
+
     def test_schedule_has_four_off_peak_recovery_opportunities_per_hour(self) -> None:
         workflow = (ROOT / ".github/workflows/publication.yml").read_text(encoding="utf-8")
         for minute in (8, 23, 38, 53):

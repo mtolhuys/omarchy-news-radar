@@ -112,7 +112,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -231,7 +231,7 @@ The site contains no runtime framework, cookies, analytics, user input, service 
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 
-The workflow requests four best-effort schedules per hour at minutes 8, 23, 38, and 53. These offsets avoid the top-of-hour load peak and provide recovery opportunities after a delayed or dropped invocation; they are not a delivery guarantee. Workflow concurrency does not cancel an in-progress publication. Before collection, the build uses read-only Actions access to select the latest successful workflow run, downloads that run's exact source-state artifact, and validates it before replacement. Missing or invalid state stops the build rather than replaying a stale repository seed. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. GitHub Pages/CDN propagation may add up to ten minutes after deployment, and each client separately reports when its validated copy was cached. A publication becomes visibly stale only when `publishedAt` is more than 90 minutes old, so normal scheduling and documented cache propagation do not create false alarms while sustained publisher lag cannot masquerade as source success.
+The workflow requests four best-effort schedules per hour at minutes 8, 23, 38, and 53. These offsets avoid the top-of-hour load peak and provide recovery opportunities after a delayed or dropped invocation; they are not a delivery guarantee. Workflow concurrency does not cancel an in-progress publication. Before collection, the build uses read-only Actions access to select the latest successful workflow run, downloads that run's exact source-state artifact, and validates it before replacement. Missing or invalid state stops the build rather than replaying a stale repository seed. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. GitHub Pages/CDN propagation may add up to ten minutes after deployment. Publication and cache timing remain available to validation, debug state, the bounded bar-health model, and external monitoring; they do not occupy the normal reader while validated news is available.
 
 ## Installed-plugin relevance
 

@@ -26,14 +26,14 @@ Version 1 is an on-demand normal desktop window paired with a default-on, option
 
 The panel has four stable visual zones:
 
-1. **Masthead:** Omarchy News Radar, local date, edition freshness, source health, and close action.
+1. **Masthead:** Omarchy News Radar and compact window/update actions.
 2. **Section rail:** Front Page, For You, Core, Plugins, and Saved with bounded counts.
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid.
 4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
-A compact keyboard guide sits directly below search instead of at the bottom of the section rail. It includes section, story, source, save, read-state, pagination, and update-check keys. The **Check for updates** control also repeats `R` on hover. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
+The reading surface does not carry a permanent keyboard legend or publication telemetry. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
 
 ## Front page composition
 
@@ -89,18 +89,18 @@ If a queued per-story write becomes stale because refresh atomically replaced th
 | State | Visible behavior | Recovery |
 | --- | --- | --- |
 | First use | Explains the empty cache and starts one refresh | Wait or retry |
-| Cached | Shows last-known-good edition immediately with age | Background refresh |
+| Cached | Shows last-known-good news immediately without an edition-status banner | Background refresh |
 | Checking | Keeps cached content readable and shows a restrained animated indicator on **Check for updates** | Wait or cancel by closing |
-| Updated | Adopts the newer edition atomically and reports its exact new-story count | Read normally |
-| No newer edition | Reports the artifact publication age without implying a source crawl | Read normally |
-| Publisher stale | Shows publisher lag when artifact publication exceeds 90 minutes, even if old source checks succeeded | Wait for publication or use an intentional local edition |
-| Offline | Keeps cache and labels the failed check, artifact age, and local cache age | Retry |
+| Updated | Adopts the newer edition atomically without adding persistent status copy | Read normally |
+| No newer edition | Leaves the current news unchanged | Read normally |
+| Publisher stale | Keeps validated cached news readable; operational monitoring carries publication-age detail | Wait for publication |
+| Offline | Keeps validated cached news readable without replacing it with network diagnostics | Retry later |
 | Source partial | Keeps valid events and names unavailable source adapters | Retry later |
 | Empty | Valid feed contains no events in the selected section | Change section or filters |
 | Filtered empty | Current filters match nothing | Clear filters |
 | Invalid feed | Rejects candidate, preserves cache, explains validation failure | Retry or inspect diagnostics |
 | No cache and failed | Gives a concise failure and direct retry action | Retry when online |
-| Local live edition | Shows an owner-built edition collected from live allowlisted sources, including the number of validated images available | Rerun `make local-latest` |
+| Local live edition | Shows the owner-built news normally; edition-origin detail remains internal | Rerun `make local-latest` when desired |
 
 ## Source opening
 
@@ -121,7 +121,7 @@ Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off contro
 - Accent marks focus, selection, and one lead rule. Urgent color is reserved for actual source or compatibility warnings.
 - A selected row must pair its fill with explicit primary and secondary foregrounds. It must never keep an ambient muted token that can blend into the selected fill; this is visually accepted in maintained dark and light themes.
 - Dense metadata remains secondary and collapsible; the main reading path prioritizes headline and summary.
-- Any motion is bounded to active refresh and has equivalent literal status text. There is no perpetual radar sweep.
+- Any motion is bounded to active refresh. There is no perpetual radar sweep or persistent pipeline-status copy.
 
 ## Accessibility boundary
 

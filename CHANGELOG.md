@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-09-02
+
+- Keep the successful reading surface focused on news by removing persistent edition-mode, source-health, publication-age, cache, and version diagnostics.
+- Remove the always-visible keyboard legend; shortcuts remain available through focused controls, tooltips, and the documented keyboard map.
+- Simplify search and section summary copy while preserving filter state, story counts, unread counts, and the temporary just-read explanation when it is actually relevant.
+- Show a concise update failure only when Radar has no usable cached news; cached last-known-good stories remain quietly readable through transient publisher or network problems.
+- Correct the public README release state and installation heading so the documented command matches the current release.
+
 ## 0.2.0 — 2026-09-02
 
 - Adopt newer validated editions in an already-open panel when the background updater replaces the cache, without resetting the reader's selection or viewport.

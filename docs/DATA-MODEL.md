@@ -43,7 +43,7 @@ Version 1 has this conceptual shape:
 
 Source `status` values are `current`, `not-modified`, `stale`, or `failed`. A failed source records one bounded public-safe reason code, never tokens, response bodies, stack traces, or internal runner paths.
 
-Source health and publication freshness are separate. Successful sources at old `checkedAt` values do not make an old artifact current. The client derives publication age from `publishedAt`, reports publisher lag beyond 90 minutes, exposes the documented ten-minute Pages cache window, and derives local cache time from the owned cache file's UTC modification time.
+Source health and publication freshness are separate. Successful sources at old `checkedAt` values do not make an old artifact current. The client derives publication age from `publishedAt` and local cache time from the owned cache file's UTC modification time for validation, bar health, debug state, and external monitoring. These operational facts do not become persistent reader copy while a validated edition is usable.
 
 ## Event
 

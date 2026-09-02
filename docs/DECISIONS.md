@@ -335,3 +335,11 @@
 **Why:** Reselecting the unchanged final story asked Qt to contain it again and could snap the ListView to its bottom, especially when rapid input followed the focus transition. Immediately removing a selected story as its asynchronous read write completed shifted the projection during the user's interaction and could make both the highlight and surrounding context disappear.
 
 **Consequence:** Focus transitions do not mutate scroll state. The helper strictly validates at most 500 canonical event IDs and applies the exception only to Unread only's read predicate; every other section, search, time, significance, image, and type condition remains active. Persistent state and section unread counts remain authoritative, the UI labels temporarily retained rows, and no transient retention survives a view change or panel reopen.
+
+## D043 — Keep publication operations out of the successful reading surface
+
+**Decision:** When a validated edition exists, Radar shows the news without persistent edition-origin, source-health, publication-age, cache-age, Pages-propagation, runtime-version, or update-result copy. Checking remains visible only while active. A concise recovery message appears only when no usable edition exists. The permanent keyboard legend is removed; shortcut hints stay on relevant controls and in documentation.
+
+**Why:** These facts are essential for build verification and operational monitoring but became content noise in the reader. A user with usable news does not need to understand whether it came from a local import, Pages, a cache, or a delayed publisher.
+
+**Consequence:** Typed helper results, timing metadata, debug state, external health monitoring, and the bar health model remain intact. Local and published editions retain their validation and downgrade rules. Normal cached, updated, no-change, stale-publisher, partial-source, and offline-with-cache paths remain quietly readable; only a genuine no-cache failure occupies the content surface.

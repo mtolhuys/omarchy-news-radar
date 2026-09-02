@@ -36,11 +36,11 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 8. Deliberately selecting an item marks only that story read and exposes its type, date, source, trust metadata, compatibility information when known, one concise factual summary, and any available source-labelled aggregate metrics. The inspector and `u` shortcut can mark it unread again; a separate explicit section action marks every unread story matching that section's persistent Settings filters read in one atomic transition.
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel never bulk-marks the edition. Stories the user did not deliberately select remain unread across close, refresh, and restart.
-11. Offline or failed checks preserve the last-known-good edition and clearly separate source checks, collection, artifact publication, Pages cache propagation, and local cache age. Publication older than 90 minutes is visibly stale even if all sources succeeded previously.
+11. Offline or failed checks preserve the last-known-good edition without displacing news with publisher diagnostics. A concise recovery message appears only when no usable edition exists; operational monitoring separately distinguishes source checks, publication, Pages propagation, and client cache age.
 12. The user can inspect each section's fixed source scope, add local filters, and reveal further matching stories in finite twelve-item steps.
 13. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images.
 
-Before the public static feed is authorized and published, an owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts, imports the complete validated edition and mirrored images into private cache, and labels the result “Local live edition.” Test fixtures must never masquerade as this mode.
+An owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts and imports the complete validated edition and mirrored images into private cache. The client retains its validated local-origin marker for downgrade protection without placing that implementation detail in the normal reader. Test fixtures must never masquerade as live news.
 
 ## Version 1 capabilities
 
@@ -73,7 +73,7 @@ Before the public static feed is authorized and published, an owner deliberately
 - Useful empty, offline, partial-source, and invalid-feed states.
 - Optional source imagery with plain-text alternatives and graceful image-free fallback.
 - A restrained bar newspaper with unread count and source-health dot.
-- A compositor-managed resizable/maximizable window with ordinary task switching, summon-to-focus activation, an always-visible keyboard guide, smooth unclipped viewport-edge story selection, explicit arrow-key/Enter finite load-more controls, a hover-visible **Check for updates** shortcut, animated check progress, and selected/secondary text contrast across maintained themes.
+- A compositor-managed resizable/maximizable window with ordinary task switching, summon-to-focus activation, smooth unclipped viewport-edge story selection, explicit arrow-key/Enter finite load-more controls, a hover-visible **Check for updates** shortcut, restrained check progress, and selected/secondary text contrast across maintained themes.
 - Explicit `UNREAD`/`READ` row labels, section unread badges, a per-story toggle, an explicit filtered-section **Mark all as read** action, and durable private reading state.
 - Optional official marketplace interaction aggregates, catalog repository stars, and GitHub release-asset download counts with compact colored icons, accessible labels, and observation times. Raw metric URLs remain feed provenance rather than reader actions; plugin stories expose the human marketplace detail page.
 

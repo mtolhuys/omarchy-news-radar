@@ -334,7 +334,7 @@ omarchy_host_test() {
   wait_for_guest_state "QMP Super+Alt+N opens the rendered Radar layer" 20 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
   wait_for_guest_state "first-use failure has visible deterministic recovery" 20 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No cache and failed\" and .storyCount == 0'" || {
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No cache and failed\" and .storyCount == 0 and .noCacheNoticeVisible == true'" || {
       ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-debug-first-use.json" 2>&1 || true
       ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/news-radar-first-use-journal.log" 2>&1 || true
       capture_console "failure-news-radar-first-use"
@@ -353,7 +353,7 @@ omarchy_host_test() {
   ssh_guest "rm -f /tmp/news-radar-fixtures/current.json"
   press meta_l-alt-n
   wait_for_guest_state "cached fixture remains visible after offline refresh" 20 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"Offline\" and .storyCount > 0 and (.selectedTitle | length > 0)'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"Offline\" and .storyCount > 0 and (.selectedTitle | length > 0) and .noCacheNoticeVisible == false'" || return 1
   capture_console "success-news-radar-02-cached-offline"
   radar_control_geometry closeGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
@@ -367,7 +367,7 @@ omarchy_host_test() {
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
   press meta_l-alt-n
   wait_for_guest_state "valid refresh reports no newer published edition" 20 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"No newer edition\" and .publisherStale == false and .storyCount > 0'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"No newer edition\" and .publisherStale == false and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
   wait_for_guest_state "same-origin fixture image is projected into the rendered lead" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedHasImage == true'" || return 1
   capture_console "success-news-radar-03-image-visible"
@@ -377,17 +377,17 @@ omarchy_host_test() {
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.refreshing == true and .refreshIndicatorVisible == true and .storyCount > 0'" || return 1
   capture_console "success-news-radar-03-refreshing"
   ssh_guest "rm -f /tmp/news-radar-fixtures/delay-seconds"
-  wait_for_guest_state "update-check progress clears with honest no-change wording" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.refreshing == false and .refreshIndicatorVisible == false and .status == \"No newer edition\" and (.statusDetail | startswith(\"No newer edition · published \"))'" || return 1
+  wait_for_guest_state "update-check progress clears without occupying the reading surface" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.refreshing == false and .refreshIndicatorVisible == false and .status == \"No newer edition\" and (.statusDetail | startswith(\"No newer edition · published \")) and .noCacheNoticeVisible == false'" || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/stale.json /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "old successful source checks never disguise publisher lag" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Publisher stale\" and .publisherStale == true and .storyCount > 0'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Publisher stale\" and .publisherStale == true and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
   capture_console "success-news-radar-03-publisher-stale"
   ssh_guest "cp /tmp/news-radar-fixtures/recovered.json /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "fresh publication recovers from stale disclosure" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .publisherStale == false and (.statusDetail | startswith(\"Adopted 0 new stories · published \"))'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .publisherStale == false and (.statusDetail | startswith(\"Adopted 0 new stories · published \")) and .noCacheNoticeVisible == false'" || return 1
 
   log "Proving normal window management, section tabs, metrics, and local filters"
   wait_for_guest_state "Radar is an independently resizable floating client" 10 ssh_session \
@@ -654,21 +654,21 @@ omarchy_host_test() {
   ssh_guest "cp /tmp/news-radar-fixtures/malformed.json /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "malformed candidate is rejected with cache intact" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Invalid feed\" and .storyCount > 0'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Invalid feed\" and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
   capture_console "success-news-radar-04-invalid-feed"
   ssh_guest "cp /tmp/news-radar-fixtures/oversized.json /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "oversized candidate is rejected with cache intact" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Invalid feed\" and .storyCount > 0'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Invalid feed\" and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/partial.json /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "partial source health remains a usable edition" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Source partial\" and .storyCount > 0'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Source partial\" and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
   capture_console "success-news-radar-05-source-partial"
   ssh_guest "rm -f /tmp/news-radar-fixtures/current.json"
   press r
   wait_for_guest_state "offline refresh preserves the partial last-known-good edition" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Offline\" and .storyCount > 0'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Offline\" and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
   capture_console "success-news-radar-06-offline"
   ssh_guest "cp /tmp/news-radar-fixtures/empty.json /tmp/news-radar-fixtures/current.json"
   press r
@@ -820,12 +820,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.2.0+identity-1/news-radar-0.2.0+identity-2/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.2.1+identity-1/news-radar-0.2.1+identity-2/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell summon io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.2.0+identity-2" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.2.1+identity-2" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1

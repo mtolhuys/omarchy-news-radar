@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.2.0+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.2.1+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -142,6 +142,16 @@ Item {
     return "This section is empty in the current bounded edition."
   }
 
+  function sectionSummaryText() {
+    var parts = []
+    if (filterSummary !== "No extra filters") parts.push(filterSummary)
+    if (retainedReadStories > 0)
+      parts.push(retainedReadStories + " just read shown until this view changes")
+    parts.push(totalStories + " stories")
+    parts.push(Number(unreadCounts[currentSection] || 0) + " unread")
+    return parts.join(" · ")
+  }
+
   function debugState() {
     return JSON.stringify({
       build: runtimeBuildIdentity,
@@ -161,6 +171,7 @@ Item {
       publisherStale: editionTiming.publisherStale === true,
       timing: editionTiming,
       statusDetail: statusDetail,
+      noCacheNoticeVisible: noCacheNotice.visible,
       availableImageCount: availableImageCount,
       refreshing: refreshing,
       refreshIndicatorVisible: refreshButton.iconSpinning,
@@ -1204,36 +1215,19 @@ Item {
                 Layout.fillWidth: true
                 implicitHeight: titleStack.implicitHeight
 
-                ColumnLayout {
+                Text {
                   id: titleStack
                   anchors.fill: parent
-                  spacing: Style.spacing.xs
-
-                  Text {
-                    text: "OMARCHY NEWS RADAR"
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.display
-                    font.bold: true
-                    font.letterSpacing: Style.spaceReal(1)
-                    Accessible.role: Accessible.Heading
-                    Accessible.name: text
-                  }
-
-                  Text {
-                    Layout.fillWidth: true
-                    text: root.feedStatus + " · " + root.sourceHealth
-                    textFormat: Text.PlainText
-                    color: root.feedStatus === "Offline" || root.feedStatus === "Invalid feed"
-                      || root.feedStatus === "Publisher stale" || root.feedStatus === "Failed"
-                      ? Color.urgent : root.secondaryTextColor
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    elide: Text.ElideRight
-                    Accessible.role: Accessible.StaticText
-                    Accessible.name: "Edition status: " + text
-                  }
+                  text: "OMARCHY NEWS RADAR"
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.display
+                  font.bold: true
+                  font.letterSpacing: Style.spaceReal(1)
+                  verticalAlignment: Text.AlignVCenter
+                  Accessible.role: Accessible.Heading
+                  Accessible.name: text
                 }
 
                 MouseArea {
@@ -1307,8 +1301,9 @@ Item {
           }
 
           Text {
+            id: noCacheNotice
             Layout.fillWidth: true
-            visible: text !== ""
+            visible: !root.cachedFeed && !root.refreshing && text !== ""
             text: root.statusDetail
             textFormat: Text.PlainText
             color: root.secondaryTextColor
@@ -1366,7 +1361,7 @@ Item {
           TextField {
             id: searchField
             Layout.fillWidth: true
-            placeholderText: "Search this validated edition  /"
+            placeholderText: "Search news  /"
             color: Color.popups.text
             placeholderTextColor: root.secondaryTextColor
             selectionColor: Style.selectionFill
@@ -1377,7 +1372,7 @@ Item {
             rightPadding: Style.spacing.controlPaddingX
             topPadding: Style.spacing.inputPaddingY
             bottomPadding: Style.spacing.inputPaddingY
-            Accessible.name: "Search the current edition"
+            Accessible.name: "Search news"
             onTextChanged: searchTimer.restart()
             Keys.onPressed: function(event) {
               if (event.key === Qt.Key_Escape) {
@@ -1389,32 +1384,6 @@ Item {
               color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
               radius: Style.cornerRadius
               borderSpec: Border.controlSpec(searchField.activeFocus ? "focus" : "normal", Color.foreground, Color.accent, Color.urgent)
-            }
-          }
-
-          BorderSurface {
-            Layout.fillWidth: true
-            Layout.preferredHeight: keyboardGuide.implicitHeight + Style.spacing.controlPaddingY * 2
-            color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
-            radius: Style.cornerRadius
-            borderSpec: Border.controlSpec("normal", Color.popups.text, Color.accent, Color.urgent)
-
-            Text {
-              id: keyboardGuide
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              anchors.leftMargin: Style.spacing.controlPaddingX
-              anchors.rightMargin: Style.spacing.controlPaddingX
-              text: "KEYBOARD  Tab/Shift+Tab sections · 1–5 sections · J/K or ↑/↓ stories · Enter open or load more · U read/unread · O source · S save · R check for updates"
-              textFormat: Text.PlainText
-              color: root.secondaryTextColor
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
-              font.bold: true
-              wrapMode: Text.WordWrap
-              Accessible.role: Accessible.StaticText
-              Accessible.name: text
             }
           }
 
@@ -1526,19 +1495,14 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: root.filterSummary
-                  + (root.retainedReadStories > 0
-                    ? " · " + root.retainedReadStories + " just read shown until this view changes"
-                    : "")
-                  + " · " + root.totalStories + " stories · "
-                  + Number(root.unreadCounts[root.currentSection] || 0) + " unread"
+                text: root.sectionSummaryText()
                 textFormat: Text.PlainText
                 color: root.secondaryTextColor
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 elide: Text.ElideRight
                 Accessible.role: Accessible.StaticText
-                Accessible.name: "Active section filters: " + text
+                Accessible.name: text
               }
 
               Flow {
@@ -1818,22 +1782,6 @@ Item {
             }
           }
 
-          Text {
-            Layout.fillWidth: true
-            text: root.generatedAt
-              ? "Sources " + String(root.editionTiming.latestSourceCheckedAt || root.generatedAt)
-                + " · collected " + String(root.editionTiming.collectedAt || root.generatedAt)
-                + " · published " + String(root.editionTiming.publishedAt || root.generatedAt)
-                + " · cached " + String(root.editionTiming.cachedAt || "this session")
-                + " · Pages cache ≤10m · v0.2.0"
-              : "No edition generated · v0.2.0 · independent community project"
-            textFormat: Text.PlainText
-            color: root.secondaryTextColor
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-            elide: Text.ElideRight
-            horizontalAlignment: Text.AlignRight
-          }
         }
 
         Rectangle {
