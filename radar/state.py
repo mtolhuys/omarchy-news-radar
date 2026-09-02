@@ -524,6 +524,7 @@ def purge(environment: Mapping[str, str] | None = None) -> list[str]:
         feed_path(environment),
         update_check_path(environment),
         cache_root(environment) / "local-edition.json",
+        cache_root(environment) / "local-source-snapshot.json",
         user_state_path(environment),
         diagnostic_path(environment),
     ]

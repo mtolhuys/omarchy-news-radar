@@ -49,6 +49,8 @@ When no prior marketplace snapshot exists, explicit bootstrap writes the complet
 
 Changes to description, tags, category, stars, views, hearts, copy counts, repository update time, observed commit, validation timestamp, preview image, or source fingerprint update the snapshot but do not create default news events. A successful catalog refresh may replace the explanation on any existing plugin event with that plugin's current validated bounded description; failure preserves the prior explanation, and the presentation change never affects event identity, time, order, significance, or curation. The event title, type, trust fields, version, and occurrence time continue to carry the exact change fact without making the summary repeat it.
 
+Scheduled collection always diffs against the validated snapshot from the latest successfully deployed edition. The next snapshot becomes eligible only after that workflow run completes successfully. A missing or invalid continuity artifact fails publication; it never falls back silently to an older tracked snapshot. Rediscovery of an existing deterministic event ID retains its first observed occurrence/discovery times.
+
 ### Preview mirroring
 
 An event created by a supported marketplace diff may carry its catalog preview thumbnail. Publication fetches only `https://plugins.omarchy.org/assets/img/plugins/...` through the closed redirect policy, caps each response at 1.5 MiB, requires matching PNG/JPEG/WebP Content-Type and magic, validates static image structure and declared dimensions up to 4,096 per side/12 million pixels, rejects SVG and animation, then names the asset by SHA-256. A fetch or validation failure removes only the optional image. Clients never receive the upstream preview URL.

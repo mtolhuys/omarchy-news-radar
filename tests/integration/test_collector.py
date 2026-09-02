@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -75,6 +75,34 @@ class CollectorIntegrationTests(unittest.TestCase):
         self.assertFalse(any(event["type"].startswith("plugin-") for event in feed["events"]))
         health = next(item for item in feed["sources"] if item["id"] == "marketplace")
         self.assertEqual(("failed", "timeout"), (health["status"], health["reason"]))
+
+    def test_rediscovered_event_keeps_its_first_observed_timestamps(self) -> None:
+        previous = load_snapshot(ROOT / "tests/fixtures/source-snapshot-baseline.json")
+        first_feed, first_snapshot = collect_from_fixtures(
+            self.inputs("next"),
+            previous_snapshot=previous,
+            now=CLOCK,
+            bootstrap_marketplace=False,
+        )
+        # Model a lagging source baseline paired with the already published
+        # event history. Recollection must not make that same event look new.
+        lagging = deepcopy(first_snapshot)
+        lagging["sources"] = deepcopy(previous["sources"])
+        repeated_feed, _ = collect_from_fixtures(
+            self.inputs("next"),
+            previous_snapshot=lagging,
+            now=CLOCK + timedelta(minutes=15),
+            bootstrap_marketplace=False,
+        )
+        first_events = {event["id"]: event for event in first_feed["events"]}
+        repeated_events = {event["id"]: event for event in repeated_feed["events"]}
+        common_new_ids = set(first_events) - {event["id"] for event in previous["events"]}
+        self.assertTrue(common_new_ids)
+        for event_id in common_new_ids:
+            self.assertEqual(
+                (first_events[event_id]["occurredAt"], first_events[event_id]["discoveredAt"]),
+                (repeated_events[event_id]["occurredAt"], repeated_events[event_id]["discoveredAt"]),
+            )
 
     def test_production_adapter_paginates_with_bounded_headers(self) -> None:
         release = json.loads((ROOT / "tests/fixtures/releases-next.json").read_text(encoding="utf-8"))[0]

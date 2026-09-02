@@ -15,7 +15,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 ## What is included
 
 - A standard-library Python collector for published Omarchy releases, bounded marketplace catalog diffs, official anonymous marketplace engagement aggregates, and reviewed repository-owned community records.
-- A tracked normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, and restricted curation overlays.
+- A versioned normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, immutable first-observation timestamps, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
 - A fixed-origin client helper with cached-first reads, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, serialized atomic private XDG state, corrupt-state quarantine, saved items, bounded per-story read overrides, and explicit purge.
 - A resizable, maximizable theme-native QML window with normal `Alt+Tab`, summon-to-focus activation, contrast-safe primary and secondary text, images, icon metrics, source-derived plugin explanations, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, fixed section identity, per-section filters, finite keyboard/pointer pagination, an always-visible keyboard guide, search, source opening, visible update-check progress and honest publisher/source/cache states, responsive layout, and virtualized story rows.
@@ -59,7 +59,7 @@ When you deliberately want to run this checkout on your daily desktop, use:
 make local-latest
 ```
 
-The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition and image assets into Radar's private cache. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and collect a new local edition. The panel labels this mode “Local live edition” while that owner-built edition is newest. **Check for updates** still checks Pages, refuses to downgrade the local edition, and automatically returns to the published stream as soon as it advances.
+The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition, image assets, and matching private source baseline. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and advance that validated private baseline so an older change cannot be rediscovered as new. The panel labels this mode “Local live edition” while that owner-built edition is newest. **Check for updates** still checks Pages, refuses to downgrade the local edition, and automatically returns to the published stream as soon as it advances.
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
@@ -149,6 +149,7 @@ ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/
 ${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json
+${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-source-snapshot.json
 ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json
 ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/launcher.json
 ```
@@ -180,7 +181,7 @@ python3 -m radar collect                          # later editions
 
 The first successful marketplace run publishes at most twelve genuinely recent listings from the previous fourteen days, then records the complete baseline. It never treats the historical catalog as new. A failed adapter retains its prior normalized state and cannot manufacture additions, releases, or mass retirements.
 
-The Pages workflow requests best-effort runs at minutes 8, 23, 38, and 53 and also supports manual dispatch. Off-peak quarter-hour opportunities reduce the impact of a delayed or dropped GitHub invocation; GitHub does not guarantee scheduled delivery. The workflow keeps repository permissions read-only, never cancels an in-progress publication, and uploads the updated `state/source-snapshot.json` as a run artifact. The owner must periodically review, validate, and commit that artifact so multi-run retirement confirmation and baseline advancement remain explicit.
+The Pages workflow requests best-effort runs at minutes 8, 23, 38, and 53 and also supports manual dispatch. Off-peak quarter-hour opportunities reduce the impact of a delayed or dropped GitHub invocation; GitHub does not guarantee scheduled delivery. Before collection, the workflow restores and validates `state/source-snapshot.json` from the latest successfully deployed run; after collection it uploads the next state under that run's exact ID. Missing, expired, malformed, or untrusted continuity fails the publication instead of replaying the committed baseline as fresh news. Repository contents remain read-only.
 
 Feed `checkedAt` values describe individual source attempts, `generatedAt` describes completed collection, and `publishedAt` describes the static artifact build. GitHub Pages/CDN propagation may take up to ten minutes after deployment; the client additionally reports when its validated local copy was cached. Radar labels the publisher stale only after `publishedAt` is more than 90 minutes old, so an old successful source check can never masquerade as current publication. Operational recovery and exact release steps are in [`docs/RELEASE.md`](docs/RELEASE.md).
 

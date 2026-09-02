@@ -212,7 +212,14 @@ def validate_workflows() -> None:
         if "contents: write" in text:
             fail(f"workflow requests repository write permission: {workflow.name}")
     publish = (ROOT / ".github" / "workflows" / "publication.yml").read_text(encoding="utf-8")
-    for required in ("contents: read", "pages: write", "id-token: write", "state/source-snapshot.json"):
+    for required in (
+        "actions: read",
+        "contents: read",
+        "pages: write",
+        "id-token: write",
+        "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
+        "state/source-snapshot.json",
+    ):
         if required not in publish:
             fail(f"publish workflow lacks required least-privilege/state contract: {required}")
     if any(f'cron: "{minute} * * * *"' not in publish for minute in (8, 23, 38, 53)):

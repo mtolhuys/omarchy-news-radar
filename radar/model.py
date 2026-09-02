@@ -144,12 +144,17 @@ def front_page(
         ),
         maximum=3,
     )
-    for section in ("plugins", "community", "core"):
+    # The newest official release was already selected above. Do not fill the
+    # front page with older core releases merely to satisfy a source quota.
+    for section in ("plugins", "community"):
         add(
             (event for event in ordered if event["classification"]["section"] == section),
             maximum=3,
         )
-    add(ordered, maximum=max(0, 18 - len(selected)))
+    add(
+        (event for event in ordered if event["type"] != "omarchy-released"),
+        maximum=max(0, 18 - len(selected)),
+    )
     return selected[:18]
 
 def greatest_event_timestamp(events: Iterable[Mapping[str, Any]]) -> str | None:

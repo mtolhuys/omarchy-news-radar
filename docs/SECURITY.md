@@ -102,6 +102,7 @@ The project must not claim perfect anonymity, sandboxing, or security auditing.
 - Runtime uses the current Omarchy/Arch environment and Python standard library only.
 - GitHub Actions are pinned to immutable commit SHAs before public release.
 - Workflow permissions are least privilege: read source by default and grant Pages/deployment permission only to the publish job.
+- The publication build has read-only Actions access solely to retrieve the exact source-state artifact from the latest successful deployment; the candidate is bounded and fully validated before use, and repository contents remain read-only.
 - Production publication runs only after source tests and artifact validation.
 - Generated artifacts record source revision and a SHA-256 digest; clients do not treat a digest from the same origin as an independent signature.
 - No remote code, package, or font is downloaded. The publication build downloads only allowlisted marketplace preview rasters under the strict mirroring policy; runtime downloads only the project feed and its same-origin content-addressed raster assets.

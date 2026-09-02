@@ -20,12 +20,26 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertIn(f'cron: "{minute} * * * *"', workflow)
         self.assertNotIn('cron: "8,23,38,53 * * * *"', workflow)
         self.assertNotIn('cron: "17 * * * *"', workflow)
+        self.assertIn("actions: read", workflow)
+        self.assertIn("actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093", workflow)
+        self.assertIn("--status success", workflow)
+        self.assertIn("news-radar-source-snapshot-${{ steps.previous_state.outputs.run_id }}", workflow)
+        self.assertIn("refusing to replay the committed baseline", workflow)
 
     def test_every_public_launcher_uses_summon_activation(self) -> None:
         command = "omarchy-shell shell summon io.github.mtolhuys.news-radar"
         self.assertEqual(command, RADAR_COMMAND)
         self.assertIn(command, (ROOT / "src/BarWidget.qml").read_text(encoding="utf-8"))
         self.assertIn(command, (ROOT / "share/applications/io.github.mtolhuys.news-radar.desktop").read_text(encoding="utf-8"))
+
+    def test_local_source_state_advances_only_after_complete_import(self) -> None:
+        script = (ROOT / "scripts/sync_local_plugin.sh").read_text(encoding="utf-8")
+        self.assertIn("prepare-local-source-snapshot", script)
+        self.assertIn("commit-local-source-snapshot", script)
+        self.assertLess(
+            script.index("import-local-edition"),
+            script.index("commit-local-source-snapshot"),
+        )
 
     def test_publication_staleness_boundary_and_distinct_timestamps(self) -> None:
         feed = json.loads((ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8"))

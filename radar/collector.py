@@ -30,7 +30,7 @@ from .sources.marketplace_engagement import ENGAGEMENT_URL
 from .sources.omarchy_releases import API_URL, PUBLIC_URL
 from .validation import format_timestamp, parse_timestamp
 
-SNAPSHOT_SCHEMA = 1
+SNAPSHOT_SCHEMA = 2
 
 
 @dataclass(frozen=True)
@@ -146,7 +146,11 @@ def collect_from_fixtures(
         for event in previous["events"]
         if parse_timestamp(event["occurredAt"]) >= window_from
     }
-    retained_events.update({event["id"]: event for event in events})
+    # A stale source baseline may rediscover the same deterministic event. Its
+    # first observed timestamps remain authoritative; current descriptions and
+    # metrics are refreshed below without making old activity look new again.
+    for event in events:
+        retained_events.setdefault(event["id"], event)
     base_events = canonical_events(
         enrich_event_metrics(
             enrich_plugin_descriptions(retained_events.values(), marketplace),

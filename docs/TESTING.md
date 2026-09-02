@@ -52,6 +52,8 @@ make site
 - JSON, RSS, and HTML remain deterministic with a fixed clock.
 - Source check, collection, artifact publication, Pages-cache, and local-cache timestamps remain distinct; publication staleness is false at exactly 90 minutes and true one second later, with explicit legacy-feed fallback.
 - Workflow source validation requires four off-peak best-effort schedule opportunities per hour and non-cancelling Pages concurrency.
+- Publication continuity selects the latest successful run's exact snapshot artifact with read-only Actions permission, rejects missing/invalid state, permits only the bounded fresh v1-to-v2 transition seed, and never falls back silently to stale committed state.
+- Rediscovering a deterministic event through a lagging source snapshot preserves its first `occurredAt` and `discoveredAt`; Front Page includes only the newest official release rather than filling a core quota with historical releases.
 - HTML/XML/context escaping defeats hostile titles, summaries, URLs, Unicode, quotes, angle brackets, and control characters.
 - CSP and external-link attributes remain present.
 - Generated-file drift fails validation.
@@ -92,6 +94,8 @@ Use temporary XDG data/state roots to prove absent/installed/modified status, bo
 Run the real client helper against a bounded in-process loopback server and temporary XDG roots. Assert request method, headers, redirect policy, body streaming limit, cache/state output, concurrency behavior, and absence of outbound requests beyond the fixture server.
 
 Run a two-generation collector scenario: bootstrap a marketplace fixture, then apply core release, plugin add/version/verification/retirement, community, partial-source, and recovery changes. Validate the complete generated JSON, RSS, HTML, source snapshot, and archive.
+
+Run local-source continuity through tracked-first, private-newer, invalid-private, post-import commit, and explicit purge cases. A failed edition import must never advance the private source baseline.
 
 ## QML and static contract tests
 

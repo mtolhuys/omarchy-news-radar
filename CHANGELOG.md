@@ -7,6 +7,8 @@
 - Invalidate stale deferred viewport work and retain selection by stable event ID so overlapping projection completions cannot fight the current navigation request.
 - Extend disposable-VM acceptance with continuous pagination geometry samples plus first- and second-Down assertions after the newly revealed page.
 - Keep reverse key-repeat synchronized with the viewport: when Up crosses the top edge, the viewport moves before the selection changes so the highlighted story never disappears above the clip.
+- Restore collection state from the latest successfully deployed edition before every scheduled build, fail closed when continuity is unavailable, and keep a private advancing baseline for repeated `make local-latest` collections.
+- Stop replaying old marketplace diffs with a new timestamp, preserve the first observation of deterministic event IDs, reset contaminated discovery-only history, and keep older Omarchy releases off the Front Page after the newest release is selected.
 
 ## 0.1.6 — 2026-09-02
 

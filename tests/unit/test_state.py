@@ -15,6 +15,7 @@ from unittest import mock
 from radar.constants import STATE_SCHEMA_VERSION
 from radar.errors import StorageError, ValidationError
 from radar.io import atomic_write_json
+from radar.local_collection import local_source_snapshot_path
 from radar.state import (
     RefreshLock,
     StateLock,
@@ -66,10 +67,23 @@ class StateTests(unittest.TestCase):
         save_feed(self.feed, self.environment, now=CLOCK)
         save_update_check("success", self.environment, now=CLOCK)
         save_state(default_state(), self.environment)
+        atomic_write_json(
+            local_source_snapshot_path(self.environment),
+            json.loads(
+                (ROOT / "tests/fixtures/source-snapshot-baseline.json").read_text(
+                    encoding="utf-8"
+                )
+            ),
+        )
         self.assertEqual(self.feed, load_feed(self.environment, now=CLOCK))
         self.assertEqual(0o600, feed_path(self.environment).stat().st_mode & 0o777)
         self.assertEqual(
-            ["feed.json", "state.json", "update-check.json"],
+            [
+                "feed.json",
+                "local-source-snapshot.json",
+                "state.json",
+                "update-check.json",
+            ],
             purge(self.environment),
         )
         self.assertFalse(update_check_path(self.environment).exists())

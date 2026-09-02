@@ -29,7 +29,7 @@ Omarchy shell
 
 The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. There is no application server, database, account service, background daemon, or bidirectional client API. The visible bar widget owns one due-checked refresh timer inside the existing shell process.
 
-The local-development route reuses the collector and publisher directly. `make local-latest` builds into a temporary directory from the tracked source baseline, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images into the user's private cache. A matching bounded marker makes the client project those assets as local file URLs. **Check for updates** still fetches the fixed Pages feed: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images. Only after that complete import succeeds does it advance the private source baseline. A matching bounded marker makes the client project those assets as local file URLs. **Check for updates** still fetches the fixed Pages feed: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
 
 ## Target repository layout
 
@@ -101,7 +101,7 @@ omarchy-news-radar/
     └── publication.yml
 ```
 
-Generated deployment output belongs in `dist/` and stays untracked. The source snapshot is intentionally tracked because it is the deterministic baseline for future diffs; it must contain public normalized source state only, not tokens, response headers containing secrets, or deployment evidence.
+Generated deployment output belongs in `dist/` and stays untracked. The tracked source snapshot is a reviewed transition/recovery seed. Normal scheduled continuity comes from the validated snapshot artifact attached to the latest successfully deployed workflow run, and the next snapshot is attached to the new run. Snapshot contents are public normalized source facts only, never tokens, response headers containing secrets, or deployment evidence.
 
 ## Plugin contract
 
@@ -209,6 +209,8 @@ Collection is transactional:
 
 A partial source outage may produce a feed with explicit source-health metadata, but the unavailable source retains its previous snapshot and produces no mass deletion or retirement events.
 
+Event identity also protects occurrence history. If a lagging source state rediscovers an event whose deterministic ID already exists in the retained ledger, its original `occurredAt` and `discoveredAt` remain authoritative; only explicitly supported description and metric enrichment may refresh.
+
 ## Static publication
 
 GitHub Actions runs tests first, then builds an immutable deployment artifact containing at least:
@@ -227,7 +229,7 @@ The site contains no runtime framework, cookies, analytics, user input, service 
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 
-The workflow requests four best-effort schedules per hour at minutes 8, 23, 38, and 53. These offsets avoid the top-of-hour load peak and provide recovery opportunities after a delayed or dropped invocation; they are not a delivery guarantee. Workflow concurrency does not cancel an in-progress publication. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. GitHub Pages/CDN propagation may add up to ten minutes after deployment, and each client separately reports when its validated copy was cached. A publication becomes visibly stale only when `publishedAt` is more than 90 minutes old, so normal scheduling and documented cache propagation do not create false alarms while sustained publisher lag cannot masquerade as source success.
+The workflow requests four best-effort schedules per hour at minutes 8, 23, 38, and 53. These offsets avoid the top-of-hour load peak and provide recovery opportunities after a delayed or dropped invocation; they are not a delivery guarantee. Workflow concurrency does not cancel an in-progress publication. Before collection, the build uses read-only Actions access to select the latest successful workflow run, downloads that run's exact source-state artifact, and validates it before replacement. Missing or invalid state stops the build rather than replaying a stale repository seed. Each generated feed records source `checkedAt`, collection `generatedAt`, and artifact `publishedAt` separately. GitHub Pages/CDN propagation may add up to ten minutes after deployment, and each client separately reports when its validated copy was cached. A publication becomes visibly stale only when `publishedAt` is more than 90 minutes old, so normal scheduling and documented cache propagation do not create false alarms while sustained publisher lag cannot masquerade as source success.
 
 ## Installed-plugin relevance
 

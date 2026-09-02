@@ -148,6 +148,7 @@ class ValidationTests(unittest.TestCase):
         validated = validate_feed(self.feed, now=NOW)
         front = front_page(validated["events"], installed_plugin_ids=["io.github.mtolhuys.disk-lens"])
         self.assertEqual("omarchy-released", next(item for item in front if item["type"] == "omarchy-released")["type"])
+        self.assertEqual(1, len([item for item in front if item["type"] == "omarchy-released"]))
         personalized = project_section(validated, "for-you", installed_plugin_ids=["io.github.mtolhuys.disk-lens"])
         self.assertEqual(2, len(personalized))
         self.assertTrue(all(item["entity"]["id"] == "io.github.mtolhuys.disk-lens" for item in personalized))

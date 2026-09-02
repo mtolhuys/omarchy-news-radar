@@ -31,7 +31,9 @@ from .collector import FixtureInputs, collect_from_fixtures, collect_production,
 from .errors import RadarError
 from .io import atomic_write_json
 from .local_edition import import_local_edition
+from .local_collection import commit_local_source_snapshot, prepare_local_source_snapshot
 from .publisher import publish
+from .publication_state import migrate_legacy_source_snapshot, restore_publication_source_snapshot
 from .validation import parse_timestamp, validate_feed
 from .window import activate_window
 
@@ -160,6 +162,18 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("validate-feed").add_argument("path", type=Path)
     local_import = commands.add_parser("import-local-edition")
     local_import.add_argument("--edition", type=Path, required=True)
+    local_prepare = commands.add_parser("prepare-local-source-snapshot")
+    local_prepare.add_argument("--tracked", type=Path, required=True)
+    local_prepare.add_argument("--output", type=Path, required=True)
+    local_commit = commands.add_parser("commit-local-source-snapshot")
+    local_commit.add_argument("--snapshot", type=Path, required=True)
+    publication_restore = commands.add_parser("restore-publication-source-snapshot")
+    publication_restore.add_argument("--previous", type=Path, required=True)
+    publication_restore.add_argument("--tracked", type=Path, required=True)
+    publication_restore.add_argument("--output", type=Path, required=True)
+    publication_migrate = commands.add_parser("migrate-source-snapshot-v2")
+    publication_migrate.add_argument("--source", type=Path, required=True)
+    publication_migrate.add_argument("--output", type=Path, required=True)
     collect = commands.add_parser("collect")
     collect.add_argument("--snapshot", type=Path, default=ROOT / "state/source-snapshot.json")
     collect.add_argument("--output", type=Path, default=ROOT / "dist")
@@ -198,10 +212,26 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             value = json.loads(args.path.read_text(encoding="utf-8"))
             validate_feed(value, now=parse_timestamp(value["generatedAt"]), public_only=True)
             _print({"status": "ok"})
-        else:
+        elif args.command == "import-local-edition":
             require_unprivileged()
             imported = import_local_edition(args.edition)
             _print({"status": "ok", **{key: value for key, value in imported.items() if key != "feed"}})
+        elif args.command == "prepare-local-source-snapshot":
+            require_unprivileged()
+            prepared = prepare_local_source_snapshot(args.tracked, args.output)
+            _print({"status": "ok", **prepared})
+        elif args.command == "commit-local-source-snapshot":
+            require_unprivileged()
+            committed = commit_local_source_snapshot(args.snapshot)
+            _print({"status": "ok", **committed})
+        elif args.command == "restore-publication-source-snapshot":
+            restored = restore_publication_source_snapshot(
+                args.previous, args.tracked, args.output
+            )
+            _print({"status": "ok", **restored})
+        else:
+            migrated = migrate_legacy_source_snapshot(args.source, args.output)
+            _print({"status": "ok", **migrated})
         return 0
     except (RadarError, OSError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)

@@ -17,7 +17,7 @@ fail() {
   exit 1
 }
 
-for command in cp find git jq mktemp omarchy-plugin-add omarchy-plugin-disable omarchy-plugin-enable \
+for command in find git jq mktemp omarchy-plugin-add omarchy-plugin-disable omarchy-plugin-enable \
   omarchy-plugin-update omarchy-plugin-validate python3 realpath; do
   command -v "$command" >/dev/null 2>&1 || fail "required command is unavailable: $command"
 done
@@ -108,7 +108,9 @@ if [[ ${OMARCHY_NEWS_RADAR_TEST_MODE:-} == 1 && -n ${OMARCHY_NEWS_RADAR_TEST_EDI
   EDITION=$(realpath -e -- "$OMARCHY_NEWS_RADAR_TEST_EDITION") ||
     fail "test edition directory does not exist"
 else
-  cp -- "$SOURCE_ROOT/state/source-snapshot.json" "$WORK_DIR/source-snapshot.json"
+  PYTHONPATH="$SOURCE_ROOT" python3 -B -m radar prepare-local-source-snapshot \
+    --tracked "$SOURCE_ROOT/state/source-snapshot.json" \
+    --output "$WORK_DIR/source-snapshot.json" >/dev/null
   EDITION="$WORK_DIR/edition"
   PYTHONPATH="$SOURCE_ROOT" SOURCE_REVISION="$SOURCE_COMMIT" \
     python3 -B -m radar collect --snapshot "$WORK_DIR/source-snapshot.json" --output "$EDITION"
@@ -118,6 +120,12 @@ IMPORT_RESULT=$(PYTHONPATH="$SOURCE_ROOT" python3 -B -m radar import-local-editi
   fail "real local edition could not be imported; the prior cache was preserved"
 [[ $(jq -r '.sourceRevision // empty' <<<"$IMPORT_RESULT") == "$SOURCE_COMMIT" ]] ||
   fail "local edition revision does not match the synchronized source commit"
+
+if [[ ${OMARCHY_NEWS_RADAR_TEST_MODE:-} != 1 ]]; then
+  PYTHONPATH="$SOURCE_ROOT" python3 -B -m radar commit-local-source-snapshot \
+    --snapshot "$WORK_DIR/source-snapshot.json" >/dev/null ||
+    fail "local source continuity could not be recorded after edition import"
+fi
 
 printf 'News Radar local plugin is current at %s.\n' "$SOURCE_COMMIT"
 printf 'The managed Omarchy News Radar entry is current in the Apps menu.\n'
