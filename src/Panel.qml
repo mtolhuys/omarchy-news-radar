@@ -1703,7 +1703,6 @@ Item {
                   }
                 }
               }
-              }
             }
 
             Rectangle {
