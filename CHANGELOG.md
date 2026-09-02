@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 — 2026-09-02
+
+- Serve the live JSON/RSS/HTML edition from `https://mtolhuijs.nl/storage/news-radar/` so Forge owns collect → build → serve.
+- Point `FEED_URL` / `FEED_ORIGIN` and RSS channel links at mtolhuijs.nl instead of GitHub Pages.
+- Keep `publication.yml` as an optional backup path; scheduled delivery no longer requires Actions or Pages.
+
+
 ## 0.2.2 — 2026-09-02
 
 - Make the top-bar unread badge count the deduplicated union of stories reachable through the current persistent section projections instead of every unread event in the raw feed.

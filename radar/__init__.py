@@ -1,3 +1,3 @@
 """Omarchy News Radar deterministic collection and client library."""
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"

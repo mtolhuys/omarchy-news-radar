@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
-BUILD_ID = "news-radar-0.2.2"
+BUILD_ID = "news-radar-0.2.3"
 FEED_SCHEMA_VERSION = 1
 STATE_SCHEMA_VERSION = 9
 HELPER_PROTOCOL_VERSION = 1
 
-FEED_URL = "https://mtolhuys.github.io/omarchy-news-radar/events.json"
-FEED_ORIGIN = "https://mtolhuys.github.io"
+FEED_URL = "https://mtolhuijs.nl/storage/news-radar/events.json"
+FEED_ORIGIN = "https://mtolhuijs.nl"
 FEED_MAX_BYTES = 2 * 1024 * 1024
 CATALOG_MAX_BYTES = 8 * 1024 * 1024
 GITHUB_MAX_BYTES = 4 * 1024 * 1024

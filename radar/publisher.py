@@ -28,7 +28,7 @@ def render_rss(feed: Mapping[str, Any]) -> bytes:
     rss = ET.Element("rss", {"version": "2.0"})
     channel = ET.SubElement(rss, "channel")
     ET.SubElement(channel, "title").text = "Omarchy News Radar"
-    ET.SubElement(channel, "link").text = "https://mtolhuys.github.io/omarchy-news-radar/"
+    ET.SubElement(channel, "link").text = "https://mtolhuijs.nl/storage/news-radar/"
     ET.SubElement(channel, "description").text = "Source-linked Omarchy ecosystem activity. Independent community project."
     last_build = str(validated.get("publishedAt", validated["generatedAt"]))
     ET.SubElement(channel, "lastBuildDate").text = datetime.strptime(last_build, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
@@ -93,7 +93,7 @@ def render_html(feed: Mapping[str, Any]) -> bytes:
     <p class="eyebrow">Independent community project</p>
     <h1>Omarchy News Radar</h1>
     <p class="deck">A calm, source-linked edition of meaningful Omarchy activity.</p>
-    <p class="health">Sources collected {generated} · artifact published {published} · Pages propagation may take up to 10 minutes · {health}</p>
+    <p class="health">Sources collected {generated} · artifact published {published} · {health}</p>
   </header>
   <main>{stories if stories else '<p class="empty">This edition contains no events.</p>'}</main>
   <footer><a href="events.json">JSON feed</a> · <a href="feed.xml">RSS</a></footer>
