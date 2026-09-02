@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.2+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.3+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -1271,6 +1271,11 @@ Item {
           root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
           event.accepted = true; return
         }
+        if ((event.text || "").toLowerCase() === "a") {
+          if (searchField.activeFocus) return
+          root.markCurrentSectionRead()
+          event.accepted = true; return
+        }
         if ((event.text || "") === "?") {
           if (searchField.activeFocus) return
           root.keysLegendOpen = !root.keysLegendOpen
@@ -1547,11 +1552,12 @@ Item {
             spacing: Style.spacing.panelGap
 
             ColumnLayout {
-              // List-first: keep the SECTIONS rail compact (labels+counts) and
-              // cap it so wide windows do not grow empty gutters beside the count.
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.20 : card.width * 0.13
+              // Comfortable SECTIONS rail (between old 16% and cramped 13%):
+              // labels+counts padded, still capped so wide windows avoid empty gutters.
+              // Freed list width goes to the detail inspector (the news itself).
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.15
               Layout.minimumWidth: Style.space(128)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.28 : Style.space(168)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(184)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1581,6 +1587,98 @@ Item {
               }
 
               Item { Layout.fillHeight: true }
+
+              ColumnLayout {
+                id: keysLegend
+                Layout.fillWidth: true
+                spacing: Style.spacing.sm
+
+                RadarButton {
+                  id: keysLegendToggle
+                  Layout.fillWidth: true
+                  label: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
+                  tooltipText: root.keysLegendOpen
+                    ? "Hide keyboard shortcuts (?)"
+                    : "Show keyboard shortcuts (?)"
+                  selected: root.keysLegendOpen
+                  onClicked: root.keysLegendOpen = !root.keysLegendOpen
+                }
+
+                Text {
+                  visible: !root.keysLegendOpen
+                  Layout.fillWidth: true
+                  text: "Esc/q · j/k · ↵/o · s · u · a · f · / · r · Tab · 1–6 · Home/End · ?"
+                  textFormat: Text.PlainText
+                  color: root.secondaryTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: "Keyboard shortcuts collapsed preview"
+                }
+
+                Flow {
+                  id: keysLegendBody
+                  visible: root.keysLegendOpen
+                  Layout.fillWidth: true
+                  Layout.preferredHeight: visible ? childrenRect.height : 0
+                  spacing: Style.spacing.controlGap
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: "Keyboard shortcuts"
+
+                  Repeater {
+                    model: [
+                      { keys: "Esc/q", action: "close" },
+                      { keys: "j/k", action: "move" },
+                      { keys: "↵/o", action: "open" },
+                      { keys: "s", action: "save" },
+                      { keys: "u", action: "read" },
+                      { keys: "a", action: "all-read" },
+                      { keys: "f", action: "unread" },
+                      { keys: "/", action: "search" },
+                      { keys: "r", action: "refresh" },
+                      { keys: "Tab", action: "sections" },
+                      { keys: "1–6", action: "jump" },
+                      { keys: "Home/End", action: "edges" },
+                      { keys: "?", action: "keys" }
+                    ]
+                    Row {
+                      required property var modelData
+                      required property int index
+                      spacing: Style.space(6)
+
+                      BorderSurface {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitWidth: keycapText.implicitWidth + Style.spacing.controlPaddingX
+                        implicitHeight: Math.max(Style.space(22), keycapText.implicitHeight + Style.space(6))
+                        radius: Style.cornerRadius
+                        color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
+                        borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+
+                        Text {
+                          id: keycapText
+                          anchors.centerIn: parent
+                          text: modelData.keys
+                          textFormat: Text.PlainText
+                          color: Color.popups.text
+                          font.family: Style.font.family
+                          font.pixelSize: Style.font.caption
+                          font.bold: true
+                        }
+                      }
+
+                      Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: modelData.action + (index < 12 ? " ·" : "")
+                        textFormat: Text.PlainText
+                        color: root.secondaryTextColor
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.caption
+                      }
+                    }
+                  }
+                }
+              }
             }
 
             Rectangle {
@@ -1592,7 +1690,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.74 : card.width * 0.52
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.48
               spacing: Style.spacing.md
 
               GridLayout {
@@ -1645,7 +1743,7 @@ Item {
                   RadarButton {
                     id: markAllReadButton
                     label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
-                    tooltipText: "Mark every unread story matching this section's Settings as read"
+                    tooltipText: "Mark every unread story matching this section's Settings as read (A)"
                     enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
                       && !root.refreshing && !projectProc.running
                       && !root.stateMutationPending && !root.readMutationPending
@@ -1775,101 +1873,6 @@ Item {
                   font.pixelSize: Style.font.caption
                 }
               }
-
-              ColumnLayout {
-                id: keysLegend
-                Layout.fillWidth: true
-                spacing: Style.spacing.sm
-
-                RowLayout {
-                  Layout.fillWidth: true
-                  spacing: Style.spacing.controlGap
-
-                  RadarButton {
-                    id: keysLegendToggle
-                    label: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
-                    tooltipText: root.keysLegendOpen
-                      ? "Hide keyboard shortcuts (?)"
-                      : "Show keyboard shortcuts (?)"
-                    selected: root.keysLegendOpen
-                    onClicked: root.keysLegendOpen = !root.keysLegendOpen
-                  }
-
-                  Text {
-                    visible: !root.keysLegendOpen
-                    Layout.fillWidth: true
-                    text: "Esc/q · j/k · ↵/o · s · u · f · / · r · Tab · 1–6 · Home/End"
-                    textFormat: Text.PlainText
-                    color: root.secondaryTextColor
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    elide: Text.ElideRight
-                    Accessible.role: Accessible.StaticText
-                    Accessible.name: "Keyboard shortcuts collapsed preview"
-                  }
-                }
-
-                Flow {
-                  id: keysLegendBody
-                  visible: root.keysLegendOpen
-                  Layout.fillWidth: true
-                  Layout.preferredHeight: visible ? childrenRect.height : 0
-                  spacing: Style.spacing.controlGap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: "Keyboard shortcuts"
-
-                  Repeater {
-                    model: [
-                      { keys: "Esc/q", action: "close" },
-                      { keys: "j/k", action: "move" },
-                      { keys: "↵/o", action: "open" },
-                      { keys: "s", action: "save" },
-                      { keys: "u", action: "read" },
-                      { keys: "f", action: "unread" },
-                      { keys: "/", action: "search" },
-                      { keys: "r", action: "refresh" },
-                      { keys: "Tab", action: "sections" },
-                      { keys: "1–6", action: "jump" },
-                      { keys: "Home/End", action: "edges" },
-                      { keys: "?", action: "keys" }
-                    ]
-                    Row {
-                      required property var modelData
-                      required property int index
-                      spacing: Style.space(6)
-
-                      BorderSurface {
-                        anchors.verticalCenter: parent.verticalCenter
-                        implicitWidth: keycapText.implicitWidth + Style.spacing.controlPaddingX
-                        implicitHeight: Math.max(Style.space(22), keycapText.implicitHeight + Style.space(6))
-                        radius: Style.cornerRadius
-                        color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
-                        borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
-
-                        Text {
-                          id: keycapText
-                          anchors.centerIn: parent
-                          text: modelData.keys
-                          textFormat: Text.PlainText
-                          color: Color.popups.text
-                          font.family: Style.font.family
-                          font.pixelSize: Style.font.caption
-                          font.bold: true
-                        }
-                      }
-
-                      Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: modelData.action + (index < 11 ? " ·" : "")
-                        textFormat: Text.PlainText
-                        color: root.secondaryTextColor
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.caption
-                      }
-                    }
-                  }
-                }
-              }
             }
 
             Rectangle {
@@ -1882,7 +1885,7 @@ Item {
             Flickable {
               visible: !keySurface.narrow
               Layout.fillHeight: true
-              Layout.preferredWidth: card.width * 0.27
+              Layout.preferredWidth: card.width * 0.31
               Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight
