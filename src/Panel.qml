@@ -752,13 +752,16 @@ Item {
       return
     }
     var initialContentY = storyList.contentY
+    var currentRow = delta > 0 ? storyList.itemAtIndex(selectedIndex) : null
+    var fallbackNextTop = currentRow
+      ? currentRow.y + currentRow.height + storyList.spacing : -1
     selectStory(nextIndex, true)
     Qt.callLater(function() {
       if (root.selectedIndex !== nextIndex
           || root.storyViewportRevision !== viewportRevision) return
       var anchorAtTop = storyNeedsTopAnchor(nextIndex)
       if (anchorAtTop) root.storyViewportAnchorIndex = nextIndex
-      animateStoryPosition(nextIndex, anchorAtTop, initialContentY)
+      animateStoryPosition(nextIndex, anchorAtTop, initialContentY, fallbackNextTop)
     })
   }
 
@@ -773,7 +776,7 @@ Item {
     return top < -0.5 || top + row.height >= storyList.height - 0.5
   }
 
-  function animateStoryPosition(index, alignAtTop, initialContentY) {
+  function animateStoryPosition(index, alignAtTop, initialContentY, fallbackTargetY) {
     storyScrollAnimation.stop()
     var targetContentY = initialContentY
     if (alignAtTop) {
@@ -786,6 +789,13 @@ Item {
         targetContentY = Math.max(
           storyList.originY,
           Math.min(row.y, maximumContentY)
+        )
+      } else if (fallbackTargetY !== undefined && fallbackTargetY >= 0) {
+        var fallbackMaximumY = storyList.originY
+          + Math.max(0, storyList.contentHeight - storyList.height)
+        targetContentY = Math.max(
+          storyList.originY,
+          Math.min(fallbackTargetY, fallbackMaximumY)
         )
       }
     }
