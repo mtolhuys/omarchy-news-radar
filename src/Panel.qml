@@ -71,6 +71,7 @@ Item {
   property real pendingViewportAnchorTop: 0
   property int pendingViewportRevision: -1
   property int pendingViewportAttempts: 0
+  property int forcedTopAnchorIndex: -1
   property bool localStateReady: false
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
@@ -511,6 +512,7 @@ Item {
   function requestProjection(viewportMode) {
     if (!opened) return
     var requestedMode = viewportMode === "preserve" ? "preserve" : "reset"
+    if (requestedMode === "reset") forcedTopAnchorIndex = -1
     if (projectProc.running) {
       if (!pendingProjection || requestedMode === "reset")
         pendingProjectionViewportMode = requestedMode
@@ -549,7 +551,7 @@ Item {
     pendingViewportPreservation = true
     pendingViewportContentY = contentY
     pendingViewportAnchorIndex = anchorIndex
-    pendingViewportAnchorTop = anchorTop
+    pendingViewportAnchorTop = forcedTopAnchorIndex === anchorIndex ? 0 : anchorTop
     pendingViewportRevision = revision
     pendingViewportAttempts = 12
     Qt.callLater(root.applyPendingViewportPreservation)
@@ -633,6 +635,8 @@ Item {
           selectedIndex
         )
         : -1
+      if (forcedTopAnchorIndex === storyViewportAnchorIndex)
+        preservedAnchorTop = 0
       if (preserveViewport) {
         // Replacing a ListView model may reset contentY while delegates settle.
         // Keep the reader at the exact live visual anchor. If a read-state
@@ -746,6 +750,7 @@ Item {
     storyScrollAnimation.stop()
     var viewportRevision = storyViewportRevision
     var nextIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
+    forcedTopAnchorIndex = -1
     if (delta < 0) {
       var previousRow = storyList.itemAtIndex(nextIndex)
       var previousAboveViewport = !previousRow
@@ -774,6 +779,7 @@ Item {
       // the top. Its read-state projection then preserves this real anchor.
       selectStory(nextIndex, true)
       storyViewportAnchorIndex = nextIndex
+      forcedTopAnchorIndex = nextIndex
       storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
       queueViewportPreservation(
         storyList.contentY,
