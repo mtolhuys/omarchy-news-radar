@@ -10,3 +10,6 @@
 *.iso
 *.log
 *.corrupt-*
+
+# local icon/preview scratch
+.tmp/
