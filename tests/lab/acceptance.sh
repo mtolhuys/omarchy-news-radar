@@ -539,6 +539,18 @@ omarchy_host_test() {
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
     "jq -e '.schemaVersion == 9 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  press esc
+  wait_for_guest_state "Unread only presents a stable unread projection" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == false and .storyCount == 2 and .selectedIndex == 0 and .selectedIsUnread == true and .retainedReadStories == 0'" || return 1
+  unread_story_count="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.storyCount'")" || return 1
+  press down
+  wait_for_guest_state "Unread-only navigation keeps the just-read selected story in place" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --argjson priorCount '$unread_story_count' '.selectedIndex == 1 and .selectedIsUnread == false and .retainedReadStories == 1 and .storyCount == \$priorCount and .unreadCount >= 0'" || return 1
+  capture_console "success-news-radar-03-unread-selection-retained"
+  radar_control_geometry settingsGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "Settings reopens after the retained unread-only reading state" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true'" || return 1
   radar_control_geometry filterResetGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered reset restores the exact section defaults" 10 ssh_session \
@@ -707,6 +719,14 @@ omarchy_host_test() {
   capture_console "success-news-radar-09-load-more-focus"
   viewport_state="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'")" || return 1
   pre_load_content_y="$(jq -r '.contentY' <<<"$viewport_state")" || return 1
+  press up
+  wait_for_guest_state "Up from Load more returns focus without moving or reselecting the final story" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIndex == 11 and .loadMoreFocused == false' && \
+     omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e --argjson retainedY '$pre_load_content_y' '.selectedIndex == 11 and .fullyVisible == true and ((.contentY - \$retainedY) | fabs) <= 0.5 and .scrolling == false'" || return 1
+  capture_console "success-news-radar-09-load-more-up-stable"
+  press down
+  wait_for_guest_state "Down deterministically returns focus to Load more" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIndex == 11 and .loadMoreFocused == true'" || return 1
   ssh_session "for _ in \$(seq 1 36); do omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'; sleep 0.025; done" \
     >"$RUN_DIR/news-radar-load-more-scroll-probes.jsonl" &
   load_more_probe_pid=$!

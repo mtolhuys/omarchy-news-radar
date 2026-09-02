@@ -312,6 +312,29 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertTrue(all(event["isUnread"] for event in unread["events"]))
         self.assertNotIn(read_id, {event["id"] for event in unread["events"]})
 
+        retained = projection_model(
+            "plugins",
+            "[]",
+            "",
+            self.environment,
+            now=CLOCK,
+            retained_read_ids_json=json.dumps([read_id]),
+        )
+        retained_story = next(event for event in retained["events"] if event["id"] == read_id)
+        self.assertFalse(retained_story["isUnread"])
+        self.assertEqual(1, retained["retainedReadCount"])
+        self.assertEqual(unread["unreadCounts"], retained["unreadCounts"])
+
+        with self.assertRaisesRegex(ValidationError, "retained read ID"):
+            projection_model(
+                "plugins",
+                "[]",
+                "",
+                self.environment,
+                now=CLOCK,
+                retained_read_ids_json='["not-an-event"]',
+            )
+
         self.assertNotIn("sectionProfiles", updated["state"]["preferences"])
 
         with self.assertRaisesRegex(ValidationError, "limit"):

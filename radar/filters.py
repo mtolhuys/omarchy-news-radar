@@ -98,6 +98,7 @@ def apply_section_filter(
     *,
     read_through: str,
     read_overrides: Mapping[str, bool],
+    retained_read_ids: Iterable[str] = (),
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     current = validate_section_filter(value)
@@ -108,6 +109,7 @@ def apply_section_filter(
         "30d": timedelta(days=30),
     }.get(current["period"])
     allowed_types = set(current["types"])
+    retained = set(retained_read_ids)
     result: list[dict[str, Any]] = []
     for raw in events:
         event = dict(raw)
@@ -119,7 +121,7 @@ def apply_section_filter(
         if current["significance"] == "critical" and significance != "critical":
             continue
         is_read = read_overrides.get(event["id"], event["occurredAt"] <= read_through)
-        if current["unreadOnly"] and is_read:
+        if current["unreadOnly"] and is_read and event["id"] not in retained:
             continue
         if current["imagesOnly"] and not isinstance(event.get("image"), dict):
             continue

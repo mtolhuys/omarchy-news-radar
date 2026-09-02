@@ -108,7 +108,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 
 - `1`–`5`: Front Page, For You, Core, Plugins, Saved.
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections.
-- `j` / `k` or arrow keys: move the selected story. Crossing the viewport bottom smoothly anchors the newly selected row at the top; crossing the top while moving upward keeps the highlight visibly anchored even during key repeat. Normal row-by-row movement continues while the next story remains visible. Down from the final loaded story focuses **Load more**, labels the Enter action, and Enter loads the next page.
+- `j` / `k` or arrow keys: move the selected story. Crossing the viewport bottom smoothly anchors the newly selected row at the top; crossing the top while moving upward keeps the highlight visibly anchored even during key repeat. Normal row-by-row movement continues while the next story remains visible. Down from the final loaded story focuses **Load more**; Up returns focus without moving the retained story or viewport; Enter loads the next page.
 - `Home` / `End`: first or last story.
 - `u`: mark the selected story read or unread locally.
 - `/`: focus local search; `Escape` returns to panel navigation.
@@ -120,6 +120,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 - `⚙ Settings`: inspect the section's fixed sources, then locally refine time, significance, unread/image state, and story types. Names, icons, order, background, and source scope remain canonical.
 - `Mark all as read`: atomically mark every unread story matching the current section's Settings, including unloaded pages. Temporary search does not change this scope.
 - `Load more`: reveal the next twelve matching stories from the already validated bounded edition by pointer or keyboard.
+- `Unread only`: a story read during the current view remains visibly marked **READ** in its existing position until the section, search, or filters change, preventing the active row from disappearing while its unread count updates.
 
 Every row explicitly says `● UNREAD` or `✓ READ`. Deliberate pointer selection, `j`/`k`, `Home`/`End`, and source activation mark only that story read; hover, opening the panel, refreshing, and closing do not mark the rest of the edition. The only batch transition is the explicit **Mark all as read** section action. The section rail and top-bar newspaper use the same durable local unread predicate, and **Mark read / Mark unread** in the inspector mirrors the `u` key.
 

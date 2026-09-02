@@ -73,6 +73,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     projection.add_argument("--installed-json", default="[]")
     projection.add_argument("--query", default="")
     projection.add_argument("--limit", type=int, default=12)
+    projection.add_argument("--retained-read-ids-json", default="[]")
     section_filter = commands.add_parser("set-section-filter")
     section_filter.add_argument("--section", required=True)
     section_filter.add_argument("--filter-json", required=True)
@@ -115,7 +116,13 @@ def client_main(argv: Sequence[str] | None = None) -> int:
                 raise RadarError("section filter must be a JSON object")
             result = set_section_filter(args.section, filter_value)
         elif args.command == "project":
-            result = projection_model(args.section, args.installed_json, args.query, limit=args.limit)
+            result = projection_model(
+                args.section,
+                args.installed_json,
+                args.query,
+                limit=args.limit,
+                retained_read_ids_json=args.retained_read_ids_json,
+            )
         else:
             result = purge_state()
         _print(result)

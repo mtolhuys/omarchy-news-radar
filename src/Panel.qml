@@ -46,6 +46,7 @@ Item {
   property var counts: ({})
   property var unreadCounts: ({})
   property var pendingReadChanges: ({})
+  property var unreadSessionRetainedIds: ({})
   property bool readChangeInFlight: false
   property bool bulkReadInFlight: false
   property int sectionIndex: 0
@@ -75,6 +76,7 @@ Item {
   property string shortcutMessage: ""
   property string windowIntegrationStatus: "idle"
   property int totalStories: 0
+  property int retainedReadStories: 0
   property bool hasMoreStories: false
   property string filterSummary: "No extra filters"
   property string sectionSources: ""
@@ -176,6 +178,7 @@ Item {
       pendingProjection: pendingProjection,
       projecting: projectProc.running,
       filterSummary: filterSummary,
+      retainedReadStories: retainedReadStories,
       sectionName: currentProfile.name,
       sectionSources: sectionSources,
       windowVisible: panelWindow.visible,
@@ -344,6 +347,7 @@ Item {
     sectionSettingsOpen = false
     selectedIndex = 0
     storyViewportAnchorIndex = 0
+    unreadSessionRetainedIds = ({})
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
     inspectShortcut()
@@ -478,7 +482,8 @@ Item {
       "--section", currentSection,
       "--installed-json", JSON.stringify(installedPluginIds),
       "--query", searchField.text,
-      "--limit", String(Number(sectionLimits[currentSection] || pageSize))
+      "--limit", String(Number(sectionLimits[currentSection] || pageSize)),
+      "--retained-read-ids-json", JSON.stringify(Object.keys(unreadSessionRetainedIds).sort())
     ])
   }
 
@@ -555,6 +560,7 @@ Item {
       counts = result.counts || ({})
       unreadCounts = result.unreadCounts || ({})
       totalStories = Number(result.totalEvents || 0)
+      retainedReadStories = Number(result.retainedReadCount || 0)
       hasMoreStories = result.hasMore === true
       filterSummary = String(result.filterSummary || "No extra filters")
       sectionSources = String(result.sectionSources || "")
@@ -594,6 +600,7 @@ Item {
     } else {
       stories = []
       totalStories = 0
+      retainedReadStories = 0
       hasMoreStories = false
       selectedIndex = -1
       storyViewportAnchorIndex = -1
@@ -618,6 +625,7 @@ Item {
     sectionIndex = index
     selectedIndex = 0
     storyViewportAnchorIndex = 0
+    unreadSessionRetainedIds = ({})
     requestProjection()
   }
 
@@ -647,9 +655,9 @@ Item {
     if (!stories.length) return
     if (loadMoreButton.activeFocus) {
       if (delta < 0) {
+        // The final story remains selected while Load more owns focus. Returning
+        // focus must not reposition or re-read that unchanged selection.
         navigationFocus.forceActiveFocus()
-        selectStory(stories.length - 1, true)
-        storyList.positionViewAtIndex(selectedIndex, ListView.Contain)
       }
       return
     }
@@ -738,6 +746,12 @@ Item {
 
   function queueStoryRead(story, read) {
     if (!story || !story.id || bulkReadInFlight) return
+    var retained = Object.assign({}, unreadSessionRetainedIds)
+    if (currentFilter.unreadOnly === true && read === true)
+      retained[String(story.id)] = true
+    else if (read !== true)
+      delete retained[String(story.id)]
+    unreadSessionRetainedIds = retained
     var changes = Object.assign({}, pendingReadChanges)
     changes[String(story.id)] = read === true
     pendingReadChanges = changes
@@ -809,6 +823,7 @@ Item {
       types: (currentFilter.types || []).slice()
     }
     next[name] = value
+    unreadSessionRetainedIds = ({})
     resetSectionLimit(currentSection)
     startProcess(stateProc, [
       "set-section-filter",
@@ -829,6 +844,7 @@ Item {
   function resetFilter() {
     if (stateMutationPending) return
     resetSectionLimit(currentSection)
+    unreadSessionRetainedIds = ({})
     startProcess(stateProc, [
       "set-section-filter",
       "--section", currentSection,
@@ -993,7 +1009,10 @@ Item {
     id: searchTimer
     interval: 160
     repeat: false
-    onTriggered: root.requestProjection()
+    onTriggered: {
+      root.unreadSessionRetainedIds = ({})
+      root.requestProjection()
+    }
   }
 
   FloatingWindow {
@@ -1466,7 +1485,11 @@ Item {
 
               Text {
                 Layout.fillWidth: true
-                text: root.filterSummary + " · " + root.totalStories + " stories · "
+                text: root.filterSummary
+                  + (root.retainedReadStories > 0
+                    ? " · " + root.retainedReadStories + " just read shown until this view changes"
+                    : "")
+                  + " · " + root.totalStories + " stories · "
                   + Number(root.unreadCounts[root.currentSection] || 0) + " unread"
                 textFormat: Text.PlainText
                 color: root.secondaryTextColor

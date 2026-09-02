@@ -38,7 +38,7 @@ from .state import (
     update_preferences,
     update_section_filter,
 )
-from .validation import parse_timestamp, validate_feed, validate_https_url
+from .validation import EVENT_ID_RE, parse_timestamp, validate_feed, validate_https_url
 
 MARKETPLACE_PLUGIN_PAGE = "https://plugins.omarchy.org/plugin.html"
 
@@ -454,6 +454,23 @@ def _parse_installed_plugin_ids(installed_json: str) -> list[str]:
     return installed
 
 
+def _parse_retained_read_ids(retained_read_ids_json: str) -> list[str]:
+    if len(retained_read_ids_json) > 16 * 1024:
+        raise ValidationError("retained read IDs exceed their bound")
+    try:
+        retained_raw = json.loads(retained_read_ids_json)
+    except json.JSONDecodeError as exc:
+        raise ValidationError("retained read IDs are invalid JSON") from exc
+    if not isinstance(retained_raw, list) or len(retained_raw) > 500:
+        raise ValidationError("retained read IDs are invalid")
+    retained: list[str] = []
+    for item in retained_raw:
+        if not isinstance(item, str) or not EVENT_ID_RE.fullmatch(item):
+            raise ValidationError("retained read ID is invalid")
+        retained.append(item)
+    return sorted(set(retained))
+
+
 def _filtered_section_events(
     feed: Mapping[str, Any],
     state: Mapping[str, Any],
@@ -461,6 +478,7 @@ def _filtered_section_events(
     installed_plugin_ids: list[str],
     *,
     query: str = "",
+    retained_read_ids: list[str] | None = None,
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     if section not in CLIENT_SECTIONS:
@@ -477,6 +495,7 @@ def _filtered_section_events(
         section_filter,
         read_through=state["readThrough"],
         read_overrides=state["readOverrides"],
+        retained_read_ids=retained_read_ids or (),
         now=now,
     )
 
@@ -489,12 +508,14 @@ def projection_model(
     *,
     now: datetime | None = None,
     limit: int = 12,
+    retained_read_ids_json: str = "[]",
 ) -> dict[str, Any]:
     if len(query) > 100:
         raise ValidationError("projection input exceeds its bound")
     if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 500:
         raise ValidationError("projection limit is outside its bound")
     installed = _parse_installed_plugin_ids(installed_json)
+    retained_read_ids = _parse_retained_read_ids(retained_read_ids_json)
     feed = load_feed(environment, now=now)
     state, _ = load_state(environment)
     names = CLIENT_SECTIONS
@@ -538,6 +559,7 @@ def projection_model(
         section,
         installed,
         query=query,
+        retained_read_ids=retained_read_ids,
         now=now,
     )
     total_events = len(events)
@@ -611,6 +633,10 @@ def projection_model(
         readThrough=state["readThrough"],
         totalEvents=total_events,
         hasMore=total_events > len(decorated),
+        retainedReadCount=sum(
+            item["id"] in retained_read_ids and not item["isUnread"]
+            for item in decorated
+        ),
         limit=limit,
         filter=current_filter,
         filterSummary=filter_summary(current_filter),
