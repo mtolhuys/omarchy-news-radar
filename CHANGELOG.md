@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.8 — 2026-09-02
+
+### Changed
+- Replace the ASCII Apps-menu icon with a high-contrast radar mark: amber rim, bold concentric rings/sweep/blip, and a larger Omarchy brand logo (#9ece6a) blended under the radar (readable at small sizes; no ASCII text).
+
+### Notes
+- No feed or local-state schema bump. Community plugin; not an official Omarchy project (Omarchy mark pending TM).
+
 ## 0.4.7 — 2026-09-02
 
 ### Fixed
