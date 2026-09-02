@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.11+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.12+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -1373,9 +1373,8 @@ Item {
               Layout.fillWidth: true
               spacing: Style.spacing.controlGap
 
-              // Opaque theme plate + popup border chip; light themes use a
-              // stronger-green SVG so the Omarchy glyph reads on Lupine.
-              // Apps-menu / manifest still ship the dark-tuned transparent SVG.
+              // The app mark owns one stable high-contrast squircle across
+              // themes; this plate supplies the outer chip border and sizing.
               Rectangle {
                 Layout.preferredWidth: Style.space(42)
                 Layout.preferredHeight: Style.space(42)
@@ -1384,13 +1383,11 @@ Item {
                 border.width: Style.spacing.hairline
                 border.color: Color.popups.border
                 Accessible.role: Accessible.Graphic
-                Accessible.name: "Omarchy News Radar newspaper mark"
+                Accessible.name: "Omarchy News Radar app mark"
 
                 Image {
                   anchors.fill: parent
-                  source: Qt.resolvedUrl(root.popupBgIsLight
-                    ? "../assets/io.github.mtolhuys.news-radar-light.svg"
-                    : "../assets/io.github.mtolhuys.news-radar.svg")
+                  source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
                   sourceSize: Qt.size(Style.space(84), Style.space(84))
                   fillMode: Image.PreserveAspectFit
                   mipmap: true

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+No changes yet.
+
+## 0.4.12 — 2026-09-03
+
+### Changed
+- Make the official Omarchy logo the full-strength primary application mark, with a compact two-ring amber radar integrated into its central negative space rather than placing two complete symbols over each other.
+- Use one opaque, self-contained dark squircle across the manifest, Apps entry, companion UIs, and light/dark panel themes so the brand shape and official `#9ece6a` green remain stable on every surface.
+- Replace the outdated animated README capture with an evergreen branded hero, and export the same composition as the root `preview.png` consumed by the marketplace preview pipeline.
+
+No feed or local-state schema bump.
+
 ## 0.4.11 — 2026-09-02
 
 ### Fixed

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-labelledby="title description">
+  <title id="title">Omarchy News Radar</title>
+  <desc id="description">Independent community plugin for Omarchy releases, marketplace changes, community work, and videos.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0d10"/>
+      <stop offset="0.58" stop-color="#111418"/>
+      <stop offset="1" stop-color="#0c100e"/>
+    </linearGradient>
+    <radialGradient id="green-glow" cx="0" cy="0" r="1" gradientTransform="translate(1060 54) rotate(135) scale(430 360)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9ece6a" stop-opacity=".17"/>
+      <stop offset="1" stop-color="#9ece6a" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#9ece6a" stroke-opacity=".045"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="400" rx="28" fill="url(#background)"/>
+  <rect x="1" y="1" width="1198" height="398" rx="27" fill="none" stroke="#9ece6a" stroke-opacity=".28" stroke-width="2"/>
+  <rect width="1200" height="400" rx="28" fill="url(#green-glow)"/>
+  <rect width="1200" height="400" rx="28" fill="url(#grid)"/>
+
+  <g opacity=".11" fill="none" stroke="#9ece6a" stroke-width="2">
+    <circle cx="1128" cy="38" r="84"/>
+    <circle cx="1128" cy="38" r="132"/>
+    <circle cx="1128" cy="38" r="180"/>
+    <path d="M1128 38 1004 162"/>
+  </g>
+
+  <g aria-label="Omarchy News Radar application mark">
+    <rect x="66" y="74" width="252" height="252" rx="58" fill="#111418" stroke="#9ece6a" stroke-opacity=".22" stroke-width="2"/>
+    <g transform="translate(192 200) scale(.15) translate(-600 -600)" shape-rendering="crispEdges">
+      <path fill="#9ece6a" fill-rule="evenodd" clip-rule="evenodd" d="m1200 1200h-480v-80h400v-1040h-479.996v160h-400v720h720v-720h-80v-80h159.996v880h-400v160h-640v-1200h1200zm-1120-80h480v-80h-400l.004-400h-80.004zm0-560h80.004v-400h400v-80h-480.004z"/>
+    </g>
+    <circle cx="192" cy="200" r="45" fill="#111418"/>
+    <circle cx="192" cy="200" r="38" fill="none" stroke="#ffad24" stroke-width="10"/>
+    <circle cx="192" cy="200" r="16" fill="none" stroke="#ffad24" stroke-width="5" opacity=".55"/>
+    <path d="M192 200 222 170" stroke="#ffad24" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="226" cy="166" r="10" fill="#ffad24" stroke="#111418" stroke-width="5"/>
+    <circle cx="192" cy="200" r="6" fill="#ffad24"/>
+  </g>
+
+  <g font-family="ui-monospace, 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace">
+    <rect x="370" y="69" width="244" height="30" rx="15" fill="#ffad24" fill-opacity=".1" stroke="#ffad24" stroke-opacity=".42"/>
+    <circle cx="389" cy="84" r="4" fill="#ffad24"/>
+    <text x="402" y="90" fill="#ffbd4a" font-size="13" font-weight="700" letter-spacing="1.2">COMMUNITY PLUGIN</text>
+
+    <text x="370" y="151" fill="#9ece6a" font-size="28" font-weight="700" letter-spacing="8">OMARCHY</text>
+    <text x="366" y="220" fill="#f1f5f2" font-size="62" font-weight="800" letter-spacing="1">NEWS RADAR</text>
+    <text x="370" y="263" fill="#aeb8b3" font-size="21">Press one key. Catch up with what changed.</text>
+
+    <g font-size="13" font-weight="700" letter-spacing="1.1">
+      <rect x="370" y="294" width="112" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="389" y="316" fill="#b6df8a">RELEASES</text>
+      <rect x="494" y="294" width="146" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="512" y="316" fill="#b6df8a">MARKETPLACE</text>
+      <rect x="652" y="294" width="132" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="671" y="316" fill="#b6df8a">COMMUNITY</text>
+      <rect x="796" y="294" width="104" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="817" y="316" fill="#b6df8a">VIDEOS</text>
+    </g>
+  </g>
+
+  <path d="M66 352h1068" stroke="#9ece6a" stroke-opacity=".16"/>
+  <path d="M66 352h150" stroke="#ffad24" stroke-width="3"/>
+</svg>

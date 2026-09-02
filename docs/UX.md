@@ -120,6 +120,7 @@ Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off contro
 ## Visual language
 
 - Use current Omarchy `Color`, `Style`, and `Border` contracts rather than hard-coded theme colors or sizes.
+- Use one self-contained Omarchy-and-radar application mark rather than stacking two complete symbols. The official full-strength green Omarchy logo remains primary; two compact amber radar rings, one sweep, and one blip live inside its central negative space and must remain distinct at 24 pixels. Keep the same opaque dark badge across light and dark themes so recognition never depends on the compositing surface.
 - Use the system monospace family and Omarchy type scale; distinguish masthead, section, headline, summary, metadata, and source through hierarchy rather than excessive color.
 - Accent marks focus, selection, and one lead rule. Urgent color is reserved for actual source or compatibility warnings.
 - A selected row must pair its fill with explicit primary and secondary foregrounds. It must never keep an ambient muted token that can blend into the selected fill; this is visually accepted in maintained dark and light themes.

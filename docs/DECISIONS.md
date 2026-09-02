@@ -373,3 +373,11 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** `make local-latest` often lacks `YOUTUBE_API_KEY`, so a newer owner-built edition can pin clients to an empty YouTube section while Forge already publishes a filled lane. The cadence gate also delayed empty→filled transitions after a first unsuccessful or empty populate.
 
 **Consequence:** Clients rejoin the shared published YouTube lane as soon as Check for updates runs; Forge continuity (D041) and fail-closed retention are unchanged. The exception is YouTube-empty-local only and never demotes a local edition that already carries YouTube stories.
+
+## D047 — Make the official Omarchy logo the primary application mark
+
+**Decision:** Replace the transparent full-glyph/full-radar overlay with one self-contained mark. The exact official vector geometry published at `https://omarchy.org/brand/` appears at full strength in its `#9ece6a` green. A compact two-ring amber radar, sweep, and blip occupy its central negative space. The same opaque dark squircle is used by the manifest, Apps entry, companion UIs, and panel on light and dark themes.
+
+**Why:** The previous composition treated the logo as a faint background and gave a second complete radar equal weight. It became muddy at launcher and 42-pixel header sizes, weakened brand recognition, and depended on its compositing surface. A stable badge with one dominant branded silhouette is faster to recognize and creates a more credible first impression.
+
+**Consequence:** The SVG retains the bounded 128-unit inert geometry contract. The panel no longer selects a separate light asset; its existing theme plate supplies only the chip border and exact header sizing. Release review renders the mark at 24, 32, 42, 64, and 128 pixels before Plugin Lab acceptance. The project remains a community plugin and does not imply official Omarchy status.

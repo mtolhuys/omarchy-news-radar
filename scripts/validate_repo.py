@@ -163,6 +163,26 @@ def validate_manifest() -> None:
     attributes = dict(attribute_pairs)
     if attributes.get("xmlns") != "http://www.w3.org/2000/svg" or attributes.get("viewBox") != "0 0 128 128":
         fail("manifest icon must be a bounded 128-unit SVG")
+    required_brand_geometry = (
+        '#111418',
+        '#9ece6a',
+        '#ffad24',
+        'translate(64 64) scale(.075) translate(-600 -600)',
+        'm1200 1200h-480v-80h400v-1040',
+        '<circle cx="64" cy="64" r="19"',
+    )
+    if any(token not in icon_text for token in required_brand_geometry):
+        fail("manifest icon does not match the reviewed Omarchy-and-radar brand geometry")
+    if (ROOT / "assets" / "io.github.mtolhuys.news-radar-light.svg").exists():
+        fail("retired light-theme icon must not be shipped")
+    banner_source = ROOT / "assets" / "readme-banner.svg"
+    marketplace_preview = ROOT / "preview.png"
+    if not banner_source.is_file() or not marketplace_preview.is_file():
+        fail("README and marketplace preview assets are missing")
+    banner_text = banner_source.read_text(encoding="utf-8")
+    for token in ("COMMUNITY PLUGIN", "OMARCHY", "NEWS RADAR", "#9ece6a", "#ffad24"):
+        if token not in banner_text:
+            fail(f"README banner lacks reviewed brand token: {token}")
     qml = entries["panel"].read_text(encoding="utf-8")
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
         if required_text not in qml:

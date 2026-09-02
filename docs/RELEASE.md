@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.11` makes the panel header icon chip read on Lupine light: opaque `Color.popups.background` plate, visible `Color.popups.border`, and a light-tuned SVG with stronger Omarchy green (~0.80) and amber; dark keeps the 0.4.10 transparent SVG. No feed or state schema bump. Earlier 0.4.10 added luminance-aware text floors and theme-tinted badge; 0.4.9 dropped the Apps-menu amber outer rim. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.12` replaces the layered transparent glyph/radar mark with one stable Omarchy-and-radar icon. The official full-strength `#9ece6a` logo is the primary silhouette; a compact amber radar occupies its central negative space. One opaque dark squircle now remains identical across the manifest, Apps entry, companion UIs, and light/dark panel themes, while the panel plate supplies only its border and size. The README and marketplace preview use the matching branded hero exported from `assets/readme-banner.svg` to root `preview.png`. Version `0.4.11` previously used separate opacity-tuned transparent variants and an outdated animated README capture. No feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 

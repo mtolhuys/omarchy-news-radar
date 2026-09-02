@@ -1,18 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Omarchy News Radar">
-  <g transform="translate(64 64) scale(0.078) translate(-600 -600)" opacity="0.40">
-    <path fill="#9ece6a" fill-rule="evenodd" clip-rule="evenodd"
-      d="m1200 1200h-480v-80h400v-1040h-479.996v160h-400v720h720v-720h-80v-80h159.996v880h-400v160h-640v-1200h1200zm-1120-80h480v-80h-400l.004-400h-80.004zm0-560h80.004v-400h400v-80h-480.004z"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#111418"/>
+  <g transform="translate(64 64) scale(.075) translate(-600 -600)" shape-rendering="crispEdges">
+    <path fill="#9ece6a" fill-rule="evenodd" clip-rule="evenodd" d="m1200 1200h-480v-80h400v-1040h-479.996v160h-400v720h720v-720h-80v-80h159.996v880h-400v160h-640v-1200h1200zm-1120-80h480v-80h-400l.004-400h-80.004zm0-560h80.004v-400h400v-80h-480.004z"/>
   </g>
-  <circle cx="64" cy="64" r="38" fill="#9ece6a" fill-opacity="0.05"/>
-  <g transform="translate(64 64)" fill="none" stroke="#f59e0b" stroke-linecap="round">
-    <circle r="15" stroke-width="2.6" stroke-opacity="0.45"/>
-    <circle r="25" stroke-width="2.8" stroke-opacity="0.65"/>
-    <circle r="35" stroke-width="3.2" stroke-opacity="0.9"/>
-    <path d="M0 -36 V36 M-36 0 H36" stroke-width="2" stroke-opacity="0.35"/>
-  </g>
-  <path d="M64 64 L99 43 A36 36 0 0 0 89 31 Z" fill="#f59e0b" fill-opacity="0.28"/>
-  <path d="M64 64 L97 37" stroke="#f59e0b" stroke-width="3.2" stroke-linecap="round" stroke-opacity="0.95"/>
-  <circle cx="64" cy="64" r="3.2" fill="#f59e0b"/>
-  <circle cx="91" cy="49" r="4.2" fill="#f59e0b"/>
-  <circle cx="91" cy="49" r="6.5" fill="#9ece6a" fill-opacity="0.18"/>
+  <circle cx="64" cy="64" r="22" fill="#111418"/>
+  <circle cx="64" cy="64" r="19" fill="none" stroke="#ffad24" stroke-width="6"/>
+  <circle cx="64" cy="64" r="8" fill="none" stroke="#ffad24" stroke-width="3.5" opacity=".55"/>
+  <path d="M64 64 79 49" stroke="#ffad24" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="81" cy="47" r="5.5" fill="#ffad24" stroke="#111418" stroke-width="3"/>
+  <circle cx="64" cy="64" r="3.5" fill="#ffad24"/>
 </svg>
