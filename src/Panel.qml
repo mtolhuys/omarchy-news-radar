@@ -787,11 +787,6 @@ Item {
         0,
         viewportRevision
       )
-      Qt.callLater(function() {
-        if (root.selectedIndex === nextIndex
-            && root.storyViewportRevision === viewportRevision)
-          storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
-      })
       return
     }
     var initialContentY = storyList.contentY
