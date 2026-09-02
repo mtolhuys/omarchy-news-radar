@@ -165,6 +165,16 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('result.status === "stale-event"', qml)
         self.assertIn('label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"', qml)
         self.assertIn("function markAllReadGeometry()", qml)
+        self.assertIn("id: headerUnreadButton", qml)
+        self.assertIn('label: root.currentFilter.unreadOnly ? "Unread only" : "All"', qml)
+        self.assertIn("function headerUnreadGeometry()", qml)
+        self.assertIn('onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)', qml)
+        self.assertIn("id: keysLegend", qml)
+        self.assertIn("id: keysLegendToggle", qml)
+        self.assertIn("property bool keysLegendOpen: true", qml)
+        self.assertIn("function keysLegendGeometry()", qml)
+        self.assertIn('{ keys: "f", action: "unread" }', qml)
+        self.assertIn('{ keys: "?", action: "keys" }', qml)
         self.assertIn("matching this section's Settings", qml)
         self.assertIn('label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"', qml)
         self.assertNotIn("mark-seen", qml)
@@ -268,6 +278,8 @@ class QmlContractTests(unittest.TestCase):
             'event.text === "/"',
             'toLowerCase() === "s"',
             'toLowerCase() === "u"',
+            'toLowerCase() === "f"',
+            '=== "?"',
             'toLowerCase() === "r"',
         ):
             self.assertIn(key, qml)

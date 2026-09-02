@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.1 — 2026-09-02
+
+### Added
+- Per-section **All ↔ Unread only** toggle in the panel section header (next to Mark all / Settings), reusing the existing `unreadOnly` filter with no schema change.
+- Keyboard `f` flips the same unread filter when Settings, preferences, and search are not editing.
+- Subtle collapsible **Keys** footer under the story list (compact keycaps · muted captions) listing the real bindings including `f`; `?` or the **Keys** control toggles it. Collapse is session-only.
+
+### Notes
+- The Settings **Unread only** chip remains; header and Settings stay in sync through the shared section filter.
+- No feed or local-state schema bump.
+
 ## 0.4.0 — 2026-09-02
 
 ### Added
