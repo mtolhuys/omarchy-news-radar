@@ -1373,8 +1373,9 @@ Item {
               Layout.fillWidth: true
               spacing: Style.spacing.controlGap
 
-              // The app mark owns one stable high-contrast squircle across
-              // themes; this plate supplies the outer chip border and sizing.
+              // Launcher surfaces retain the opaque application tile. The
+              // panel uses a transparent, contrast-tuned mark so its own
+              // theme plate remains visible instead of becoming a black box.
               Rectangle {
                 Layout.preferredWidth: Style.space(42)
                 Layout.preferredHeight: Style.space(42)
@@ -1383,11 +1384,13 @@ Item {
                 border.width: Style.spacing.hairline
                 border.color: Color.popups.border
                 Accessible.role: Accessible.Graphic
-                Accessible.name: "Omarchy News Radar app mark"
+                Accessible.name: "Omarchy News Radar panel mark"
 
                 Image {
                   anchors.fill: parent
-                  source: Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")
+                  source: Qt.resolvedUrl(root.popupBgIsLight
+                    ? "../assets/io.github.mtolhuys.news-radar-panel-light.svg"
+                    : "../assets/io.github.mtolhuys.news-radar-panel.svg")
                   sourceSize: Qt.size(Style.space(84), Style.space(84))
                   fillMode: Image.PreserveAspectFit
                   mipmap: true

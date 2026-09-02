@@ -80,9 +80,17 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('placeholderText: "Search news  /"', qml)
         self.assertIn("function sectionSummaryText()", qml)
         self.assertIn("readonly property bool popupBgIsLight", qml)
-        self.assertIn('Qt.resolvedUrl("../assets/io.github.mtolhuys.news-radar.svg")', qml)
-        self.assertNotIn("news-radar-light.svg", qml)
+        self.assertIn("../assets/io.github.mtolhuys.news-radar-panel.svg", qml)
+        self.assertIn("../assets/io.github.mtolhuys.news-radar-panel-light.svg", qml)
         self.assertFalse((ROOT / "assets/io.github.mtolhuys.news-radar-light.svg").exists())
+        for panel_mark_name in (
+            "io.github.mtolhuys.news-radar-panel.svg",
+            "io.github.mtolhuys.news-radar-panel-light.svg",
+        ):
+            panel_mark = (ROOT / "assets" / panel_mark_name).read_text(encoding="utf-8")
+            self.assertNotIn("#111418", panel_mark)
+            self.assertNotIn("<rect", panel_mark)
+            self.assertIn('circle cx="64" cy="64" r="19"', panel_mark)
         self.assertIn("border.color: Color.popups.border", qml)
         self.assertIn("border.width: Style.spacing.hairline", qml)
         self.assertIn("FloatingWindow", qml)

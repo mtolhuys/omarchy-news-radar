@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Omarchy News Radar panel mark">
+  <g transform="translate(64 64) scale(.075) translate(-600 -600)" shape-rendering="crispEdges">
+    <path fill="#9ece6a" fill-rule="evenodd" clip-rule="evenodd" d="m1200 1200h-480v-80h400v-1040h-479.996v160h-400v720h720v-720h-80v-80h159.996v880h-400v160h-640v-1200h1200zm-1120-80h480v-80h-400l.004-400h-80.004zm0-560h80.004v-400h400v-80h-480.004z"/>
+  </g>
+  <circle cx="64" cy="64" r="19" fill="none" stroke="#ffad24" stroke-width="6"/>
+  <circle cx="64" cy="64" r="8" fill="none" stroke="#ffad24" stroke-width="3.5" opacity=".62"/>
+  <path d="M64 64 79 49" stroke="#ffad24" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="81" cy="47" r="5.5" fill="#ffad24"/>
+  <circle cx="64" cy="64" r="3.5" fill="#ffad24"/>
+</svg>

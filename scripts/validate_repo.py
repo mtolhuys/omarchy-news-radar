@@ -175,6 +175,22 @@ def validate_manifest() -> None:
         fail("manifest icon does not match the reviewed Omarchy-and-radar brand geometry")
     if (ROOT / "assets" / "io.github.mtolhuys.news-radar-light.svg").exists():
         fail("retired light-theme icon must not be shipped")
+    panel_mark_paths = (
+        ROOT / "assets" / "io.github.mtolhuys.news-radar-panel.svg",
+        ROOT / "assets" / "io.github.mtolhuys.news-radar-panel-light.svg",
+    )
+    for panel_mark_path in panel_mark_paths:
+        if not panel_mark_path.is_file():
+            fail(f"panel mark is missing: {panel_mark_path.name}")
+        panel_mark_text = panel_mark_path.read_text(encoding="utf-8")
+        lowered_panel_mark = panel_mark_text.casefold()
+        if any(token in lowered_panel_mark for token in forbidden_icon_tokens):
+            fail(f"panel mark must be inert self-contained SVG geometry: {panel_mark_path.name}")
+        if '#111418' in panel_mark_text or '<rect' in lowered_panel_mark:
+            fail(f"panel mark must remain transparent: {panel_mark_path.name}")
+        for token in ('viewBox="0 0 128 128"', 'm1200 1200h-480v-80h400v-1040', '<circle cx="64" cy="64" r="19"'):
+            if token not in panel_mark_text:
+                fail(f"panel mark lacks reviewed geometry: {panel_mark_path.name}")
     banner_source = ROOT / "assets" / "readme-banner.svg"
     marketplace_preview = ROOT / "preview.png"
     if not banner_source.is_file() or not marketplace_preview.is_file():
