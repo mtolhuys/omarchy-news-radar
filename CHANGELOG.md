@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.4 — 2026-09-02
+
+### Changed
+- Soften the SECTIONS-rail **Keys** legend: drop boxed keycaps and the heavy toggle chrome for quiet typography that matches Matte Black.
+- Trim the SECTIONS rail slightly (preferred 15% → 14% wide, max 184 → 176) and slim the center list (48% → 45%) so the detail inspector widens (31% → 36%) for reading the selected story.
+
+### Notes
+- No feed or local-state schema bump.
+
 ## 0.4.3 — 2026-09-02
 
 ### Changed
