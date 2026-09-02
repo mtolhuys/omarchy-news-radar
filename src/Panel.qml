@@ -110,6 +110,11 @@ Item {
     onTriggered: root.applyPendingViewportPreservation()
   }
 
+  ListModel {
+    id: renderedStoryModel
+    dynamicRoles: true
+  }
+
   readonly property var preferences: userState && userState.preferences
     ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionFilters: ({}) })
 
@@ -613,6 +618,33 @@ Item {
     return -1
   }
 
+  function syncRenderedStories(previousStories, nextStories, preserveViewport) {
+    var sharedCount = Math.min(previousStories.length, nextStories.length)
+    var stablePrefix = preserveViewport
+    for (var index = 0; stablePrefix && index < sharedCount; index++) {
+      var previousId = previousStories[index] && previousStories[index].id
+        ? String(previousStories[index].id) : ""
+      var nextId = nextStories[index] && nextStories[index].id
+        ? String(nextStories[index].id) : ""
+      if (!previousId || previousId !== nextId) stablePrefix = false
+    }
+    if (!stablePrefix) {
+      renderedStoryModel.clear()
+      for (var replacementIndex = 0; replacementIndex < nextStories.length; replacementIndex++)
+        renderedStoryModel.append({ payload: nextStories[replacementIndex] })
+      return
+    }
+    for (var retainedIndex = 0; retainedIndex < sharedCount; retainedIndex++)
+      renderedStoryModel.setProperty(retainedIndex, "payload", nextStories[retainedIndex])
+    if (renderedStoryModel.count > nextStories.length)
+      renderedStoryModel.remove(
+        nextStories.length,
+        renderedStoryModel.count - nextStories.length
+      )
+    for (var appendedIndex = renderedStoryModel.count; appendedIndex < nextStories.length; appendedIndex++)
+      renderedStoryModel.append({ payload: nextStories[appendedIndex] })
+  }
+
   function handleProjection(raw) {
     var result = RadarModel.parseResponse(raw)
     if (result.status === "ok" || result.status === "first-use") {
@@ -631,7 +663,9 @@ Item {
       var preservedAnchorTop = preservedAnchorRow
         ? preservedAnchorRow.y - storyList.contentY : 0
       var preservedAnchor = storyViewportAnchorIndex
+      var previousStories = stories
       stories = result.events || []
+      syncRenderedStories(previousStories, stories, preserveViewport)
       counts = result.counts || ({})
       unreadCounts = result.unreadCounts || ({})
       totalStories = Number(result.totalEvents || 0)
@@ -699,6 +733,7 @@ Item {
       }
     } else {
       stories = []
+      renderedStoryModel.clear()
       totalStories = 0
       retainedReadStories = 0
       hasMoreStories = false
@@ -1632,17 +1667,17 @@ Item {
                 id: storyList
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                model: root.stories
+                model: renderedStoryModel
                 spacing: Style.spacing.sm
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
                 delegate: StoryRow {
-                  required property var modelData
+                  required property var payload
                   required property int index
                   width: storyList.width
-                  story: modelData
+                  story: payload
                   selected: index === root.selectedIndex
                   lead: root.currentSection === "front-page" && index === 0
                   onActivated: root.selectStory(index, true)
