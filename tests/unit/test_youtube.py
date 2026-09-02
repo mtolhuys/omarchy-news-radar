@@ -76,6 +76,39 @@ class YouTubeSourceTests(unittest.TestCase):
         self.assertEqual("youtube", events[0]["classification"]["section"])
         self.assertTrue(events[0]["image"]["sourceUrl"].startswith("https://i.ytimg.com/vi/"))
 
+
+    def test_parse_videos_truncates_long_or_empty_description(self) -> None:
+        long_description = ("Omarchy notes. " * 80).strip()
+        payload = {
+            "items": [
+                {
+                    "id": "dQwOmarchy1",
+                    "snippet": {
+                        "title": "Omarchy long desc",
+                        "description": long_description,
+                        "channelTitle": "Channel",
+                        "publishedAt": "2026-08-30T12:00:00Z",
+                    },
+                    "statistics": {"viewCount": "10", "likeCount": "2"},
+                },
+                {
+                    "id": "dQwOmarchy2",
+                    "snippet": {
+                        "title": "Omarchy empty desc",
+                        "description": "   ",
+                        "channelTitle": "Channel",
+                        "publishedAt": "2026-08-30T11:00:00Z",
+                    },
+                    "statistics": {"viewCount": "5", "likeCount": "1"},
+                },
+            ]
+        }
+        videos = parse_videos(payload)
+        self.assertEqual(["dQwOmarchy1", "dQwOmarchy2"], [video["id"] for video in videos])
+        self.assertLessEqual(len(videos[0]["summary"]), 400)
+        self.assertTrue(videos[0]["summary"].endswith("…"))
+        self.assertEqual("Omarchy empty desc", videos[1]["summary"])
+
     def test_missing_key_fails_closed_and_retains_prior(self) -> None:
         inputs = FixtureInputs(
             ROOT / "tests/fixtures/releases-baseline.json",

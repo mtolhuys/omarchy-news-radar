@@ -10,6 +10,9 @@
 ### Changed
 - Ranking for views/likes/recent applies only inside the YouTube section; Front Page, significance, and identity stay unchanged (D045 / D008 / D020).
 
+### Fixed
+- Truncate or fall back YouTube descriptions when building summaries so long/empty API descriptions do not fail the whole YouTube source.
+
 ### Notes
 - Missing or failed YouTube collection fails closed and retains the prior YouTube snapshot. CI uses fixtures only—no live YouTube API.
 

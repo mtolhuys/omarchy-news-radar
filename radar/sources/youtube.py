@@ -114,6 +114,16 @@ def parse_search_video_ids(payload: Any) -> list[str]:
     return video_ids
 
 
+
+def _bounded_summary(value: Any, fallback: str) -> str:
+    """Clamp YouTube descriptions like marketplace/release summaries (truncate, never fail on length)."""
+    raw = value if isinstance(value, str) and value.strip() else fallback
+    text = normalize_text(raw, 10_000)
+    if len(text) > 400:
+        text = text[:397].rstrip() + "…"
+    return normalize_text(text, 400)
+
+
 def parse_videos(payload: Any) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         raise ValidationError("YouTube videos payload must be an object")
@@ -149,8 +159,7 @@ def parse_videos(payload: Any) -> list[dict[str, Any]]:
         if not isinstance(channel, str) or not channel.strip():
             channel = "YouTube"
         title = normalize_text(snippet.get("title"), 160)
-        description = snippet.get("description") if isinstance(snippet.get("description"), str) else title
-        summary = normalize_text(description, 400, minimum=1)
+        summary = _bounded_summary(snippet.get("description"), title)
         videos.append(
             {
                 "id": video_id,
