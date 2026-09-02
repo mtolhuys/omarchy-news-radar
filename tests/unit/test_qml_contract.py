@@ -99,6 +99,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("interval: 16", qml)
         self.assertIn("viewportPreservationTimer.start()", qml)
         self.assertIn("viewportPreservationTimer.stop()", qml)
+        self.assertIn("applyPendingViewportPreservation()", qml)
         self.assertIn("pendingViewportAnchorTop = forcedTopAnchorIndex === anchorIndex ? 0 : anchorTop", qml)
         self.assertIn("pendingViewportAnchorIndex >= 0 && !anchorRow && pendingViewportAttempts > 0", qml)
         self.assertIn("if (anchorRow && pendingViewportAttempts > 0)", qml)

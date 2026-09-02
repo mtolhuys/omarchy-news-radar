@@ -566,6 +566,10 @@ Item {
     pendingViewportRevision = revision
     pendingViewportAttempts = 24
     viewportPreservationTimer.start()
+    // Correct the model-replacement offset in this turn so the retained row
+    // never flashes at its provisional delegate position. The timer then
+    // keeps the same anchor stable across subsequent rendered frames.
+    applyPendingViewportPreservation()
   }
 
   function applyPendingViewportPreservation() {
