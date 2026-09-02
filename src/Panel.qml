@@ -634,8 +634,14 @@ Item {
         renderedStoryModel.append({ payload: nextStories[replacementIndex] })
       return
     }
-    for (var retainedIndex = 0; retainedIndex < sharedCount; retainedIndex++)
-      renderedStoryModel.setProperty(retainedIndex, "payload", nextStories[retainedIndex])
+    for (var retainedIndex = 0; retainedIndex < sharedCount; retainedIndex++) {
+      // A read-state projection normally changes one payload. Reassigning
+      // every unchanged map makes ListView relayout rows above the selection
+      // and shifts the visual anchor even though their content is identical.
+      if (JSON.stringify(previousStories[retainedIndex])
+          !== JSON.stringify(nextStories[retainedIndex]))
+        renderedStoryModel.setProperty(retainedIndex, "payload", nextStories[retainedIndex])
+    }
     if (renderedStoryModel.count > nextStories.length)
       renderedStoryModel.remove(
         nextStories.length,

@@ -103,6 +103,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("id: renderedStoryModel", qml)
         self.assertIn("function syncRenderedStories(previousStories, nextStories, preserveViewport)", qml)
         self.assertIn("renderedStoryModel.append({ payload: nextStories[appendedIndex] })", qml)
+        self.assertIn("JSON.stringify(previousStories[retainedIndex])", qml)
         self.assertIn("model: renderedStoryModel", qml)
         self.assertIn("pendingViewportAnchorTop = forcedTopAnchorIndex === anchorIndex ? 0 : anchorTop", qml)
         self.assertIn("pendingViewportAnchorIndex >= 0 && !anchorRow && pendingViewportAttempts > 0", qml)
