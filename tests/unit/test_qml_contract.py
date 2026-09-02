@@ -41,6 +41,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('shortcutMigrationProc.command = [shortcutHelperPath, "migrate-owned-legacy"]', widget)
         self.assertIn("property bool componentReady: false", widget)
         self.assertIn("property bool shortcutMigrationAttempted: false", widget)
+        self.assertIn('runHelper(installedProc, ["installed"])', widget)
+        self.assertIn('"indicator", "--installed-json", JSON.stringify(installedPluginIds)', widget)
 
     def test_panel_uses_plain_text_and_structural_process_arguments(self) -> None:
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

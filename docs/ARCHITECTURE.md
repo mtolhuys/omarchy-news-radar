@@ -112,7 +112,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -127,7 +127,7 @@ This is a target manifest, not permission to create it before `src/Panel.qml` ex
 
 Every public activation route uses the shell's `summon` operation. Closed means create/open/focus; already open means raise and focus the same window, whether it is foreground or obscured. Repeated activation never serves as close. `Escape`, `q`, the rendered close control, and normal window-manager close remain the deliberate close routes. The panel's bounded window helper validates one exact mapped Radar client, floats it if necessary, then focuses that address; an ambiguous identity fails closed.
 
-The bar entry point runs one bounded migration command when Omarchy creates its generation, including the generation loaded by the updater's normal rescan. That command cannot install a free chord: it mutates only when the helper identifies the byte-exact 0.1.3 Radar-owned `toggle` block and one matching live action. It backs up and atomically replaces only that owned block with `summon`, reloads and validates Hyprland, and rolls back on failure. Every other classification is a no-op. The panel still performs a read-only inspection on open and renders **Update shortcut** as a user-visible retry if the exact legacy state remains.
+The bar entry point loads the bounded local enabled-plugin ID set before requesting its indicator model. That model deduplicates unread event IDs across all five current persistent section projections, so every advertised story is reachable in the newspaper and one event appearing in multiple sections is counted once. It then runs one bounded migration command when Omarchy creates its generation, including the generation loaded by the updater's normal rescan. That command cannot install a free chord: it mutates only when the helper identifies the byte-exact 0.1.3 Radar-owned `toggle` block and one matching live action. It backs up and atomically replaces only that owned block with `summon`, reloads and validates Hyprland, and rolls back on failure. Every other classification is a no-op. The panel still performs a read-only inspection on open and renders **Update shortcut** as a user-visible retry if the exact legacy state remains.
 
 `windowIdentity` is a narrow companion-integration declaration for hosted normal windows. The app ID and full title must both equal the compositor values before a companion switcher or dock may use the existing local manifest name/icon. Unknown, disabled, malformed, missing, or ambiguous declarations fall back to normal desktop-entry resolution; the declaration does not alter Quickshell's process-wide app ID.
 
@@ -241,7 +241,7 @@ The panel calls the maintained shell IPC and treats the returned plugin IDs as l
 
 ## Optional bar indicator
 
-The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
+The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, actionable unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The unread count is the unique union of unread event IDs surviving the five current persistent section projections, using the same enabled-plugin IDs and filters as the panel. Search and pagination remain transient and do not affect it. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
 
 While visible, one single-shot timer checks the fixed feed at most every 15 minutes after a successful attempt and retries a failed attempt after five minutes. Cadence comes from private `update-check.json`, not the edition's collection timestamp, so loading the shell shortly before an edition becomes old cannot defer the next check for another full interval. A feed-file watch reloads the canonical unread/health indicator immediately after either entry point adopts a valid edition; a 30-second local-only fallback covers missed filesystem events. The panel does not need to be opened. This is a passive bar indicator, not a desktop notification service.
 

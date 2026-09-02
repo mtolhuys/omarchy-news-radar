@@ -207,6 +207,8 @@ State v9 retains strict filters and explicit read overrides but cannot represent
 
 The stable client sections are `front-page`, `for-you`, `core`, `plugins`, and `saved`; they own the fixed name, projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections.
 
+The top-bar unread value is not a second reading-state model. It applies the same canonical read predicate, projects all five sections with the current persistent filters and exact locally enabled plugin IDs, and counts the union of matching unread event IDs. Overlap between Front Page, For You, source sections, and Saved never double-counts a story. Temporary search and pagination do not change the badge; an unread story excluded by every persistent section projection is deliberately not advertised as actionable.
+
 Background check cadence is disposable cache metadata, not reading state or feed metadata:
 
 ```json

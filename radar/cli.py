@@ -55,7 +55,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("refresh")
     due = commands.add_parser("refresh-if-due")
     due.add_argument("--minimum-age", required=True, type=int)
-    commands.add_parser("indicator")
+    indicator = commands.add_parser("indicator")
+    indicator.add_argument("--installed-json", default="[]")
     commands.add_parser("installed")
     commands.add_parser("purge")
     commands.add_parser("activate-window")
@@ -91,7 +92,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "refresh-if-due":
             result = refresh_if_due(args.minimum_age)
         elif args.command == "indicator":
-            result = indicator_model()
+            result = indicator_model(installed_json=args.installed_json)
         elif args.command == "installed":
             result = installed_plugins()
         elif args.command == "activate-window":

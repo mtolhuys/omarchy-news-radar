@@ -24,6 +24,8 @@ BarWidget {
   property bool barVisible: false
   property int unread: 0
   property string health: "empty"
+  property var installedPluginIds: []
+  property bool installedPluginsReady: false
   property bool componentReady: false
   property bool shortcutMigrationAttempted: false
   readonly property string healthLabel: health === "publisher-stale" ? "publisher stale"
@@ -42,7 +44,13 @@ BarWidget {
   }
 
   function updateIndicator() {
-    runHelper(indicatorProc, ["indicator"])
+    if (!installedPluginsReady) {
+      runHelper(installedProc, ["installed"])
+      return
+    }
+    runHelper(indicatorProc, [
+      "indicator", "--installed-json", JSON.stringify(installedPluginIds)
+    ])
   }
 
   function refreshIfDue() {
@@ -78,6 +86,7 @@ BarWidget {
 
   onHelperPathChanged: {
     if (!helperPath) return
+    installedPluginsReady = false
     updateIndicator()
     refreshTimer.interval = 1800
     refreshTimer.restart()
@@ -97,6 +106,20 @@ BarWidget {
       refreshTimer.interval = 1800
       refreshTimer.restart()
     } else refreshTimer.stop()
+  }
+
+  Process {
+    id: installedProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        root.installedPluginIds = result.status === "ok" && Array.isArray(result.pluginIds)
+          ? result.pluginIds : []
+        root.installedPluginsReady = true
+        root.updateIndicator()
+      }
+    }
   }
 
   Process {

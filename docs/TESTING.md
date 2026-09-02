@@ -24,7 +24,7 @@ make site
 - Required fields, closed enums, UTC timestamps, URL rules, text normalization, bounds, duplicate IDs, and unsupported schema versions.
 - Deterministic event ID and byte-stable serialization with fixed input and clock.
 - Ordering, section projection, exact enabled-plugin matching, front-page composition, and saved-item retention.
-- Explicit per-event read/unread overrides, migrated baseline semantics, indicator and section unread counts, unread-only filtering, bounded just-read retention within the active view, read/unread reversal, bounded atomic filtered-section marking across unloaded pages, isolation from temporary search and nonmatching sections, pruning outside the current edition, and proof that close or refresh never bulk-marks unselected stories.
+- Explicit per-event read/unread overrides, migrated baseline semantics, deduplicated actionable indicator counts across all persistent section projections, section unread counts, unread-only filtering, bounded just-read retention within the active view, read/unread reversal, bounded atomic filtered-section marking across unloaded pages, isolation from temporary search and nonmatching sections, pruning outside the current edition, and proof that close or refresh never bulk-marks unselected stories.
 - State-v1-through-v8-to-v9 migration, exact legacy/current object shapes, legacy-interest/profile validation and removal, preference/filter/read-override bounds, exact removal of v5 Community preferences, per-section isolation, corrupt state quarantine, atomic replacement, symlink refusal, kernel-backed refresh-lock release after write failure or abrupt helper termination, cross-process state-mutation serialization, and last-known-good preservation.
 - Local projection limits, finite load-more semantics, filtered counts, reset behavior, and proof that filters/pagination make no network request.
 
@@ -65,7 +65,7 @@ make site
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, benign stale per-story writes across replacement, and no-cache failure.
 - Published-edition checks retain typed `updated`, `no-change`, `stale-publication`, invalid-feed, and offline results for logic and monitoring without exposing normal pipeline diagnostics in the reader when cached news is usable.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
-- Indicator unread/health output, private last-attempt metadata, exact 15-minute success cadence, five-minute failure retry, malformed/future metadata fail-open behavior, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
+- Indicator unread/health output, exact enabled-plugin projection, persistent-filter reachability, overlap deduplication, private last-attempt metadata, exact 15-minute success cadence, five-minute failure retry, malformed/future metadata fail-open behavior, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
 - Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, published downgrade refusal, adoption of a newer published edition while local mode is active, and purge of imported assets.
 
 ### Shortcut helper

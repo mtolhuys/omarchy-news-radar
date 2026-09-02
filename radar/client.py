@@ -327,7 +327,10 @@ def set_section_filter(
 
 
 def indicator_model(
-    environment: Mapping[str, str] | None = None, *, now: datetime | None = None
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+    installed_json: str = "[]",
 ) -> dict[str, Any]:
     clock = now or datetime.now(timezone.utc)
     feed = load_feed(environment, now=clock)
@@ -343,7 +346,22 @@ def indicator_model(
             quarantine=quarantined,
             lastUpdateCheck=update_check,
         )
-    unread = sum(not event_is_read(state, event) for event in feed["events"])
+    installed = _parse_installed_plugin_ids(installed_json)
+    visible_ids = {
+        event["id"]
+        for section in CLIENT_SECTIONS
+        for event in _filtered_section_events(
+            feed,
+            state,
+            section,
+            installed,
+            now=clock,
+        )
+    }
+    unread = sum(
+        event["id"] in visible_ids and not event_is_read(state, event)
+        for event in feed["events"]
+    )
     timing = edition_timing(feed, now=clock, cached_at=feed_cached_at(environment))
     health = "partial" if any(source["status"] == "failed" for source in feed["sources"]) else "publisher-stale" if timing["publisherStale"] else "source-stale" if any(source["status"] == "stale" for source in feed["sources"]) else "current"
     return response(

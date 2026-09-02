@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 — 2026-09-02
+
+- Make the top-bar unread badge count the deduplicated union of stories reachable through the current persistent section projections instead of every unread event in the raw feed.
+- Load exact enabled-plugin IDs before the bar requests its indicator model, keeping Front Page and For You projection membership aligned with the panel.
+- Add a regression for unread stories hidden by every section filter so an `8 unread` badge can never lead to a newspaper whose sections all report zero.
+
 ## 0.2.1 — 2026-09-02
 
 - Keep the successful reading surface focused on news by removing persistent edition-mode, source-health, publication-age, cache, and version diagnostics.

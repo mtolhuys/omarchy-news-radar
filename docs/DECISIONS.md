@@ -345,3 +345,11 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** These facts are essential for build verification and operational monitoring but became content noise in the reader. A user with usable news does not need to understand whether it came from a local import, Pages, a cache, or a delayed publisher.
 
 **Consequence:** Typed helper results, timing metadata, debug state, external health monitoring, and the bar health model remain intact. Local and published editions retain their validation and downgrade rules. Normal cached, updated, no-change, stale-publisher, partial-source, and offline-with-cache paths remain quietly readable; only a genuine no-cache failure occupies the content surface.
+
+## D044 — Advertise only actionable unread stories
+
+**Decision:** The top-bar newspaper counts the unique unread event IDs that survive at least one of the five current persistent section projections. It uses the same enabled-plugin IDs, filters, and canonical read predicate as the panel. Temporary search and pagination do not change the count.
+
+**Why:** A global raw-feed count could remain nonzero after every visible section reported zero unread. In the reported production state, the Plugins **With images** filter hid eight image-less unread events while the bar still advertised all eight, leaving no visible destination for the badge.
+
+**Consequence:** A story hidden by every persistent section filter cannot keep the badge active, overlap between sections never double-counts it, and changing a filter can reveal and begin advertising previously hidden unread stories. The bar resolves local enabled-plugin IDs before its first indicator request and continues to send no private state over the network.

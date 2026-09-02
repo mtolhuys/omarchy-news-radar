@@ -199,6 +199,53 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertEqual([], projection_model("for-you", "[]", "", self.environment, now=CLOCK)["events"])
         self.assertFalse(indicator_model(self.environment, now=CLOCK)["barVisible"])
 
+    def test_indicator_counts_only_unread_stories_reachable_through_current_filters(self) -> None:
+        refresh(self.environment, now=CLOCK)
+        image_filter = {
+            "period": "all",
+            "significance": "all",
+            "unreadOnly": False,
+            "imagesOnly": True,
+            "types": [],
+        }
+        for section in ("front-page", "core", "plugins"):
+            set_section_filter(section, image_filter, self.environment)
+
+        projected = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertEqual(0, projected["totalEvents"])
+        self.assertEqual(0, projected["unreadCounts"]["plugins"])
+        self.assertEqual(0, indicator_model(self.environment, now=CLOCK)["unread"])
+
+        installed_json = '["io.github.mtolhuys.disk-lens"]'
+        for_you = projection_model("for-you", installed_json, "", self.environment, now=CLOCK)
+        self.assertGreater(for_you["unreadCounts"]["for-you"], 0)
+        self.assertEqual(
+            for_you["unreadCounts"]["for-you"],
+            indicator_model(
+                self.environment,
+                now=CLOCK,
+                installed_json=installed_json,
+            )["unread"],
+        )
+
+        set_section_filter(
+            "plugins",
+            {
+                "period": "all",
+                "significance": "all",
+                "unreadOnly": False,
+                "imagesOnly": False,
+                "types": [],
+            },
+            self.environment,
+        )
+        revealed = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertGreater(revealed["unreadCounts"]["plugins"], 0)
+        self.assertEqual(
+            revealed["unreadCounts"]["plugins"],
+            indicator_model(self.environment, now=CLOCK)["unread"],
+        )
+
     def test_stale_read_mutation_after_refresh_is_a_benign_no_op(self) -> None:
         refresh(self.environment, now=CLOCK)
         result = set_event_read_state(
