@@ -79,12 +79,15 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("screen.width - Style.gapsOut * 2", qml)
         self.assertIn("screen.height - Style.gapsOut * 2", qml)
         self.assertGreaterEqual(qml.count("columns: keySurface.narrow ? 1 : 2"), 2)
-        self.assertIn("keySurface.narrow ? card.width * 0.20 : card.width * 0.13", qml)
-        self.assertIn("Layout.maximumWidth: keySurface.narrow ? card.width * 0.28 : Style.space(168)", qml)
+        self.assertIn("keySurface.narrow ? card.width * 0.22 : card.width * 0.15", qml)
+        self.assertIn("Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(184)", qml)
         self.assertIn("Layout.minimumWidth: Style.space(128)", qml)
-        self.assertIn("keySurface.narrow ? card.width * 0.74 : card.width * 0.52", qml)
-        self.assertIn("Layout.preferredWidth: card.width * 0.27", qml)
+        self.assertIn("keySurface.narrow ? card.width * 0.72 : card.width * 0.48", qml)
+        self.assertIn("Layout.preferredWidth: card.width * 0.31", qml)
         self.assertIn("Layout.minimumWidth: Style.space(240)", qml)
+        self.assertNotIn("card.width * 0.13", qml)
+        self.assertNotIn("card.width * 0.52", qml)
+        self.assertNotIn("card.width * 0.27", qml)
         self.assertNotIn("card.width * 0.16", qml)
         self.assertNotIn("card.width * 0.46", qml)
         self.assertNotIn("card.width * 0.29", qml)
@@ -182,8 +185,13 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("id: keysLegendToggle", qml)
         self.assertIn("property bool keysLegendOpen: true", qml)
         self.assertIn("function keysLegendGeometry()", qml)
+        self.assertIn('{ keys: "a", action: "all-read" }', qml)
         self.assertIn('{ keys: "f", action: "unread" }', qml)
         self.assertIn('{ keys: "?", action: "keys" }', qml)
+        self.assertLess(qml.find('text: "SECTIONS"'), qml.find("id: keysLegend"))
+        self.assertLess(qml.find("id: keysLegend"), qml.find("id: storyList"))
+        self.assertIn('toLowerCase() === "a"', qml)
+        self.assertIn("root.markCurrentSectionRead()", qml)
         self.assertIn("matching this section's Settings", qml)
         self.assertIn('label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"', qml)
         self.assertNotIn("mark-seen", qml)
@@ -288,6 +296,7 @@ class QmlContractTests(unittest.TestCase):
             'toLowerCase() === "s"',
             'toLowerCase() === "u"',
             'toLowerCase() === "f"',
+            'toLowerCase() === "a"',
             '=== "?"',
             'toLowerCase() === "r"',
         ):

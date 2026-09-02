@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.4.2` is the layout QoL candidate that tightens the SECTIONS rail and widens the center story list on top of 0.4.1, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.3` corrects the 0.4.2 layout (Keys under SECTIONS, roomier rail, slimmer list, roomier detail) and adds keyboard `a` for Mark all as read, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
@@ -18,8 +18,8 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Front Page, For You, Core, Plugins, and Saved match the implemented model; reviewed community records remain an optional feed input rather than an empty dedicated section.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
 - `Tab`/`Shift+Tab`, canonical section identity, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more behavior match the local projection model; the focused action labels Enter explicitly.
-- No publication-diagnostics strip occupies the reading surface; a subtle collapsible **Keys** footer (session-only collapse) lists the real bindings without the retired always-on `KEYBOARD` wall; search exposes `/` and **Check for updates** exposes `R` on hover.
-- Section headers expose an **All** / **Unread only** chip and keyboard `f` that toggle the existing persistent `unreadOnly` filter without a schema bump; Settings keeps its **Unread only** chip in sync; the Keys footer includes `f` and `?`.
+- No publication-diagnostics strip occupies the reading surface; a subtle collapsible **Keys** footer at the bottom of the **SECTIONS** rail (session-only collapse) lists the real bindings without the retired always-on `KEYBOARD` wall; search exposes `/` and **Check for updates** exposes `R` on hover.
+- Section headers expose an **All** / **Unread only** chip and keyboard `f` that toggle the existing persistent `unreadOnly` filter without a schema bump; Settings keeps its **Unread only** chip in sync; keyboard `a` matches **Mark all as read**; the Keys footer includes `a`, `f`, and `?`.
 - Bar click, `Super+Alt+N`, and Apps launch all summon one window; closed, obscured, foreground, rapid-repeat, Alt+Tab, explicit close, and reopen states are machine-asserted with real QMP input.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
@@ -60,7 +60,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Current Omarchy tokens drive color, spacing, typography, borders, focus, and monitor fit.
 - Selected and unselected primary/secondary text, status, summaries, metadata, and counts remain distinguishable from their surfaces in maintained dark and light themes.
 - Light/dark, narrow/wide, long text, empty/dense, cached/refreshing/offline/invalid/partial, and 200% text states are reviewed.
-- Visual columns preserve one semantic keyboard order; the SECTIONS rail stays compact (capped) and the center list is list-first wider than the inspector.
+- Visual columns preserve one semantic keyboard order; the SECTIONS rail is comfortably padded and capped, the center list is slightly slimmer, and the detail inspector gets more width for the news itself.
 - Keyboard-only traversal, focus visibility, labels, counts, source health, and reduced motion pass.
 - Assistive-technology claims do not exceed actual evidence.
 

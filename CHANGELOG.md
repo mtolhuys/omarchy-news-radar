@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.3 — 2026-09-02
+
+### Changed
+- Move the collapsible **Keys** legend to the bottom of the left **SECTIONS** rail (not under the story list).
+- Widen the SECTIONS rail slightly (preferred 13% → 15% wide / 20% → 22% narrow, max 168 → 184) for comfortable labels+counts without returning to large gutters.
+- Slim the center story list (52% → 48% wide / 74% → 72% narrow) and give the freed width to the detail inspector (27% → 31%) so the news itself reads roomier.
+
+### Added
+- Keyboard `a` marks all unread stories matching the current section's Settings as read (same as the header **Mark all as read** control); no-ops when nothing is unread or Settings/preferences/search are editing.
+
+### Notes
+- No feed or local-state schema bump.
+
 ## 0.4.2 — 2026-09-02
 
 ### Changed
