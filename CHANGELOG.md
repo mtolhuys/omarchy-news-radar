@@ -3,7 +3,7 @@
 ## 0.2.2 — 2026-09-02
 
 - Make the top-bar unread badge count the deduplicated union of stories reachable through the current persistent section projections instead of every unread event in the raw feed.
-- Load exact enabled-plugin IDs before the bar requests its indicator model, keeping Front Page and For You projection membership aligned with the panel.
+- Reload exact enabled-plugin IDs before each coalesced bar indicator request, keeping Front Page and For You projection membership aligned after plugin enablement changes.
 - Add a regression for unread stories hidden by every section filter so an `8 unread` badge can never lead to a newspaper whose sections all report zero.
 
 ## 0.2.1 — 2026-09-02

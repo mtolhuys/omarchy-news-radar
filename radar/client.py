@@ -347,26 +347,22 @@ def indicator_model(
             lastUpdateCheck=update_check,
         )
     installed = _parse_installed_plugin_ids(installed_json)
-    visible_ids = {
-        event["id"]
-        for section in CLIENT_SECTIONS
-        for event in _filtered_section_events(
-            feed,
-            state,
-            section,
-            installed,
-            now=clock,
-        )
-    }
-    unread = sum(
-        event["id"] in visible_ids and not event_is_read(state, event)
-        for event in feed["events"]
+    section_events = _persistent_section_events(
+        feed,
+        state,
+        installed,
+        now=clock,
     )
+    unread_ids = {
+        event_id
+        for events in section_events.values()
+        for event_id in _unread_event_ids(state, events)
+    }
     timing = edition_timing(feed, now=clock, cached_at=feed_cached_at(environment))
     health = "partial" if any(source["status"] == "failed" for source in feed["sources"]) else "publisher-stale" if timing["publisherStale"] else "source-stale" if any(source["status"] == "stale" for source in feed["sources"]) else "current"
     return response(
         "ok",
-        unread=unread,
+        unread=len(unread_ids),
         health=health,
         generatedAt=feed["generatedAt"],
         barVisible=preferences["barVisible"],
@@ -518,6 +514,35 @@ def _filtered_section_events(
     )
 
 
+def _persistent_section_events(
+    feed: Mapping[str, Any],
+    state: Mapping[str, Any],
+    installed_plugin_ids: list[str],
+    *,
+    now: datetime | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Project every section through its persisted filter exactly once."""
+
+    return {
+        section: _filtered_section_events(
+            feed,
+            state,
+            section,
+            installed_plugin_ids,
+            now=now,
+        )
+        for section in CLIENT_SECTIONS
+    }
+
+
+def _unread_event_ids(
+    state: Mapping[str, Any], events: list[dict[str, Any]]
+) -> set[str]:
+    return {
+        event["id"] for event in events if not event_is_read(state, event)
+    }
+
+
 def projection_model(
     section: str,
     installed_json: str,
@@ -557,20 +582,12 @@ def projection_model(
             filterOptions=filter_options(section),
         )
     saved_ids = set(state["saved"])
-    counts: dict[str, int] = {}
-    unread_counts: dict[str, int] = {}
-    for name in names:
-        filtered_events = _filtered_section_events(
-            feed,
-            state,
-            name,
-            installed,
-            now=now,
-        )
-        counts[name] = len(filtered_events)
-        unread_counts[name] = sum(
-            not event_is_read(state, event) for event in filtered_events
-        )
+    section_events = _persistent_section_events(feed, state, installed, now=now)
+    counts = {name: len(events) for name, events in section_events.items()}
+    unread_counts = {
+        name: len(_unread_event_ids(state, events))
+        for name, events in section_events.items()
+    }
     events = _filtered_section_events(
         feed,
         state,

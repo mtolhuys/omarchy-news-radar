@@ -65,7 +65,7 @@ make site
 - Cached-first read, successful refresh, timeout, redirect rejection, oversized response, truncated JSON, unsupported schema, future timestamp, atomic cache replacement, benign stale per-story writes across replacement, and no-cache failure.
 - Published-edition checks retain typed `updated`, `no-change`, `stale-publication`, invalid-feed, and offline results for logic and monitoring without exposing normal pipeline diagnostics in the reader when cached news is usable.
 - Private file modes where supported, symlink refusal, bounded diagnostics, explicit purge, and one-refresh locking.
-- Indicator unread/health output, exact enabled-plugin projection, persistent-filter reachability, overlap deduplication, private last-attempt metadata, exact 15-minute success cadence, five-minute failure retry, malformed/future metadata fail-open behavior, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
+- Indicator unread/health output, exact enabled-plugin projection refreshed before each coalesced request, persistent-filter reachability including Saved, overlap deduplication, private last-attempt metadata, exact 15-minute success cadence, five-minute failure retry, malformed/future metadata fail-open behavior, local bar/image preferences, fail-closed installed-plugin discovery, and no preference data in network requests.
 - Local-edition build digest/revision, complete image validation before feed replacement, private file projection, marker mismatch fallback, published downgrade refusal, adoption of a newer published edition while local mode is active, and purge of imported assets.
 
 ### Shortcut helper

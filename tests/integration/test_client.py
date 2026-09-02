@@ -21,6 +21,7 @@ from radar.client import (
     set_section_filter,
     toggle_saved_state,
 )
+from radar.constants import CLIENT_SECTIONS
 from radar.errors import ValidationError
 from radar.io import atomic_write_json
 from radar.state import feed_path, load_feed, update_check_path
@@ -47,6 +48,34 @@ class ClientIntegrationTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    def visible_unread_ids(self, installed_json: str = "[]") -> set[str]:
+        visible: set[str] = set()
+        for section in CLIENT_SECTIONS:
+            projection = projection_model(
+                section,
+                installed_json,
+                "",
+                self.environment,
+                now=CLOCK,
+                limit=500,
+            )
+            visible.update(
+                event["id"] for event in projection["events"] if event["isUnread"]
+            )
+        return visible
+
+    def assert_indicator_matches_visible_unread_union(
+        self, installed_json: str = "[]"
+    ) -> set[str]:
+        visible = self.visible_unread_ids(installed_json)
+        indicator = indicator_model(
+            self.environment,
+            now=CLOCK,
+            installed_json=installed_json,
+        )
+        self.assertEqual(len(visible), indicator["unread"])
+        return visible
 
     def test_first_use_refresh_cached_read_and_private_projection(self) -> None:
         self.assertEqual("first-use", read_model(self.environment, now=CLOCK)["status"])
@@ -214,18 +243,32 @@ class ClientIntegrationTests(unittest.TestCase):
         projected = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
         self.assertEqual(0, projected["totalEvents"])
         self.assertEqual(0, projected["unreadCounts"]["plugins"])
-        self.assertEqual(0, indicator_model(self.environment, now=CLOCK)["unread"])
+        self.assertEqual(set(), self.assert_indicator_matches_visible_unread_union())
 
         installed_json = '["io.github.mtolhuys.disk-lens"]'
         for_you = projection_model("for-you", installed_json, "", self.environment, now=CLOCK)
         self.assertGreater(for_you["unreadCounts"]["for-you"], 0)
+        visible_for_you = self.assert_indicator_matches_visible_unread_union(installed_json)
         self.assertEqual(
-            for_you["unreadCounts"]["for-you"],
-            indicator_model(
-                self.environment,
-                now=CLOCK,
-                installed_json=installed_json,
-            )["unread"],
+            {event["id"] for event in for_you["events"] if event["isUnread"]},
+            visible_for_you,
+        )
+
+        toggle_saved_state(for_you["events"][0]["id"], self.environment, now=CLOCK)
+        self.assertEqual(
+            visible_for_you,
+            self.assert_indicator_matches_visible_unread_union(installed_json),
+        )
+
+        hidden_plugin_id = "evt_53642b4d3e0e59c943494606"
+        toggle_saved_state(hidden_plugin_id, self.environment, now=CLOCK)
+        visible_with_saved = self.assert_indicator_matches_visible_unread_union(installed_json)
+        self.assertEqual(visible_for_you | {hidden_plugin_id}, visible_with_saved)
+
+        set_section_filter("saved", image_filter, self.environment)
+        self.assertEqual(
+            visible_for_you,
+            self.assert_indicator_matches_visible_unread_union(installed_json),
         )
 
         set_section_filter(
@@ -241,9 +284,10 @@ class ClientIntegrationTests(unittest.TestCase):
         )
         revealed = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
         self.assertGreater(revealed["unreadCounts"]["plugins"], 0)
+        visible_revealed = self.assert_indicator_matches_visible_unread_union()
         self.assertEqual(
-            revealed["unreadCounts"]["plugins"],
-            indicator_model(self.environment, now=CLOCK)["unread"],
+            {event["id"] for event in revealed["events"] if event["isUnread"]},
+            visible_revealed,
         )
 
     def test_stale_read_mutation_after_refresh_is_a_benign_no_op(self) -> None:
