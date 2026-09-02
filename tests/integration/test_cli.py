@@ -61,7 +61,7 @@ class ClientCliIntegrationTests(unittest.TestCase):
         self.assertEqual(
             indicator_model(
                 self.environment,
-                now=datetime.now(timezone.utc),
+                now=CLOCK,
                 installed_json=installed_json,
             )["unread"],
             payload["unread"],
