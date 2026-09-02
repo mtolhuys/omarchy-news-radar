@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.9 — 2026-09-02
+
+### Changed
+- Drop the outer amber rect stroke on the Apps-menu icon so the mark is a cleaner black-fill squircle with the green Omarchy glyph (`scale(0.078)`) and amber radar only.
+
+### Fixed
+- Ignore local `.tmp/` scratch (icon/preview rasters) so untracked files no longer block `make local-latest`.
+
+### Notes
+- No feed or local-state schema bump. Community plugin; not an official Omarchy project (Omarchy mark pending TM).
+
 ## 0.4.8 — 2026-09-02
 
 ### Changed
