@@ -662,12 +662,32 @@ Item {
     storyScrollAnimation.stop()
     var viewportRevision = storyViewportRevision
     var nextIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
+    if (delta < 0) {
+      var previousRow = storyList.itemAtIndex(nextIndex)
+      var previousAboveViewport = !previousRow
+        || previousRow.y - storyList.contentY < -0.5
+      if (previousAboveViewport) {
+        // Key repeat can outrun an eased scroll and leave the highlight above
+        // the clip. Move the viewport first so selection is never invisible.
+        storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
+        storyViewportAnchorIndex = nextIndex
+      }
+      selectStory(nextIndex, true)
+      if (previousAboveViewport) {
+        Qt.callLater(function() {
+          if (root.selectedIndex === nextIndex
+              && root.storyViewportRevision === viewportRevision)
+            storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
+        })
+      }
+      return
+    }
     var initialContentY = storyList.contentY
     selectStory(nextIndex, true)
     Qt.callLater(function() {
       if (root.selectedIndex !== nextIndex
           || root.storyViewportRevision !== viewportRevision) return
-      var anchorAtTop = delta > 0 && storyNeedsTopAnchor(nextIndex)
+      var anchorAtTop = storyNeedsTopAnchor(nextIndex)
       if (anchorAtTop) root.storyViewportAnchorIndex = nextIndex
       animateStoryPosition(nextIndex, anchorAtTop, initialContentY)
     })

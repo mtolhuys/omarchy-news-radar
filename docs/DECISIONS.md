@@ -311,3 +311,11 @@
 **Why:** Expanding a 12-story projection replaced the ListView model and then ran the generic anchor restoration. That anchor described an earlier viewport block, so pagination jumped upward. The selected story's asynchronous read write could immediately request another projection while the 140 ms keyboard animation was active, making multiple valid operations fight over `contentY` and producing visible oscillation.
 
 **Consequence:** Pagination does not move or animate the retained story viewport. The next Down top-aligns the first newly revealed row when it crosses the viewport, and the following Down keeps that anchor while moving normally. Stable event identity survives a refreshed projection, active animation remains authoritative, and only explicit context changes reset the viewport. Disposable-lab acceptance continuously samples pagination geometry and asserts both post-load navigation steps.
+
+## D040 — Keep reverse key-repeat synchronized with selection
+
+**Decision:** Up retains ordinary row-by-row selection while the previous story is visible. When the previous story is above the viewport, Radar positions that row at the top before changing selection. The upward edge transition is immediate rather than eased because the visible highlight must remain authoritative under compositor key repeat.
+
+**Why:** Up previously changed only `selectedIndex`; all viewport-edge logic was gated to Down. Holding Up could therefore advance through several off-screen stories while the ListView remained below them. Reusing the 140 ms eased Down animation would still let a 30–40 ms repeat cadence outrun the viewport.
+
+**Consequence:** Reverse navigation never selects a clipped or invisible story. Held Up produces monotonic selection and one-row viewport steps, while single Up presses within the visible block do not move the viewport. Disposable-lab acceptance holds the physical Up key through QMP, samples geometry throughout the repeat interval, and requires every sampled selected row to remain fully visible.

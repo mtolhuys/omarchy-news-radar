@@ -54,7 +54,7 @@ All behavior must remain reachable without a pointer:
 | `Super+Alt+N` | Summon or raise Radar after explicit conflict-free setup |
 | `Escape` or `q` | Close Radar |
 | `j` / `Down` | Select next story; crossing the viewport bottom anchors that complete row at the top |
-| `k` / `Up` | Select previous story |
+| `k` / `Up` | Select previous story; crossing the viewport top keeps that row visibly anchored |
 | `Enter` or `o` | Open selected original source |
 | `s` | Save or unsave selected story locally |
 | `u` | Mark the selected story read or unread locally |
@@ -74,7 +74,7 @@ Filters apply only to that section, persist in private state, never alter the pu
 
 Each section header exposes **Mark all as read** while that filtered section has unread stories. It marks every unread story matching the section's persistent Settings filters, including stories beyond the loaded page, through one atomic local-state update. Temporary search does not change the batch scope. The control is disabled while another reading/state mutation is pending and reports completion before the projection reloads.
 
-The initial projection contains at most twelve stories. Keyboard movement never leaves the selected row clipped against the viewport bottom: when Down crosses that edge, a short eased scroll anchors the complete selected row at the top, after which ordinary row-by-row movement continues until the next edge crossing. Load more increases the local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final loaded story focuses the control and changes its label to the explicit Enter action, Up returns to the story list, and Enter expands the page while preserving the prior selection; the next Down reaches the first newly revealed story.
+The initial projection contains at most twelve stories. Keyboard movement never leaves the selected row outside the viewport: when Down crosses the bottom edge, a short eased scroll anchors the complete selected row at the top; when Up crosses the top edge, the viewport moves before selection so held key-repeat cannot outrun the highlight. Ordinary row-by-row movement continues while the next row remains visible. Load more increases the local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final loaded story focuses the control and changes its label to the explicit Enter action, Up returns to the story list, and Enter expands the page while preserving the prior selection; the next Down reaches the first newly revealed story.
 
 ## Read and saved semantics
 

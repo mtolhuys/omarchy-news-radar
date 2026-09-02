@@ -732,6 +732,23 @@ omarchy_host_test() {
   press down
   wait_for_guest_state "A second Down after Load more keeps the anchored viewport stable" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e --argjson retainedY '$post_load_content_y' '.selectedIndex == 13 and .fullyVisible == true and .top > 0 and .anchorIndex == 12 and .anchorFullyVisible == true and .anchorTopAligned == true and ((.contentY - \$retainedY) | fabs) <= 0.5 and .scrolling == false'" || return 1
+  ssh_session "for _ in \$(seq 1 72); do omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'; sleep 0.025; done" \
+    >"$RUN_DIR/news-radar-up-hold-probes.jsonl" &
+  up_hold_probe_pid=$!
+  qmp '"send-key", "arguments": {"keys": [{"type":"qcode","data":"up"}], "hold-time": 1400}' >/dev/null
+  wait "$up_hold_probe_pid" || return 1
+  if ! jq -s -e '
+      length > 8
+      and all(.[]; .available == true and .fullyVisible == true)
+      and (.[-1].selectedIndex < 10)
+      and ([range(1; length) as $index | .[$index].selectedIndex <= .[$index - 1].selectedIndex] | all)
+    ' "$RUN_DIR/news-radar-up-hold-probes.jsonl" >/dev/null; then
+    log "Held Up allowed selection to leave the visible viewport or move forward"
+    return 1
+  fi
+  wait_for_guest_state "Held Up keeps the selected story visible throughout reverse navigation" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.selectedIndex < 10 and .fullyVisible == true and .scrolling == false'" || return 1
+  capture_console "success-news-radar-10-up-hold"
   dense_ready_ms="$(date +%s%3N)"
   capture_console "success-news-radar-10-dense"
   # Move the synthetic pointer off Radar before replacing the model so it

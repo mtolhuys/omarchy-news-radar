@@ -94,6 +94,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("storyList.positionViewAtEnd()", qml)
         self.assertIn("function storyViewportState()", qml)
         self.assertIn("function storyNeedsTopAnchor(index)", qml)
+        self.assertIn("previousAboveViewport", qml)
+        self.assertIn("selection is never invisible", qml)
         self.assertIn("function animateStoryPosition(index, alignAtTop, initialContentY)", qml)
         self.assertIn("top + row.height >= storyList.height - 0.5", qml)
         self.assertIn("if (anchorAtTop) root.storyViewportAnchorIndex = nextIndex", qml)
