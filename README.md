@@ -8,7 +8,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.1.6` is the current release candidate. Version 0.1.5, the live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and the maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public. Marketplace verification is commit-specific compatibility evidence, not a security audit.
+Version `0.1.7` is an unpublished local candidate. Version 0.1.6, the live Pages edition, release evidence, exact public-clone Plugin Lab acceptance, and the maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) are public. Marketplace verification is commit-specific compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -63,7 +63,7 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install v0.1.6
+## Install the published v0.1.6
 
 Install the tagged public release directly with:
 
@@ -96,7 +96,7 @@ If `status` reports `classification: free`, install the owned Radar binding:
 
 The helper refuses personal, multiple, unknown, symlinked, unowned, or ambiguous configuration. It creates a timestamped backup, writes one clearly marked bind-only Radar block, reloads Hyprland, validates the live action and config errors, and rolls back on failure. There is no unbind, Editor replacement, or force flag.
 
-If an earlier Radar version installed the old close-on-repeat binding, updating to 0.1.6 reloads Radar and repairs that one byte-exact unmodified Radar-owned block from `toggle` to `summon`. It creates the same private backup, atomically reloads and validates Hyprland, and restores the old block on failure. This narrow update command cannot create a shortcut when the chord is free and leaves edited, personal, conflicting, multiple, symlinked, or ambiguous configuration unchanged. If automatic validation cannot complete, opening Radar shows **Update shortcut** as a visible retry; `status` reports `owned-legacy`, and the explicit `install` command performs the same migration.
+If an earlier Radar version installed the old close-on-repeat binding, updating to 0.1.6 or later reloads Radar and repairs that one byte-exact unmodified Radar-owned block from `toggle` to `summon`. It creates the same private backup, atomically reloads and validates Hyprland, and restores the old block on failure. This narrow update command cannot create a shortcut when the chord is free and leaves edited, personal, conflicting, multiple, symlinked, or ambiguous configuration unchanged. If automatic validation cannot complete, opening Radar shows **Update shortcut** as a visible retry; `status` reports `owned-legacy`, and the explicit `install` command performs the same migration.
 
 To choose another free chord, skip the helper and add your own reviewed line to `~/.config/hypr/bindings.lua`, for example:
 

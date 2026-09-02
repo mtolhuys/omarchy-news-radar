@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.1.6` makes the normal Omarchy update path repair the missed 0.1.3 shortcut defect while preserving conflict-free initial setup and deterministic summon-to-focus behavior. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.1.7` is an unpublished local candidate that fixes the post-pagination viewport race while retaining the 0.1.6 update-path repair, conflict-free shortcut setup, and deterministic summon-to-focus behavior. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
@@ -91,7 +91,7 @@ The owner explicitly authorized this procedure on 2026-09-01. It remains the req
 3. Download the workflow's `source-snapshot` artifact, replace `state/source-snapshot.json` with that exact reviewed file, run all four local source gates, commit it, and push it before running publication again. For every later publication, leave bootstrap disabled and repeat this snapshot-review commit step so the repository remains the explicit source baseline.
 4. Wait for two consecutive genuine `event=schedule` workflow runs on the merged four-times-hourly schedule. Both must pass build and deploy. After Pages/CDN propagation, verify `events.json`, RSS, HTML, build metadata, all source states/timestamps, event count, newest event, image count, schema, artifact SHA-256, and that public `publishedAt` matches the deployed build. A manual run does not satisfy this trigger proof.
 5. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
-6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.6` tag and release.
+6. Review the release checklist and evidence record against that exact commit. Only then create the `v0.1.7` tag and release.
 7. Use the marketplace's **Plugin verification** form with **Verify and publish a newer upstream commit**, the exact plugin ID, repository root URL, and full 40-character release SHA. The existing snapshot remains live while compatibility validation, the Automated Security Baseline, maintainer approval, testing, and deployment remain maintainer-controlled. Do not represent issue creation as promotion or as a security audit.
 
 The workflow intentionally has no repository write permission. Snapshot advancement is a human-reviewed source change, not hidden CI state. If scheduled activity exceeds 45 minutes, publication age exceeds 90 minutes, Pages remains behind a successful deployment for more than its documented ten-minute propagation window, or a source check lags publication materially, the read-only health automation reports the exact layer. Recovery is to inspect the workflow trigger and latest scheduled run, use one manual dispatch only to restore publication, verify Pages, and leave schedule continuity to the next genuine invocations.

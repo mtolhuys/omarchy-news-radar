@@ -705,6 +705,11 @@ omarchy_host_test() {
   wait_for_guest_state "Down from the last story focuses the rendered Load more action" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount == 12 and .selectedIndex == 11 and .loadMoreFocused == true and (.loadMoreLabel | startswith(\"Press Enter to load \"))'" || return 1
   capture_console "success-news-radar-09-load-more-focus"
+  viewport_state="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'")" || return 1
+  pre_load_content_y="$(jq -r '.contentY' <<<"$viewport_state")" || return 1
+  ssh_session "for _ in \$(seq 1 36); do omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'; sleep 0.025; done" \
+    >"$RUN_DIR/news-radar-load-more-scroll-probes.jsonl" &
+  load_more_probe_pid=$!
   # QEMU's qcode name for the physical main Enter/Return key is `ret`.
   press ret
   wait_for_guest_state "Enter on keyboard-focused Load more reveals the next finite page" 10 ssh_session \
@@ -713,9 +718,20 @@ omarchy_host_test() {
         >"$RUN_DIR/news-radar-load-more-failure.json" 2>&1 || true
       return 1
     }
+  wait "$load_more_probe_pid" || return 1
+  if ! jq -s -e --argjson retainedY "$pre_load_content_y" \
+    'length > 4 and all(.[]; .selectedIndex == 11 and ((.contentY - $retainedY) | fabs) <= 1 and .scrolling == false)' \
+    "$RUN_DIR/news-radar-load-more-scroll-probes.jsonl" >/dev/null; then
+    log "Load more moved or animated the retained story viewport"
+    return 1
+  fi
   press down
-  wait_for_guest_state "Down continues into the first newly loaded story" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIndex == 12 and .loadMoreFocused == false'" || return 1
+  wait_for_guest_state "Down continues smoothly into the first newly loaded story" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.selectedIndex == 12 and .fullyVisible == true and .topAligned == true and .scrolling == false'" || return 1
+  post_load_content_y="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }' | jq -r '.contentY'")" || return 1
+  press down
+  wait_for_guest_state "A second Down after Load more keeps the anchored viewport stable" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e --argjson retainedY '$post_load_content_y' '.selectedIndex == 13 and .fullyVisible == true and .top > 0 and .anchorIndex == 12 and .anchorFullyVisible == true and .anchorTopAligned == true and ((.contentY - \$retainedY) | fabs) <= 0.5 and .scrolling == false'" || return 1
   dense_ready_ms="$(date +%s%3N)"
   capture_console "success-news-radar-10-dense"
   # Move the synthetic pointer off Radar before replacing the model so it
@@ -760,12 +776,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.1.6+identity-1/news-radar-0.1.6+identity-2/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.1.7+identity-1/news-radar-0.1.7+identity-2/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell summon io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.6+identity-2" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.7+identity-2" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1

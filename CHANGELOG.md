@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7 — 2026-09-02
+
+- Keep the exact story and `contentY` stable while **Load more** replaces the bounded ListView model, instead of restoring an older keyboard anchor and visibly jumping upward.
+- Preserve live keyboard animation across asynchronous per-story read projections, while section, search, and filter changes retain deliberate reset semantics.
+- Invalidate stale deferred viewport work and retain selection by stable event ID so overlapping projection completions cannot fight the current navigation request.
+- Extend disposable-VM acceptance with continuous pagination geometry samples plus first- and second-Down assertions after the newly revealed page.
+
 ## 0.1.6 — 2026-09-02
 
 - Make the normal Omarchy plugin update path repair the background-window shortcut defect: the bar generation loaded by the updater's plugin rescan automatically migrates only the byte-exact, unmodified Radar-owned 0.1.3 `toggle` block to `summon`.

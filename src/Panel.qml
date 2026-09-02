@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.6+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.1.7+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -59,6 +59,14 @@ Item {
   property string editionMode: "published"
   property bool refreshing: false
   property bool pendingProjection: false
+  property string activeProjectionViewportMode: "reset"
+  property string pendingProjectionViewportMode: "reset"
+  property int storyViewportRevision: 0
+  property bool pendingViewportPreservation: false
+  property real pendingViewportContentY: 0
+  property int pendingViewportAnchorIndex: -1
+  property real pendingViewportAnchorTop: 0
+  property int pendingViewportRevision: -1
   property bool localStateReady: false
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
@@ -86,6 +94,7 @@ Item {
     property: "contentY"
     duration: 140
     easing.type: Easing.OutCubic
+    onStopped: root.applyPendingViewportPreservation()
   }
 
   readonly property var preferences: userState && userState.preferences
@@ -217,6 +226,8 @@ Item {
 
   function storyViewportState() {
     var row = selectedIndex >= 0 ? storyList.itemAtIndex(selectedIndex) : null
+    var anchorRow = storyViewportAnchorIndex >= 0
+      ? storyList.itemAtIndex(storyViewportAnchorIndex) : null
     if (!row) {
       return JSON.stringify({
         selectedIndex: selectedIndex,
@@ -228,6 +239,8 @@ Item {
     }
     var top = row.y - storyList.contentY
     var bottom = top + row.height
+    var anchorTop = anchorRow ? anchorRow.y - storyList.contentY : 0
+    var anchorBottom = anchorRow ? anchorTop + anchorRow.height : 0
     return JSON.stringify({
       selectedIndex: selectedIndex,
       available: true,
@@ -237,6 +250,13 @@ Item {
       bottom: bottom,
       viewportHeight: storyList.height,
       contentY: storyList.contentY,
+      contentHeight: storyList.contentHeight,
+      anchorIndex: storyViewportAnchorIndex,
+      anchorAvailable: !!anchorRow,
+      anchorTop: anchorTop,
+      anchorFullyVisible: !!anchorRow
+        && anchorTop >= -0.5 && anchorBottom <= storyList.height + 0.5,
+      anchorTopAligned: !!anchorRow && Math.abs(anchorTop) <= 1,
       scrolling: storyScrollAnimation.running
     })
   }
@@ -409,7 +429,7 @@ Item {
       cachedFeed = result.feed
       generatedAt = String(result.feed.generatedAt || "")
       sourceHealth = RadarModel.sourceHealth(result.feed)
-      requestProjection()
+      requestProjection("preserve")
     }
     if (result.status === "local-current") {
       feedStatus = "Local live edition"
@@ -439,16 +459,20 @@ Item {
     var result = RadarModel.parseResponse(raw)
     installedPluginIds = result.status === "ok" && Array.isArray(result.pluginIds)
       ? result.pluginIds : []
-    requestProjection()
+    requestProjection("preserve")
   }
 
-  function requestProjection() {
+  function requestProjection(viewportMode) {
     if (!opened) return
+    var requestedMode = viewportMode === "preserve" ? "preserve" : "reset"
     if (projectProc.running) {
+      if (!pendingProjection || requestedMode === "reset")
+        pendingProjectionViewportMode = requestedMode
       pendingProjection = true
       return
     }
     pendingProjection = false
+    activeProjectionViewportMode = requestedMode
     startProcess(projectProc, [
       "project",
       "--section", currentSection,
@@ -458,7 +482,8 @@ Item {
     ])
   }
 
-  function restoreStoryViewport() {
+  function restoreStoryViewport(revision) {
+    if (revision !== undefined && revision !== storyViewportRevision) return
     if (!stories.length || selectedIndex < 0) return
     storyScrollAnimation.stop()
     if (hasMoreStories && selectedIndex === stories.length - 1)
@@ -473,9 +498,59 @@ Item {
     }
   }
 
+  function queueViewportPreservation(contentY, anchorIndex, anchorTop, revision) {
+    pendingViewportPreservation = true
+    pendingViewportContentY = contentY
+    pendingViewportAnchorIndex = anchorIndex
+    pendingViewportAnchorTop = anchorTop
+    pendingViewportRevision = revision
+    Qt.callLater(root.applyPendingViewportPreservation)
+  }
+
+  function applyPendingViewportPreservation() {
+    if (!pendingViewportPreservation) return
+    if (pendingViewportRevision !== storyViewportRevision) {
+      pendingViewportPreservation = false
+      return
+    }
+    if (storyScrollAnimation.running) return
+    var targetContentY = pendingViewportContentY
+    var anchorRow = pendingViewportAnchorIndex >= 0
+      ? storyList.itemAtIndex(pendingViewportAnchorIndex) : null
+    if (anchorRow) targetContentY = anchorRow.y - pendingViewportAnchorTop
+    var maximumContentY = storyList.originY
+      + Math.max(0, storyList.contentHeight - storyList.height)
+    storyList.contentY = Math.max(
+      storyList.originY,
+      Math.min(targetContentY, maximumContentY)
+    )
+    pendingViewportPreservation = false
+  }
+
+  function storyIndexById(eventId) {
+    if (!eventId) return -1
+    for (var index = 0; index < stories.length; index++) {
+      if (stories[index] && String(stories[index].id) === eventId) return index
+    }
+    return -1
+  }
+
   function handleProjection(raw) {
     var result = RadarModel.parseResponse(raw)
     if (result.status === "ok" || result.status === "first-use") {
+      var preserveViewport = activeProjectionViewportMode === "preserve"
+      var preservedContentY = storyList.contentY
+      var preservedSelectedId = selectedStory && selectedStory.id
+        ? String(selectedStory.id) : ""
+      var preservedAnchorId = storyViewportAnchorIndex >= 0
+          && storyViewportAnchorIndex < stories.length
+          && stories[storyViewportAnchorIndex]
+        ? String(stories[storyViewportAnchorIndex].id) : ""
+      var preservedAnchorRow = storyViewportAnchorIndex >= 0
+        ? storyList.itemAtIndex(storyViewportAnchorIndex) : null
+      var preservedAnchorTop = preservedAnchorRow
+        ? preservedAnchorRow.y - storyList.contentY : 0
+      var preservedAnchor = storyViewportAnchorIndex
       stories = result.events || []
       counts = result.counts || ({})
       unreadCounts = result.unreadCounts || ({})
@@ -484,11 +559,38 @@ Item {
       filterSummary = String(result.filterSummary || "No extra filters")
       sectionSources = String(result.sectionSources || "")
       filterOptions = result.filterOptions || []
-      selectedIndex = stories.length ? Math.min(Math.max(0, selectedIndex), stories.length - 1) : -1
-      storyViewportAnchorIndex = stories.length
-        ? Math.min(Math.max(0, storyViewportAnchorIndex), selectedIndex)
+      var preservedSelectedIndex = preserveViewport
+        ? storyIndexById(preservedSelectedId) : -1
+      var preservedAnchorIndex = preserveViewport
+        ? storyIndexById(preservedAnchorId) : -1
+      selectedIndex = stories.length
+        ? (preservedSelectedIndex >= 0
+          ? preservedSelectedIndex
+          : Math.min(Math.max(0, selectedIndex), stories.length - 1))
         : -1
-      Qt.callLater(root.restoreStoryViewport)
+      storyViewportAnchorIndex = stories.length
+        ? Math.min(
+          Math.max(0, preservedAnchorIndex >= 0 ? preservedAnchorIndex : preservedAnchor),
+          selectedIndex
+        )
+        : -1
+      if (preserveViewport) {
+        // Replacing a ListView model may reset contentY while delegates settle.
+        // Keep the reader at the exact live offset; an in-flight keyboard
+        // animation remains authoritative and continues toward its target.
+        storyList.contentY = preservedContentY
+        var preservedRevision = storyViewportRevision
+        queueViewportPreservation(
+          preservedContentY,
+          storyViewportAnchorIndex,
+          preservedAnchorTop,
+          preservedRevision
+        )
+      } else {
+        storyViewportRevision++
+        var restoreRevision = storyViewportRevision
+        Qt.callLater(function() { root.restoreStoryViewport(restoreRevision) })
+      }
     } else {
       stories = []
       totalStories = 0
@@ -533,10 +635,12 @@ Item {
 
   function loadMore() {
     if (!hasMoreStories) return
+    storyViewportRevision++
+    storyScrollAnimation.stop()
     var limits = Object.assign({}, sectionLimits)
     limits[currentSection] = Math.min(500, Number(limits[currentSection] || pageSize) + pageSize)
     sectionLimits = limits
-    requestProjection()
+    requestProjection("preserve")
   }
 
   function moveSelection(delta) {
@@ -554,12 +658,15 @@ Item {
       storyList.positionViewAtEnd()
       return
     }
+    storyViewportRevision++
     storyScrollAnimation.stop()
+    var viewportRevision = storyViewportRevision
     var nextIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
     var initialContentY = storyList.contentY
     selectStory(nextIndex, true)
     Qt.callLater(function() {
-      if (root.selectedIndex !== nextIndex) return
+      if (root.selectedIndex !== nextIndex
+          || root.storyViewportRevision !== viewportRevision) return
       var anchorAtTop = delta > 0 && storyNeedsTopAnchor(nextIndex)
       if (anchorAtTop) root.storyViewportAnchorIndex = nextIndex
       animateStoryPosition(nextIndex, anchorAtTop, initialContentY)
@@ -764,7 +871,12 @@ Item {
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleProjection(text) }
     onRunningChanged: function() {
       if (running) return
-      if (root.pendingProjection) Qt.callLater(root.requestProjection)
+      if (root.pendingProjection) {
+        var viewportMode = root.pendingProjectionViewportMode
+        root.pendingProjection = false
+        root.pendingProjectionViewportMode = "reset"
+        Qt.callLater(function() { root.requestProjection(viewportMode) })
+      }
     }
   }
 
@@ -800,10 +912,10 @@ Item {
         var result = RadarModel.parseResponse(text)
         if (result.status === "ok") {
           root.userState = result.state || root.userState
-          if (root.opened) root.requestProjection()
+          if (root.opened) root.requestProjection("preserve")
         } else if (result.status === "stale-event") {
           root.userState = result.state || root.userState
-          if (root.opened) root.requestProjection()
+          if (root.opened) root.requestProjection("preserve")
         } else if (root.opened) {
           root.feedStatus = "Failed"
           root.statusDetail = result.message || "Reading state could not be changed."
@@ -927,19 +1039,27 @@ Item {
         }
         if (event.key === Qt.Key_Home) {
           if (root.stories.length) {
+            root.storyViewportRevision++
             storyScrollAnimation.stop()
+            var homeViewportRevision = root.storyViewportRevision
             var initialContentY = storyList.contentY
             root.selectStory(0, true)
             root.storyViewportAnchorIndex = 0
             Qt.callLater(function() {
-              if (root.selectedIndex === 0)
+              if (root.selectedIndex === 0
+                  && root.storyViewportRevision === homeViewportRevision)
                 root.animateStoryPosition(0, true, initialContentY)
             })
           } else root.selectedIndex = -1
           event.accepted = true; return
         }
         if (event.key === Qt.Key_End) {
-          if (root.stories.length) root.selectStory(root.stories.length - 1, true)
+          root.storyViewportRevision++
+          storyScrollAnimation.stop()
+          if (root.stories.length) {
+            root.selectStory(root.stories.length - 1, true)
+            root.storyViewportAnchorIndex = root.selectedIndex
+          }
           else root.selectedIndex = -1
           storyList.positionViewAtEnd()
           Qt.callLater(function() {
@@ -1621,8 +1741,8 @@ Item {
                 + " · collected " + String(root.editionTiming.collectedAt || root.generatedAt)
                 + " · published " + String(root.editionTiming.publishedAt || root.generatedAt)
                 + " · cached " + String(root.editionTiming.cachedAt || "this session")
-                + " · Pages cache ≤10m · v0.1.6"
-              : "No edition generated · v0.1.6 · independent community project"
+                + " · Pages cache ≤10m · v0.1.7"
+              : "No edition generated · v0.1.7 · independent community project"
             textFormat: Text.PlainText
             color: root.secondaryTextColor
             font.family: Style.font.family
