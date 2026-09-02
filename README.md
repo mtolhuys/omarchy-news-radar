@@ -4,7 +4,7 @@
 
 Omarchy News Radar is a visual, keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with an optional newspaper status widget, a full panel, a deterministic Python collector/publisher, a bounded static JSON/RSS/HTML edition with safe mirrored previews, and a cached local reader that remains useful offline.
 
-![Omarchy News Radar showing explicit read and unread stories](preview.png)
+![Omarchy News Radar YouTube section with quiet Keys legend and roomier detail pane](preview.gif)
 
 ## Project status
 
