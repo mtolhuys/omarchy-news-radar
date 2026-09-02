@@ -29,6 +29,13 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('circle cx="64" cy="64" r="19"', icon)
         self.assertTrue((ROOT / "assets/readme-banner.svg").is_file())
         self.assertTrue((ROOT / "preview.png").is_file())
+        walkthrough = (ROOT / "preview.gif").read_bytes()
+        self.assertIn(walkthrough[:6], (b"GIF87a", b"GIF89a"))
+        self.assertEqual((960, 573), (
+            int.from_bytes(walkthrough[6:8], "little"),
+            int.from_bytes(walkthrough[8:10], "little"),
+        ))
+        self.assertIn("(preview.gif)", (ROOT / "README.md").read_text(encoding="utf-8"))
         self.assertEqual(
             {"appId": "org.quickshell", "title": "📰 Omarchy News Radar"},
             manifest["windowIdentity"],

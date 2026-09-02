@@ -11,7 +11,7 @@ omarchy_host_test() {
   local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before for_you_before
-  local initial_bar_unread background_bar_unread
+  local initial_bar_unread background_bar_unread runtime_identity_before runtime_identity_after
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -524,7 +524,7 @@ omarchy_host_test() {
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true and (.sectionSources | startswith(\"Omarchy Plugin Marketplace\"))'" || return 1
   capture_console "success-news-radar-03-settings-options"
   wait_for_guest_state "Settings keeps canonical section identity and only actionable filters" 10 ssh_session \
-    "jq -e '.schemaVersion == 9 and (.preferences | has(\"sectionProfiles\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+    "jq -e '.schemaVersion == 10 and (.preferences | has(\"sectionProfiles\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
      ! grep -q 'set-section-profile\|sectionNameField\|Apply name\|Reset name\|BUILT-IN SECTION RULE\|Local-only ·' $plugin_dir/src/Panel.qml" || return 1
   capture_console "success-news-radar-03-section-settings-clean"
 
@@ -538,7 +538,7 @@ omarchy_host_test() {
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \
-    "jq -e '.schemaVersion == 9 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "jq -e '.schemaVersion == 10 and .preferences.sectionFilters.plugins.unreadOnly == true and .preferences.sectionFilters.core.unreadOnly == false and (.preferences.sectionFilters | has(\"community\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press esc
   wait_for_guest_state "Unread only presents a stable unread projection" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == false and .storyCount == 2 and .selectedIndex == 0 and .selectedIsUnread == true and .retainedReadStories == 0'" || return 1
@@ -564,7 +564,7 @@ omarchy_host_test() {
   wait_for_guest_state "retired interests are absent from UI, CLI, and current local state" 10 ssh_session \
     "! grep -q 'Apply interests\|interestField\|--interests-json' $plugin_dir/src/Panel.qml && \
      ! $helper set-preferences --help 2>&1 | grep -q -- '--interests-json' && \
-     jq -e '.schemaVersion == 9 and (.preferences | has(\"interests\") | not) and (.preferences | has(\"sectionProfiles\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+     jq -e '.schemaVersion == 10 and (.preferences | has(\"interests\") | not) and (.preferences | has(\"sectionProfiles\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   ssh_session "$helper set-preferences --images-visible false" >"$RUN_DIR/news-radar-images-off.json" || return 1
   press 1
   wait_for_guest_state "image-off preference preserves the complete text story" 15 ssh_session \
@@ -589,10 +589,10 @@ omarchy_host_test() {
   press s
   wait_for_guest_state "save writes bounded local metadata" 10 ssh_session \
     "jq -e '.saved | has(\"evt_53642b4d3e0e59c943494606\")' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
-  press 5
-  wait_for_guest_state "numeric key five opens Saved with no Community destination" 10 ssh_session \
+  press 6
+  wait_for_guest_state "numeric key six opens Saved with no Community destination" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"saved\" and .storyCount == 1' && \
-     ! grep -q 'Object.assign({ id: \"community\" }\|1–6 sections\|currentSection === \"community\"' $plugin_dir/src/Panel.qml" || return 1
+     ! grep -q 'Object.assign({ id: \"community\" }\|currentSection === \"community\"' $plugin_dir/src/Panel.qml" || return 1
   press o
   wait_for_guest_state "source opening reaches the inert shim with the exact HTTPS URL" 10 ssh_session \
     "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = https://github.com/example/omarchy-notes" || return 1
@@ -613,7 +613,7 @@ omarchy_host_test() {
   wait_for_guest_state "open panel adopts an externally fetched event and keeps it unread" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .statusDetail == \"Adopted a newer validated edition fetched in the background.\" and .section == \"for-you\" and .storyCount == $((for_you_before + 1)) and .unreadCount > 0' && \
      $helper project --section for-you --installed-json '[\"io.github.mtolhuys.disk-lens\"]' --query '' | jq -e '.events | any(.id == \"evt_000000000000000000000abc\" and .isUnread == true)' && \
-     jq -e '.schemaVersion == 9 and .readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+     jq -e '.schemaVersion == 10 and .readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   capture_console "success-news-radar-03-open-panel-background-update"
   press esc
   wait_for_guest_state "normal close does not bulk-mark unseen stories" 15 ssh_session \
@@ -827,12 +827,15 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.3.0+identity-1/news-radar-0.3.0+identity-2/' $plugin_dir/src/Panel.qml"
+  runtime_identity_before="$(sed -n 's/.*property string runtimeBuildIdentity: "\([^"]*\)".*/\1/p' "$product_root/src/Panel.qml")"
+  [[ $runtime_identity_before =~ ^news-radar-[0-9]+\.[0-9]+\.[0-9]+\+identity-1$ ]] || return 1
+  runtime_identity_after="${runtime_identity_before%1}2"
+  ssh_session "sed -i 's|$runtime_identity_before|$runtime_identity_after|' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell summon io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.3.0+identity-2" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = '$runtime_identity_after'" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1

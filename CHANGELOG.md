@@ -9,7 +9,7 @@ No changes yet.
 ### Changed
 - Make the official Omarchy logo the full-strength primary application mark, with a compact two-ring amber radar integrated into its central negative space rather than placing two complete symbols over each other.
 - Keep one opaque, self-contained dark squircle for the manifest, Apps entry, and companion UIs, while the panel uses transparent light/dark contrast variants on its own theme-native plate instead of showing a black box in light themes.
-- Replace the outdated animated README capture with an evergreen branded hero, and export the same composition as the root `preview.png` consumed by the marketplace preview pipeline.
+- Add an evergreen branded hero and replace the outdated YouTube-focused animation with a current product walkthrough covering Front Page, plugin activity, and section filters; keep the root `preview.png` as the marketplace preview.
 
 No feed or local-state schema bump.
 
