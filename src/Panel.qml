@@ -553,7 +553,7 @@ Item {
     pendingViewportAnchorIndex = anchorIndex
     pendingViewportAnchorTop = forcedTopAnchorIndex === anchorIndex ? 0 : anchorTop
     pendingViewportRevision = revision
-    pendingViewportAttempts = 12
+    pendingViewportAttempts = 24
     Qt.callLater(root.applyPendingViewportPreservation)
   }
 
@@ -581,6 +581,11 @@ Item {
       storyList.originY,
       Math.min(targetContentY, maximumContentY)
     )
+    if (anchorRow && pendingViewportAttempts > 0) {
+      pendingViewportAttempts--
+      Qt.callLater(root.applyPendingViewportPreservation)
+      return
+    }
     pendingViewportPreservation = false
     pendingViewportAttempts = 0
   }
