@@ -18,6 +18,8 @@ Flow {
       case "marketplace-copies": return "󰆏"
       case "repository-stars": return "󰓎"
       case "release-asset-downloads": return "󰇚"
+      case "youtube-views": return "󰈈"
+      case "youtube-likes": return "󰋑"
     }
     return "•"
   }

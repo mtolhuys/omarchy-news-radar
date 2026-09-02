@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.3.0+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.0+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -33,7 +33,7 @@ Item {
     Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.72)
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 9,
+    schemaVersion: 10,
     readThrough: "1970-01-01T00:00:00Z",
     readOverrides: ({}),
     saved: ({}),
@@ -91,6 +91,7 @@ Item {
     "for-you": 12,
     "core": 12,
     "plugins": 12,
+    "youtube": 12,
     "saved": 12
   })
 
@@ -123,6 +124,7 @@ Item {
     Object.assign({ id: "for-you" }, root.defaultSectionProfile("for-you")),
     Object.assign({ id: "core" }, root.defaultSectionProfile("core")),
     Object.assign({ id: "plugins" }, root.defaultSectionProfile("plugins")),
+    Object.assign({ id: "youtube" }, root.defaultSectionProfile("youtube")),
     Object.assign({ id: "saved" }, root.defaultSectionProfile("saved"))
   ]
   readonly property string currentSection: sections[sectionIndex].id
@@ -344,6 +346,7 @@ Item {
       "for-you": { name: "For You", icon: "spark", tone: "clear" },
       "core": { name: "Core", icon: "core", tone: "clear" },
       "plugins": { name: "Plugins", icon: "plugins", tone: "clear" },
+      "youtube": { name: "YouTube", icon: "youtube", tone: "clear" },
       "saved": { name: "Saved", icon: "saved", tone: "clear" }
     }
     return values[section]
@@ -355,6 +358,7 @@ Item {
       spark: "",
       core: "",
       plugins: "",
+      youtube: "",
       saved: ""
     }
     return icons[iconId] || ""

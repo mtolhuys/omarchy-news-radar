@@ -11,7 +11,7 @@ from typing import Any, Mapping
 from .curation import apply_curation, load_curation
 from .errors import ValidationError
 from .errors import FetchError
-from .constants import ENGAGEMENT_MAX_BYTES
+from .constants import ENGAGEMENT_MAX_BYTES, GITHUB_MAX_BYTES
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import atomic_write_json, canonical_json_bytes, read_json_bounded
 from .metrics import enrich_event_metrics
@@ -24,10 +24,21 @@ from .sources import (
     parse_engagement,
     parse_marketplace,
     parse_releases,
+    parse_search_video_ids,
+    parse_videos,
+    should_refresh_youtube,
+    youtube_events,
 )
 from .sources.marketplace import CATALOG_URL
 from .sources.marketplace_engagement import ENGAGEMENT_URL
 from .sources.omarchy_releases import API_URL, PUBLIC_URL
+from .sources.youtube import (
+    API_ORIGIN as YOUTUBE_API_ORIGIN,
+    PUBLIC_URL as YOUTUBE_PUBLIC_URL,
+    SEARCH_QUERIES,
+    search_url,
+    videos_url,
+)
 from .validation import format_timestamp, parse_timestamp
 
 SNAPSHOT_SCHEMA = 2
@@ -40,6 +51,7 @@ class FixtureInputs:
     community: Path
     curation: Path
     engagement: Path | None = None
+    youtube: Path | None = None
 
 
 def empty_snapshot() -> dict[str, Any]:
@@ -141,10 +153,67 @@ def collect_from_fixtures(
         next_sources["community"] = {"recordIds": sorted(event["entity"]["id"] for event in community)}
         health.append({"id": "community", "status": "current", "checkedAt": checked_at, "sourceUrl": "https://github.com/mtolhuys/omarchy-news-radar/tree/main/content/community"})
 
+    youtube_success = False
+    previous_youtube = previous_sources.get("youtube") if isinstance(previous_sources.get("youtube"), dict) else None
+    if "youtube" in failed:
+        health.append(
+            {
+                "id": "youtube",
+                "status": "failed",
+                "checkedAt": checked_at,
+                "sourceUrl": YOUTUBE_PUBLIC_URL,
+                "reason": failed["youtube"],
+            }
+        )
+    elif inputs.youtube is None:
+        # Absent fixture keeps the source out of CI editions unless a prior
+        # snapshot already carries YouTube continuity.
+        if previous_youtube is not None:
+            next_sources["youtube"] = previous_youtube
+            health.append(
+                {
+                    "id": "youtube",
+                    "status": "not-modified",
+                    "checkedAt": checked_at,
+                    "sourceUrl": YOUTUBE_PUBLIC_URL,
+                }
+            )
+    else:
+        youtube_payload = read_json_bounded(inputs.youtube, GITHUB_MAX_BYTES)
+        if not isinstance(youtube_payload, dict) or not isinstance(youtube_payload.get("videos"), list):
+            raise ValidationError("YouTube fixture payload is invalid")
+        video_records = youtube_payload["videos"]
+        fresh_events = youtube_events(video_records, discovered_at=clock, observed_at=checked_at)
+        events.extend(
+            event
+            for event in fresh_events
+            if parse_timestamp(event["occurredAt"]) >= window_from
+        )
+        next_sources["youtube"] = {
+            "checkedAt": checked_at,
+            "videoIds": [event["entity"]["id"] for event in fresh_events],
+        }
+        health.append(
+            {
+                "id": "youtube",
+                "status": "current",
+                "checkedAt": checked_at,
+                "sourceUrl": YOUTUBE_PUBLIC_URL,
+            }
+        )
+        youtube_success = True
+
     retained_events = {
         event["id"]: event
         for event in previous["events"]
         if parse_timestamp(event["occurredAt"]) >= window_from
+        and not (
+            youtube_success
+            and (
+                event.get("type") == "youtube-video"
+                or event.get("classification", {}).get("section") == "youtube"
+            )
+        )
     }
     # A stale source baseline may rediscover the same deterministic event. Its
     # first observed timestamps remain authoritative; current descriptions and
@@ -189,8 +258,9 @@ def collect_production(
     now: datetime,
     bootstrap_marketplace: bool,
     github_token: str | None = None,
+    youtube_api_key: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Fetch only the three allowlisted machine sources, then collect transactionally."""
+    """Fetch allowlisted machine sources, then collect transactionally."""
 
     failures: dict[str, str] = {}
     release_payload: list[Any] = []
@@ -253,14 +323,57 @@ def collect_production(
     except ValidationError:
         failures["marketplace-engagement"] = "schema-mismatch"
 
+    youtube_bytes: bytes | None = None
+    previous_sources = previous_snapshot.get("sources", {}) if isinstance(previous_snapshot, Mapping) else {}
+    previous_youtube = previous_sources.get("youtube") if isinstance(previous_sources, Mapping) else None
+    if not youtube_api_key:
+        failures["youtube"] = "validation-failed"
+    elif not should_refresh_youtube(previous_youtube if isinstance(previous_youtube, Mapping) else None, now=now):
+        # Keep prior YouTube continuity inside the cadence window.
+        pass
+    else:
+        try:
+            video_ids: list[str] = []
+            seen_ids: set[str] = set()
+            policy = FetchPolicy(GITHUB_MAX_BYTES, 20.0, frozenset({YOUTUBE_API_ORIGIN}))
+            for query in SEARCH_QUERIES:
+                page_bytes, _, _ = fetch_bytes(
+                    search_url(query=query, api_key=youtube_api_key),
+                    policy=policy,
+                    headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-collector/0.4"},
+                )
+                for video_id in parse_search_video_ids(decode_json(page_bytes, label="YouTube search")):
+                    if video_id not in seen_ids:
+                        seen_ids.add(video_id)
+                        video_ids.append(video_id)
+            videos: list[dict[str, Any]] = []
+            for offset in range(0, len(video_ids), 50):
+                chunk = video_ids[offset : offset + 50]
+                if not chunk:
+                    break
+                page_bytes, _, _ = fetch_bytes(
+                    videos_url(video_ids=chunk, api_key=youtube_api_key),
+                    policy=policy,
+                    headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-collector/0.4"},
+                )
+                videos.extend(parse_videos(decode_json(page_bytes, label="YouTube videos")))
+            youtube_bytes = canonical_json_bytes({"videos": videos})
+        except FetchError as exc:
+            failures["youtube"] = exc.reason
+        except ValidationError:
+            failures["youtube"] = "schema-mismatch"
+
     with tempfile.TemporaryDirectory(prefix="omarchy-news-radar-collect-") as temporary:
         root = Path(temporary)
         releases_path = root / "releases.json"
         marketplace_path = root / "catalog.json"
         engagement_path = root / "engagement.json"
+        youtube_path = root / "youtube.json" if youtube_bytes is not None else None
         releases_path.write_bytes(release_bytes)
         marketplace_path.write_bytes(catalog_bytes)
         engagement_path.write_bytes(engagement_bytes)
+        if youtube_path is not None and youtube_bytes is not None:
+            youtube_path.write_bytes(youtube_bytes)
         return collect_from_fixtures(
             FixtureInputs(
                 releases=releases_path,
@@ -268,6 +381,7 @@ def collect_production(
                 community=community_directory,
                 curation=curation_directory,
                 engagement=engagement_path,
+                youtube=youtube_path,
             ),
             previous_snapshot=previous_snapshot,
             now=now,

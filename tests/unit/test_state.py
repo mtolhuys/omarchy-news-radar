@@ -12,11 +12,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
-from radar.constants import STATE_SCHEMA_VERSION
+from radar.constants import STATE_SCHEMA_VERSION, V9_CLIENT_SECTIONS
+from radar.filters import default_section_filter
 from radar.errors import StorageError, ValidationError
 from radar.io import atomic_write_json
 from radar.local_collection import local_source_snapshot_path
 from radar.state import (
+    LEGACY_CLIENT_SECTIONS,
     RefreshLock,
     StateLock,
     default_state,
@@ -47,6 +49,14 @@ LEGACY_PROFILES = {
     "plugins": {"name": "Plugins"},
     "saved": {"name": "Saved"},
 }
+
+
+def v9_filters():
+    return {section: default_section_filter() for section in V9_CLIENT_SECTIONS}
+
+
+def legacy_filters():
+    return {section: default_section_filter() for section in LEGACY_CLIENT_SECTIONS}
 
 
 class StateTests(unittest.TestCase):
@@ -263,8 +273,12 @@ class StateTests(unittest.TestCase):
         self.assertFalse(v2["preferences"]["barVisible"])
         self.assertNotIn("interests", v2["preferences"])
 
-        v3_preferences = default_state()["preferences"]
-        v3_preferences["interests"] = []
+        v3_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "interests": [],
+            "sectionFilters": legacy_filters(),
+        }
         v3_preferences["sectionFilters"]["community"] = {
             "period": "all",
             "significance": "all",
@@ -288,22 +302,19 @@ class StateTests(unittest.TestCase):
         self.assertEqual("30d", v3["preferences"]["sectionFilters"]["plugins"]["period"])
         self.assertNotIn("sectionProfiles", v3["preferences"])
 
-        v4_preferences = default_state()["preferences"]
-        v4_preferences["interests"] = []
-        v4_preferences["sectionFilters"]["community"] = {
-            "period": "all",
-            "significance": "all",
-            "unreadOnly": False,
-            "imagesOnly": False,
-            "types": [],
-        }
-        v4_preferences["sectionProfiles"] = {
-            "front-page": {"name": "Front Page", "icon": "newspaper", "tone": "clear"},
-            "for-you": {"name": "For You", "icon": "spark", "tone": "clear"},
-            "core": {"name": "Core", "icon": "core", "tone": "clear"},
-            "plugins": {"name": "My Extensions", "icon": "spark", "tone": "accent"},
-            "community": {"name": "Community", "icon": "community", "tone": "ink"},
-            "saved": {"name": "Saved", "icon": "saved", "tone": "soft"},
+        v4_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "interests": [],
+            "sectionFilters": legacy_filters(),
+            "sectionProfiles": {
+                "front-page": {"name": "Front Page", "icon": "newspaper", "tone": "clear"},
+                "for-you": {"name": "For You", "icon": "spark", "tone": "clear"},
+                "core": {"name": "Core", "icon": "core", "tone": "clear"},
+                "plugins": {"name": "My Extensions", "icon": "spark", "tone": "accent"},
+                "community": {"name": "Community", "icon": "community", "tone": "ink"},
+                "saved": {"name": "Saved", "icon": "saved", "tone": "soft"},
+            },
         }
         path.write_text(
             json.dumps({
@@ -320,10 +331,13 @@ class StateTests(unittest.TestCase):
         self.assertNotIn("sectionProfiles", v4["preferences"])
         self.assertNotIn("community", v4["preferences"]["sectionFilters"])
 
-        v5_preferences = default_state()["preferences"]
-        v5_preferences["barVisible"] = False
-        v5_preferences["imagesVisible"] = False
-        v5_preferences["interests"] = ["security"]
+        v5_preferences = {
+            "barVisible": False,
+            "imagesVisible": False,
+            "interests": ["security"],
+            "sectionFilters": legacy_filters(),
+            "sectionProfiles": copy.deepcopy(LEGACY_PROFILES),
+        }
         v5_preferences["sectionFilters"]["community"] = {
             "period": "30d",
             "significance": "notable",
@@ -331,7 +345,6 @@ class StateTests(unittest.TestCase):
             "imagesOnly": True,
             "types": ["community-link"],
         }
-        v5_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
         v5_preferences["sectionProfiles"]["community"] = {"name": "People"}
         v5_preferences["sectionProfiles"]["plugins"] = {"name": "Extensions"}
         path.write_text(
@@ -354,9 +367,13 @@ class StateTests(unittest.TestCase):
         self.assertNotIn("sectionProfiles", v5["preferences"])
         self.assertNotIn("community", v5["preferences"]["sectionFilters"])
 
-        v6_preferences = copy.deepcopy(default_state()["preferences"])
-        v6_preferences["interests"] = []
-        v6_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
+        v6_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "interests": [],
+            "sectionFilters": v9_filters(),
+            "sectionProfiles": copy.deepcopy(LEGACY_PROFILES),
+        }
         path.write_text(
             json.dumps({
                 "schemaVersion": 6,
@@ -372,9 +389,13 @@ class StateTests(unittest.TestCase):
         self.assertEqual("2026-08-31T10:00:00Z", v6["readThrough"])
         self.assertEqual({}, v6["readOverrides"])
 
-        v7_preferences = copy.deepcopy(default_state()["preferences"])
-        v7_preferences["interests"] = ["security"]
-        v7_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
+        v7_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "interests": ["security"],
+            "sectionFilters": v9_filters(),
+            "sectionProfiles": copy.deepcopy(LEGACY_PROFILES),
+        }
         path.write_text(
             json.dumps({
                 "schemaVersion": 7,
@@ -391,9 +412,13 @@ class StateTests(unittest.TestCase):
         self.assertEqual({self.feed["events"][0]["id"]: True}, v7["readOverrides"])
         self.assertNotIn("interests", v7["preferences"])
 
-        v8_preferences = copy.deepcopy(default_state()["preferences"])
+        v8_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "sectionFilters": v9_filters(),
+            "sectionProfiles": copy.deepcopy(LEGACY_PROFILES),
+        }
         v8_preferences["sectionFilters"]["plugins"]["period"] = "7d"
-        v8_preferences["sectionProfiles"] = copy.deepcopy(LEGACY_PROFILES)
         v8_preferences["sectionProfiles"]["plugins"] = {"name": "Extensions"}
         path.write_text(
             json.dumps({
@@ -411,6 +436,29 @@ class StateTests(unittest.TestCase):
         self.assertEqual("7d", v8["preferences"]["sectionFilters"]["plugins"]["period"])
         self.assertEqual({self.feed["events"][0]["id"]: False}, v8["readOverrides"])
         self.assertNotIn("sectionProfiles", v8["preferences"])
+        self.assertIn("youtube", v8["preferences"]["sectionFilters"])
+
+        v9_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "sectionFilters": v9_filters(),
+        }
+        v9_preferences["sectionFilters"]["core"]["period"] = "24h"
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 9,
+                "readThrough": "2026-08-31T10:00:00Z",
+                "readOverrides": {},
+                "saved": {},
+                "preferences": v9_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v9, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(STATE_SCHEMA_VERSION, v9["schemaVersion"])
+        self.assertEqual("24h", v9["preferences"]["sectionFilters"]["core"]["period"])
+        self.assertIn("youtube", v9["preferences"]["sectionFilters"])
 
     def test_current_state_rejects_unknown_members_instead_of_normalizing_them_away(self) -> None:
         cases = []
@@ -450,14 +498,7 @@ class StateTests(unittest.TestCase):
     def test_malformed_legacy_states_are_quarantined_instead_of_partially_migrated(self) -> None:
         path = user_state_path(self.environment)
         path.parent.mkdir(parents=True, exist_ok=True)
-        filters = default_state()["preferences"]["sectionFilters"]
-        filters["community"] = {
-            "period": "all",
-            "significance": "all",
-            "unreadOnly": False,
-            "imagesOnly": False,
-            "types": [],
-        }
+        filters = legacy_filters()
         valid_v2_preferences = {
             "barVisible": True,
             "imagesVisible": True,

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 — 2026-09-02
+
+### Added
+- YouTube section for Omarchy-related videos collected through the allowlisted YouTube Data API v3 (Forge-only `YOUTUBE_API_KEY`).
+- Feed schema version 2 and local state schema version 10 with a `youtube` client section (keys `1`–`6`).
+- Optional `youtube-views` / `youtube-likes` metrics and allowlisted `i.ytimg.com` thumbnails.
+
+### Changed
+- Ranking for views/likes/recent applies only inside the YouTube section; Front Page, significance, and identity stay unchanged (D045 / D008 / D020).
+
+### Notes
+- Missing or failed YouTube collection fails closed and retains the prior YouTube snapshot. CI uses fixtures only—no live YouTube API.
+
 ## 0.3.0 — 2026-09-02
 
 - Point `FEED_URL` at the rate-limited Laravel feed `https://mtolhuijs.nl/news-radar/events.json`.

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlencode, urljoin, urlsplit
 
-from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN
+from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN, YOUTUBE_IMAGE_ORIGIN
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary
 from .freshness import edition_timing, update_message
@@ -611,6 +611,8 @@ def projection_model(
         "marketplace-copies": "Command copies",
         "repository-stars": "Repository stars",
         "release-asset-downloads": "Release asset downloads",
+        "youtube-views": "Views",
+        "youtube-likes": "Likes",
     }
     metric_order = tuple(metric_labels)
     for event in events:
@@ -620,7 +622,10 @@ def projection_model(
         image = item.get("image")
         if state["preferences"]["imagesVisible"] and isinstance(image, dict):
             source_url = image.get("sourceUrl")
-            if isinstance(source_url, str) and source_url.startswith(MARKETPLACE_IMAGE_ORIGIN + "/"):
+            if isinstance(source_url, str) and (
+                source_url.startswith(MARKETPLACE_IMAGE_ORIGIN + "/")
+                or source_url.startswith(YOUTUBE_IMAGE_ORIGIN + "/")
+            ):
                 item["imageUrl"] = source_url
             elif "path" in image:
                 # Legacy mirrored editions / local private caches.

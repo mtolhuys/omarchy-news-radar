@@ -8,11 +8,11 @@ Unknown required schema versions fail closed. Unknown optional fields are ignore
 
 ## Feed envelope
 
-Version 1 has this conceptual shape:
+Version 2 has this conceptual shape (version 1 remains documented historically in `schemas/feed-v1.schema.json`):
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "generatedAt": "2026-08-31T14:00:00Z",
   "publishedAt": "2026-08-31T14:01:00Z",
   "window": {
@@ -39,7 +39,7 @@ Version 1 has this conceptual shape:
 - `generatedAt` may not be materially in the future relative to the client clock; tolerate a documented small skew.
 - `generatedAt` is the completed source-collection time. `publishedAt` is the later artifact-build time, may not predate collection, and may not be materially in the future. Legacy schema-v1 editions without `publishedAt` explicitly infer publication from `generatedAt`.
 - Events are sorted descending by `occurredAt`, then stable descending discovery order, then ascending ID.
-- Source IDs are unique and come from a closed enum in version 1.
+- Source IDs are unique and come from a closed enum in the active feed schema version.
 
 Source `status` values are `current`, `not-modified`, `stale`, or `failed`. A failed source records one bounded public-safe reason code, never tokens, response bodies, stack traces, or internal runner paths.
 
@@ -92,7 +92,7 @@ Source health and publication freshness are separate. Successful sources at old 
 
 ## Event enums
 
-Version 1 event types:
+Version 2 event types:
 
 - `omarchy-released`
 - `plugin-added`
@@ -100,8 +100,9 @@ Version 1 event types:
 - `plugin-retired`
 - `plugin-verification-changed`
 - `community-link`
+- `youtube-video`
 
-Sections are `core`, `plugins`, or `community`. “front-page”, “for-you”, and “saved” are client projections, not stored source sections.
+Sections are `core`, `plugins`, `community`, or `youtube`. “front-page”, “for-you”, and “saved” are client projections, not stored source sections. YouTube events must never appear under feed schema version 1.
 
 Significance is `routine`, `notable`, or `critical`. Only explicit reviewed curation may set `notable`. `critical` is reserved for an authoritative upstream security or breaking-compatibility statement and requires a decision record or reviewed curation entry; it is never derived from popularity or prose sentiment.
 
@@ -121,13 +122,13 @@ Compatibility basis is `declared`, `inferred-from-source`, or `unknown`. Version
 - Tags: at most 12 unique normalized lowercase tags, each 1–32 characters.
 - Channels: at most 8 values from a closed vocabulary.
 - All timestamps: canonical UTC RFC 3339 with `Z`.
-- Public image paths: optional relative `assets/images/<sha256>.(jpg|png|webp)` only, with 1–4,096 pixel dimensions, at most 12 million pixels, bounded plain-text alt/credit, and no upstream URL in the public feed.
+- Public images: optional legacy relative `assets/images/<sha256>.(jpg|png|webp)`, allowlisted marketplace `https://plugins.omarchy.org/assets/img/plugins/…`, or allowlisted YouTube `https://i.ytimg.com/vi/<id>/hqdefault.jpg`, each with 1–4,096 pixel dimensions, at most 12 million pixels, and bounded plain-text alt/credit.
 
 ### Optional observed metrics
 
-An event may carry at most one canonical record for each closed metric ID: `marketplace-views`, `marketplace-hearts`, `marketplace-copies`, `repository-stars`, and `release-asset-downloads`. Each record contains a non-negative JavaScript-safe integer `value`, canonical UTC `observedAt`, and validated public HTTPS `sourceUrl`. Records sort by ID.
+An event may carry at most one canonical record for each closed metric ID: `marketplace-views`, `marketplace-hearts`, `marketplace-copies`, `repository-stars`, `release-asset-downloads`, `youtube-views`, and `youtube-likes`. Each record contains a non-negative JavaScript-safe integer `value`, canonical UTC `observedAt`, and validated public HTTPS `sourceUrl`. Records sort by ID.
 
-These are observed source facts, not occurrences. Counter changes never create an event or change its ID, timestamps, significance, curation, ordering, or Front Page position. Marketplace aggregates specifically mean anonymous detail views, hearts, and command copies; they do not mean installs, downloads, unique people, votes, rankings, or security.
+These are observed source facts, not occurrences. Counter changes never create an event or change its ID, timestamps, significance, curation, or Front Page position. YouTube views/likes may reorder only the YouTube section projection. Marketplace aggregates specifically mean anonymous detail views, hearts, and command copies; they do not mean installs, downloads, unique people, votes, rankings, or security.
 
 Replace C0/DEL control characters in display strings, normalize line breaks and repeated whitespace, and preserve Unicode without converting user content into markup. Do not silently repair structural IDs or URLs; reject them.
 
@@ -171,7 +172,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "readThrough": "1970-01-01T00:00:00Z",
   "readOverrides": {
     "evt_8cb067f9ef7da216bcab4781": true
@@ -193,6 +194,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
       "for-you": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
       "core": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
       "plugins": {"period":"7d","significance":"notable","unreadOnly":false,"imagesOnly":true,"types":["plugin-released"]},
+      "youtube": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
       "saved": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]}
     }
   }
@@ -203,11 +205,11 @@ Saved records intentionally duplicate a small bounded subset so a bookmark survi
 
 `readThrough` is a migration baseline, not a session cursor. An event is read when its boolean `readOverrides[eventId]` exists and is true, unread when that override exists and is false, and otherwise read only when `occurredAt <= readThrough`. New installations use the Unix epoch baseline, so every current event starts unread. The panel never advances the baseline; deliberate per-story actions create or remove the smallest necessary override. The explicit filtered-section batch action applies that same rule to a validated list of at most 500 event IDs in one locked atomic write, including unloaded matches while ignoring temporary search. Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v9 retains strict filters and explicit read overrides but cannot represent a section display profile. Valid v1–v8 states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, legacy profile shapes and the v2–v7 interests array are strictly validated before being discarded, and the removed Community filter stays removed. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical names, icons, order, backgrounds, and source scope remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
+State v10 retains strict filters and explicit read overrides but cannot represent a section display profile. Valid v1–v9 states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, legacy profile shapes and the v2–v7 interests array are strictly validated before being discarded, the removed Community filter stays removed, and v9 gains a default YouTube section filter. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical names, icons, order, backgrounds, and source scope remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
 
-The stable client sections are `front-page`, `for-you`, `core`, `plugins`, and `saved`; they own the fixed name, projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections.
+The stable client sections are `front-page`, `for-you`, `core`, `plugins`, `youtube`, and `saved`; they own the fixed name, projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections. YouTube stays in its own rail and does not enter Front Page in MVP.
 
-The top-bar unread value is not a second reading-state model. It applies the same canonical read predicate, projects all five sections with the current persistent filters and exact locally enabled plugin IDs, and counts the union of matching unread event IDs. Overlap between Front Page, For You, source sections, and Saved never double-counts a story. Temporary search and pagination do not change the badge; an unread story excluded by every persistent section projection is deliberately not advertised as actionable.
+The top-bar unread value is not a second reading-state model. It applies the same canonical read predicate, projects all six sections with the current persistent filters and exact locally enabled plugin IDs, and counts the union of matching unread event IDs. Overlap between Front Page, For You, source sections, and Saved never double-counts a story. Temporary search and pagination do not change the badge; an unread story excluded by every persistent section projection is deliberately not advertised as actionable.
 
 Background check cadence is disposable cache metadata, not reading state or feed metadata:
 
@@ -219,4 +221,4 @@ The strict bounded record distinguishes an actual client attempt from source `ch
 
 ## Schema evolution
 
-Additive optional fields may appear within schema version 1. A semantic change to required fields, enums, ID calculation, read-state meaning, or validation bounds requires a new schema version plus explicit migration and compatibility tests. The publisher may offer multiple feed versions during a documented transition; the client never guesses across versions.
+Additive optional fields may appear within the active feed schema version. A semantic change to required fields, enums, ID calculation, read-state meaning, or validation bounds requires a new schema version plus explicit migration and compatibility tests. The publisher may offer multiple feed versions during a documented transition; the client never guesses across versions.

@@ -1,0 +1,40 @@
+{
+  "videos": [
+    {
+      "id": "dQwOmarchy1",
+      "title": "Omarchy Quattro desktop walkthrough",
+      "summary": "A calm tour of Omarchy Quattro with plugins and keyboard flow.",
+      "channelTitle": "Omarchy Community",
+      "publishedAt": "2026-08-30T12:00:00Z",
+      "views": 1200,
+      "likes": 90
+    },
+    {
+      "id": "dQwOmarchy2",
+      "title": "Installing Omarchy Linux",
+      "summary": "Install notes for Omarchy on a fresh machine.",
+      "channelTitle": "Linux Notes",
+      "publishedAt": "2026-08-29T09:30:00Z",
+      "views": 3400,
+      "likes": 210
+    },
+    {
+      "id": "dQwOmarchy3",
+      "title": "Omarchy plugin marketplace tour",
+      "summary": "Browsing the Omarchy plugin marketplace without leaving the terminal.",
+      "channelTitle": "Plugin Lab",
+      "publishedAt": "2026-08-28T18:15:00Z",
+      "views": 800,
+      "likes": 55
+    },
+    {
+      "id": "dQwOmarchy4",
+      "title": "Why Omarchy feels different",
+      "summary": "Opinionated notes on Omarchy workflow design.",
+      "channelTitle": "Desktop Essays",
+      "publishedAt": "2026-08-27T16:00:00Z",
+      "views": 5000,
+      "likes": 400
+    }
+  ]
+}

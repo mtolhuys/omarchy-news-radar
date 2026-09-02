@@ -80,8 +80,12 @@ def project_section(
     events = [deepcopy(event) for event in feed.get("events", [])]
     installed = set(installed_plugin_ids)
     saved = set(saved_ids)
-    if section in {"core", "plugins"}:
+    if section in {"core", "plugins", "youtube"}:
         events = [event for event in events if event["classification"]["section"] == section]
+        if section == "youtube":
+            from .sources.youtube import rank_youtube_events
+
+            events = rank_youtube_events(events)
     elif section == "for-you":
         events = [
             event
@@ -117,7 +121,12 @@ def front_page(
 ) -> list[dict[str, Any]]:
     """Compose a finite deterministic edition without popularity signals."""
 
-    ordered = canonical_events(events)
+    # YouTube stays in its own rail (D045); it never fills Front Page in MVP.
+    ordered = [
+        event
+        for event in canonical_events(events)
+        if event["classification"]["section"] != "youtube" and event["type"] != "youtube-video"
+    ]
     installed = set(installed_plugin_ids)
     selected: list[dict[str, Any]] = []
     selected_ids: set[str] = set()

@@ -19,6 +19,7 @@ from .constants import (
     MAX_SAVED,
     STATE_SCHEMA_VERSION,
     UPDATE_CHECK_MAX_BYTES,
+    V9_CLIENT_SECTIONS,
 )
 from .errors import StorageError, ValidationError
 from .io import atomic_write_json, ensure_private_directory, read_json_bounded, refuse_symlink
@@ -35,7 +36,7 @@ from .validation import (
     validate_section_profile,
     validate_state,
 )
-from .filters import default_section_filters
+from .filters import default_section_filter, default_section_filters
 
 EPOCH = "1970-01-01T00:00:00Z"
 LEGACY_CLIENT_SECTIONS = (
@@ -212,7 +213,7 @@ def _quarantine(path: Path) -> Path:
 
 
 def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate one published legacy shape before converting it to v9."""
+    """Validate one published legacy shape before converting it to v10."""
 
     old_version = raw.get("schemaVersion")
     if old_version not in {1, 2, 3, 4, 5, 6, 7, 8}:
@@ -244,12 +245,16 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             )
             require_exact_keys(
                 old_filters,
-                CLIENT_SECTIONS if old_version >= 6 else LEGACY_CLIENT_SECTIONS,
+                V9_CLIENT_SECTIONS if old_version >= 6 else LEGACY_CLIENT_SECTIONS,
                 f"state v{old_version} section filters",
             )
             preferences["sectionFilters"] = {
-                section: validate_section_filter(old_filters[section])
-                for section in preferences["sectionFilters"]
+                section: (
+                    validate_section_filter(old_filters[section])
+                    if section in old_filters
+                    else default_section_filter()
+                )
+                for section in CLIENT_SECTIONS
             }
 
         if old_version >= 4:
@@ -259,7 +264,7 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             )
             require_exact_keys(
                 old_profiles,
-                CLIENT_SECTIONS if old_version >= 6 else LEGACY_CLIENT_SECTIONS,
+                V9_CLIENT_SECTIONS if old_version >= 6 else LEGACY_CLIENT_SECTIONS,
                 f"state v{old_version} section profiles",
             )
             profile_validator = migrate_section_profile_v4 if old_version == 4 else validate_section_profile
@@ -273,6 +278,45 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             "readOverrides": raw.get("readOverrides") if old_version >= 7 else {},
             "saved": raw.get("saved"),
             "preferences": preferences,
+        }
+    )
+
+
+def _migrate_v9_state(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate state v9 and add the YouTube section filter for v10."""
+
+    require_exact_keys(
+        raw,
+        MODERN_LEGACY_STATE_KEYS,
+        "state v9",
+    )
+    preferences = require_mapping(raw.get("preferences"), "state v9 preferences")
+    require_exact_keys(
+        preferences,
+        {"barVisible", "imagesVisible", "sectionFilters"},
+        "state v9 preferences",
+    )
+    old_filters = require_mapping(preferences.get("sectionFilters"), "state v9 section filters")
+    require_exact_keys(old_filters, V9_CLIENT_SECTIONS, "state v9 section filters")
+    section_filters = {
+        section: (
+            validate_section_filter(old_filters[section])
+            if section in old_filters
+            else default_section_filter()
+        )
+        for section in CLIENT_SECTIONS
+    }
+    return validate_state(
+        {
+            "schemaVersion": STATE_SCHEMA_VERSION,
+            "readThrough": raw.get("readThrough"),
+            "readOverrides": raw.get("readOverrides"),
+            "saved": raw.get("saved"),
+            "preferences": {
+                "barVisible": preferences["barVisible"],
+                "imagesVisible": preferences["imagesVisible"],
+                "sectionFilters": section_filters,
+            },
         }
     )
 
@@ -291,6 +335,10 @@ def load_state(
         raw = read_json_bounded(path, 512 * 1024)
         if isinstance(raw, dict) and raw.get("schemaVersion") in {1, 2, 3, 4, 5, 6, 7, 8}:
             migrated = _migrate_legacy_state(raw)
+            atomic_write_json(path, migrated)
+            return migrated, None
+        if isinstance(raw, dict) and raw.get("schemaVersion") == 9:
+            migrated = _migrate_v9_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
         return validate_state(raw), None

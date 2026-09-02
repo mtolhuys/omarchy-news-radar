@@ -112,3 +112,17 @@ Rules:
 Fixture inputs with a fixed clock produce byte-identical snapshots, events, RSS, and HTML. Network order, object key order, locale, local timezone, filesystem enumeration order, and current wall-clock time must not change event identity or content.
 
 The collector supports an offline fixture mode used by tests and `make feed-fixture`. Production collection is a separate explicit command and never runs during ordinary unit tests.
+
+## YouTube Data API v3
+
+Allowlisted origin and paths:
+
+```text
+https://www.googleapis.com/youtube/v3/search
+https://www.googleapis.com/youtube/v3/videos
+```
+
+This is an explicit D007 exception (D045). Forge provisions optional `YOUTUBE_API_KEY`; the key never ships in the repository or client. Without the key, or when the API fails validation/transport bounds, the `youtube` source is `failed` and any prior YouTube events in the rolling snapshot are retained.
+
+Collection searches fixed queries (`Omarchy`, `Omarchy Linux`, `Omarchy Quattro`), keeps results matching `(?i)\bomarchy\b` in title or description, loads `snippet` and `statistics` via `videos.list`, and refreshes about every six hours. Successful editions replace the YouTube lane with an interleaved mix of the top eight by views, likes, and recency, capped at 24 events. Thumbnails use `https://i.ytimg.com/vi/<id>/hqdefault.jpg` only. Metrics are observed facts on those events; they never create events, change IDs, or affect Front Page/significance. CI uses checked-in fixtures and never calls the live API.
+

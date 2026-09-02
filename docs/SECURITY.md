@@ -13,7 +13,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 ## Remote-content invariants
 
 - Render remote strings as plain text only. Do not interpret HTML, Markdown, SVG, upstream image URLs, ANSI escapes, QML, JavaScript, terminal sequences, or link markup.
-- Render optional images only from allowlisted marketplace preview HTTPS URLs (`https://plugins.omarchy.org/assets/img/plugins/…`) recorded as `image.sourceUrl`, or from legacy content-addressed `image.path` values in older caches. The publisher accepts only bounded static PNG/JPEG/WebP from that exact marketplace image origin, verifies Content-Type/magic/structure/dimensions at build time, rejects SVG and animation, omits failures, and does not host rasters on the feed origin.
+- Render optional images only from allowlisted marketplace preview HTTPS URLs (`https://plugins.omarchy.org/assets/img/plugins/…`) or allowlisted YouTube thumbnails (`https://i.ytimg.com/vi/<id>/hqdefault.jpg`) recorded as `image.sourceUrl`, or from legacy content-addressed `image.path` values in older caches. The publisher accepts only bounded static PNG/JPEG/WebP from that exact marketplace image origin, verifies Content-Type/magic/structure/dimensions at build time, rejects SVG and animation, omits failures, and does not host rasters on the feed origin.
 - Enforce feed size, event count, string length, tag count, URL length, nesting, and timestamp bounds before a candidate reaches QML.
 - Accept source links only when they parse as public HTTPS URLs without credentials or control characters.
 - Opening a source requires an explicit user action and passes the validated URL as one structural process argument to the maintained desktop launcher and `xdg-open`.
@@ -105,8 +105,10 @@ The project must not claim perfect anonymity, sandboxing, or security auditing.
 - The publication build has read-only Actions access solely to retrieve the exact source-state artifact from the latest successful deployment; the candidate is bounded and fully validated before use, and repository contents remain read-only.
 - Production publication runs only after source tests and artifact validation.
 - Generated artifacts record source revision and a SHA-256 digest; clients do not treat a digest from the same origin as an independent signature.
-- No remote code, package, or font is downloaded. The publication build downloads allowlisted marketplace preview rasters only to validate them before recording their HTTPS `sourceUrl`; it does not retain or serve those bytes. Runtime downloads the project feed from the fixed feed origin and loads preview images only from the allowlisted marketplace image origin (or legacy same-origin paths still present in an old cache).
+- No remote code, package, or font is downloaded. The publication build downloads allowlisted marketplace preview rasters only to validate them before recording their HTTPS `sourceUrl`; it does not retain or serve those bytes. Runtime downloads the project feed from the fixed feed origin and loads preview images only from the allowlisted marketplace and YouTube image origins (or legacy same-origin paths still present in an old cache).
 
 ## Vulnerability reporting
 
 Before public release, add a root `SECURITY.md` with private reporting instructions. Reports must not include real user binding files, tokens, browsing data, private plugins, or host diagnostics in public issues.
+
+Forge may hold `YOUTUBE_API_KEY` for server-side collection only. Clients never receive the key, and the repository must not contain a real key.

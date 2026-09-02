@@ -79,6 +79,7 @@ omarchy-news-radar/
 │   └── static/
 ├── schemas/
 │   ├── feed-v1.schema.json
+│   ├── feed-v2.schema.json
 │   ├── state-v1.schema.json
 │   ├── state-v2.schema.json
 │   ├── state-v3.schema.json
@@ -87,7 +88,8 @@ omarchy-news-radar/
 │   ├── state-v6.schema.json
 │   ├── state-v7.schema.json
 │   ├── state-v8.schema.json
-│   └── state-v9.schema.json
+│   ├── state-v9.schema.json
+│   └── state-v10.schema.json
 ├── share/
 │   └── applications/
 │       └── io.github.mtolhuys.news-radar.desktop
@@ -111,7 +113,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.2.2",
+  "version": "0.4.0",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
