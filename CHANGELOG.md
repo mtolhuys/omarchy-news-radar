@@ -7,6 +7,8 @@
 - Simplify search and section summary copy while preserving filter state, story counts, unread counts, and the temporary just-read explanation when it is actually relevant.
 - Show a concise update failure only when Radar has no usable cached news; cached last-known-good stories remain quietly readable through transient publisher or network problems.
 - Correct the public README release state and installation heading so the documented command matches the current release.
+- Append newly paginated stories to a stable rendered model, retain unchanged row delegates during read projections, and preload the adjacent viewport so **Load more** and both following Down presses remain visually deterministic.
+- Settle explicit viewport anchors across rendered frames and cancel pending preservation on close, preventing virtualized delegates or asynchronous read updates from leaving the selected row offset or out of sight.
 
 ## 0.2.0 — 2026-09-02
 

@@ -312,7 +312,7 @@
 
 **Consequence:** Pagination does not move or animate the retained story viewport. The next Down top-aligns the first newly revealed row when it crosses the viewport, and the following Down keeps that anchor while moving normally. Stable event identity survives a refreshed projection, active animation remains authoritative, and only explicit context changes reset the viewport. Disposable-lab acceptance continuously samples pagination geometry and asserts both post-load navigation steps.
 
-The invariant is the rendered anchor rather than the raw `ListView.contentY` number. When a replaced variable-height delegate settles at a different internal `y`, preservation adjusts `contentY` by the same amount to keep the selected story at the identical screen position. Acceptance therefore samples the selected row's on-screen top, full visibility, and animation state; treating the compensating internal offset as motion would reject a visually stable result.
+The invariant is the rendered anchor rather than the raw `ListView.contentY` number. Pagination appends to a stable `ListModel` instead of replacing the entire JavaScript-array model, so existing delegates are not recycled. Read projections update only payloads whose validated content changed. One adjacent viewport remains instantiated so the first newly revealed row has real geometry before keyboard movement; a bounded rendered-frame preservation pass remains as a safety net for genuine asynchronous relayout. Acceptance samples the selected row's on-screen top, full visibility, and animation state rather than mistaking a compensating internal offset for visual motion.
 
 ## D040 — Keep reverse key-repeat synchronized with selection
 
