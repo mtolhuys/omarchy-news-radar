@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.2.2` is the corrective candidate that keeps the 0.2.1 reading-surface cleanup while making the newspaper badge count only unique unread stories reachable through the current persistent section projections. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.4.1` is the QoL candidate that adds a per-section header **All ↔ Unread only** toggle, keyboard `f`, and a subtle collapsible **Keys** legend on top of the 0.4.0 YouTube lane, without a feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
 
 ## Candidate identity
 
@@ -18,7 +18,8 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - Front Page, For You, Core, Plugins, and Saved match the implemented model; reviewed community records remain an optional feed input rather than an empty dedicated section.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
 - `Tab`/`Shift+Tab`, canonical section identity, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more behavior match the local projection model; the focused action labels Enter explicitly.
-- No permanent keyboard or publication-diagnostics strip occupies the reading surface; search exposes `/` and **Check for updates** exposes `R` on hover.
+- No publication-diagnostics strip occupies the reading surface; a subtle collapsible **Keys** footer (session-only collapse) lists the real bindings without the retired always-on `KEYBOARD` wall; search exposes `/` and **Check for updates** exposes `R` on hover.
+- Section headers expose an **All** / **Unread only** chip and keyboard `f` that toggle the existing persistent `unreadOnly` filter without a schema bump; Settings keeps its **Unread only** chip in sync; the Keys footer includes `f` and `?`.
 - Bar click, `Super+Alt+N`, and Apps launch all summon one window; closed, obscured, foreground, rapid-repeat, Alt+Tab, explicit close, and reopen states are machine-asserted with real QMP input.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.

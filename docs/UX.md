@@ -33,7 +33,7 @@ The panel has four stable visual zones:
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
-The reading surface does not carry a permanent keyboard legend or publication telemetry. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
+The reading surface does not carry publication telemetry. A subtle collapsible **Keys** footer under the story list shows the real bindings as compact keycaps with muted captions; it starts open for discovery and remembers collapse only for the session (no schema). **Keys · ?** or keyboard `?` toggles it. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
 
 ## Front page composition
 
@@ -58,10 +58,12 @@ All behavior must remain reachable without a pointer:
 | `Enter` or `o` | Open selected original source |
 | `s` | Save or unsave selected story locally |
 | `u` | Mark the selected story read or unread locally |
+| `f` | Toggle this section's **Unread only** filter (same as the header chip) |
+| `?` | Show or hide the collapsible Keys legend |
 | `/` | Focus search/filter input |
 | `r` | Check the published edition; **Check for updates** repeats this shortcut on hover |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
-| `1`–`5` | Switch between the five primary sections |
+| `1`–`6` | Switch between the primary sections including YouTube and Saved |
 | `Home` / `End` | Select first or last story in the current section |
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
@@ -72,7 +74,7 @@ Each section exposes a cogwheel named **Settings**. Names, icons, order, backgro
 
 Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection. Under **Unread only**, a story deliberately read during the current view remains in its existing position, visibly changes to **READ**, and is labelled as temporarily retained until the user changes section, search, or filters. The true unread count decreases immediately; a later view excludes the read story normally.
 
-Each section header exposes **Mark all as read** while that filtered section has unread stories. It marks every unread story matching the section's persistent Settings filters, including stories beyond the loaded page, through one atomic local-state update. Temporary search does not change the batch scope. The control is disabled while another reading/state mutation is pending and reports completion before the projection reloads.
+Each section header exposes an **All** / **Unread only** chip beside **Mark all as read** and **Settings**. The chip mirrors the Settings **Unread only** control: selected when `unreadOnly` is on, labels **Unread only** when filtering and **All** when not, and calls the same persistent `updateFilter("unreadOnly", …)` path. Keyboard `f` flips that flag when Settings, preferences, and search are not editing. **Mark all as read** remains available while that filtered section has unread stories. It marks every unread story matching the section's persistent Settings filters, including stories beyond the loaded page, through one atomic local-state update. Temporary search does not change the batch scope. The control is disabled while another reading/state mutation is pending and reports completion before the projection reloads.
 
 The initial projection contains at most twelve stories. Keyboard movement never leaves the selected row outside the viewport: when Down crosses the bottom edge, a short eased scroll anchors the complete selected row at the top; when Up crosses the top edge, the viewport moves before selection so held key-repeat cannot outrun the highlight. Ordinary row-by-row movement continues while the next row remains visible. Load more increases the local limit by twelve, never performs a network request, and states when all matching stories are loaded. Down from the final loaded story focuses the control and changes its label to the explicit Enter action. Because that story remains selected, Up only returns navigation focus and preserves the exact viewport; Enter expands the page while preserving the prior selection, and the next Down reaches the first newly revealed story.
 
