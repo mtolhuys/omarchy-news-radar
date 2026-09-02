@@ -1,7 +1,8 @@
 # Changelog
 
-## 0.1.7 — 2026-09-02
+## 0.2.0 — 2026-09-02
 
+- Adopt newer validated editions in an already-open panel when the background updater replaces the cache, without resetting the reader's selection or viewport.
 - Keep the final story and exact viewport unchanged when Up returns from the keyboard-focused **Load more** action.
 - Retain stories read during the active **Unread only** view in place with an explicit just-read label until section, search, or filter context changes; persistent unread counts remain exact.
 - Reconcile the live marketplace against Radar's source baseline and event ledger, confirming complete addition coverage since the original baseline rather than treating the full catalog as news.

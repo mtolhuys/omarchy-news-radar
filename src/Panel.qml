@@ -16,11 +16,13 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.1.7+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.2.0+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-shortcut" : ""
+  readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME")
+    || (Quickshell.env("HOME") + "/.cache")
   readonly property string pluginId: manifest && manifest.id
     ? String(manifest.id) : "io.github.mtolhuys.news-radar"
 
@@ -121,7 +123,8 @@ Item {
   readonly property bool readMutationPending: readChangeInFlight
     || Object.keys(pendingReadChanges).length > 0
   readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight
-  readonly property bool anyHelperRunning: readProc.running || refreshProc.running || projectProc.running
+  readonly property bool anyHelperRunning: readProc.running || cacheSyncProc.running
+    || refreshProc.running || projectProc.running
     || installedProc.running || preferencesProc.running || stateMutationPending || readMutationPending
     || openSourceProc.running || windowProc.running || shortcutProc.running
 
@@ -361,6 +364,7 @@ Item {
   function stopOwnedProcesses() {
     searchTimer.stop()
     readProc.running = false
+    cacheSyncProc.running = false
     refreshProc.running = false
     projectProc.running = false
     installedProc.running = false
@@ -422,6 +426,27 @@ Item {
     }
     requestProjection()
     refreshFeed()
+  }
+
+  function syncCachedEdition() {
+    if (!opened || refreshing || readProc.running || cacheSyncProc.running) return
+    startProcess(cacheSyncProc, ["read"])
+  }
+
+  function handleCacheSync(raw) {
+    var result = RadarModel.parseResponse(raw)
+    if (!opened || !result.feed) return
+    var nextGeneratedAt = String(result.feed.generatedAt || "")
+    if (nextGeneratedAt === generatedAt) return
+    userState = result.state || userState
+    cachedFeed = result.feed
+    generatedAt = nextGeneratedAt
+    editionMode = String(result.editionMode || "published")
+    editionTiming = result.timing || editionTiming
+    sourceHealth = RadarModel.sourceHealth(result.feed)
+    feedStatus = sourceHealth.indexOf("Partial") === 0 ? "Source partial" : "Updated"
+    statusDetail = "Adopted a newer validated edition fetched in the background."
+    requestProjection("preserve")
   }
 
   function handleRefresh(raw) {
@@ -876,6 +901,11 @@ Item {
   }
 
   Process {
+    id: cacheSyncProc
+    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleCacheSync(text) }
+  }
+
+  Process {
     id: refreshProc
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleRefresh(text) }
     onExited: function(exitCode) {
@@ -1012,6 +1042,17 @@ Item {
     onTriggered: {
       root.unreadSessionRetainedIds = ({})
       root.requestProjection()
+    }
+  }
+
+  FileView {
+    id: feedWatcher
+    path: root.cacheBase + "/omarchy-news-radar/feed.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: {
+      reload()
+      root.syncCachedEdition()
     }
   }
 
@@ -1784,8 +1825,8 @@ Item {
                 + " · collected " + String(root.editionTiming.collectedAt || root.generatedAt)
                 + " · published " + String(root.editionTiming.publishedAt || root.generatedAt)
                 + " · cached " + String(root.editionTiming.cachedAt || "this session")
-                + " · Pages cache ≤10m · v0.1.7"
-              : "No edition generated · v0.1.7 · independent community project"
+                + " · Pages cache ≤10m · v0.2.0"
+              : "No edition generated · v0.2.0 · independent community project"
             textFormat: Text.PlainText
             color: root.secondaryTextColor
             font.family: Style.font.family

@@ -10,7 +10,7 @@ omarchy_host_test() {
   local control_x control_y window_before_width window_after_width window_x window_y window_width window_height window_initial_maximized
   local settings_center_x settings_center_y
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
-  local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before
+  local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before for_you_before
   local initial_bar_unread background_bar_unread
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -602,12 +602,19 @@ omarchy_host_test() {
   press esc
   capture_console "success-news-radar-03-keyboard-source-save"
 
-  log "Proving explicit per-story read state across refresh and close"
+  log "Proving open-panel background adoption and explicit per-story read state"
+  press 2
+  wait_for_guest_state "For You is ready before the external edition replacement" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .projecting == false'" || return 1
+  for_you_before="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.storyCount'")" || return 1
+  [[ $for_you_before =~ ^[0-9]+$ ]] || return 1
   ssh_guest "cp /tmp/news-radar-fixtures/later.json /tmp/news-radar-fixtures/current.json"
-  press r
-  wait_for_guest_state "new event arrives with an exact adopted-story count and stays unread" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and (.statusDetail | startswith(\"Adopted 1 new story · published \"))' && \
+  ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" >/dev/null || return 1
+  wait_for_guest_state "open panel adopts an externally fetched event and keeps it unread" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .statusDetail == \"Adopted a newer validated edition fetched in the background.\" and .section == \"for-you\" and .storyCount == $((for_you_before + 1)) and .unreadCount > 0' && \
+     $helper project --section for-you --installed-json '[\"io.github.mtolhuys.disk-lens\"]' --query '' | jq -e '.events | any(.id == \"evt_000000000000000000000abc\" and .isUnread == true)' && \
      jq -e '.schemaVersion == 9 and .readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  capture_console "success-news-radar-03-open-panel-background-update"
   press esc
   wait_for_guest_state "normal close does not bulk-mark unseen stories" 15 ssh_session \
     "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
@@ -813,12 +820,12 @@ omarchy_host_test() {
 
   log "Proving same-path runtime replacement and clean lifecycle removal"
   before_change_count="$(ssh_session "journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true")"
-  ssh_session "sed -i 's/news-radar-0.1.7+identity-1/news-radar-0.1.7+identity-2/' $plugin_dir/src/Panel.qml"
+  ssh_session "sed -i 's/news-radar-0.2.0+identity-1/news-radar-0.2.0+identity-2/' $plugin_dir/src/Panel.qml"
   wait_for_guest_state "shell observes the same-path candidate update" 20 ssh_session \
     "test \"\$(journalctl --user -t omarchy-shell --since '@$start_epoch' --no-pager | grep -Fc 'Local plugin changed, reloading: io.github.mtolhuys.news-radar' || true)\" -gt '$before_change_count'" || return 1
   ssh_session "omarchy-shell shell summon io.github.mtolhuys.news-radar '{}'"
   wait_for_guest_state "same-path panel update replaces the live runtime identity" 20 ssh_session \
-    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.1.7+identity-2" || return 1
+    "test \"\$(omarchy-shell shell call io.github.mtolhuys.news-radar runtimeIdentity '')\" = news-radar-0.2.0+identity-2" || return 1
   capture_console "success-news-radar-13-hot-update"
   press esc
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-shortcut-removed.json" || return 1
