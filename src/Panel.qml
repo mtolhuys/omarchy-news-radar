@@ -1961,24 +1961,33 @@ Item {
                     Accessible.ignored: true
                   }
 
-                  Text {
-                    // preferredWidth 0 lets this claim leftover space before the
-                    // action buttons, so "FOR YOU" / "FRONT PAGE" are not elided
-                    // while empty gap sits beside them.
+                  // Wrapper binds a real width for elide. A bare Text with
+                  // Layout.fillWidth can keep a tiny content width and elide to
+                  // "FRONT P..." while leaving empty gap before the buttons.
+                  Item {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 0
-                    Layout.minimumWidth: Style.space(72)
-                    text: root.currentProfile.name.toUpperCase()
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.heading
-                    font.bold: true
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
-                    wrapMode: Text.NoWrap
-                    Accessible.role: Accessible.Heading
-                    Accessible.name: text
+                    Layout.minimumWidth: Style.space(96)
+                    Layout.fillHeight: true
+                    implicitHeight: sectionTitleText.implicitHeight
+
+                    Text {
+                      id: sectionTitleText
+                      anchors.left: parent.left
+                      anchors.right: parent.right
+                      anchors.verticalCenter: parent.verticalCenter
+                      text: root.currentProfile.name.toUpperCase()
+                      textFormat: Text.PlainText
+                      color: Color.popups.text
+                      font.family: Style.font.family
+                      font.pixelSize: Style.font.heading
+                      font.bold: true
+                      elide: Text.ElideRight
+                      maximumLineCount: 1
+                      wrapMode: Text.NoWrap
+                      Accessible.role: Accessible.Heading
+                      Accessible.name: text
+                    }
                   }
 
                   RowLayout {
