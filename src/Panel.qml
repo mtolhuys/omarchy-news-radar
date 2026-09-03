@@ -1950,6 +1950,7 @@ Item {
 
                 RowLayout {
                   Layout.fillWidth: true
+                  Layout.fillHeight: false
                   spacing: Style.spacing.controlGap
 
                   Text {
@@ -1968,7 +1969,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 0
                     Layout.minimumWidth: Style.space(96)
-                    Layout.fillHeight: true
+                    Layout.fillHeight: false
                     implicitHeight: sectionTitleText.implicitHeight
 
                     Text {
