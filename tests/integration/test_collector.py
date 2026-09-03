@@ -11,6 +11,7 @@ from radar.collector import FixtureInputs, collect_from_fixtures, collect_produc
 from radar.io import canonical_json_bytes
 from radar.sources.marketplace import CATALOG_URL
 from radar.sources.marketplace_engagement import ENGAGEMENT_URL
+from radar.sources.omarchy_news import RSS_URL
 from radar.sources.omarchy_releases import API_URL
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -126,6 +127,8 @@ class CollectorIntegrationTests(unittest.TestCase):
                 return catalog, {}, 200
             if url == ENGAGEMENT_URL:
                 return engagement, {}, 200
+            if url == RSS_URL:
+                return (ROOT / "tests/fixtures/omarchy-news-baseline.xml").read_bytes(), {}, 200
             raise AssertionError(f"unexpected URL: {url}")
 
         with mock.patch("radar.collector.fetch_bytes", side_effect=fixture_fetch):
@@ -143,13 +146,17 @@ class CollectorIntegrationTests(unittest.TestCase):
                 API_URL + "?per_page=100&page=2",
                 CATALOG_URL,
                 ENGAGEMENT_URL,
+                RSS_URL,
             ],
             [url for url, _ in calls],
         )
         self.assertEqual("Bearer fixture-token", calls[0][1]["Authorization"])
         self.assertEqual("2022-11-28", calls[0][1]["X-GitHub-Api-Version"])
         self.assertEqual({}, snapshot["sources"]["omarchy-releases"]["releases"])
-        self.assertEqual(["community-link"], [event["type"] for event in feed["events"]])
+        self.assertEqual(
+            {"community-link", "omarchy-news"},
+            {event["type"] for event in feed["events"]},
+        )
 
 
 if __name__ == "__main__":

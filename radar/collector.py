@@ -19,10 +19,12 @@ from .model import canonical_events, make_feed
 from .sources import (
     community_events,
     diff_marketplace,
+    diff_news,
     diff_releases,
     enrich_plugin_descriptions,
     parse_engagement,
     parse_marketplace,
+    parse_news_rss,
     parse_releases,
     parse_search_video_ids,
     parse_videos,
@@ -31,6 +33,7 @@ from .sources import (
 )
 from .sources.marketplace import CATALOG_URL
 from .sources.marketplace_engagement import ENGAGEMENT_URL
+from .sources.omarchy_news import MAX_RSS_BYTES, PUBLIC_URL as NEWS_PUBLIC_URL, RSS_ORIGIN, RSS_URL
 from .sources.omarchy_releases import API_URL, PUBLIC_URL
 from .sources.youtube import (
     API_ORIGIN as YOUTUBE_API_ORIGIN,
@@ -52,6 +55,7 @@ class FixtureInputs:
     curation: Path
     engagement: Path | None = None
     youtube: Path | None = None
+    omarchy_news: Path | None = None
 
 
 def empty_snapshot() -> dict[str, Any]:
@@ -115,6 +119,49 @@ def collect_from_fixtures(
         events.extend(diff_releases(old_releases, releases, discovered_at=clock, window_from=window_from))
         next_sources["omarchy-releases"] = {"releases": releases}
         health.append({"id": "omarchy-releases", "status": "current", "checkedAt": checked_at, "sourceUrl": PUBLIC_URL})
+
+    if "omarchy-news" in failed:
+        health.append(
+            {
+                "id": "omarchy-news",
+                "status": "failed",
+                "checkedAt": checked_at,
+                "sourceUrl": NEWS_PUBLIC_URL,
+                "reason": failed["omarchy-news"],
+            }
+        )
+    elif inputs.omarchy_news is None:
+        previous_news = previous_sources.get("omarchy-news")
+        if isinstance(previous_news, dict):
+            next_sources["omarchy-news"] = previous_news
+            health.append(
+                {
+                    "id": "omarchy-news",
+                    "status": "not-modified",
+                    "checkedAt": checked_at,
+                    "sourceUrl": NEWS_PUBLIC_URL,
+                }
+            )
+    else:
+        news_bytes = inputs.omarchy_news.read_bytes()
+        news_items = parse_news_rss(news_bytes)
+        old_news = (
+            previous_sources.get("omarchy-news", {}).get("items", {})
+            if isinstance(previous_sources.get("omarchy-news"), dict)
+            else {}
+        )
+        if not isinstance(old_news, dict):
+            old_news = {}
+        events.extend(diff_news(old_news, news_items, discovered_at=clock, window_from=window_from))
+        next_sources["omarchy-news"] = {"items": news_items, "checkedAt": checked_at}
+        health.append(
+            {
+                "id": "omarchy-news",
+                "status": "current",
+                "checkedAt": checked_at,
+                "sourceUrl": NEWS_PUBLIC_URL,
+            }
+        )
 
     if "marketplace" in failed:
         health.append({"id": "marketplace", "status": "failed", "checkedAt": checked_at, "sourceUrl": CATALOG_URL, "reason": failed["marketplace"]})
@@ -323,6 +370,23 @@ def collect_production(
     except ValidationError:
         failures["marketplace-engagement"] = "schema-mismatch"
 
+    news_bytes: bytes | None = None
+    try:
+        fetched_news, _, _ = fetch_bytes(
+            RSS_URL,
+            policy=FetchPolicy(MAX_RSS_BYTES, 20.0, frozenset({RSS_ORIGIN})),
+            headers={
+                "Accept": "application/rss+xml, application/xml, text/xml",
+                "User-Agent": "omarchy-news-radar-collector/0.4",
+            },
+        )
+        parse_news_rss(fetched_news)
+        news_bytes = bytes(fetched_news)
+    except FetchError as exc:
+        failures["omarchy-news"] = exc.reason
+    except ValidationError:
+        failures["omarchy-news"] = "schema-mismatch"
+
     youtube_bytes: bytes | None = None
     previous_sources = previous_snapshot.get("sources", {}) if isinstance(previous_snapshot, Mapping) else {}
     previous_youtube = previous_sources.get("youtube") if isinstance(previous_sources, Mapping) else None
@@ -369,11 +433,14 @@ def collect_production(
         marketplace_path = root / "catalog.json"
         engagement_path = root / "engagement.json"
         youtube_path = root / "youtube.json" if youtube_bytes is not None else None
+        news_path = root / "omarchy-news.xml" if news_bytes is not None else None
         releases_path.write_bytes(release_bytes)
         marketplace_path.write_bytes(catalog_bytes)
         engagement_path.write_bytes(engagement_bytes)
         if youtube_path is not None and youtube_bytes is not None:
             youtube_path.write_bytes(youtube_bytes)
+        if news_path is not None and news_bytes is not None:
+            news_path.write_bytes(news_bytes)
         return collect_from_fixtures(
             FixtureInputs(
                 releases=releases_path,
@@ -382,6 +449,7 @@ def collect_production(
                 curation=curation_directory,
                 engagement=engagement_path,
                 youtube=youtube_path,
+                omarchy_news=news_path,
             ),
             previous_snapshot=previous_snapshot,
             now=now,

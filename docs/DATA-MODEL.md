@@ -95,6 +95,7 @@ Source health and publication freshness are separate. Successful sources at old 
 Version 2 event types:
 
 - `omarchy-released`
+- `omarchy-news`
 - `plugin-added`
 - `plugin-released`
 - `plugin-retired`

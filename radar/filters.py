@@ -11,6 +11,7 @@ from .validation import parse_timestamp, validate_section_filter
 SECTION_EVENT_TYPES = {
     "front-page": (
         "omarchy-released",
+        "omarchy-news",
         "plugin-added",
         "plugin-released",
         "plugin-retired",
@@ -19,13 +20,14 @@ SECTION_EVENT_TYPES = {
     ),
     "for-you": (
         "omarchy-released",
+        "omarchy-news",
         "plugin-added",
         "plugin-released",
         "plugin-retired",
         "plugin-verification-changed",
         "community-link",
     ),
-    "core": ("omarchy-released",),
+    "core": ("omarchy-released", "omarchy-news"),
     "plugins": (
         "plugin-added",
         "plugin-released",
@@ -35,6 +37,7 @@ SECTION_EVENT_TYPES = {
     "youtube": ("youtube-video",),
     "saved": (
         "omarchy-released",
+        "omarchy-news",
         "plugin-added",
         "plugin-released",
         "plugin-retired",
@@ -46,6 +49,7 @@ SECTION_EVENT_TYPES = {
 
 TYPE_LABELS = {
     "omarchy-released": "Omarchy releases",
+    "omarchy-news": "Omarchy News",
     "plugin-added": "New plugins",
     "plugin-released": "Plugin releases",
     "plugin-retired": "Retirements",

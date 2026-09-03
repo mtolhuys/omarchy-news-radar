@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
-BUILD_ID = "news-radar-0.4.12"
+BUILD_ID = "news-radar-0.4.13"
 FEED_SCHEMA_VERSION = 2
 STATE_SCHEMA_VERSION = 10
 HELPER_PROTOCOL_VERSION = 1
@@ -29,6 +29,7 @@ FUTURE_SKEW_SECONDS = 300
 EVENT_TYPES = frozenset(
     {
         "omarchy-released",
+        "omarchy-news",
         "plugin-added",
         "plugin-released",
         "plugin-retired",
@@ -45,7 +46,14 @@ MARKETPLACE_TRUST = frozenset(
 COMPATIBILITY_BASIS = frozenset({"declared", "inferred-from-source", "unknown"})
 CHANNELS = frozenset({"quattro", "stable", "development"})
 SOURCE_IDS = frozenset(
-    {"omarchy-releases", "marketplace", "marketplace-engagement", "community", "youtube"}
+    {
+        "omarchy-releases",
+        "omarchy-news",
+        "marketplace",
+        "marketplace-engagement",
+        "community",
+        "youtube",
+    }
 )
 SOURCE_STATUSES = frozenset({"current", "not-modified", "stale", "failed"})
 SOURCE_REASON_CODES = frozenset(

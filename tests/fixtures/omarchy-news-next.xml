@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Omarchy News</title>
+    <link>https://omarchy.org/news</link>
+    <description>Notes on the people, ideas, and releases shaping Omarchy.</description>
+    <language>en</language>
+    <lastBuildDate>Mon, 31 Aug 2026 12:00:00 GMT</lastBuildDate>
+    <atom:link href="https://omarchy.org/news/rss.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Patronage opens to everyone</title>
+      <link>https://omarchy.org/news/2026/08/patronage-opens-to-everyone</link>
+      <guid isPermaLink="true">https://omarchy.org/news/2026/08/patronage-opens-to-everyone</guid>
+      <pubDate>Mon, 31 Aug 2026 08:00:00 GMT</pubDate>
+      <dc:creator>DHH</dc:creator>
+      <description><![CDATA[Four patronage tiers are now open, each with its own badge.]]></description>
+      <content:encoded><![CDATA[<p>Four patronage tiers are now open, each with its own badge.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Omarchy Quattro ships</title>
+      <link>https://omarchy.org/news/2026/08/omarchy-quattro-ships</link>
+      <guid isPermaLink="true">https://omarchy.org/news/2026/08/omarchy-quattro-ships</guid>
+      <pubDate>Sun, 30 Aug 2026 12:00:00 GMT</pubDate>
+      <dc:creator>DHH</dc:creator>
+      <description><![CDATA[Omarchy Quattro is out with a malleable desktop and a growing plugin ecosystem.]]></description>
+      <content:encoded><![CDATA[<p>Omarchy Quattro is out with a malleable desktop and a growing plugin ecosystem.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Meet the Omarchy Core Team</title>
+      <link>https://omarchy.org/news/2026/08/meet-the-omarchy-core-team</link>
+      <guid isPermaLink="true">https://omarchy.org/news/2026/08/meet-the-omarchy-core-team</guid>
+      <pubDate>Fri, 28 Aug 2026 09:00:00 GMT</pubDate>
+      <dc:creator>DHH</dc:creator>
+      <description><![CDATA[The inaugural Core Team shares responsibility for the direction of the distro.]]></description>
+      <content:encoded><![CDATA[<p>The inaugural <strong>Core Team</strong> shares responsibility for the direction of the distro.</p>]]></content:encoded>
+    </item>
+  </channel>
+</rss>

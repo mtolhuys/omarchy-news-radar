@@ -5,9 +5,9 @@ from __future__ import annotations
 # Membership remains editorially fixed. These strings let Settings disclose the
 # source scope behind each canonical section.
 SECTION_SOURCE_SUMMARIES = {
-    "front-page": "Official Omarchy releases · Omarchy Plugin Marketplace · repository-reviewed community links",
+    "front-page": "Official Omarchy releases and Omarchy News · Omarchy Plugin Marketplace · repository-reviewed community links",
     "for-you": "The same fixed sources, narrowed locally by exact enabled plugin IDs",
-    "core": "Official Omarchy GitHub releases",
+    "core": "Official Omarchy GitHub releases and Omarchy News RSS",
     "plugins": "Omarchy Plugin Marketplace and linked public repositories",
     "youtube": "Omarchy-related YouTube videos collected through the YouTube Data API",
     "saved": "Stories you saved locally from the fixed sources above",

@@ -15,7 +15,7 @@ from .validation import parse_timestamp
 PUBLICATION_SNAPSHOT_MAX_BYTES = 16 * 1024 * 1024
 TRANSITION_BASELINE_MAX_AGE = timedelta(hours=6)
 TRUSTWORTHY_TRANSITION_EVENT_TYPES = frozenset(
-    {"omarchy-released", "plugin-added", "community-link"}
+    {"omarchy-released", "omarchy-news", "plugin-added", "community-link"}
 )
 
 
