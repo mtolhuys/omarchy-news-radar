@@ -155,7 +155,12 @@ function articleBodyHtml(segments, linkColor) {
       parts.push(text)
     }
   }
+  // Feed text keeps intentional paragraph breaks as newlines; RichText needs tags.
   return parts.join("")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\n{2,}/g, "<br/><br/>")
+    .replace(/\n/g, "<br/>")
 }
 
 function articlePlainText(segments) {

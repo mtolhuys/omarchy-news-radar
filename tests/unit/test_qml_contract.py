@@ -348,6 +348,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function usesQuietCard", model_js)
         self.assertIn("function articleSegments", model_js)
         self.assertIn("function articleBodyHtml", model_js)
+        self.assertIn("<br/><br/>", model_js)
         self.assertIn("function acceptedHttpsUrl", model_js)
         self.assertIn('type === "omarchy-news"', model_js)
         self.assertIn('id === "core"', model_js)

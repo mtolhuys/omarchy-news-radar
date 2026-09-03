@@ -84,6 +84,28 @@ def require_string(value: Any, name: str, minimum: int, maximum: int) -> str:
     return value
 
 
+ARTICLE_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def normalize_article_summary(value: Any, maximum: int = 8000, *, minimum: int = 1) -> str:
+    """Normalize article bodies while keeping paragraph breaks for the reader."""
+    if not isinstance(value, str):
+        raise ValidationError("display text must be a string")
+    text = unicodedata.normalize("NFC", value)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = ARTICLE_CONTROL_RE.sub(" ", text)
+    paragraphs = [
+        " ".join(chunk.split())
+        for chunk in re.split(r"\n\s*\n", text)
+    ]
+    text = "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
+    if not minimum <= len(text) <= maximum:
+        raise ValidationError(
+            f"display text must contain {minimum} to {maximum} characters"
+        )
+    return text
+
+
 def normalize_text(value: Any, maximum: int, *, minimum: int = 1) -> str:
     if not isinstance(value, str):
         raise ValidationError("display text must be a string")
@@ -275,7 +297,7 @@ def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
         "occurredAt": occurred_at,
         "discoveredAt": discovered_at,
         "title": normalize_text(event.get("title"), 160),
-        "summary": normalize_text(event.get("summary"), 8000),
+        "summary": normalize_article_summary(event.get("summary"), 8000),
         "source": {
             "label": normalize_text(source.get("label"), 60),
             "url": validate_https_url(source.get("url"), "source.url"),

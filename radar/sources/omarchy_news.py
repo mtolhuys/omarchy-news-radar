@@ -71,15 +71,36 @@ def _anchor_to_marker(match: re.Match[str]) -> str:
 
 
 def _plain_summary(value: str, fallback: str, maximum: int = ARTICLE_MAX) -> str:
-    """Strip RSS HTML to bounded text, preserving validated HTTPS anchors."""
+    """Strip RSS HTML to bounded text, preserving anchors and paragraph breaks."""
     text = ANCHOR_RE.sub(_anchor_to_marker, value)
+    # Turn block tags into paragraph breaks before the generic tag strip, so the
+    # reading pane can keep air between paragraphs instead of one dense slab.
+    text = re.sub(r"(?i)<\s*br\s*/?\s*>", "\n", text)
+    text = re.sub(
+        r"(?i)</\s*(p|div|h[1-6]|li|blockquote|section|article)\s*>",
+        "\n\n",
+        text,
+    )
+    text = re.sub(
+        r"(?i)<\s*(p|div|h[1-6]|li|blockquote|section|article)(\s[^>]*)?>",
+        "\n\n",
+        text,
+    )
     text = TAG_RE.sub(" ", text)
-    text = WHITESPACE_RE.sub(" ", html.unescape(text)).strip()
+    text = html.unescape(text)
+    paragraphs = [
+        WHITESPACE_RE.sub(" ", chunk).strip()
+        for chunk in re.split(r"\n\s*\n", text)
+    ]
+    text = "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
     if not text:
         text = fallback
     if len(text) > maximum:
-        text = text[: maximum - 1].rstrip() + "…"
-    return normalize_text(text, maximum)
+        cut = text[: maximum - 1].rstrip()
+        if "\n\n" in cut:
+            cut = cut.rsplit("\n\n", 1)[0].rstrip()
+        text = cut + "…"
+    return text
 
 
 def _allowlisted_news_url(value: str, label: str) -> str:

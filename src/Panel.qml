@@ -2170,6 +2170,7 @@ Item {
                   linkColor: Color.accent
                   font.family: Style.font.family
                   font.pixelSize: Style.font.body
+                  lineHeight: 1.28
                   wrapMode: Text.WordWrap
                   Accessible.role: Accessible.StaticText
                   Accessible.name: root.inspectorArticleMode

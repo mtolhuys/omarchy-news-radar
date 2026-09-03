@@ -44,7 +44,33 @@ class OmarchyNewsSourceTests(unittest.TestCase):
         )
         self.assertIn("this script", items["meet-the-omarchy-core-team"]["summary"])
         self.assertNotIn("javascript:", items["meet-the-omarchy-core-team"]["summary"])
+        self.assertIn("\n\n", items["meet-the-omarchy-core-team"]["summary"])
         self.assertEqual("2026-08-30T12:00:00Z", items["omarchy-quattro-ships"]["publishedAt"])
+
+    def test_plain_summary_keeps_paragraph_breaks(self) -> None:
+        payload = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <item>
+      <title>Paragraph spacing</title>
+      <guid>https://omarchy.org/news/2026/08/paragraph-spacing</guid>
+      <link>https://omarchy.org/news/2026/08/paragraph-spacing</link>
+      <pubDate>Sun, 30 Aug 2026 12:00:00 +0000</pubDate>
+      <content:encoded><![CDATA[
+        <p>First paragraph with a <a href="https://omarchy.org/news/2026/08/omarchy-quattro-ships">link</a>.</p>
+        <p>Second paragraph should breathe.</p>
+      ]]></content:encoded>
+    </item>
+  </channel>
+</rss>
+"""
+        items = parse_news_rss(payload.encode("utf-8"))
+        summary = items["paragraph-spacing"]["summary"]
+        self.assertIn("\n\n", summary)
+        self.assertIn("[link](https://omarchy.org/news/2026/08/omarchy-quattro-ships)", summary)
+        from radar.validation import normalize_article_summary
+        kept = normalize_article_summary(summary, 8000)
+        self.assertIn("\n\n", kept)
 
     def test_diff_emits_only_new_in_window_events(self) -> None:
         baseline = parse_news_rss(self.fixture("omarchy-news-baseline.xml"))
