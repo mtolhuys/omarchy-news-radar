@@ -165,7 +165,9 @@ def front_page(
         (
             event
             for event in ordered
-            if event["entity"]["kind"] == "plugin" and event["entity"]["id"] in installed
+            if event["entity"]["kind"] == "plugin"
+            and event["entity"]["id"] in installed
+            and event["type"] != "plugin-verification-changed"
         ),
         maximum=3,
     )
@@ -173,14 +175,22 @@ def front_page(
     # front page with older core releases merely to satisfy a source quota.
     for section in ("plugins", "community"):
         add(
-            (event for event in ordered if event["classification"]["section"] == section),
+            (
+                event
+                for event in ordered
+                if event["classification"]["section"] == section
+                # Verification flips stay on the Plugins rail; they are noise on
+                # Front Page next to news and new listings.
+                and event["type"] != "plugin-verification-changed"
+            ),
             maximum=3,
         )
     add(
         (
             event
             for event in ordered
-            if event["type"] not in {"omarchy-released", "omarchy-news"}
+            if event["type"]
+            not in {"omarchy-released", "omarchy-news", "plugin-verification-changed"}
         ),
         maximum=max(0, 18 - len(selected)),
     )

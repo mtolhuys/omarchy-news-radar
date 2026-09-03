@@ -671,6 +671,10 @@ def projection_model(
         item["listSummary"] = list_summary(item.get("summary"), item.get("title", ""))
         item["summarySegments"] = article_segments(item.get("summary"))
         image = item.get("image")
+        # Verification flips reused marketplace marketing art; hide it in the
+        # reader even for historical feed rows that still carry image metadata.
+        if item.get("type") == "plugin-verification-changed":
+            image = None
         if state["preferences"]["imagesVisible"] and isinstance(image, dict):
             source_url = image.get("sourceUrl")
             if isinstance(source_url, str) and (

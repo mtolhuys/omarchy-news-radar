@@ -97,5 +97,37 @@ class TopicDiversityTests(unittest.TestCase):
         self.assertEqual([event["id"] for event in only_foundation], [event["id"] for event in selected])
 
 
+    def test_verification_changed_stays_off_front_page(self) -> None:
+        events = list(self.events)
+        events.append(
+            {
+                "id": "evt_bbbbbbbbbbbbbbbbbbbbbb01",
+                "type": "plugin-verification-changed",
+                "occurredAt": "2026-08-31T13:00:00Z",
+                "discoveredAt": "2026-08-31T13:00:00Z",
+                "title": "Demo: unverified -> verified",
+                "summary": "Marketplace verification moved from unverified to verified.",
+                "source": {"label": "Plugin source", "url": "https://github.com/example/demo"},
+                "entity": {
+                    "kind": "plugin",
+                    "id": "org.example.demo",
+                    "name": "Demo",
+                    "repository": "https://github.com/example/demo",
+                },
+                "classification": {
+                    "section": "plugins",
+                    "significance": "routine",
+                    "curated": False,
+                    "tags": ["desktop"],
+                },
+                "trust": {"marketplace": "verified", "securityAudit": False},
+                "compatibility": {"channels": [], "basis": "unknown"},
+            }
+        )
+        selected = front_page(events)
+        self.assertNotIn("plugin-verification-changed", {event["type"] for event in selected})
+
+
+
 if __name__ == "__main__":
     unittest.main()

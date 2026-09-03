@@ -29,8 +29,9 @@ class PublisherTests(unittest.TestCase):
 
     def test_hostile_plain_text_is_contextually_escaped(self) -> None:
         feed = copy.deepcopy(self.feed)
-        feed["events"][0]["title"] = '</h2><script src="https://evil.invalid/x"></script>'
-        feed["events"][0]["summary"] = 'Quotes " and <img src=x onerror=alert(1)>'
+        target = next(event for event in feed["events"] if event["type"] == "plugin-added")
+        target["title"] = '</h2><script src="https://evil.invalid/x"></script>'
+        target["summary"] = 'Quotes " and <img src=x onerror=alert(1)>'
         page = render_html(feed).decode("utf-8")
         self.assertNotIn("<script src=", page)
         self.assertNotIn("<img src=x", page)
@@ -73,7 +74,9 @@ class PublisherTests(unittest.TestCase):
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
         )
         feed = copy.deepcopy(self.feed)
-        feed["events"][0]["image"] = {
+        # Pin the fixture image on a Front Page story (not verification-changed).
+        target = next(event for event in feed["events"] if event["type"] == "plugin-added")
+        target["image"] = {
             "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/fixture.png",
             "alt": "Fixture preview",
             "credit": "Fixture marketplace",
@@ -89,7 +92,10 @@ class PublisherTests(unittest.TestCase):
             )
             self.assertEqual(1, result["images"])
             published = json.loads((destination / "events.json").read_text(encoding="utf-8"))
-            image = published["events"][0]["image"]
+            published_target = next(
+                event for event in published["events"] if event["type"] == "plugin-added"
+            )
+            image = published_target["image"]
             self.assertEqual(
                 "https://plugins.omarchy.org/assets/img/plugins/fixture.png",
                 image["sourceUrl"],
@@ -109,7 +115,8 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(0, rejected["images"])
             self.assertEqual(1, len(rejected["imageFailures"]))
             public = json.loads((destination / "events.json").read_text(encoding="utf-8"))
-            self.assertNotIn("image", public["events"][0])
+            public_target = next(event for event in public["events"] if event["type"] == "plugin-added")
+            self.assertNotIn("image", public_target)
 
 
     def test_raster_inspector_rejects_truncated_jpeg_and_animated_webp(self) -> None:

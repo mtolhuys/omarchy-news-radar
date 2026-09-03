@@ -199,15 +199,18 @@ def _base_event(
         "trust": {"marketplace": plugin["verification"], "securityAudit": False},
         "compatibility": {"channels": [], "basis": "unknown"},
     }
-    preview = plugin.get("preview")
-    if isinstance(preview, dict):
-        event["image"] = {
-            "sourceUrl": preview["sourceUrl"],
-            "alt": f"{plugin['name']} plugin preview",
-            "credit": "Omarchy Plugin Marketplace",
-            "width": preview["width"],
-            "height": preview["height"],
-        }
+    # Marketing previews belong on listings and releases, not on verification
+    # status flips — those otherwise dominate the reader with unrelated art.
+    if event_type in {"plugin-added", "plugin-released"}:
+        preview = plugin.get("preview")
+        if isinstance(preview, dict):
+            event["image"] = {
+                "sourceUrl": preview["sourceUrl"],
+                "alt": f"{plugin['name']} plugin preview",
+                "credit": "Omarchy Plugin Marketplace",
+                "width": preview["width"],
+                "height": preview["height"],
+            }
     return event
 
 
@@ -225,11 +228,12 @@ def enrich_plugin_descriptions(
     for raw_event in events:
         event = deepcopy(dict(raw_event))
         entity = event.get("entity")
+        # Verification stories carry their own from->to summary; only refresh
+        # listing/release/retirement blurbs from the live catalog description.
         if event.get("type") in {
             "plugin-added",
             "plugin-released",
             "plugin-retired",
-            "plugin-verification-changed",
         } and isinstance(entity, Mapping):
             plugin = plugins.get(entity.get("id"))
             if isinstance(plugin, Mapping):
@@ -320,16 +324,20 @@ def diff_marketplace(
             )
         old_verification = str(old.get("verification") or "unknown")
         if old_verification != plugin["verification"]:
+            new_verification = plugin["verification"]
             events.append(
                 _base_event(
                     plugin_id,
                     plugin,
                     event_type="plugin-verification-changed",
-                    occurrence_key=f"verification:{old_verification}->{plugin['verification']}",
+                    occurrence_key=f"verification:{old_verification}->{new_verification}",
                     occurred_at=discovered_text,
                     discovered_at=discovered_at,
-                    title=f"{plugin['name']} verification changed",
-                    summary=plugin["description"],
+                    title=f"{plugin['name']}: {old_verification} -> {new_verification}",
+                    summary=(
+                        f"Marketplace verification moved from {old_verification} to "
+                        f"{new_verification}. {plugin['description']}"
+                    ),
                 )
             )
         if plugin["retired"] and not bool(old.get("retired")):

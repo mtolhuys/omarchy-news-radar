@@ -107,7 +107,13 @@ class SourceTests(unittest.TestCase):
         )
         addition = next(item for item in events if item["type"] == "plugin-added")
         self.assertEqual("A small workspace note panel.", addition["summary"])
+        verification = next(item for item in events if item["type"] == "plugin-verification-changed")
+        self.assertIn("->", verification["title"])
+        self.assertTrue(verification["summary"].startswith("Marketplace verification moved"))
+        self.assertNotIn("image", verification)
         for event in events:
+            if event["type"] == "plugin-verification-changed":
+                continue
             self.assertEqual(
                 current["plugins"][event["entity"]["id"]]["description"],
                 event["summary"],
@@ -116,10 +122,14 @@ class SourceTests(unittest.TestCase):
         for event in stale_events:
             event["summary"] = "Generic marketplace change text."
         enriched = enrich_plugin_descriptions(stale_events, current)
-        self.assertEqual(
-            [current["plugins"][event["entity"]["id"]]["description"] for event in events],
-            [event["summary"] for event in enriched],
-        )
+        for event in enriched:
+            if event["type"] == "plugin-verification-changed":
+                self.assertEqual("Generic marketplace change text.", event["summary"])
+            else:
+                self.assertEqual(
+                    current["plugins"][event["entity"]["id"]]["description"],
+                    event["summary"],
+                )
         noise_payload = self.payload("catalog-baseline.json")
         noise_payload["plugins"][0]["stars"] = 5000
         noise_payload["plugins"][0]["description"] = "Changed wording only."
