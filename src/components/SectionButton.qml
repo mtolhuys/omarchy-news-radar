@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import qs.Commons
 import qs.Ui
 
@@ -50,51 +51,53 @@ FocusScope {
         : root.toneFill()
     borderSpec: Border.controlSpec(root.activeFocus ? "focus" : root.selected ? "selected" : "normal", Color.foreground, Color.accent, Color.urgent)
 
-    Text {
-      id: iconText
-      anchors.left: parent.left
+    RowLayout {
+      anchors.fill: parent
       anchors.leftMargin: Style.spacing.controlPaddingX
-      anchors.verticalCenter: parent.verticalCenter
-      text: root.icon
-      textFormat: Text.PlainText
-      color: root.selected || root.activeFocus || hover.hovered ? Color.accent : Color.popups.text
-      font.family: Style.font.family
-      font.pixelSize: Style.font.iconLarge
-      width: Style.font.iconLarge + Style.spacing.controlGap
-      horizontalAlignment: Text.AlignHCenter
-    }
-
-    Text {
-      id: labelText
-      anchors.left: iconText.right
-      anchors.leftMargin: Style.spacing.controlGap
-      anchors.verticalCenter: parent.verticalCenter
-      text: root.label
-      textFormat: Text.PlainText
-      color: Color.popups.text
-      font.family: Style.font.family
-      font.pixelSize: Style.font.bodySmall
-      font.bold: root.selected
-      elide: Text.ElideRight
-      width: parent.width - anchors.leftMargin - iconText.width - countText.width - Style.spacing.controlPaddingX * 3
-    }
-
-    Text {
-      id: countText
-      anchors.right: parent.right
       anchors.rightMargin: Style.spacing.controlPaddingX
-      anchors.verticalCenter: parent.verticalCenter
-      text: root.unreadCount > 0 ? "● " + String(root.unreadCount) : String(root.count)
-      textFormat: Text.PlainText
-      color: root.unreadCount > 0
-        ? Color.accent
-        : root.selected
-        ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
-                  root.popupBgIsLight ? 0.88 : 0.78)
-        : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
-                  root.popupBgIsLight ? 0.82 : 0.72)
-      font.family: Style.font.family
-      font.pixelSize: Style.font.caption
+      spacing: Style.spacing.controlGap
+
+      Text {
+        id: iconText
+        text: root.icon
+        textFormat: Text.PlainText
+        color: root.selected || root.activeFocus || hover.hovered ? Color.accent : Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.iconLarge
+        Layout.preferredWidth: Style.font.iconLarge + Style.spacing.controlGap
+        horizontalAlignment: Text.AlignHCenter
+        Accessible.ignored: true
+      }
+
+      Text {
+        id: labelText
+        Layout.fillWidth: true
+        text: root.label
+        textFormat: Text.PlainText
+        color: Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+        font.bold: root.selected
+        elide: Text.ElideRight
+        maximumLineCount: 1
+        wrapMode: Text.NoWrap
+      }
+
+      Text {
+        id: countText
+        text: root.unreadCount > 0 ? "● " + String(root.unreadCount) : String(root.count)
+        textFormat: Text.PlainText
+        color: root.unreadCount > 0
+          ? Color.accent
+          : root.selected
+          ? Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+                    root.popupBgIsLight ? 0.88 : 0.78)
+          : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
+                    root.popupBgIsLight ? 0.82 : 0.72)
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        Layout.alignment: Qt.AlignVCenter
+      }
     }
   }
 
