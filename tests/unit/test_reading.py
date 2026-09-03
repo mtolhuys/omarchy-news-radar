@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from radar.reading import LIST_SUMMARY_MAX, list_summary
+from radar.reading import LIST_SUMMARY_MAX, article_segments, list_summary
 from radar.sources.youtube_text import NEUTRAL_SUMMARY
 
 
@@ -36,6 +36,28 @@ class ReadingSurfaceTests(unittest.TestCase):
         self.assertIn("keyboard flow", teaser)
         self.assertNotIn("marketplace walkthrough", teaser)
         self.assertLessEqual(len(teaser), LIST_SUMMARY_MAX)
+
+    def test_article_segments_keep_validated_https_and_drop_unsafe_hrefs(self) -> None:
+        body = (
+            "Read the [Quattro announcement](https://omarchy.org/news/2026/08/omarchy-quattro-ships) "
+            "and later https://github.com/basecamp/omarchy. "
+            "Ignore [xss](javascript:alert(1)) and http://example.com/insecure."
+        )
+        segments = article_segments(body)
+        links = [segment for segment in segments if segment["kind"] == "link"]
+        self.assertEqual(
+            [
+                "https://omarchy.org/news/2026/08/omarchy-quattro-ships",
+                "https://github.com/basecamp/omarchy",
+            ],
+            [segment["url"] for segment in links],
+        )
+        self.assertEqual("Quattro announcement", links[0]["text"])
+        self.assertNotIn("javascript:", "".join(segment.get("url", "") for segment in links))
+        teaser = list_summary(body, "Omarchy Quattro ships")
+        self.assertIn("Quattro announcement", teaser)
+        self.assertNotIn("http", teaser.casefold())
+        self.assertNotIn("github.com", teaser.casefold())
 
 
 if __name__ == "__main__":

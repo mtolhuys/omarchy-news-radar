@@ -115,7 +115,7 @@ Compatibility basis is `declared`, `inferred-from-source`, or `unknown`. Version
 
 - Event ID: ASCII, maximum 32 characters, `evt_` plus 24 lowercase hexadecimal characters.
 - Title: plain text, 1–160 Unicode scalar values after normalization.
-- Summary: plain text, 1–8,000 Unicode scalar values (official Omarchy News may carry the RSS article body; other adapters still write short factual copy). List cards display a client-derived teaser of at most 220 characters and never replace this field.
+- Summary: plain text, 1–8,000 Unicode scalar values (official Omarchy News may carry the RSS article body; other adapters still write short factual copy). Omarchy News may include lightweight `[label](https://...)` markers copied from real RSS hrefs. List cards display a client-derived teaser of at most 220 characters and never replace this field.
 - Source label: 1–60 characters.
 - URL: HTTPS, maximum 2,048 characters, no credentials, control characters, fragments containing secrets, or non-public host literals.
 - Entity ID: 1–160 characters from a conservative plugin-ID/release-ID grammar.

@@ -407,10 +407,10 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 
 **Consequence:** Valid v10 states migrate atomically and gain the default-on profile. Tune copy stays local-display only: no language selector, engagement, clickbait, keywords, muting, duration, captions, or AI controls.
 
-## D051 — Compact list teasers, full article in the inspector
+## D051 — Reader mode for Core and Front Page articles
 
-**Decision:** The client attaches a deterministic `listSummary` (at most 220 characters of cleaned leading prose) to each projected story. List cards and their accessible names use that teaser. The wider inspector continues to render the full validated `summary`, including the official Omarchy News article body added in 0.4.14, directly after the headline. Actions follow the body; metadata and non-video metrics sit below a quiet divider. YouTube retains thumbnail and prominent metric treatment.
+**Decision:** Core, and Front Page `omarchy-news` / Core-tagged stories, render as quiet headlines (title + human date, optional unread mark). Plugins, YouTube, and For You keep denser cards that still use a deterministic `listSummary` teaser (at most 220 characters). The article inspector leads with a large title, one `date · source` line, a divider, and the full validated `summary` (including the official 0.4.14 Omarchy News body); compact actions follow; TYPE/TRUST/AUDIT/COMPAT and raw URLs live in a collapsed Details footer. Validated HTTPS anchors from RSS `content:encoded` are stored as `[label](https://...)` markers and rendered as accent links that open through the existing `open-source` helper. YouTube retains thumbnail and prominent metric treatment. Core and Front Page give the reading pane majority width (~60%). Keys is a collapsed `Keys · ?` control with no shortcut dump until opened. `readerLayout`, `usesQuietCard`, and `isReaderArticle` are derived from section + story type.
 
-**Why:** Competitor reading surfaces stay scannable. Dumping an 8k body, sponsor line, or URL wall into the index makes Core and Front Page feel like sludge even when QML elides extra lines.
+**Why:** A dense three-column data UI is not a news reader. Competitor surfaces keep the index quiet so the article can dominate. Compact teasers alone did not change the product character.
 
-**Consequence:** Source content is not rewritten or discarded. YouTube cards reuse the same teaser path on already-sanitized descriptions. Feed schema is unchanged.
+**Consequence:** Source content is not rewritten or discarded. Dense cards still use `listSummary`. Feed schema is unchanged.

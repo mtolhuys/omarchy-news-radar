@@ -34,6 +34,16 @@ class OmarchyNewsSourceTests(unittest.TestCase):
         self.assertNotIn("<", items["meet-the-omarchy-core-team"]["summary"])
         self.assertIn("Core Team", items["meet-the-omarchy-core-team"]["summary"])
         self.assertGreater(len(items["meet-the-omarchy-core-team"]["summary"]), 20)
+        self.assertIn(
+            "[Quattro announcement](https://omarchy.org/news/2026/08/omarchy-quattro-ships)",
+            items["meet-the-omarchy-core-team"]["summary"],
+        )
+        self.assertIn(
+            "[the relative news link](https://omarchy.org/news/2026/08/omarchy-quattro-ships)",
+            items["meet-the-omarchy-core-team"]["summary"],
+        )
+        self.assertIn("this script", items["meet-the-omarchy-core-team"]["summary"])
+        self.assertNotIn("javascript:", items["meet-the-omarchy-core-team"]["summary"])
         self.assertEqual("2026-08-30T12:00:00Z", items["omarchy-quattro-ships"]["publishedAt"])
 
     def test_diff_emits_only_new_in_window_events(self) -> None:

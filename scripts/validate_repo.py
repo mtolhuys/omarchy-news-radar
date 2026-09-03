@@ -220,10 +220,18 @@ def validate_manifest() -> None:
             fail(f"panel entry point lacks {required_text}")
     if f'news-radar-{version}+identity-1' not in qml:
         fail("panel runtime identity does not match the manifest version")
-    forbidden = ("Text.RichText", "Qt.openUrlExternally", "shell -c", "bash -c")
+    forbidden = ("Qt.openUrlExternally", "shell -c", "bash -c")
     for value in forbidden:
         if value in qml:
             fail(f"panel contains forbidden runtime path: {value}")
+    if qml.count("Text.RichText") != 1:
+        fail("panel may use Text.RichText only once, for the article reading pane")
+    if "textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText" not in qml:
+        fail("article body RichText must be constrained to inspectorArticleMode")
+    if "function openArticleLink(url)" not in qml or "linkColor: Color.accent" not in qml:
+        fail("article links must use accent styling and openArticleLink")
+    if "RadarModel.articleBodyHtml" not in qml or "RadarModel.acceptedHttpsUrl" not in qml:
+        fail("article links must be built from escaped segments, not raw feed HTML")
     for helper_name in ("news-radar-client", "news-radar-shortcut", "news-radar-launcher"):
         helper = (ROOT / "bin" / helper_name).read_text(encoding="utf-8")
         if "exec python3 -B -m " not in helper:

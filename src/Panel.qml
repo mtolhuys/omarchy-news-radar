@@ -168,6 +168,9 @@ Item {
   readonly property bool inspectorHasMetrics: !!selectedStory
     && !!selectedStory.metricItems
     && selectedStory.metricItems.length > 0
+  readonly property bool readerLayout: currentSection === "core" || currentSection === "front-page"
+  readonly property bool inspectorArticleMode: RadarModel.isReaderArticle(selectedStory)
+  property bool inspectorFactsOpen: false
   readonly property var currentFilter: preferences.sectionFilters
     && preferences.sectionFilters[currentSection]
       ? preferences.sectionFilters[currentSection]
@@ -203,6 +206,15 @@ Item {
     parts.push(totalStories + " stories")
     parts.push(Number(unreadCounts[currentSection] || 0) + " unread")
     return parts.join(" · ")
+  }
+
+  function inspectorMetaLine() {
+    if (!selectedStory) return ""
+    var date = RadarModel.humanDate(String(selectedStory.occurredAt || ""))
+    var source = selectedStory.source && selectedStory.source.label
+      ? String(selectedStory.source.label) : ""
+    if (date && source) return date + " · " + source
+    return date || source
   }
 
   function debugState() {
@@ -255,6 +267,10 @@ Item {
       windowIntegrationStatus: windowIntegrationStatus,
       shortcutState: shortcutState,
       shortcutMessage: shortcutMessage,
+      keysLegendOpen: keysLegendOpen,
+      readerLayout: readerLayout,
+      inspectorArticleMode: inspectorArticleMode,
+      inspectorFactsOpen: inspectorFactsOpen,
       emptyStateMessage: emptyStateMessage()
     })
   }
@@ -847,6 +863,7 @@ Item {
     navigationFocus.forceActiveFocus()
     sectionIndex = index
     requestedSection = sections[index].id
+    inspectorFactsOpen = false
     selectedIndex = 0
     storyViewportAnchorIndex = 0
     unreadSessionRetainedIds = ({})
@@ -993,6 +1010,7 @@ Item {
 
   function selectStory(index, markRead) {
     if (index < 0 || index >= stories.length) return
+    inspectorFactsOpen = false
     selectedIndex = index
     if (markRead) queueStoryRead(stories[index], true)
   }
@@ -1043,6 +1061,27 @@ Item {
 
   function openUrl(url) {
     startProcess(openSourceProc, ["open-source", "--url", String(url)])
+  }
+
+  function openArticleLink(url) {
+    var href = RadarModel.acceptedHttpsUrl(String(url || ""))
+    if (!href) return
+    openUrl(href)
+  }
+
+  function inspectorBodySegments() {
+    if (!selectedStory) return []
+    if (selectedStory.summarySegments && selectedStory.summarySegments.length)
+      return selectedStory.summarySegments
+    return RadarModel.articleSegments(String(selectedStory.summary || ""))
+  }
+
+  function inspectorBodyText() {
+    if (!selectedStory)
+      return "Story details and the original source appear here."
+    if (!inspectorArticleMode)
+      return String(selectedStory.summary || "")
+    return RadarModel.articleBodyHtml(inspectorBodySegments())
   }
 
   function toggleSaved() {
@@ -1656,11 +1695,11 @@ Item {
             spacing: Style.spacing.panelGap
 
             ColumnLayout {
-              // SECTIONS stays a compact index; leftover width goes to reading.
-              // Narrow keeps the stacked single-column shares unchanged.
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.12
+              // SECTIONS stays a compact rail. Core/Front Page give leftover
+              // width to the reading pane; Plugins/YouTube keep a denser list.
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : (root.readerLayout ? card.width * 0.10 : card.width * 0.12)
               Layout.minimumWidth: Style.space(128)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(160)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : (root.readerLayout ? Style.space(144) : Style.space(160))
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1739,19 +1778,6 @@ Item {
                   Keys.onSpacePressed: root.keysLegendOpen = !root.keysLegendOpen
                 }
 
-                Text {
-                  visible: !root.keysLegendOpen
-                  Layout.fillWidth: true
-                  text: "Esc/q · j/k · ↵/o · s · u · a · f · / · r · Tab · 1–" + root.sections.length + " · Home/End · ?"
-                  textFormat: Text.PlainText
-                  color: root.quietTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: "Keyboard shortcuts collapsed preview"
-                }
-
                 Flow {
                   id: keysLegendBody
                   visible: root.keysLegendOpen
@@ -1816,7 +1842,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.38
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : (root.readerLayout ? card.width * 0.28 : card.width * 0.38)
               spacing: Style.spacing.md
 
               GridLayout {
@@ -1933,7 +1959,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 model: renderedStoryModel
-                spacing: Style.spacing.sm
+                spacing: root.readerLayout ? Style.space(4) : Style.spacing.sm
                 // Keep the immediately adjacent screen instantiated. Keyboard
                 // navigation can then animate to real row geometry after
                 // pagination instead of asking ListView to estimate a
@@ -1949,6 +1975,7 @@ Item {
                   width: storyList.width
                   story: payload
                   selected: index === root.selectedIndex
+                  quiet: RadarModel.usesQuietCard(root.currentSection, payload)
                   lead: root.currentSection === "front-page" && index === 0
                   onActivated: root.selectStory(index, true)
                 }
@@ -2012,7 +2039,7 @@ Item {
               visible: !keySurface.narrow
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: card.width * 0.44
+              Layout.preferredWidth: root.readerLayout && !keySurface.narrow ? card.width * 0.60 : card.width * 0.44
               Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight
@@ -2026,7 +2053,7 @@ Item {
                 spacing: Style.spacing.panelGap
 
                 BorderSurface {
-                  visible: !!root.selectedStory && !!root.selectedStory.imageUrl
+                  visible: !root.inspectorArticleMode && !!root.selectedStory && !!root.selectedStory.imageUrl
                   width: parent.width
                   height: visible ? Math.round(width * 0.58) : 0
                   radius: Style.cornerRadius
@@ -2046,7 +2073,7 @@ Item {
                 }
 
                 Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.imageUrl
+                  visible: !root.inspectorArticleMode && !!root.selectedStory && !!root.selectedStory.imageUrl
                   width: parent.width
                   text: visible ? "IMAGE  " + root.selectedStory.image.credit : ""
                   textFormat: Text.PlainText
@@ -2069,6 +2096,28 @@ Item {
                   Accessible.name: text
                 }
 
+                Text {
+                  id: inspectorMeta
+                  visible: root.inspectorArticleMode && !!root.selectedStory
+                  width: parent.width
+                  text: visible ? root.inspectorMetaLine() : ""
+                  textFormat: Text.PlainText
+                  color: root.secondaryTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.bodySmall
+                  wrapMode: Text.WordWrap
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: text
+                }
+
+                Rectangle {
+                  id: inspectorReadDivider
+                  visible: root.inspectorArticleMode && !!root.selectedStory
+                  width: parent.width
+                  height: Style.spacing.hairline
+                  color: Color.popups.border
+                }
+
                 MetricStrip {
                   visible: root.inspectorYouTube && root.inspectorHasMetrics
                   width: parent.width
@@ -2079,14 +2128,23 @@ Item {
                 Text {
                   id: inspectorBody
                   width: parent.width
-                  text: root.selectedStory ? root.selectedStory.summary : "Story details and the original source appear here."
-                  textFormat: Text.PlainText
+                  text: root.inspectorBodyText()
+                  textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText
                   color: Color.popups.text
+                  linkColor: Color.accent
                   font.family: Style.font.family
                   font.pixelSize: Style.font.body
                   wrapMode: Text.WordWrap
                   Accessible.role: Accessible.StaticText
-                  Accessible.name: text
+                  Accessible.name: root.inspectorArticleMode
+                    ? RadarModel.articlePlainText(root.inspectorBodySegments())
+                    : text
+                  onLinkActivated: function(link) { root.openArticleLink(link) }
+
+                  HoverHandler {
+                    enabled: inspectorBody.hoveredLink && inspectorBody.hoveredLink.length > 0
+                    cursorShape: Qt.PointingHandCursor
+                  }
                 }
 
                 Flow {
@@ -2119,16 +2177,59 @@ Item {
                   }
                 }
 
+                FocusScope {
+                  id: inspectorFactsToggle
+                  visible: !!root.selectedStory
+                  width: parent.width
+                  implicitHeight: Math.max(Style.space(18), inspectorFactsLabel.implicitHeight + Style.space(2))
+                  activeFocusOnTab: true
+                  Accessible.role: Accessible.Button
+                  Accessible.name: inspectorFactsLabel.text
+                  Accessible.focusable: true
+                  Accessible.onPressAction: root.inspectorFactsOpen = !root.inspectorFactsOpen
+
+                  Text {
+                    id: inspectorFactsLabel
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.inspectorFactsOpen ? "Details ▾" : "Details"
+                    textFormat: Text.PlainText
+                    color: inspectorFactsHover.hovered || parent.activeFocus
+                      ? root.secondaryTextColor
+                      : root.quietTextColor
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                  }
+
+                  HoverHandler { id: inspectorFactsHover }
+                  PanelToolTip {
+                    visible: inspectorFactsHover.hovered
+                    text: root.inspectorFactsOpen
+                      ? "Hide type, trust, audit, and source URL"
+                      : "Show type, trust, audit, and source URL"
+                    fontFamily: Style.font.family
+                  }
+                  MouseArea {
+                    anchors.fill: parent
+                    preventStealing: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.inspectorFactsOpen = !root.inspectorFactsOpen
+                  }
+                  Keys.onReturnPressed: root.inspectorFactsOpen = !root.inspectorFactsOpen
+                  Keys.onEnterPressed: root.inspectorFactsOpen = !root.inspectorFactsOpen
+                  Keys.onSpacePressed: root.inspectorFactsOpen = !root.inspectorFactsOpen
+                }
+
                 Rectangle {
                   id: inspectorFactsDivider
-                  visible: !!root.selectedStory
+                  visible: !!root.selectedStory && root.inspectorFactsOpen
                   width: parent.width
                   height: Style.spacing.hairline
                   color: Color.popups.border
                 }
 
                 Text {
-                  visible: !root.inspectorYouTube && root.inspectorHasMetrics
+                  visible: root.inspectorFactsOpen && !root.inspectorYouTube && root.inspectorHasMetrics
                   width: parent.width
                   text: "METRICS"
                   textFormat: Text.PlainText
@@ -2138,7 +2239,7 @@ Item {
                 }
 
                 MetricStrip {
-                  visible: !root.inspectorYouTube && root.inspectorHasMetrics
+                  visible: root.inspectorFactsOpen && !root.inspectorYouTube && root.inspectorHasMetrics
                   width: parent.width
                   metrics: visible ? root.selectedStory.metricItems : []
                   foreground: root.quietTextColor
@@ -2146,7 +2247,7 @@ Item {
                 }
 
                 Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.metricsObservedAt
+                  visible: root.inspectorFactsOpen && !!root.selectedStory && !!root.selectedStory.metricsObservedAt
                   width: parent.width
                   text: visible ? "OBSERVED  " + root.selectedStory.metricsObservedAt : ""
                   textFormat: Text.PlainText
@@ -2159,7 +2260,7 @@ Item {
                 }
 
                 Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.metricsCaveat
+                  visible: root.inspectorFactsOpen && !!root.selectedStory && !!root.selectedStory.metricsCaveat
                   width: parent.width
                   text: visible ? root.selectedStory.metricsCaveat : ""
                   textFormat: Text.PlainText
@@ -2171,6 +2272,7 @@ Item {
 
                 Text {
                   id: inspectorMetadata
+                  visible: root.inspectorFactsOpen && !!root.selectedStory
                   width: parent.width
                   text: root.selectedStory
                     ? "TYPE  " + root.selectedStory.type + "\nDATE  " + root.selectedStory.occurredAt
@@ -2188,6 +2290,7 @@ Item {
                 }
 
                 Text {
+                  visible: root.inspectorFactsOpen && !!root.selectedStory
                   width: parent.width
                   text: root.selectedStory ? root.selectedStory.source.label + "\n" + root.selectedStory.source.url : ""
                   textFormat: Text.PlainText

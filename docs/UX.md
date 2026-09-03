@@ -27,22 +27,22 @@ Version 1 is an on-demand normal desktop window paired with a default-on, option
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar and compact window/update actions.
-2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; comfortably padded (preferred ~12% wide / ~22% narrow, capped) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail and starts collapsed.
-3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid; the list stays a compact, glanceable index (~38% wide) rather than becoming the reading surface.
-4. **Story inspector:** a wide reading pane (~44%) that leads with the selected headline and full summary, then keeps read/save/source actions immediately reachable. A divider demotes type, date, trust, audit, compatibility, source details, and non-video metrics to quiet caption styling below the body. YouTube may keep its validated thumbnail and compact metrics above the description because those facts are part of scanning a video.
+2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; a compact capped rail (preferred ~10–12% wide / ~22% narrow) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail as `Keys · ?` and starts fully collapsed with no shortcut dump.
+3. **Edition:** Core, and Front Page Omarchy News / Core-tagged stories, are quiet headlines—title plus a human date, with an unread mark allowed and no teaser, metric strip, or plugin thumbnail. Plugins, YouTube, and For You may keep denser teaser/metric/thumbnail cards. On Core and Front Page the list is a compact index (~28% wide) rather than the reading surface; other sections may keep a denser list (~38%).
+4. **Story inspector:** the dominant reading pane on Core and Front Page (~60%). Article stories (`omarchy-news` and other Core long-text items) lead with a large title, one quiet `date · source` line, a divider, and the full article body immediately, then compact read/save/source actions. Validated HTTPS links inside that body render as accent-colored labels and open through the same helper as **Original source**. TYPE/TRUST/AUDIT/COMPAT and the raw URL live in a collapsed **Details** footer. YouTube may keep its validated thumbnail and compact metrics above the description because those facts are part of scanning a video.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
-The reading surface does not carry publication telemetry. A subtle collapsible **Keys** footer at the bottom of the left **SECTIONS** rail shows the real bindings as quiet unboxed key·action pairs (no heavy keycap chrome); it starts collapsed so the rail stays quiet and remembers open/closed only for the session (no schema). **Keys · ?** or keyboard `?` toggles it. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
+The reading surface does not carry publication telemetry. A subtle collapsible **Keys** footer at the bottom of the left **SECTIONS** rail shows the real bindings as quiet unboxed key·action pairs (no heavy keycap chrome) only after it is opened; collapsed state is the single `Keys · ?` label with no shortcut preview. It remembers open/closed only for the session (no schema). **Keys · ?** or keyboard `?` toggles it. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
 
 ## Front page composition
 
 The front page is finite. The initial viewport should communicate the most important changes without requiring search or scrolling through routine events.
 
-- One lead item may receive the largest treatment.
+- One lead item may receive the largest treatment on dense cards.
 - Up to six secondary items may appear above the fold.
-- List cards show a short cleaned teaser; Core and Front Page selection opens the full official article body as the inspector’s primary reading content, before actions and quiet secondary facts.
-- Every story row states `UNREAD` or `READ`, section badges expose unread counts, and the inspector exposes the exact selected-story toggle.
+- Core and Front Page article rows are quiet headlines (title + human date). Plugin and YouTube rows on Front Page may keep a short cleaned teaser. Selecting an article opens the full official body as the inspector’s primary reading content, after a `date · source` line and divider, before compact actions and collapsed Details.
+- Dense cards state `UNREAD` or `READ`; quiet headlines use an unread mark instead of a kicker. Section badges expose unread counts, and the inspector exposes the exact selected-story toggle.
 - No autoplay, carousel, ticker, infinite scroll, or continuously moving decoration is allowed. A visible Load more control may reveal the next twelve matches from the already downloaded edition, up to the feed bound.
 
 ## Keyboard model
@@ -107,7 +107,7 @@ If a queued per-story write becomes stale because refresh atomically replaced th
 
 ## Source opening
 
-Titles, summaries, tags, image alternatives, credits, and URLs are untrusted data. Display text is plain text. Source URLs appear as labels but open only through a dedicated button or keyboard action. The UI never renders remote HTML, Markdown, SVG, scripts, or embedded media. It loads images only from content-addressed paths in the validated feed, resolved against that feed's fixed origin; the publisher has already mirrored and inspected those raster bytes. Missing or failed imagery leaves the complete text story intact.
+Titles, summaries, tags, image alternatives, credits, and URLs are untrusted data. Display text is plain text except for the article reading pane, which may turn collector-preserved HTTPS link markers into accent-colored `<a href>` labels built from escaped text. Those links open only through the same `open-source` helper as **Original source**; javascript, http, and other unsafe hrefs are dropped at collect time and ignored in the pane. The UI never renders remote HTML, Markdown, SVG, scripts, or embedded media from the feed. It loads images only from content-addressed paths in the validated feed, resolved against that feed's fixed origin; the publisher has already mirrored and inspected those raster bytes. Missing or failed imagery leaves the complete text story intact.
 
 The image preference always reports whether the current edition actually contains validated images. Turning it on when an edition has no images must not imply that an image is loading or available.
 
@@ -124,7 +124,7 @@ Tune Your Radar in the panel exposes “Top-bar newspaper”, story images, and 
 - Use the system monospace family and Omarchy type scale; distinguish masthead, section, headline, summary, metadata, and source through hierarchy rather than excessive color.
 - Accent marks focus, selection, and one lead rule. Urgent color is reserved for actual source or compatibility warnings.
 - A selected row must pair its fill with explicit primary and secondary foregrounds. It must never keep an ambient muted token that can blend into the selected fill; this is visually accepted in maintained dark and light themes.
-- Dense metadata remains secondary below a subtle divider; the main reading path prioritizes headline, full article body, and intentional actions.
+- Dense metadata remains secondary inside collapsed Details; the main reading path prioritizes headline, `date · source`, full article body, and intentional actions.
 - Any motion is bounded to active refresh. There is no perpetual radar sweep or persistent pipeline-status copy.
 
 ## Accessibility boundary

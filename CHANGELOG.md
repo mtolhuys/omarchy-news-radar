@@ -10,8 +10,9 @@
 - Front Page topic-cluster diversity for Omarchy News so one same-cycle Foundation/patronage story cannot take every quota slot. Core still keeps every news item.
 
 ### Changed
-- List cards now show a short cleaned teaser. The wider reading-first inspector puts the full 0.4.14 article body directly after the headline, keeps actions close, and demotes metrics and provenance below a quiet divider; YouTube retains its thumbnail and prominent metrics.
-- The sidebar Keys legend starts collapsed. `?` and the Keys header still toggle it for the current session.
+- Core, and Front Page Omarchy News / Core-tagged stories, use quiet headline rows (title + human date, unread mark only). Plugins, YouTube, and For You keep denser teaser/metric/thumbnail cards.
+- The article reading pane leads with a large title, one `date · source` line, a divider, and the full 0.4.14 body; compact actions follow; TYPE/TRUST/AUDIT/COMPAT and the raw URL sit in a collapsed Details footer. Validated HTTPS links from RSS `content:encoded` render as accent-colored clickable labels and open through the same helper as Original source. YouTube keeps its thumbnail and prominent metrics.
+- Core and Front Page give the reading pane majority width (~60%). The Keys legend is only `Keys · ?` until opened; it no longer dumps the shortcut list while collapsed.
 - YouTube Settings labels the existing period filter as TIME RANGE (24h / 7d / 30d / All).
 - Bar widget one-shot refresh rearms after an early helper return or unparsable output; the 1800 ms first-check delay is a named constant.
 

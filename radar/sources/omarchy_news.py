@@ -28,6 +28,10 @@ ATOM_NS = "http://www.w3.org/2005/Atom"
 
 TAG_RE = re.compile(r"<[^>]+>")
 WHITESPACE_RE = re.compile(r"\s+")
+ANCHOR_RE = re.compile(
+    r'<a\b[^>]*\bhref\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+    re.IGNORECASE | re.DOTALL,
+)
 SLUG_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._:+-]{0,159})$")
 NEWS_PATH_RE = re.compile(r"^/news/[0-9]{4}/[0-9]{2}/[A-Za-z0-9][A-Za-z0-9._-]{0,158}$")
 
@@ -42,9 +46,34 @@ def _child_text(element: ET.Element, name: str, namespace: str | None = None) ->
     return str(node.text)
 
 
+def _safe_article_href(value: str) -> str:
+    href = html.unescape(value).strip()
+    if href.startswith("/"):
+        href = RSS_ORIGIN + href
+    try:
+        return validate_https_url(href, "article link")
+    except ValidationError:
+        return ""
+
+
+def _anchor_to_marker(match: re.Match[str]) -> str:
+    """Keep a real HTTPS href as a lightweight marker; drop unsafe destinations."""
+    href = _safe_article_href(match.group(1))
+    label = TAG_RE.sub(" ", match.group(2))
+    label = WHITESPACE_RE.sub(" ", html.unescape(label)).strip()
+    label = label.replace("[", " ").replace("]", " ")
+    label = WHITESPACE_RE.sub(" ", label).strip()
+    if not href:
+        return f" {label} " if label else " "
+    if not label:
+        label = href
+    return f" [{label}]({href}) "
+
+
 def _plain_summary(value: str, fallback: str, maximum: int = ARTICLE_MAX) -> str:
-    """Strip RSS HTML to bounded plain text. Prefer encoded article bodies."""
-    text = TAG_RE.sub(" ", value)
+    """Strip RSS HTML to bounded text, preserving validated HTTPS anchors."""
+    text = ANCHOR_RE.sub(_anchor_to_marker, value)
+    text = TAG_RE.sub(" ", text)
     text = WHITESPACE_RE.sub(" ", html.unescape(text)).strip()
     if not text:
         text = fallback

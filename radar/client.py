@@ -20,7 +20,7 @@ from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
 from .local_edition import local_edition_metadata, local_image_url
 from .model import project_section
-from .reading import list_summary
+from .reading import article_segments, list_summary
 from .state import (
     RefreshLock,
     StateLock,
@@ -669,6 +669,7 @@ def projection_model(
         item["isSaved"] = item["id"] in saved_ids
         # Cards stay scannable. The inspector keeps the full 0.4.14 body.
         item["listSummary"] = list_summary(item.get("summary"), item.get("title", ""))
+        item["summarySegments"] = article_segments(item.get("summary"))
         image = item.get("image")
         if state["preferences"]["imagesVisible"] and isinstance(image, dict):
             source_url = image.get("sourceUrl")
