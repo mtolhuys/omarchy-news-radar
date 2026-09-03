@@ -1563,8 +1563,30 @@ Item {
               Layout.fillWidth: true
               spacing: Style.spacing.controlGap
 
-              // No in-panel mark: the title already names the app, and the
-              // Apps menu / desktop entry keep the real application icon.
+              // Launcher surfaces retain the opaque application tile. The
+              // panel uses a transparent, contrast-tuned mark so its own
+              // theme plate remains visible instead of becoming a black box.
+              Rectangle {
+                Layout.preferredWidth: Style.space(42)
+                Layout.preferredHeight: Style.space(42)
+                radius: Math.round(width * 28 / 128)
+                color: Color.popups.background
+                border.width: Style.spacing.hairline
+                border.color: Color.popups.border
+                Accessible.role: Accessible.Graphic
+                Accessible.name: "Omarchy News Radar panel mark"
+
+                Image {
+                  anchors.fill: parent
+                  source: Qt.resolvedUrl(root.popupBgIsLight
+                    ? "../assets/io.github.mtolhuys.news-radar-panel-light.svg"
+                    : "../assets/io.github.mtolhuys.news-radar-panel.svg")
+                  sourceSize: Qt.size(Style.space(84), Style.space(84))
+                  fillMode: Image.PreserveAspectFit
+                  mipmap: true
+                }
+              }
+
               Item {
                 Layout.fillWidth: true
                 implicitHeight: titleStack.implicitHeight
@@ -1938,11 +1960,21 @@ Item {
               color: Color.popups.border
             }
 
-            ColumnLayout {
+            Item {
               Layout.fillWidth: true
               Layout.fillHeight: true
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.30
-              spacing: Style.spacing.md
+              Layout.minimumWidth: Style.space(220)
+              clip: true
+
+              Rectangle {
+                anchors.fill: parent
+                color: Color.popups.background
+              }
+
+              ColumnLayout {
+                anchors.fill: parent
+                spacing: Style.spacing.md
 
               ColumnLayout {
                 Layout.fillWidth: true
@@ -1962,12 +1994,7 @@ Item {
                   }
 
                   Text {
-                    // preferredWidth 0 lets this claim leftover space before the
-                    // action buttons, so "FOR YOU" / "FRONT PAGE" are not elided
-                    // while empty gap sits beside them.
                     Layout.fillWidth: true
-                    Layout.preferredWidth: 0
-                    Layout.minimumWidth: Style.space(72)
                     text: root.currentProfile.name.toUpperCase()
                     textFormat: Text.PlainText
                     color: Color.popups.text
@@ -1977,13 +2004,12 @@ Item {
                     elide: Text.ElideRight
                     maximumLineCount: 1
                     wrapMode: Text.NoWrap
+                    clip: true
                     Accessible.role: Accessible.Heading
                     Accessible.name: text
                   }
 
                   RowLayout {
-                    Layout.fillWidth: false
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     spacing: Style.spacing.controlGap
                     visible: !keySurface.narrow
 
@@ -2167,6 +2193,8 @@ Item {
               }
             }
 
+            }
+
             Rectangle {
               visible: !keySurface.narrow
               Layout.preferredWidth: Style.spacing.hairline
@@ -2174,15 +2202,24 @@ Item {
               color: Color.popups.border
             }
 
-            Flickable {
+            Item {
               visible: !keySurface.narrow
               Layout.fillWidth: true
               Layout.fillHeight: true
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.44 : card.width * 0.54
               Layout.minimumWidth: Style.space(240)
-              contentWidth: width
-              contentHeight: inspector.implicitHeight
               clip: true
+
+              Rectangle {
+                anchors.fill: parent
+                color: Color.popups.background
+              }
+
+              Flickable {
+                anchors.fill: parent
+                contentWidth: width
+                contentHeight: inspector.implicitHeight
+                clip: true
               boundsBehavior: Flickable.StopAtBounds
               ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
@@ -2442,6 +2479,8 @@ Item {
 
               }
             }
+            }
+
           }
 
         }
