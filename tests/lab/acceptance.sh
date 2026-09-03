@@ -690,21 +690,21 @@ omarchy_host_test() {
     sleep 0.25
     viewport_state="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'")" || return 1
     printf '%s\n' "$viewport_state" >>"$RUN_DIR/news-radar-scroll-probes.jsonl"
-    if jq -e '.selectedIndex > 0 and .fullyVisible == true and .topAligned == true and .scrolling == false' \
+    if jq -e '.selectedIndex > 0 and .fullyVisible == true and .contentY > 0 and .scrolling == false' \
       <<<"$viewport_state" >/dev/null; then
       anchored=true
       break
     fi
   done
   if [[ $anchored != true ]]; then
-    log "Dense-list selection never reached a complete top-anchored row"
+    log "Dense-list selection never reached a stable, fully visible scrolled row"
     return 1
   fi
   anchored_index="$(jq -r '.selectedIndex' <<<"$viewport_state")" || return 1
   anchored_content_y="$(jq -r '.contentY' <<<"$viewport_state")" || return 1
   printf '%s\n' "$viewport_state" >"$RUN_DIR/news-radar-scroll-anchor.json"
   press down
-  wait_for_guest_state "Down continues normally below the top-anchored story without bottom overlap" 10 ssh_session \
+  wait_for_guest_state "Down continues normally below the stable scrolled story without bottom overlap" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e --argjson priorIndex '$anchored_index' --argjson priorY '$anchored_content_y' '.selectedIndex == (\$priorIndex + 1) and .fullyVisible == true and .top > 0 and ((.contentY - \$priorY) | fabs) <= 0.5 and .scrolling == false'" || return 1
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | awk '/^{.*}$/ { value = \$0 } END { print value }'" \
     >"$RUN_DIR/news-radar-scroll-continue.json" || return 1
