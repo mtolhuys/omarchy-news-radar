@@ -1697,9 +1697,9 @@ Item {
             ColumnLayout {
               // SECTIONS stays one stable rail: wide enough for "Front Page"
               // and "Plugins", never jumping when the active section changes.
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.14
-              Layout.minimumWidth: Style.space(168)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(184)
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.16
+              Layout.minimumWidth: Style.space(200)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(228)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1845,14 +1845,13 @@ Item {
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.30
               spacing: Style.spacing.md
 
-              GridLayout {
+              ColumnLayout {
                 Layout.fillWidth: true
-                columns: keySurface.narrow ? 1 : 2
-                columnSpacing: Style.spacing.controlGap
-                rowSpacing: Style.spacing.sm
+                spacing: Style.spacing.sm
 
                 RowLayout {
                   Layout.fillWidth: true
+                  spacing: Style.spacing.controlGap
 
                   Text {
                     text: root.sectionIcon(root.currentProfile.icon)
@@ -1871,15 +1870,17 @@ Item {
                     font.family: Style.font.family
                     font.pixelSize: Style.font.heading
                     font.bold: true
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                    wrapMode: Text.NoWrap
+                    clip: true
                     Accessible.role: Accessible.Heading
                     Accessible.name: text
                   }
-                }
 
-                RowLayout {
-                  Layout.fillWidth: keySurface.narrow
-                  Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
-                  spacing: Style.spacing.controlGap
+                  RowLayout {
+                    spacing: Style.spacing.controlGap
+                    visible: !keySurface.narrow
 
                   RadarButton {
                     id: headerUnreadButton
@@ -1904,6 +1905,33 @@ Item {
 
                   RadarButton {
                     id: settingsButton
+                    label: "⚙ Settings"
+                    selected: root.filterSummary !== "No extra filters"
+                    enabled: !root.stateMutationPending
+                    onClicked: root.showSectionSettings()
+                  }
+                  }
+                }
+
+                RowLayout {
+                  visible: keySurface.narrow
+                  Layout.fillWidth: true
+                  spacing: Style.spacing.controlGap
+
+                  RadarButton {
+                    label: root.currentFilter.unreadOnly ? "Unread only" : "All"
+                    selected: root.currentFilter.unreadOnly
+                    enabled: !root.stateMutationPending
+                    onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
+                  }
+                  RadarButton {
+                    label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
+                    enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
+                      && !root.refreshing && !projectProc.running
+                      && !root.stateMutationPending && !root.readMutationPending
+                    onClicked: root.markCurrentSectionRead()
+                  }
+                  RadarButton {
                     label: "⚙ Settings"
                     selected: root.filterSummary !== "No extra filters"
                     enabled: !root.stateMutationPending
