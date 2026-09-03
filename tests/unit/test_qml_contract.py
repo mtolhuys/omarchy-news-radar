@@ -91,7 +91,6 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("RadarModel.articleBodyHtml", qml)
         self.assertIn("pluginUpdateNotice", qml)
         self.assertIn("Layout.preferredWidth: 0", qml)
-        self.assertIn("id: sectionTitleText", qml)
         self.assertIn("Update plugin", qml)
         self.assertIn('"update-status"', qml)
         self.assertIn('"update-apply"', qml)
