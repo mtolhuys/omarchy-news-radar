@@ -22,6 +22,9 @@
 - YouTube Settings labels the existing period filter as TIME RANGE (24h / 7d / 30d / All).
 - Bar widget one-shot refresh rearms after an early helper return or unparsable output; the 1800 ms first-check delay is a named constant.
 
+### Fixed
+- Make the Plugins **With images** filter use the same visible-image policy as the reader: historical verification-change rows with stale marketplace preview metadata no longer appear as image stories, and the next successful collection removes that stale metadata from the public edition.
+
 ## 0.4.14 — 2026-09-03
 
 - Omarchy News stories now carry the official RSS article body (plain text, up to 8k) in the detail pane; list rows still elide to a teaser.

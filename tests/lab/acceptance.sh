@@ -535,6 +535,17 @@ omarchy_host_test() {
   settings_center_x=$((window_x + window_width / 2))
   settings_center_y=$((window_y + window_height / 2))
   qmp_pointer_scroll_down "$viewport_width" "$viewport_height" "$settings_center_x" "$settings_center_y" 8 || return 1
+  radar_control_geometry filterImagesGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "With images keeps only stories whose image is visible in the reader" 10 ssh_session \
+    "jq -e '.preferences.sectionFilters.plugins.imagesOnly == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true and .filterSummary == \"With images\" and .storyCount == 1 and .selectedHasImage == true'" || return 1
+  capture_console "success-news-radar-03-with-images-filter"
+  radar_control_geometry filterImagesGeometry || return 1
+  qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
+  wait_for_guest_state "With images toggles off through the same rendered control" 10 ssh_session \
+    "jq -e '.preferences.sectionFilters.plugins.imagesOnly == false' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+     omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true and .storyCount == 3'" || return 1
   radar_control_geometry filterUnreadGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered filter control persists only the Plugins filter" 10 ssh_session \

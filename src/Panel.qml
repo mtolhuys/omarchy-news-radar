@@ -315,6 +315,7 @@ Item {
     return itemGeometry(loadMoreButton, loadMoreButton.visible)
   }
   function filterUnreadGeometry() { return itemGeometry(unreadFilterButton, unreadFilterButton.visible) }
+  function filterImagesGeometry() { return itemGeometry(imagesFilterButton, imagesFilterButton.visible) }
   function filterResetGeometry() { return itemGeometry(filterResetButton, filterResetButton.visible) }
   function pluginPageGeometry() { return itemGeometry(pluginPageButton, pluginPageButton.visible) }
   function readStateGeometry() {
@@ -2781,6 +2782,7 @@ Item {
                       onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
                     }
                     RadarButton {
+                      id: imagesFilterButton
                       label: "With images"
                       selected: root.currentFilter.imagesOnly
                       onClicked: root.updateFilter("imagesOnly", !root.currentFilter.imagesOnly)

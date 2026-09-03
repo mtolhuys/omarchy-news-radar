@@ -290,6 +290,51 @@ class ClientIntegrationTests(unittest.TestCase):
             visible_revealed,
         )
 
+    def test_images_only_excludes_historical_verification_preview_metadata(self) -> None:
+        candidate = copy.deepcopy(self.feed)
+        plugin_events = {
+            event["type"]: event
+            for event in candidate["events"]
+            if event["classification"]["section"] == "plugins"
+        }
+        image = {
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/fixture-card.webp",
+            "alt": "Fixture plugin preview",
+            "credit": "Omarchy Plugin Marketplace",
+            "width": 720,
+            "height": 405,
+        }
+        plugin_events["plugin-released"]["image"] = copy.deepcopy(image)
+        plugin_events["plugin-verification-changed"]["image"] = copy.deepcopy(image)
+        atomic_write_json(self.fixture, candidate)
+        refresh(self.environment, now=CLOCK)
+        set_section_filter(
+            "plugins",
+            {
+                "period": "all",
+                "significance": "all",
+                "unreadOnly": False,
+                "imagesOnly": True,
+                "types": [],
+            },
+            self.environment,
+        )
+
+        projected = projection_model(
+            "plugins", "[]", "", self.environment, now=CLOCK, limit=500
+        )
+
+        self.assertEqual(1, projected["totalEvents"])
+        self.assertEqual(
+            [plugin_events["plugin-released"]["id"]],
+            [event["id"] for event in projected["events"]],
+        )
+        self.assertTrue(all(event.get("imageUrl") for event in projected["events"]))
+        self.assertNotIn(
+            plugin_events["plugin-verification-changed"]["id"],
+            {event["id"] for event in projected["events"]},
+        )
+
     def test_stale_read_mutation_after_refresh_is_a_benign_no_op(self) -> None:
         refresh(self.environment, now=CLOCK)
         result = set_event_read_state(

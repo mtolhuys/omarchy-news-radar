@@ -121,10 +121,26 @@ class SourceTests(unittest.TestCase):
         stale_events = copy.deepcopy(events)
         for event in stale_events:
             event["summary"] = "Generic marketplace change text."
+        stale_verification = next(
+            event for event in stale_events if event["type"] == "plugin-verification-changed"
+        )
+        stale_verification["image"] = {
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/fixture-card.webp",
+            "alt": "Fixture plugin preview",
+            "credit": "Omarchy Plugin Marketplace",
+            "width": 720,
+            "height": 405,
+        }
+        preserved = enrich_plugin_descriptions(stale_events, None)
+        preserved_verification = next(
+            event for event in preserved if event["type"] == "plugin-verification-changed"
+        )
+        self.assertIn("image", preserved_verification)
         enriched = enrich_plugin_descriptions(stale_events, current)
         for event in enriched:
             if event["type"] == "plugin-verification-changed":
                 self.assertEqual("Generic marketplace change text.", event["summary"])
+                self.assertNotIn("image", event)
             else:
                 self.assertEqual(
                     current["plugins"][event["entity"]["id"]]["description"],

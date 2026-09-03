@@ -78,6 +78,14 @@ def main() -> int:
         "width": 720,
         "height": 405,
     }
+    plugin_release = next(event for event in feed["events"] if event["type"] == "plugin-released")
+    plugin_release["image"] = copy.deepcopy(pictured["image"])
+    # Reproduce the historical feed shape that made With images look broken:
+    # the reader hides this unrelated marketing art on verification changes.
+    verification = next(
+        event for event in feed["events"] if event["type"] == "plugin-verification-changed"
+    )
+    verification["image"] = copy.deepcopy(pictured["image"])
     write(output / "valid.json", feed)
 
     background = copy.deepcopy(feed)

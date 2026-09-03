@@ -228,6 +228,11 @@ def enrich_plugin_descriptions(
     for raw_event in events:
         event = deepcopy(dict(raw_event))
         entity = event.get("entity")
+        # Early editions attached a plugin's marketing preview to verification
+        # transitions. Remove that stale presentation metadata so newly
+        # published editions agree with the reader and its images-only filter.
+        if marketplace is not None and event.get("type") == "plugin-verification-changed":
+            event.pop("image", None)
         # Verification stories carry their own from->to summary; only refresh
         # listing/release/retirement blurbs from the live catalog description.
         if event.get("type") in {

@@ -99,6 +99,20 @@ def filter_summary(value: Mapping[str, Any]) -> str:
     return " · ".join(parts) if parts else "No extra filters"
 
 
+def has_reader_image(event: Mapping[str, Any]) -> bool:
+    """Return whether a story can expose its validated image in the reader.
+
+    Older editions may still carry marketplace preview metadata on verification
+    changes. Those images are deliberately hidden because they illustrate the
+    plugin rather than the verification transition, so they must not satisfy
+    the user-facing ``With images`` filter either.
+    """
+
+    return event.get("type") != "plugin-verification-changed" and isinstance(
+        event.get("image"), Mapping
+    )
+
+
 def apply_section_filter(
     events: Iterable[Mapping[str, Any]],
     value: Mapping[str, Any],
@@ -130,7 +144,7 @@ def apply_section_filter(
         is_read = read_overrides.get(event["id"], event["occurredAt"] <= read_through)
         if current["unreadOnly"] and is_read and event["id"] not in retained:
             continue
-        if current["imagesOnly"] and not isinstance(event.get("image"), dict):
+        if current["imagesOnly"] and not has_reader_image(event):
             continue
         if allowed_types and event["type"] not in allowed_types:
             continue

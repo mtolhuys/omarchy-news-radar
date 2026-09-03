@@ -13,7 +13,7 @@ from urllib.parse import urlencode, urljoin, urlsplit
 
 from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN, YOUTUBE_IMAGE_ORIGIN
 from .errors import FetchError, RadarError, StorageError, ValidationError
-from .filters import apply_section_filter, filter_options, filter_summary
+from .filters import apply_section_filter, filter_options, filter_summary, has_reader_image
 from .freshness import edition_timing, update_message
 from .sections import SECTION_SOURCE_SUMMARIES, visible_client_sections
 from .http import FetchPolicy, decode_json, fetch_bytes
@@ -670,11 +670,7 @@ def projection_model(
         # Cards stay scannable. The inspector keeps the full 0.4.14 body.
         item["listSummary"] = list_summary(item.get("summary"), item.get("title", ""))
         item["summarySegments"] = article_segments(item.get("summary"))
-        image = item.get("image")
-        # Verification flips reused marketplace marketing art; hide it in the
-        # reader even for historical feed rows that still carry image metadata.
-        if item.get("type") == "plugin-verification-changed":
-            image = None
+        image = item.get("image") if has_reader_image(item) else None
         if state["preferences"]["imagesVisible"] and isinstance(image, dict):
             source_url = image.get("sourceUrl")
             if isinstance(source_url, str) and (
