@@ -381,3 +381,12 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** The previous composition treated the logo as a faint background and gave a second complete radar equal weight. It became muddy at launcher and 42-pixel header sizes, weakened brand recognition, and depended on its compositing surface. A stable badge with one dominant branded silhouette is faster to recognize and creates a more credible first impression.
 
 **Consequence:** Every SVG retains the bounded 128-unit inert geometry contract and exact centered radar composition. Launcher-like surfaces remain independent of their compositing background; the panel variants are intentionally transparent and let its existing theme plate supply background, border, and exact header sizing. Release review renders the mark at 24, 32, 42, 64, and 128 pixels on both light and dark surfaces before Plugin Lab acceptance. The project remains a community plugin and does not imply official Omarchy status.
+
+## D048 — Ingest official Omarchy News RSS into Core without flooding Front Page
+
+**Decision:** Version 0.4.13 adds a Forge-collected Omarchy News RSS 2.0 source as a D007 exception for one allowlisted HTTPS URL (`https://omarchy.org/news/rss.xml`). The live document's Atom self link names that path; `/news/rss` currently mirrors it and is not separately allowlisted. Events use type `omarchy-news`, classification section `core`, and deterministic IDs derived from the item guid/path slug. Collection is fail-closed: transport or validation failure records a failed `omarchy-news` source health entry and retains the prior news snapshot. CI uses checked-in RSS fixtures only. No new client rail section is added—Core already hosts official releases.
+
+**Why:** Official announcements belong beside releases in Core, and clients must keep fetching only the published `events.json`. Broad HTML scraping is out of scope. Marking every RSS item `notable` would break Front Page bounds because the notable lane has no per-type cap and the channel already carries many items inside the rolling window.
+
+**Consequence:** Adapter significance stays `routine` (D008). Front Page selects at most three recent `omarchy-news` events by an explicit quota. Settings discloses Omarchy News on Front Page/Core. Feed schema version remains 2 with an extended event-type and source-id enum; local state schema remains v10 with an extended filter-type enum. No API key is required.
+

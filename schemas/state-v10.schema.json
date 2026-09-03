@@ -146,6 +146,7 @@
           "items": {
             "enum": [
               "omarchy-released",
+              "omarchy-news",
               "plugin-added",
               "plugin-released",
               "plugin-retired",
@@ -154,7 +155,7 @@
               "youtube-video"
             ]
           },
-          "maxItems": 7,
+          "maxItems": 8,
           "type": "array",
           "uniqueItems": true
         },

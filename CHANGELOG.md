@@ -4,6 +4,16 @@
 
 No changes yet.
 
+## 0.4.13 — 2026-09-03
+
+### Added
+- Forge-collected official Omarchy News RSS (`https://omarchy.org/news/rss.xml`) as Core events of type `omarchy-news`, with deterministic guid-based IDs, fail-closed snapshot retention, and CI fixtures only (D048).
+
+### Changed
+- Front Page admits at most three recent Omarchy News items by quota; news stays `routine` so blanket notability cannot flood the edition (D008/D048).
+- Settings source disclosure for Front Page and Core names Omarchy News beside releases.
+- Extend feed schema v2 and state schema v10 enums for the new event type and source id without a schema version bump.
+
 ## 0.4.12 — 2026-09-03
 
 ### Changed

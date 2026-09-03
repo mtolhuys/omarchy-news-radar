@@ -47,6 +47,7 @@ An owner deliberately running the local checkout may use `make local-latest`. Th
 ### Activity
 
 - Official Omarchy GitHub releases.
+- Official Omarchy News announcements from the allowlisted RSS feed.
 - New plugin listings from the official marketplace catalog.
 - Plugin version changes when the catalog exposes a changed non-empty version.
 - Plugin retirement only after an explicit retirement signal or repeated confirmed absence.

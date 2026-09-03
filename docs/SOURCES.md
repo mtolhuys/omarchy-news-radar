@@ -126,3 +126,17 @@ This is an explicit D007 exception (D045). Forge provisions optional `YOUTUBE_AP
 
 Collection searches fixed queries (`Omarchy`, `Omarchy Linux`, `Omarchy Quattro`), keeps results matching `(?i)\bomarchy\b` in title or description, loads `snippet` and `statistics` via `videos.list`, and refreshes about every six hours after a successful non-empty snapshot (an empty or missing YouTube snapshot refreshes on the next collect; D046). Successful editions replace the YouTube lane with an interleaved mix of the top eight by views, likes, and recency, capped at 24 events. Thumbnails use `https://i.ytimg.com/vi/<id>/hqdefault.jpg` only. Metrics are observed facts on those events; they never create events, change IDs, or affect Front Page/significance. CI uses checked-in fixtures and never calls the live API.
 
+## Omarchy News RSS
+
+Allowlisted canonical URL:
+
+```text
+https://omarchy.org/news/rss.xml
+```
+
+This is an explicit D007 exception (D048). The Atom self link names `/news/rss.xml`; `/news/rss` currently serves the same document and is not a second allowlisted endpoint. No API key is required.
+
+The adapter accepts RSS 2.0 with `title`, `link`, `guid`, `pubDate`, optional `dc:creator`, `description`, and `content:encoded`. Item URLs must stay under `https://omarchy.org/news/YYYY/MM/<slug>`. Summaries prefer the description, strip HTML from either description or encoded content, and truncate to the ordinary 400-character bound. Event identity uses the guid permalink path slug; `occurredAt` uses `pubDate`.
+
+Diffing emits only newly observed items inside the rolling window. Failure retains the prior `omarchy-news` snapshot and emits no mass change. Successful items are classified into Core as `omarchy-news` with routine significance; Front Page admits at most three of them by quota rather than blanket notability (D008/D048). CI uses fixtures only and never calls the live feed during ordinary tests.
+

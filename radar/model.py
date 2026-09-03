@@ -145,6 +145,9 @@ def front_page(
     add(event for event in ordered if event["classification"]["significance"] == "critical")
     add(event for event in ordered if event["classification"]["significance"] == "notable")
     add((event for event in ordered if event["type"] == "omarchy-released"), maximum=1)
+    # Official news stays routine (D008/D048). Give Core announcements a small
+    # Front Page quota instead of marking every RSS item notable.
+    add((event for event in ordered if event["type"] == "omarchy-news"), maximum=3)
     add(
         (
             event
@@ -161,7 +164,11 @@ def front_page(
             maximum=3,
         )
     add(
-        (event for event in ordered if event["type"] != "omarchy-released"),
+        (
+            event
+            for event in ordered
+            if event["type"] not in {"omarchy-released", "omarchy-news"}
+        ),
         maximum=max(0, 18 - len(selected)),
     )
     return selected[:18]

@@ -17,7 +17,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 - Enforce feed size, event count, string length, tag count, URL length, nesting, and timestamp bounds before a candidate reaches QML.
 - Accept source links only when they parse as public HTTPS URLs without credentials or control characters.
 - Opening a source requires an explicit user action and passes the validated URL as one structural process argument to the maintained desktop launcher and `xdg-open`.
-- The collector fetches only allowlisted machine sources. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
+- The collector fetches only allowlisted machine sources, including the official Omarchy News RSS URL. It does not fetch arbitrary community or event source URLs and cannot be turned into an SSRF client.
 - Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
 - Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS provenance URLs. They cannot create events or drive ranking. The QML projection strips raw metric URLs, renders only icon/value/accessible-label facts plus the marketplace caveat, and constructs human plugin pages from the fixed marketplace route and validated entity ID.
 - Section names, icons, order, backgrounds, and source membership are code-owned canonical identities. Local settings contain only strict filter enums/booleans and cannot introduce text, markup, colors, URLs, scope changes, or network requests.

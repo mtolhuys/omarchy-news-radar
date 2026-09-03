@@ -26,7 +26,7 @@
       "items": {
         "$ref": "#/$defs/sourceHealth"
       },
-      "maxItems": 5,
+      "maxItems": 6,
       "type": "array"
     },
     "window": {
@@ -344,6 +344,7 @@
         "type": {
           "enum": [
             "omarchy-released",
+            "omarchy-news",
             "plugin-added",
             "plugin-released",
             "plugin-retired",
@@ -386,6 +387,7 @@
         "id": {
           "enum": [
             "omarchy-releases",
+            "omarchy-news",
             "marketplace",
             "marketplace-engagement",
             "community",

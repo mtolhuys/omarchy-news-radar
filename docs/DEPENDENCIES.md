@@ -32,7 +32,7 @@ Inspect the current Omarchy source selected by Plugin Lab before importing shell
 
 ## Collector and CI
 
-Production collection uses GitHub’s REST API, the raw marketplace catalog, the official marketplace engagement API, and catalog-declared thumbnails at the official marketplace origin over HTTPS. Image inspection is implemented with Python standard-library byte parsing and hashing; Pillow/ImageMagick are not required. GitHub Actions may use the repository-provided `GITHUB_TOKEN` with least privilege. No personal access token is required for ordinary operation.
+Production collection uses GitHub’s REST API, the official Omarchy News RSS feed, the raw marketplace catalog, the official marketplace engagement API, and catalog-declared thumbnails at the official marketplace origin over HTTPS. Image inspection is implemented with Python standard-library byte parsing and hashing; Pillow/ImageMagick are not required. GitHub Actions may use the repository-provided `GITHUB_TOKEN` with least privilege. No personal access token is required for ordinary operation.
 
 Build and tests require only:
 
