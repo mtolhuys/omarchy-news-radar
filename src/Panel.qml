@@ -1081,7 +1081,9 @@ Item {
       return "Story details and the original source appear here."
     if (!inspectorArticleMode)
       return String(selectedStory.summary || "")
-    return RadarModel.articleBodyHtml(inspectorBodySegments())
+    // Pass the live theme accent so RichText anchors follow Omarchy themes
+    // instead of Qt's default bright blue.
+    return RadarModel.articleBodyHtml(inspectorBodySegments(), Color.accent)
   }
 
   function toggleSaved() {
