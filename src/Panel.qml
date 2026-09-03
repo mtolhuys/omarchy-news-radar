@@ -96,6 +96,9 @@ Item {
   property bool keysLegendOpen: false
   property string shortcutAction: ""
   property string shortcutState: "unknown"
+  property string pluginUpdateState: "unknown"
+  property string pluginUpdateMessage: ""
+  property bool pluginUpdateCanApply: false
   property string shortcutMessage: ""
   property string windowIntegrationStatus: "idle"
   property int totalStories: 0
@@ -182,7 +185,7 @@ Item {
   readonly property bool anyHelperRunning: readProc.running || cacheSyncProc.running
     || refreshProc.running || projectProc.running
     || installedProc.running || preferencesProc.running || stateMutationPending || readMutationPending
-    || openSourceProc.running || windowProc.running || shortcutProc.running
+    || openSourceProc.running || windowProc.running || shortcutProc.running || updateProc.running
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
@@ -377,6 +380,55 @@ Item {
     shortcutProc.running = true
   }
 
+  function inspectPluginUpdate() {
+    if (!helperPath || updateProc.running) return
+    if (pluginUpdateState === "updating") return
+    startProcess(updateProc, ["update-status"])
+  }
+
+  function applyPluginUpdate() {
+    if (!helperPath || updateProc.running) return
+    if (!pluginUpdateCanApply && pluginUpdateState !== "failed") return
+    pluginUpdateState = "updating"
+    pluginUpdateMessage = "Updating News Radar…"
+    startProcess(updateProc, ["update-apply"])
+  }
+
+  function handlePluginUpdate(raw) {
+    var result = RadarModel.parseResponse(raw)
+    var state = String(result.state || "")
+    var message = String(result.message || "")
+    pluginUpdateCanApply = result.canApply === true
+    if (state === "behind" && result.updateAvailable === true) {
+      pluginUpdateState = "behind"
+      pluginUpdateMessage = message || "A newer News Radar is available."
+      pluginUpdateCanApply = result.canApply === true
+    } else if (state === "updated") {
+      pluginUpdateState = "updated"
+      pluginUpdateMessage = message || "News Radar updated. The panel will reload with the new version."
+      pluginUpdateCanApply = false
+    } else if (state === "failed" || result.status === "failed") {
+      pluginUpdateState = "failed"
+      pluginUpdateMessage = message || "News Radar update failed."
+      pluginUpdateCanApply = true
+    } else if (state === "blocked" && result.updateAvailable === true) {
+      pluginUpdateState = "blocked"
+      pluginUpdateMessage = message || "A newer News Radar exists, but this checkout cannot update automatically."
+      pluginUpdateCanApply = false
+    } else if (state === "check-failed") {
+      // Stay quiet on transient network blips; keep any existing behind notice.
+      if (pluginUpdateState !== "behind" && pluginUpdateState !== "failed" && pluginUpdateState !== "updating") {
+        pluginUpdateState = "unknown"
+        pluginUpdateMessage = ""
+        pluginUpdateCanApply = false
+      }
+    } else {
+      pluginUpdateState = "current"
+      pluginUpdateMessage = ""
+      pluginUpdateCanApply = false
+    }
+  }
+
   function inspectShortcut() {
     runShortcutHelper("status")
   }
@@ -461,6 +513,7 @@ Item {
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
     inspectShortcut()
+    inspectPluginUpdate()
     Qt.callLater(function() {
       if (root.opened) {
         navigationFocus.forceActiveFocus()
@@ -480,6 +533,7 @@ Item {
     openSourceProc.running = false
     windowProc.running = false
     shortcutProc.running = false
+    updateProc.running = false
     refreshing = false
     bulkReadInFlight = false
   }
@@ -593,6 +647,8 @@ Item {
         ? "The update check failed; the last-known-good edition remains readable."
         : "The update check failed and no validated cache exists. Retry when online.")
     }
+      if (result.status !== "failed" && result.status !== "offline" && result.status !== "invalid-feed")
+      inspectPluginUpdate()
   }
 
   function handleInstalled(raw) {
@@ -1296,6 +1352,22 @@ Item {
     }
   }
 
+
+  Process {
+    id: updateProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.handlePluginUpdate(text)
+    }
+    onExited: function(exitCode) {
+      if (exitCode !== 0 && root.pluginUpdateState === "updating") {
+        root.pluginUpdateState = "failed"
+        root.pluginUpdateMessage = "News Radar update failed."
+        root.pluginUpdateCanApply = true
+      }
+    }
+  }
+
   Process {
     id: shortcutProc
     stdout: StdioCollector {
@@ -1658,6 +1730,53 @@ Item {
                 tooltipText: "Replace only Radar's exact managed toggle binding with summon activation"
                 enabled: !shortcutProc.running
                 onClicked: root.migrateShortcut()
+              }
+            }
+          }
+
+
+          BorderSurface {
+            id: pluginUpdateNotice
+            Layout.fillWidth: true
+            Layout.preferredHeight: pluginUpdateNoticeRow.implicitHeight + Style.spacing.controlPaddingY * 2
+            visible: root.pluginUpdateState === "behind" || root.pluginUpdateState === "updating"
+              || root.pluginUpdateState === "updated" || root.pluginUpdateState === "failed"
+              || root.pluginUpdateState === "blocked"
+            color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
+            radius: Style.cornerRadius
+            borderSpec: Border.controlSpec(
+              root.pluginUpdateState === "failed" ? "focus" : "normal",
+              Color.popups.text, Color.accent, Color.urgent)
+
+            RowLayout {
+              id: pluginUpdateNoticeRow
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.spacing.controlPaddingX
+              anchors.rightMargin: Style.spacing.controlPaddingX
+              spacing: Style.spacing.controlGap
+
+              Text {
+                Layout.fillWidth: true
+                text: root.pluginUpdateMessage
+                textFormat: Text.PlainText
+                color: root.pluginUpdateState === "failed" ? Color.urgent : Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+                wrapMode: Text.WordWrap
+                Accessible.role: Accessible.StaticText
+                Accessible.name: text
+              }
+
+              RadarButton {
+                id: pluginUpdateButton
+                visible: (root.pluginUpdateState === "behind" && root.pluginUpdateCanApply)
+                  || root.pluginUpdateState === "failed"
+                label: root.pluginUpdateState === "failed" ? "Retry update" : "Update plugin"
+                tooltipText: "Fast-forward News Radar with Omarchy's official plugin updater"
+                enabled: !updateProc.running && (root.pluginUpdateCanApply || root.pluginUpdateState === "failed")
+                onClicked: root.applyPluginUpdate()
               }
             }
           }

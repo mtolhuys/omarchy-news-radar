@@ -29,6 +29,7 @@ from .client import (
 )
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
 from .errors import RadarError
+from .plugin_update import apply_update, inspect_update
 from .io import atomic_write_json
 from .local_edition import import_local_edition
 from .local_collection import commit_local_source_snapshot, prepare_local_source_snapshot
@@ -74,6 +75,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     indicator = commands.add_parser("indicator")
     indicator.add_argument("--installed-json", default="[]")
     commands.add_parser("installed")
+    commands.add_parser("update-status")
+    commands.add_parser("update-apply")
     commands.add_parser("purge")
     commands.add_parser("activate-window")
     reading = commands.add_parser("set-read")
@@ -112,6 +115,10 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = indicator_model(installed_json=args.installed_json)
         elif args.command == "installed":
             result = installed_plugins()
+        elif args.command == "update-status":
+            result = inspect_update()
+        elif args.command == "update-apply":
+            result = apply_update()
         elif args.command == "activate-window":
             result = activate_window()
         elif args.command == "set-read":
@@ -149,7 +156,9 @@ def client_main(argv: Sequence[str] | None = None) -> int:
         else:
             result = purge_state()
         _print(result)
-        return 0 if result.get("status") not in {"offline", "invalid-feed"} else 2
+        if result.get("status") in {"offline", "invalid-feed", "failed"}:
+            return 2
+        return 0
     except (RadarError, OSError, subprocess.SubprocessError) as exc:
         _print({"protocolVersion": 1, "status": "failed", "message": str(exc)})
         return 2

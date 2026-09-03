@@ -237,6 +237,24 @@ def validate_manifest() -> None:
         if "exec python3 -B -m " not in helper:
             fail(f"{helper_name} must disable bytecode writes in the watched plugin directory")
 
+    update_source = (ROOT / "radar" / "plugin_update.py").read_text(encoding="utf-8")
+    if "omarchy-plugin-update" not in update_source:
+        fail("plugin update helper must call omarchy-plugin-update")
+    for forbidden_update in ("merge --ff-only", "git pull", "git reset"):
+        if forbidden_update in update_source:
+            fail(f"plugin update helper must not implement its own git mutation: {forbidden_update}")
+    panel_source = (ROOT / "src" / "Panel.qml").read_text(encoding="utf-8")
+    for required_update_ui in ("pluginUpdateNotice", "Update plugin", '"update-status"', '"update-apply"'):
+        if required_update_ui not in panel_source:
+            fail(f"panel lacks plugin update UI contract: {required_update_ui}")
+    makefile_text = (ROOT / "Makefile").read_text(encoding="utf-8")
+    if "local-downgrade" not in makefile_text or "local-behind" not in makefile_text:
+        fail("Makefile must expose local-downgrade and local-behind test helpers")
+    if not (ROOT / "scripts" / "downgrade_local_plugin.sh").is_file():
+        fail("local-downgrade script is missing")
+    if not (ROOT / "scripts" / "mark_local_plugin_behind.sh").is_file():
+        fail("local-behind script is missing")
+
     shortcut_source = (ROOT / "radar" / "shortcut.py").read_text(encoding="utf-8")
     shortcut_cli = (ROOT / "radar" / "shortcut_cli.py").read_text(encoding="utf-8")
     if 'CHORD = "SUPER + ALT + N"' not in shortcut_source or "MODMASK = 72" not in shortcut_source:
