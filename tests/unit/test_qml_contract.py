@@ -28,14 +28,24 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('translate(64 64) scale(.075) translate(-600 -600)', icon)
         self.assertIn('circle cx="64" cy="64" r="19"', icon)
         self.assertTrue((ROOT / "assets/readme-banner.svg").is_file())
-        self.assertTrue((ROOT / "preview.png").is_file())
+        marketplace_preview = (ROOT / "preview.png").read_bytes()
+        self.assertEqual(b"\x89PNG\r\n\x1a\n", marketplace_preview[:8])
+        self.assertEqual(
+            (1200, 675),
+            (
+                int.from_bytes(marketplace_preview[16:20], "big"),
+                int.from_bytes(marketplace_preview[20:24], "big"),
+            ),
+        )
         walkthrough = (ROOT / "preview.gif").read_bytes()
         self.assertIn(walkthrough[:6], (b"GIF87a", b"GIF89a"))
         self.assertEqual((960, 573), (
             int.from_bytes(walkthrough[6:8], "little"),
             int.from_bytes(walkthrough[8:10], "little"),
         ))
-        self.assertIn("(preview.gif)", (ROOT / "README.md").read_text(encoding="utf-8"))
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("(assets/readme-banner.svg)", readme)
+        self.assertIn("(preview.gif)", readme)
         self.assertEqual(
             {"appId": "org.quickshell", "title": "📰 Omarchy News Radar"},
             manifest["windowIdentity"],

@@ -1,4 +1,4 @@
-![Omarchy News Radar — press one key and catch up with what changed](preview.png)
+![Omarchy News Radar — press one key and catch up with what changed](assets/readme-banner.svg)
 
 # Omarchy News Radar
 

@@ -196,6 +196,15 @@ def validate_manifest() -> None:
     readme_walkthrough = ROOT / "preview.gif"
     if not banner_source.is_file() or not marketplace_preview.is_file() or not readme_walkthrough.is_file():
         fail("README and marketplace preview assets are missing")
+    marketplace_preview_bytes = marketplace_preview.read_bytes()
+    if marketplace_preview_bytes[:8] != b"\x89PNG\r\n\x1a\n":
+        fail("marketplace preview must remain a root preview.png")
+    marketplace_preview_size = (
+        int.from_bytes(marketplace_preview_bytes[16:20], "big"),
+        int.from_bytes(marketplace_preview_bytes[20:24], "big"),
+    )
+    if marketplace_preview_size != (1200, 675):
+        fail("marketplace preview must remain a 1200x675 16:9 hero image")
     banner_text = banner_source.read_text(encoding="utf-8")
     for token in ("COMMUNITY PLUGIN", "OMARCHY", "NEWS RADAR", "#9ece6a", "#ffad24"):
         if token not in banner_text:
@@ -212,6 +221,8 @@ def validate_manifest() -> None:
     if len(walkthrough_bytes) > 6 * 1024 * 1024:
         fail("README walkthrough exceeds the 6 MiB repository budget")
     readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+    if "(assets/readme-banner.svg)" not in readme_text:
+        fail("README does not embed the reviewed brand banner")
     if "(preview.gif)" not in readme_text:
         fail("README does not embed the product walkthrough")
     qml = entries["panel"].read_text(encoding="utf-8")
