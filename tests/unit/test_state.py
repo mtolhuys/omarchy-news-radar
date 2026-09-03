@@ -460,6 +460,36 @@ class StateTests(unittest.TestCase):
         self.assertEqual("24h", v9["preferences"]["sectionFilters"]["core"]["period"])
         self.assertIn("youtube", v9["preferences"]["sectionFilters"])
 
+        self.assertEqual(
+            {"core": True, "plugins": True, "youtube": True},
+            v9["preferences"]["sectionVisibility"],
+        )
+
+        v10_preferences = {
+            "barVisible": True,
+            "imagesVisible": True,
+            "sectionFilters": default_state()["preferences"]["sectionFilters"],
+        }
+        v10_preferences["sectionFilters"]["youtube"]["period"] = "7d"
+        path.write_text(
+            json.dumps({
+                "schemaVersion": 10,
+                "readThrough": "2026-08-31T10:00:00Z",
+                "readOverrides": {},
+                "saved": {},
+                "preferences": v10_preferences,
+            }),
+            encoding="utf-8",
+        )
+        v10, quarantine = load_state(self.environment)
+        self.assertIsNone(quarantine)
+        self.assertEqual(STATE_SCHEMA_VERSION, v10["schemaVersion"])
+        self.assertEqual("7d", v10["preferences"]["sectionFilters"]["youtube"]["period"])
+        self.assertEqual(
+            {"core": True, "plugins": True, "youtube": True},
+            v10["preferences"]["sectionVisibility"],
+        )
+
     def test_current_state_rejects_unknown_members_instead_of_normalizing_them_away(self) -> None:
         cases = []
 

@@ -15,11 +15,12 @@ from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, H
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary
 from .freshness import edition_timing, update_message
-from .sections import SECTION_SOURCE_SUMMARIES
+from .sections import SECTION_SOURCE_SUMMARIES, visible_client_sections
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
 from .local_edition import local_edition_metadata, local_image_url
 from .model import project_section
+from .reading import article_segments, list_summary
 from .state import (
     RefreshLock,
     StateLock,
@@ -330,6 +331,7 @@ def set_preferences(
     *,
     bar_visible: bool | None = None,
     images_visible: bool | None = None,
+    section_visibility: Mapping[str, Any] | None = None,
     environment: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     with StateLock(environment):
@@ -338,9 +340,14 @@ def set_preferences(
             state,
             bar_visible=bar_visible,
             images_visible=images_visible,
+            section_visibility=section_visibility,
         )
         saved = save_state(updated, environment)
-    return response("ok", state=saved)
+    return response(
+        "ok",
+        state=saved,
+        visibleSections=list(visible_client_sections(saved["preferences"]["sectionVisibility"])),
+    )
 
 
 def set_section_filter(
@@ -376,6 +383,7 @@ def indicator_model(
             barVisible=preferences["barVisible"],
             quarantine=quarantined,
             lastUpdateCheck=update_check,
+            visibleSections=list(visible_client_sections(preferences["sectionVisibility"])),
         )
     installed = _parse_installed_plugin_ids(installed_json)
     section_events = _persistent_section_events(
@@ -401,6 +409,7 @@ def indicator_model(
         publisherStale=timing["publisherStale"],
         timing=timing,
         lastUpdateCheck=update_check,
+        visibleSections=list(visible_client_sections(preferences["sectionVisibility"])),
     )
 
 
@@ -552,7 +561,12 @@ def _persistent_section_events(
     *,
     now: datetime | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Project every section through its persisted filter exactly once."""
+    """Project every locally visible section through its persisted filter once.
+
+    A rail hidden in Tune is not a reachable destination, so it contributes no
+    count and cannot keep the top-bar newspaper active (D044/D050). Saved keeps
+    every bookmark, including stories from a hidden rail.
+    """
 
     return {
         section: _filtered_section_events(
@@ -562,7 +576,7 @@ def _persistent_section_events(
             installed_plugin_ids,
             now=now,
         )
-        for section in CLIENT_SECTIONS
+        for section in visible_client_sections(state["preferences"]["sectionVisibility"])
     }
 
 
@@ -611,13 +625,16 @@ def projection_model(
             filterSummary=filter_summary(current_filter),
             sectionSources=SECTION_SOURCE_SUMMARIES[section],
             filterOptions=filter_options(section),
+            visibleSections=list(visible_client_sections(state["preferences"]["sectionVisibility"])),
         )
     saved_ids = set(state["saved"])
     section_events = _persistent_section_events(feed, state, installed, now=now)
-    counts = {name: len(events) for name, events in section_events.items()}
+    # Hidden rails report zero instead of disappearing, so the response shape
+    # stays stable for every client build.
+    counts = {name: len(section_events.get(name, ())) for name in names}
     unread_counts = {
-        name: len(_unread_event_ids(state, events))
-        for name, events in section_events.items()
+        name: len(_unread_event_ids(state, section_events.get(name, [])))
+        for name in names
     }
     events = _filtered_section_events(
         feed,
@@ -650,6 +667,9 @@ def projection_model(
         item = dict(event)
         item["isUnread"] = not event_is_read(state, item)
         item["isSaved"] = item["id"] in saved_ids
+        # Cards stay scannable. The inspector keeps the full 0.4.14 body.
+        item["listSummary"] = list_summary(item.get("summary"), item.get("title", ""))
+        item["summarySegments"] = article_segments(item.get("summary"))
         image = item.get("image")
         if state["preferences"]["imagesVisible"] and isinstance(image, dict):
             source_url = image.get("sourceUrl")
@@ -718,6 +738,7 @@ def projection_model(
         filterSummary=filter_summary(current_filter),
         sectionSources=SECTION_SOURCE_SUMMARIES[section],
         filterOptions=filter_options(section),
+        visibleSections=list(visible_client_sections(state["preferences"]["sectionVisibility"])),
     )
 
 

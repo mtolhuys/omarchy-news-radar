@@ -2,8 +2,21 @@
 
 ## Unreleased
 
-### Documentation
-- Refresh the README walkthrough with the current 0.4.14 public edition, full official Omarchy News detail, real plugin activity and metrics, section filters, and a Matte Black/Catppuccin Latte theme switch without unreviewed story imagery.
+## 0.4.15 — 2026-09-03
+
+### Added
+- Local Tune section visibility for Core, Plugins, and YouTube (state v11). Hidden rails leave the nav, Tab cycle, number keys, and newspaper badge; Front Page, For You, and Saved stay reachable.
+- Deterministic YouTube description sanitation and stronger lane eligibility: sponsor/course/affiliate/URL sludge is stripped, incidental mentions and promo-only items stay out, critical reviews survive, and one channel may hold at most two slots.
+- Front Page topic-cluster diversity for Omarchy News so one same-cycle Foundation/patronage story cannot take every quota slot. Core still keeps every news item.
+
+### Changed
+- Keep one stable column split across sections so Core ↔ Plugins no longer jumps widths.
+- Keep the SECTIONS rail wide enough that Front Page and Plugins never truncate.
+- Core, and Front Page Omarchy News / Core-tagged stories, use quiet headline rows (title + human date, unread mark only). Plugins, YouTube, and For You keep denser teaser/metric/thumbnail cards.
+- The article reading pane leads with a large title, one `date · source` line, a divider, and the full 0.4.14 body; compact actions follow; TYPE/TRUST/AUDIT/COMPAT and the raw URL sit in a collapsed Details footer. Validated HTTPS links from RSS `content:encoded` render as accent-colored clickable labels and open through the same helper as Original source. YouTube keeps its thumbnail and prominent metrics.
+- Core and Front Page give the reading pane majority width (~60%). The Keys legend is only `Keys · ?` until opened; it no longer dumps the shortcut list while collapsed.
+- YouTube Settings labels the existing period filter as TIME RANGE (24h / 7d / 30d / All).
+- Bar widget one-shot refresh rearms after an early helper return or unparsable output; the 1800 ms first-check delay is a named constant.
 
 ## 0.4.14 — 2026-09-03
 

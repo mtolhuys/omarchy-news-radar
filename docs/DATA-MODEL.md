@@ -115,7 +115,7 @@ Compatibility basis is `declared`, `inferred-from-source`, or `unknown`. Version
 
 - Event ID: ASCII, maximum 32 characters, `evt_` plus 24 lowercase hexadecimal characters.
 - Title: plain text, 1–160 Unicode scalar values after normalization.
-- Summary: plain text, 1–400 Unicode scalar values.
+- Summary: plain text, 1–8,000 Unicode scalar values (official Omarchy News may carry the RSS article body; other adapters still write short factual copy). Omarchy News may include lightweight `[label](https://...)` markers copied from real RSS hrefs. List cards display a client-derived teaser of at most 220 characters and never replace this field.
 - Source label: 1–60 characters.
 - URL: HTTPS, maximum 2,048 characters, no credentials, control characters, fragments containing secrets, or non-public host literals.
 - Entity ID: 1–160 characters from a conservative plugin-ID/release-ID grammar.
@@ -173,7 +173,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "readThrough": "1970-01-01T00:00:00Z",
   "readOverrides": {
     "evt_8cb067f9ef7da216bcab4781": true
@@ -197,6 +197,11 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
       "plugins": {"period":"7d","significance":"notable","unreadOnly":false,"imagesOnly":true,"types":["plugin-released"]},
       "youtube": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]},
       "saved": {"period":"all","significance":"all","unreadOnly":false,"imagesOnly":false,"types":[]}
+    },
+    "sectionVisibility": {
+      "core": true,
+      "plugins": true,
+      "youtube": true
     }
   }
 }
@@ -206,11 +211,11 @@ Saved records intentionally duplicate a small bounded subset so a bookmark survi
 
 `readThrough` is a migration baseline, not a session cursor. An event is read when its boolean `readOverrides[eventId]` exists and is true, unread when that override exists and is false, and otherwise read only when `occurredAt <= readThrough`. New installations use the Unix epoch baseline, so every current event starts unread. The panel never advances the baseline; deliberate per-story actions create or remove the smallest necessary override. The explicit filtered-section batch action applies that same rule to a validated list of at most 500 event IDs in one locked atomic write, including unloaded matches while ignoring temporary search. Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v10 retains strict filters and explicit read overrides but cannot represent a section display profile. Valid v1–v9 states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, legacy profile shapes and the v2–v7 interests array are strictly validated before being discarded, the removed Community filter stays removed, and v9 gains a default YouTube section filter. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical names, icons, order, backgrounds, and source scope remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
+State v11 adds `sectionVisibility` for the hideable Core, Plugins, and YouTube rails. Valid v1–v10 states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, legacy profile shapes and the v2–v7 interests array are strictly validated before being discarded, the removed Community filter stays removed, v9 gains a default YouTube section filter, and v10 gains the default-on visibility profile. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical names, icons, order, backgrounds, and source scope remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
 
 The stable client sections are `front-page`, `for-you`, `core`, `plugins`, `youtube`, and `saved`; they own the fixed name, projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections. YouTube stays in its own rail and does not enter Front Page in MVP.
 
-The top-bar unread value is not a second reading-state model. It applies the same canonical read predicate, projects all six sections with the current persistent filters and exact locally enabled plugin IDs, and counts the union of matching unread event IDs. Overlap between Front Page, For You, source sections, and Saved never double-counts a story. Temporary search and pagination do not change the badge; an unread story excluded by every persistent section projection is deliberately not advertised as actionable.
+The top-bar unread value is not a second reading-state model. It applies the same canonical read predicate, projects the currently visible sections with the current persistent filters and exact locally enabled plugin IDs, and counts the union of matching unread event IDs. A rail hidden in Tune is not a reachable destination and cannot keep the badge active. Overlap between Front Page, For You, source sections, and Saved never double-counts a story. Temporary search and pagination do not change the badge; an unread story excluded by every persistent section projection is deliberately not advertised as actionable.
 
 Background check cadence is disposable cache metadata, not reading state or feed metadata:
 

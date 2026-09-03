@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import "../Model.js" as RadarModel
 
 FocusScope {
   id: root
@@ -8,9 +9,10 @@ FocusScope {
   property var story: null
   property bool selected: false
   property bool lead: false
+  property bool quiet: false
   signal activated()
 
-  readonly property bool hasImage: !!story && !!story.imageUrl
+  readonly property bool hasImage: !!story && !!story.imageUrl && !quiet
   // A selected surface must never keep the ambient muted token: some themes
   // intentionally make that token close to their selection fill.  Derive all
   // selected text tiers from the popup foreground so the pair stays legible.
@@ -24,15 +26,23 @@ FocusScope {
               popupBgIsLight ? 0.88 : 0.78)
     : Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b,
               popupBgIsLight ? 0.82 : 0.72)
+  readonly property int cardPad: quiet ? Style.spacing.sm : Style.spacing.rowPaddingX
+  readonly property string cardSummary: story
+    ? String(story.listSummary || story.summary || "")
+    : ""
+  readonly property string cardDate: story
+    ? RadarModel.humanDate(String(story.occurredAt || ""))
+    : ""
   implicitHeight: Math.max(
-    storyColumn.implicitHeight + Style.spacing.rowPaddingX * 2,
+    storyColumn.implicitHeight + cardPad * 2,
     hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0
   )
   activeFocusOnTab: true
 
   Accessible.role: Accessible.ListItem
   Accessible.name: story
-    ? (story.isUnread ? "Unread. " : "Read. ") + story.title + ". " + story.summary
+    ? (story.isUnread ? "Unread. " : "Read. ") + story.title
+      + ". " + (quiet ? cardDate : cardSummary)
     : "Story"
   Accessible.selected: selected
   Accessible.focusable: true
@@ -49,7 +59,7 @@ FocusScope {
     borderSpec: Border.controlSpec(root.activeFocus ? "focus" : root.selected ? "selected" : "normal", Color.foreground, Color.accent, Color.urgent)
 
     Rectangle {
-      visible: root.lead
+      visible: (!root.quiet && root.lead) || (root.quiet && root.story && root.story.isUnread)
       anchors.left: parent.left
       anchors.top: parent.top
       anchors.bottom: parent.bottom
@@ -62,11 +72,12 @@ FocusScope {
       anchors.left: parent.left
       anchors.right: storyImageBox.visible ? storyImageBox.left : parent.right
       anchors.verticalCenter: parent.verticalCenter
-      anchors.leftMargin: Style.spacing.rowPaddingX
-      anchors.rightMargin: Style.spacing.rowPaddingX
-      spacing: Style.spacing.labelGap
+      anchors.leftMargin: root.cardPad
+      anchors.rightMargin: root.cardPad
+      spacing: root.quiet ? Style.space(2) : Style.spacing.labelGap
 
       Text {
+        visible: !root.quiet
         width: parent.width
         text: root.story
           ? String(root.story.classification.section).toUpperCase()
@@ -86,16 +97,30 @@ FocusScope {
         textFormat: Text.PlainText
         color: root.primaryTextColor
         font.family: Style.font.family
-        font.pixelSize: root.lead ? Style.font.heading : Style.font.subtitle
+        font.pixelSize: root.quiet
+          ? Style.font.subtitle
+          : (root.lead ? Style.font.heading : Style.font.subtitle)
         font.bold: true
         wrapMode: Text.WordWrap
-        maximumLineCount: root.lead ? 3 : 2
+        maximumLineCount: root.quiet ? 2 : (root.lead ? 3 : 2)
         elide: Text.ElideRight
       }
 
       Text {
+        visible: root.quiet
         width: parent.width
-        text: root.story ? root.story.summary : ""
+        text: root.cardDate
+        textFormat: Text.PlainText
+        color: root.secondaryTextColor
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        elide: Text.ElideRight
+      }
+
+      Text {
+        visible: !root.quiet
+        width: parent.width
+        text: root.cardSummary
         textFormat: Text.PlainText
         color: root.secondaryTextColor
         font.family: Style.font.family
@@ -107,7 +132,7 @@ FocusScope {
 
       MetricStrip {
         width: parent.width
-        visible: !!root.story && !!root.story.metricItems && root.story.metricItems.length > 0
+        visible: !root.quiet && !!root.story && !!root.story.metricItems && root.story.metricItems.length > 0
         metrics: visible ? root.story.metricItems : []
         foreground: root.secondaryTextColor
         compact: true
@@ -118,7 +143,7 @@ FocusScope {
       id: storyImageBox
       visible: root.hasImage
       anchors.right: parent.right
-      anchors.rightMargin: Style.spacing.rowPaddingX
+      anchors.rightMargin: root.cardPad
       anchors.verticalCenter: parent.verticalCenter
       width: root.lead ? Style.space(180) : Style.space(104)
       height: root.lead ? Style.space(102) : Style.space(66)

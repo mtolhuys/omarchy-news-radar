@@ -23,7 +23,7 @@
       <pubDate>Fri, 28 Aug 2026 09:00:00 GMT</pubDate>
       <dc:creator>DHH</dc:creator>
       <description><![CDATA[The inaugural Core Team shares responsibility for the direction of the distro.]]></description>
-      <content:encoded><![CDATA[<p>The inaugural <strong>Core Team</strong> shares responsibility for the direction of the distro.</p><p>This second paragraph exists so Radar can show a full article body instead of the teaser.</p>]]></content:encoded>
+      <content:encoded><![CDATA[<p>The inaugural <strong>Core Team</strong> shares responsibility for the direction of the distro. Read the <a href="https://omarchy.org/news/2026/08/omarchy-quattro-ships">Quattro announcement</a>.</p><p>This second paragraph exists so Radar can show a full article body instead of the teaser.</p><p>Ignore <a href="javascript:alert(1)">this script</a> and keep <a href="/news/2026/08/omarchy-quattro-ships">the relative news link</a>.</p>]]></content:encoded>
     </item>
   </channel>
 </rss>

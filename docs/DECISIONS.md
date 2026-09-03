@@ -390,3 +390,27 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 
 **Consequence:** Adapter significance stays `routine` (D008). Front Page selects at most three recent `omarchy-news` events by an explicit quota. Settings discloses Omarchy News on Front Page/Core. Feed schema version remains 2 with an extended event-type and source-id enum; local state schema remains v10 with an extended filter-type enum. No API key is required.
 
+
+## D049 — Diversify Front Page news by topic cluster, keep every item in Core
+
+**Decision:** Core continues to list every official `omarchy-news` event. Front Page still admits at most three recent news items (D048) but spends that quota on distinct deterministic topic clusters first, then backfills in freshness order. Clustering uses closed stoplist tokens from the title and leading summary sentence. No rewriting, translation, sentiment, or popularity signal is involved.
+
+**Why:** A single-cycle Foundation/patronage announcement shipped as several RSS items and consumed the entire news quota, hiding the rest of the edition.
+
+**Consequence:** Same-topic follow-ups remain in Core and Saved. Front Page shows one item from that cluster before other current topics. A window that contains only one topic still fills the quota by freshness.
+
+## D050 — Local section visibility without hiding the edition
+
+**Decision:** State v11 adds `preferences.sectionVisibility` for the hideable source rails Core, Plugins, and YouTube. Each defaults to visible. Front Page, For You, and Saved cannot be hidden. Hidden rails leave the section list, Tab cycle, number keys, Settings destination, and newspaper unread union. Saved still keeps bookmarks from a hidden rail.
+
+**Why:** Readers asked to quiet unused lanes without losing the edition, the installed-plugin view, or bookmarks. Session-only visibility would reset on every open.
+
+**Consequence:** Valid v10 states migrate atomically and gain the default-on profile. Tune copy stays local-display only: no language selector, engagement, clickbait, keywords, muting, duration, captions, or AI controls.
+
+## D051 — Reader mode for Core and Front Page articles
+
+**Decision:** Core, and Front Page `omarchy-news` / Core-tagged stories, render as quiet headlines (title + human date, optional unread mark). Plugins, YouTube, and For You keep denser cards that still use a deterministic `listSummary` teaser (at most 220 characters). The article inspector leads with a large title, one `date · source` line, a divider, and the full validated `summary` (including the official 0.4.14 Omarchy News body); compact actions follow; TYPE/TRUST/AUDIT/COMPAT and raw URLs live in a collapsed Details footer. Validated HTTPS anchors from RSS `content:encoded` are stored as `[label](https://...)` markers and rendered as accent links that open through the existing `open-source` helper. YouTube retains thumbnail and prominent metric treatment. Core and Front Page give the reading pane majority width (~60%). Keys is a collapsed `Keys · ?` control with no shortcut dump until opened. `readerLayout`, `usesQuietCard`, and `isReaderArticle` are derived from section + story type.
+
+**Why:** A dense three-column data UI is not a news reader. Competitor surfaces keep the index quiet so the article can dominate. Compact teasers alone did not change the product character.
+
+**Consequence:** Source content is not rewritten or discarded. Dense cards still use `listSummary`. Feed schema is unchanged.

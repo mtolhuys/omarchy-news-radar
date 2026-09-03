@@ -18,6 +18,10 @@ BarWidget {
   readonly property string stateBase: Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")
   readonly property int refreshMinimumAgeSeconds: 5 * 60
+  // First due-check after enablement or helper discovery. Named so the
+  // one-shot timer is never confused with a 1.8-second polling interval.
+  readonly property int initialRefreshDelayMs: 1800
+  readonly property int refreshFloorSeconds: 5
   // Start collapsed until the validated local preference arrives. This avoids
   // a one-frame flash for users who previously hid the indicator; state defaults
   // to visible on first use.
@@ -27,6 +31,7 @@ BarWidget {
   property bool indicatorUpdatePending: false
   property bool componentReady: false
   property bool shortcutMigrationAttempted: false
+  property bool refreshScheduledFromOutput: false
   readonly property string healthLabel: health === "publisher-stale" ? "publisher stale"
     : health === "source-stale" ? "source stale"
     : health === "partial" ? "source partial"
@@ -61,9 +66,21 @@ BarWidget {
   }
 
   function refreshIfDue() {
-    if (barVisible) runHelper(refreshProc, [
+    if (!barVisible) return
+    if (refreshProc.running) {
+      // The one-shot already fired. Keep a single helper process and rearm
+      // so an in-flight check cannot drop the next due-check.
+      scheduleRefresh({})
+      return
+    }
+    runHelper(refreshProc, [
       "refresh-if-due", "--minimum-age", String(refreshMinimumAgeSeconds)
     ])
+    if (!refreshProc.running) {
+      // runHelper bailed (helper path missing or process already claimed).
+      // Rearm so the one-shot cannot go silent after an early return.
+      scheduleRefresh({})
+    }
   }
 
   function scheduleRefresh(result) {
@@ -75,9 +92,10 @@ BarWidget {
       ? result.nextCheckInSeconds : refreshMinimumAgeSeconds)
     if (!isFinite(seconds)) seconds = refreshMinimumAgeSeconds
     refreshTimer.interval = Math.round(
-      Math.max(5, Math.min(refreshMinimumAgeSeconds, seconds)) * 1000
+      Math.max(refreshFloorSeconds, Math.min(refreshMinimumAgeSeconds, seconds)) * 1000
     )
     refreshTimer.restart()
+    refreshScheduledFromOutput = true
   }
 
   function hideIndicator() {
@@ -94,7 +112,7 @@ BarWidget {
   onHelperPathChanged: {
     if (!helperPath) return
     updateIndicator()
-    refreshTimer.interval = 1800
+    refreshTimer.interval = initialRefreshDelayMs
     refreshTimer.restart()
   }
 
@@ -109,7 +127,7 @@ BarWidget {
 
   onBarVisibleChanged: {
     if (barVisible) {
-      refreshTimer.interval = 1800
+      refreshTimer.interval = initialRefreshDelayMs
       refreshTimer.restart()
     } else refreshTimer.stop()
   }
@@ -159,9 +177,19 @@ BarWidget {
     id: refreshProc
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.scheduleRefresh(RadarModel.parseResponse(text))
+      onStreamFinished: {
+        root.refreshScheduledFromOutput = false
+        root.scheduleRefresh(RadarModel.parseResponse(text))
+      }
     }
-    onExited: function() { root.updateIndicator() }
+    onExited: function() {
+      // Rearm even when stdout is empty or unparsable so the one-shot cannot
+      // die after a failed helper. Prefer the parsed next-check when present.
+      if (!root.refreshScheduledFromOutput)
+        root.scheduleRefresh({})
+      root.refreshScheduledFromOutput = false
+      root.updateIndicator()
+    }
   }
 
   Process {
@@ -192,7 +220,8 @@ BarWidget {
 
   Timer {
     id: refreshTimer
-    interval: 1800
+    interval: initialRefreshDelayMs
+    repeat: false
     onTriggered: root.refreshIfDue()
   }
 
