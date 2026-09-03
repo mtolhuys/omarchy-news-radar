@@ -1563,30 +1563,8 @@ Item {
               Layout.fillWidth: true
               spacing: Style.spacing.controlGap
 
-              // Launcher surfaces retain the opaque application tile. The
-              // panel uses a transparent, contrast-tuned mark so its own
-              // theme plate remains visible instead of becoming a black box.
-              Rectangle {
-                Layout.preferredWidth: Style.space(42)
-                Layout.preferredHeight: Style.space(42)
-                radius: Math.round(width * 28 / 128)
-                color: Color.popups.background
-                border.width: Style.spacing.hairline
-                border.color: Color.popups.border
-                Accessible.role: Accessible.Graphic
-                Accessible.name: "Omarchy News Radar panel mark"
-
-                Image {
-                  anchors.fill: parent
-                  source: Qt.resolvedUrl(root.popupBgIsLight
-                    ? "../assets/io.github.mtolhuys.news-radar-panel-light.svg"
-                    : "../assets/io.github.mtolhuys.news-radar-panel.svg")
-                  sourceSize: Qt.size(Style.space(84), Style.space(84))
-                  fillMode: Image.PreserveAspectFit
-                  mipmap: true
-                }
-              }
-
+              // No in-panel mark: the title already names the app, and the
+              // Apps menu / desktop entry keep the real application icon.
               Item {
                 Layout.fillWidth: true
                 implicitHeight: titleStack.implicitHeight
@@ -1984,7 +1962,12 @@ Item {
                   }
 
                   Text {
+                    // preferredWidth 0 lets this claim leftover space before the
+                    // action buttons, so "FOR YOU" / "FRONT PAGE" are not elided
+                    // while empty gap sits beside them.
                     Layout.fillWidth: true
+                    Layout.preferredWidth: 0
+                    Layout.minimumWidth: Style.space(72)
                     text: root.currentProfile.name.toUpperCase()
                     textFormat: Text.PlainText
                     color: Color.popups.text
@@ -1994,12 +1977,13 @@ Item {
                     elide: Text.ElideRight
                     maximumLineCount: 1
                     wrapMode: Text.NoWrap
-                    clip: true
                     Accessible.role: Accessible.Heading
                     Accessible.name: text
                   }
 
                   RowLayout {
+                    Layout.fillWidth: false
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     spacing: Style.spacing.controlGap
                     visible: !keySurface.narrow
 

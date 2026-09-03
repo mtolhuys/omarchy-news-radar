@@ -90,6 +90,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function inspectorBodyText()", qml)
         self.assertIn("RadarModel.articleBodyHtml", qml)
         self.assertIn("pluginUpdateNotice", qml)
+        self.assertIn("Layout.preferredWidth: 0", qml)
         self.assertIn("Update plugin", qml)
         self.assertIn('"update-status"', qml)
         self.assertIn('"update-apply"', qml)
@@ -112,8 +113,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('placeholderText: "Search news  /"', qml)
         self.assertIn("function sectionSummaryText()", qml)
         self.assertIn("readonly property bool popupBgIsLight", qml)
-        self.assertIn("../assets/io.github.mtolhuys.news-radar-panel.svg", qml)
-        self.assertIn("../assets/io.github.mtolhuys.news-radar-panel-light.svg", qml)
+        # Panel chrome is title-only; Apps/desktop keep the application icon assets.
+        self.assertIn("No in-panel mark", qml)
+        self.assertNotIn("../assets/io.github.mtolhuys.news-radar-panel.svg", qml)
+        self.assertNotIn("../assets/io.github.mtolhuys.news-radar-panel-light.svg", qml)
         self.assertFalse((ROOT / "assets/io.github.mtolhuys.news-radar-light.svg").exists())
         for panel_mark_name in (
             "io.github.mtolhuys.news-radar-panel.svg",
