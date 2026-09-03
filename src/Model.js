@@ -120,17 +120,40 @@ function articleSegments(value) {
   return raw ? [{ kind: "text", text: raw }] : []
 }
 
-function articleBodyHtml(segments) {
+function cssColor(value) {
+  if (!value) return ""
+  if (typeof value === "string") {
+    var raw = value.replace(/\s+/g, "")
+    if (raw.charAt(0) === "#" && (raw.length === 7 || raw.length === 4)) return raw
+    return ""
+  }
+  if (typeof value.r !== "number" || typeof value.g !== "number" || typeof value.b !== "number")
+    return ""
+  function hex(channel) {
+    var n = Math.max(0, Math.min(255, Math.round(channel * 255)))
+    var h = n.toString(16)
+    return h.length === 1 ? "0" + h : h
+  }
+  return "#" + hex(value.r) + hex(value.g) + hex(value.b)
+}
+
+function articleBodyHtml(segments, linkColor) {
   if (!segments || !segments.length) return ""
+  var color = cssColor(linkColor)
   var parts = []
   for (var index = 0; index < segments.length; index++) {
     var segment = segments[index]
     var text = escapeHtml(String(segment && segment.text ? segment.text : ""))
     var url = segment && segment.kind === "link" ? acceptedHttpsUrl(String(segment.url || "")) : ""
-    if (url)
-      parts.push('<a href="' + escapeHtml(url) + '">' + text + "</a>")
-    else
+    if (url) {
+      // Bake theme color into the tag: Qt RichText often ignores Text.linkColor.
+      var style = color
+        ? ' style="color: ' + color + '; text-decoration: underline;"'
+        : ""
+      parts.push('<a href="' + escapeHtml(url) + '"' + style + ">" + text + "</a>")
+    } else {
       parts.push(text)
+    }
   }
   return parts.join("")
 }

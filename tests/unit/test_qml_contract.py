@@ -74,6 +74,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("textFormat: Text.PlainText", qml)
         self.assertIn("textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText", qml)
         self.assertIn("linkColor: Color.accent", qml)
+        self.assertIn("articleBodyHtml(inspectorBodySegments(), Color.accent)", qml)
         self.assertIn("onLinkActivated", qml)
         self.assertIn("function openArticleLink(url)", qml)
         self.assertIn("function inspectorBodyText()", qml)
