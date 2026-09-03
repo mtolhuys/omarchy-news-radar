@@ -1697,9 +1697,9 @@ Item {
             ColumnLayout {
               // SECTIONS stays a compact rail. Core/Front Page give leftover
               // width to the reading pane; Plugins/YouTube keep a denser list.
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : (root.readerLayout ? card.width * 0.10 : card.width * 0.12)
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.10
               Layout.minimumWidth: Style.space(128)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : (root.readerLayout ? Style.space(144) : Style.space(160))
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(144)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1842,7 +1842,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : (root.readerLayout ? card.width * 0.28 : card.width * 0.38)
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.28
               spacing: Style.spacing.md
 
               GridLayout {
@@ -2039,7 +2039,7 @@ Item {
               visible: !keySurface.narrow
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: root.readerLayout && !keySurface.narrow ? card.width * 0.60 : card.width * 0.44
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.44 : card.width * 0.60
               Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight
