@@ -32,7 +32,7 @@ PUBLIC_URL = "https://www.youtube.com"
 THUMB_ORIGIN = "https://i.ytimg.com"
 SEARCH_QUERIES = ("Omarchy", "Omarchy Linux", "Omarchy Quattro")
 VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
-REFRESH_CADENCE = timedelta(hours=6)
+REFRESH_CADENCE = timedelta(hours=2)
 MAX_SEARCH_RESULTS = 25
 MAX_VIDEOS_LOOKUP = 50
 TOP_N = 8
@@ -389,7 +389,7 @@ def should_refresh_youtube(
 ) -> bool:
     """Return True when YouTube should be fetched again.
 
-    The six-hour cadence conserves quota only after a successful non-empty
+    The two-hour cadence conserves quota only after a successful non-empty
     snapshot. Missing, malformed, or empty ``videoIds`` always refresh so the
     first populate (and empty→filled) is never delayed by the gate.
     """

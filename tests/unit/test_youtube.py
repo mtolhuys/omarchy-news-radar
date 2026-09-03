@@ -191,15 +191,17 @@ class YouTubeSourceTests(unittest.TestCase):
         )
         self.assertFalse(
             should_refresh_youtube(
-                {"checkedAt": "2026-08-31T10:00:00Z", "videoIds": ["yt:dQwOmarchy1"]},
+                {"checkedAt": "2026-08-31T13:00:00Z", "videoIds": ["yt:dQwOmarchy1"]},
                 now=CLOCK,
-            )
+            ),
+            "within the two-hour cadence must not refresh",
         )
         self.assertTrue(
             should_refresh_youtube(
-                {"checkedAt": "2026-08-31T07:00:00Z", "videoIds": ["yt:dQwOmarchy1"]},
+                {"checkedAt": "2026-08-31T11:59:00Z", "videoIds": ["yt:dQwOmarchy1"]},
                 now=CLOCK,
-            )
+            ),
+            "past the two-hour cadence must refresh",
         )
         with self.assertRaises(ValidationError):
             parse_search_video_ids({"items": [{"id": {"videoId": "short"}}]})
