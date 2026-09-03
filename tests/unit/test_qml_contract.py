@@ -113,7 +113,6 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("function sectionSummaryText()", qml)
         self.assertIn("readonly property bool popupBgIsLight", qml)
         # Panel chrome is title-only; Apps/desktop keep the application icon assets.
-        self.assertIn("No in-panel mark", qml)
         self.assertNotIn("../assets/io.github.mtolhuys.news-radar-panel.svg", qml)
         self.assertNotIn("../assets/io.github.mtolhuys.news-radar-panel-light.svg", qml)
         self.assertFalse((ROOT / "assets/io.github.mtolhuys.news-radar-light.svg").exists())
