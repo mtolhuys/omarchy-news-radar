@@ -34,7 +34,12 @@ class LocalEditionIntegrationTests(unittest.TestCase):
             "XDG_STATE_HOME": str(root / "state"),
         }
         feed = json.loads((ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8"))
-        feed["events"][0]["image"] = {
+        pictured = next(
+            event
+            for event in feed["events"]
+            if event["type"] in {"plugin-added", "plugin-released"}
+        )
+        pictured["image"] = {
             "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/local.png",
             "alt": "Validated local edition preview",
             "credit": "Plugin marketplace",
