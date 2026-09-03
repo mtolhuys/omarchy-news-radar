@@ -48,7 +48,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Qt.RightButton", widget)
         self.assertIn("refresh-if-due", widget)
         self.assertIn('path: root.cacheBase + "/omarchy-news-radar/feed.json"', widget)
-        self.assertIn("readonly property int refreshMinimumAgeSeconds: 15 * 60", widget)
+        self.assertIn("readonly property int refreshMinimumAgeSeconds: 5 * 60", widget)
         self.assertIn("function scheduleRefresh(result)", widget)
         self.assertIn("nextCheckInSeconds", widget)
         self.assertIn('String(widgetMetadata.sourceDir) + "/bin/news-radar-shortcut"', widget)

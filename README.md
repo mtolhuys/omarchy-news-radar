@@ -10,7 +10,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.4.13` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
+Version `0.4.14` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -65,7 +65,7 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install the published v0.4.13
+## Install the published v0.4.14
 
 Install the tagged public release directly with:
 
@@ -141,7 +141,7 @@ Reviewed community links are an optional edition input, not a dedicated reader s
 - Right click: hide the newspaper immediately; its bar slot collapses to zero.
 - Restore: press `Super+Alt+N` (or use shell IPC), choose Tune, then set “Top-bar newspaper” to On.
 
-The visible widget records network-check time separately from edition age. It checks at most once every 15 minutes after success, retries after five minutes when a check fails, and watches the private feed cache so the unread badge changes as soon as a valid edition is adopted—even while the panel is closed. Hiding the newspaper stops network checks. Radar deliberately uses this passive badge rather than desktop pop-up notifications.
+The visible widget records network-check time separately from edition age. It checks at most once every 5 minutes after success, retries after five minutes when a check fails, and watches the private feed cache so the unread badge changes as soon as a valid edition is adopted—even while the panel is closed. Hiding the newspaper stops network checks. Radar deliberately uses this passive badge rather than desktop pop-up notifications.
 
 ## Local data and removal
 
@@ -186,7 +186,7 @@ Forge production collection reads optional `YOUTUBE_API_KEY` for the YouTube lan
 
 The first successful marketplace run publishes at most twelve genuinely recent listings from the previous fourteen days, then records the complete baseline. It never treats the historical catalog as new. A failed adapter retains its prior normalized state and cannot manufacture additions, releases, or mass retirements.
 
-Live publication is owned by Forge Laravel: `news-radar:publish` runs every 10 minutes on the maintainer host and serves the static edition at `https://mtolhuijs.nl/news-radar/events.json`. Continuity state lives in Laravel storage between runs; missing or invalid continuity fails closed rather than replaying the committed baseline as fresh news. GitHub Actions `publication.yml` and GitHub Pages are retired as the publication path (Pages may linger as unused legacy). CI still uses `.github/workflows/test.yml` only.
+Live publication is owned by Forge Laravel: `news-radar:publish` runs every 5 minutes on the maintainer host and serves the static edition at `https://mtolhuijs.nl/news-radar/events.json`. Continuity state lives in Laravel storage between runs; missing or invalid continuity fails closed rather than replaying the committed baseline as fresh news. GitHub Actions `publication.yml` and GitHub Pages are retired as the publication path (Pages may linger as unused legacy). CI still uses `.github/workflows/test.yml` only.
 
 Feed `checkedAt` values describe individual source attempts, `generatedAt` describes completed collection, and `publishedAt` describes the static artifact build. The client additionally reports when its validated local copy was cached. Radar labels the publisher stale only after `publishedAt` is more than 90 minutes old, so an old successful source check can never masquerade as current publication. Operational recovery and exact release steps are in [`docs/RELEASE.md`](docs/RELEASE.md).
 

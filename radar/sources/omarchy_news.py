@@ -21,6 +21,7 @@ PUBLIC_URL = "https://omarchy.org/news"
 RSS_ORIGIN = "https://omarchy.org"
 MAX_ITEMS = 100
 MAX_RSS_BYTES = 512 * 1024
+ARTICLE_MAX = 8000
 CONTENT_NS = "http://purl.org/rss/1.0/modules/content/"
 DC_NS = "http://purl.org/dc/elements/1.1/"
 ATOM_NS = "http://www.w3.org/2005/Atom"
@@ -41,14 +42,15 @@ def _child_text(element: ET.Element, name: str, namespace: str | None = None) ->
     return str(node.text)
 
 
-def _plain_summary(value: str, fallback: str) -> str:
+def _plain_summary(value: str, fallback: str, maximum: int = ARTICLE_MAX) -> str:
+    """Strip RSS HTML to bounded plain text. Prefer encoded article bodies."""
     text = TAG_RE.sub(" ", value)
     text = WHITESPACE_RE.sub(" ", html.unescape(text)).strip()
     if not text:
         text = fallback
-    if len(text) > 400:
-        text = text[:397].rstrip() + "…"
-    return normalize_text(text, 400)
+    if len(text) > maximum:
+        text = text[: maximum - 1].rstrip() + "…"
+    return normalize_text(text, maximum)
 
 
 def _allowlisted_news_url(value: str, label: str) -> str:
@@ -119,7 +121,7 @@ def parse_news_rss(payload: bytes | str) -> dict[str, dict[str, Any]]:
         creator = _child_text(item, "creator", DC_NS).strip() or "Omarchy News"
         description = _child_text(item, "description")
         encoded = _child_text(item, "encoded", CONTENT_NS)
-        summary = _plain_summary(description or encoded, title)
+        summary = _plain_summary(encoded or description, title)
         news[entity_id] = {
             "id": entity_id,
             "guid": occurrence_key,
@@ -171,3 +173,26 @@ def diff_news(
             }
         )
     return events
+
+
+def enrich_omarchy_news(
+    events: list[dict[str, Any]],
+    news_items: Mapping[str, Mapping[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    """Refresh Omarchy News article text from the current RSS snapshot.
+
+    Identity and timestamps stay put so existing stories do not look new.
+    """
+    if not isinstance(news_items, Mapping) or not news_items:
+        return list(events)
+    enriched: list[dict[str, Any]] = []
+    for event in events:
+        current = dict(event)
+        if current.get("type") == "omarchy-news":
+            entity = current.get("entity")
+            item_id = entity.get("id") if isinstance(entity, Mapping) else None
+            item = news_items.get(item_id) if isinstance(item_id, str) else None
+            if isinstance(item, Mapping) and item.get("summary"):
+                current["summary"] = str(item["summary"])
+        enriched.append(current)
+    return enriched

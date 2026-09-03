@@ -17,7 +17,7 @@ BarWidget {
     ? String(widgetMetadata.sourceDir) + "/bin/news-radar-shortcut" : ""
   readonly property string stateBase: Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")
-  readonly property int refreshMinimumAgeSeconds: 15 * 60
+  readonly property int refreshMinimumAgeSeconds: 5 * 60
   // Start collapsed until the validated local preference arrives. This avoids
   // a one-frame flash for users who previously hid the indicator; state defaults
   // to visible on first use.
