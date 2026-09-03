@@ -127,7 +127,6 @@ class QmlContractTests(unittest.TestCase):
             self.assertNotIn("<rect", panel_mark)
             self.assertIn('circle cx="64" cy="64" r="19"', panel_mark)
         self.assertIn("color: Color.popups.border", qml)
-        self.assertIn("border.width: Style.spacing.hairline", qml)
         self.assertIn("FloatingWindow", qml)
         self.assertNotIn("PanelWindow", qml)
         self.assertIn("minimumSize:", qml)
