@@ -409,7 +409,7 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 
 ## D051 — Compact list teasers, full article in the inspector
 
-**Decision:** The client attaches a deterministic `listSummary` (at most 220 characters of cleaned leading prose) to each projected story. List cards and their accessible names use that teaser. The inspector continues to render the full validated `summary`, including the official Omarchy News article body added in 0.4.14.
+**Decision:** The client attaches a deterministic `listSummary` (at most 220 characters of cleaned leading prose) to each projected story. List cards and their accessible names use that teaser. The wider inspector continues to render the full validated `summary`, including the official Omarchy News article body added in 0.4.14, directly after the headline. Actions follow the body; metadata and non-video metrics sit below a quiet divider. YouTube retains thumbnail and prominent metric treatment.
 
 **Why:** Competitor reading surfaces stay scannable. Dumping an 8k body, sponsor line, or URL wall into the index makes Core and Front Page feel like sludge even when QML elides extra lines.
 

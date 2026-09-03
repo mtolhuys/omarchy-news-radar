@@ -10,7 +10,7 @@
 - Front Page topic-cluster diversity for Omarchy News so one same-cycle Foundation/patronage story cannot take every quota slot. Core still keeps every news item.
 
 ### Changed
-- List cards now show a short cleaned teaser; the inspector still shows the full 0.4.14 article body.
+- List cards now show a short cleaned teaser. The wider reading-first inspector puts the full 0.4.14 article body directly after the headline, keeps actions close, and demotes metrics and provenance below a quiet divider; YouTube retains its thumbnail and prominent metrics.
 - The sidebar Keys legend starts collapsed. `?` and the Keys header still toggle it for the current session.
 - YouTube Settings labels the existing period filter as TIME RANGE (24h / 7d / 30d / All).
 - Bar widget one-shot refresh rearms after an early helper return or unparsable output; the 1800 ms first-check delay is a named constant.

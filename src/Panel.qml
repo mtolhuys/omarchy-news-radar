@@ -163,6 +163,11 @@ Item {
     : root.defaultSectionProfile("front-page")
   readonly property var selectedStory: selectedIndex >= 0 && selectedIndex < stories.length
     ? stories[selectedIndex] : null
+  readonly property bool inspectorYouTube: !!selectedStory
+    && String(selectedStory.type || "") === "youtube-video"
+  readonly property bool inspectorHasMetrics: !!selectedStory
+    && !!selectedStory.metricItems
+    && selectedStory.metricItems.length > 0
   readonly property var currentFilter: preferences.sectionFilters
     && preferences.sectionFilters[currentSection]
       ? preferences.sectionFilters[currentSection]
@@ -1651,11 +1656,11 @@ Item {
             spacing: Style.spacing.panelGap
 
             ColumnLayout {
-              // SECTIONS rail stays compact; slight trim feeds the detail pane.
-              // List is the skimmable index; selected story gets the reading width.
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.14
+              // SECTIONS stays a compact index; leftover width goes to reading.
+              // Narrow keeps the stacked single-column shares unchanged.
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.12
               Layout.minimumWidth: Style.space(128)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(176)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(160)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1811,7 +1816,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.45
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.38
               spacing: Style.spacing.md
 
               GridLayout {
@@ -2005,8 +2010,9 @@ Item {
 
             Flickable {
               visible: !keySurface.narrow
+              Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: card.width * 0.36
+              Layout.preferredWidth: card.width * 0.44
               Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight
@@ -2063,51 +2069,15 @@ Item {
                   Accessible.name: text
                 }
 
-                Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.metricItems
-                    && root.selectedStory.metricItems.length > 0
-                  width: parent.width
-                  text: "METRICS"
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.bodySmall
-                  font.bold: true
-                }
-
                 MetricStrip {
-                  visible: !!root.selectedStory && !!root.selectedStory.metricItems
-                    && root.selectedStory.metricItems.length > 0
+                  visible: root.inspectorYouTube && root.inspectorHasMetrics
                   width: parent.width
                   metrics: visible ? root.selectedStory.metricItems : []
                   foreground: Color.popups.text
                 }
 
                 Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.metricsObservedAt
-                  width: parent.width
-                  text: visible ? "OBSERVED  " + root.selectedStory.metricsObservedAt : ""
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: text
-                }
-
-                Text {
-                  visible: !!root.selectedStory && !!root.selectedStory.metricsCaveat
-                  width: parent.width
-                  text: visible ? root.selectedStory.metricsCaveat : ""
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                }
-
-                Text {
+                  id: inspectorBody
                   width: parent.width
                   text: root.selectedStory ? root.selectedStory.summary : "Story details and the original source appear here."
                   textFormat: Text.PlainText
@@ -2115,36 +2085,12 @@ Item {
                   font.family: Style.font.family
                   font.pixelSize: Style.font.body
                   wrapMode: Text.WordWrap
-                }
-
-                Text {
-                  width: parent.width
-                  text: root.selectedStory
-                    ? "TYPE  " + root.selectedStory.type + "\nDATE  " + root.selectedStory.occurredAt
-                      + "\nTRUST  " + root.selectedStory.trust.marketplace
-                      + "\nAUDIT  " + (root.selectedStory.trust.securityAudit ? "authoritative audit declared" : "not claimed")
-                      + "\nCOMPAT  " + root.selectedStory.compatibility.basis
-                    : ""
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WrapAnywhere
                   Accessible.role: Accessible.StaticText
                   Accessible.name: text
                 }
 
-                Text {
-                  width: parent.width
-                  text: root.selectedStory ? root.selectedStory.source.label + "\n" + root.selectedStory.source.url : ""
-                  textFormat: Text.PlainText
-                  color: Color.accent
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.bodySmall
-                  wrapMode: Text.WrapAnywhere
-                }
-
                 Flow {
+                  id: inspectorActions
                   width: parent.width
                   spacing: Style.spacing.controlGap
                   RadarButton {
@@ -2172,6 +2118,85 @@ Item {
                     onClicked: root.openSelected()
                   }
                 }
+
+                Rectangle {
+                  id: inspectorFactsDivider
+                  visible: !!root.selectedStory
+                  width: parent.width
+                  height: Style.spacing.hairline
+                  color: Color.popups.border
+                }
+
+                Text {
+                  visible: !root.inspectorYouTube && root.inspectorHasMetrics
+                  width: parent.width
+                  text: "METRICS"
+                  textFormat: Text.PlainText
+                  color: root.quietTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                }
+
+                MetricStrip {
+                  visible: !root.inspectorYouTube && root.inspectorHasMetrics
+                  width: parent.width
+                  metrics: visible ? root.selectedStory.metricItems : []
+                  foreground: root.quietTextColor
+                  compact: true
+                }
+
+                Text {
+                  visible: !!root.selectedStory && !!root.selectedStory.metricsObservedAt
+                  width: parent.width
+                  text: visible ? "OBSERVED  " + root.selectedStory.metricsObservedAt : ""
+                  textFormat: Text.PlainText
+                  color: root.quietTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: text
+                }
+
+                Text {
+                  visible: !!root.selectedStory && !!root.selectedStory.metricsCaveat
+                  width: parent.width
+                  text: visible ? root.selectedStory.metricsCaveat : ""
+                  textFormat: Text.PlainText
+                  color: root.quietTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                }
+
+                Text {
+                  id: inspectorMetadata
+                  width: parent.width
+                  text: root.selectedStory
+                    ? "TYPE  " + root.selectedStory.type + "\nDATE  " + root.selectedStory.occurredAt
+                      + "\nTRUST  " + root.selectedStory.trust.marketplace
+                      + "\nAUDIT  " + (root.selectedStory.trust.securityAudit ? "authoritative audit declared" : "not claimed")
+                      + "\nCOMPAT  " + root.selectedStory.compatibility.basis
+                    : ""
+                  textFormat: Text.PlainText
+                  color: root.quietTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WordWrap
+                  Accessible.role: Accessible.StaticText
+                  Accessible.name: text
+                }
+
+                Text {
+                  width: parent.width
+                  text: root.selectedStory ? root.selectedStory.source.label + "\n" + root.selectedStory.source.url : ""
+                  textFormat: Text.PlainText
+                  color: root.quietTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  wrapMode: Text.WrapAnywhere
+                }
+
               }
             }
           }

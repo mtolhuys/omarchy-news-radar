@@ -27,9 +27,9 @@ Version 1 is an on-demand normal desktop window paired with a default-on, option
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar and compact window/update actions.
-2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; comfortably padded (preferred ~14% wide / ~22% narrow, capped) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail and starts collapsed.
-3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid; the list stays the skimmable index (~45% wide) so the inspector can breathe.
-4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action; receives a larger share of width (~36%) for the news body and actions.
+2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; comfortably padded (preferred ~12% wide / ~22% narrow, capped) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail and starts collapsed.
+3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid; the list stays a compact, glanceable index (~38% wide) rather than becoming the reading surface.
+4. **Story inspector:** a wide reading pane (~44%) that leads with the selected headline and full summary, then keeps read/save/source actions immediately reachable. A divider demotes type, date, trust, audit, compatibility, source details, and non-video metrics to quiet caption styling below the body. YouTube may keep its validated thumbnail and compact metrics above the description because those facts are part of scanning a video.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
@@ -41,7 +41,7 @@ The front page is finite. The initial viewport should communicate the most impor
 
 - One lead item may receive the largest treatment.
 - Up to six secondary items may appear above the fold.
-- List cards show a short cleaned teaser; the inspector keeps the full official article body.
+- List cards show a short cleaned teaser; Core and Front Page selection opens the full official article body as the inspector’s primary reading content, before actions and quiet secondary facts.
 - Every story row states `UNREAD` or `READ`, section badges expose unread counts, and the inspector exposes the exact selected-story toggle.
 - No autoplay, carousel, ticker, infinite scroll, or continuously moving decoration is allowed. A visible Load more control may reveal the next twelve matches from the already downloaded edition, up to the feed bound.
 
@@ -124,7 +124,7 @@ Tune Your Radar in the panel exposes “Top-bar newspaper”, story images, and 
 - Use the system monospace family and Omarchy type scale; distinguish masthead, section, headline, summary, metadata, and source through hierarchy rather than excessive color.
 - Accent marks focus, selection, and one lead rule. Urgent color is reserved for actual source or compatibility warnings.
 - A selected row must pair its fill with explicit primary and secondary foregrounds. It must never keep an ambient muted token that can blend into the selected fill; this is visually accepted in maintained dark and light themes.
-- Dense metadata remains secondary and collapsible; the main reading path prioritizes headline and summary.
+- Dense metadata remains secondary below a subtle divider; the main reading path prioritizes headline, full article body, and intentional actions.
 - Any motion is bounded to active refresh. There is no perpetual radar sweep or persistent pipeline-status copy.
 
 ## Accessibility boundary
