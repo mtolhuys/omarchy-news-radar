@@ -1,4 +1,12 @@
-"""Allowlisted YouTube Data API v3 adapter for Omarchy-related videos."""
+"""Allowlisted YouTube Data API v3 adapter for Omarchy-related videos.
+
+Collection is deliberately conservative. Sponsor blocks, course funnels, and
+link walls are removed from descriptions, only substantive Omarchy activity
+enters the lane, and one channel can hold at most two slots so a prolific
+uploader cannot become the section. All of it is deterministic text and
+position work: metrics never create, remove, or reorder an event outside the
+documented YouTube-only interleave.
+"""
 
 from __future__ import annotations
 
@@ -10,19 +18,27 @@ from urllib.parse import urlencode
 from ..errors import ValidationError
 from ..model import event_id
 from ..validation import format_timestamp, normalize_text, parse_timestamp, validate_event
+from .youtube_text import (
+    KEYWORD_RE,
+    NEUTRAL_SUMMARY,
+    SUMMARY_MAX_CHARS,
+    evaluate_eligibility,
+    sanitize_description,
+)
 
 API_ORIGIN = "https://www.googleapis.com"
 API_BASE = f"{API_ORIGIN}/youtube/v3"
 PUBLIC_URL = "https://www.youtube.com"
 THUMB_ORIGIN = "https://i.ytimg.com"
 SEARCH_QUERIES = ("Omarchy", "Omarchy Linux", "Omarchy Quattro")
-KEYWORD_RE = re.compile(r"(?i)\bomarchy\b")
 VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 REFRESH_CADENCE = timedelta(hours=6)
 MAX_SEARCH_RESULTS = 25
 MAX_VIDEOS_LOOKUP = 50
 TOP_N = 8
 MAX_SECTION_EVENTS = 24
+# One channel may hold at most this many lane slots after ranking.
+MAX_EVENTS_PER_CHANNEL = 2
 HQDEFAULT_WIDTH = 480
 HQDEFAULT_HEIGHT = 360
 MAX_METRIC_VALUE = 9_007_199_254_740_991
@@ -114,14 +130,25 @@ def parse_search_video_ids(payload: Any) -> list[str]:
     return video_ids
 
 
+def _summary_text(prose: str) -> str:
+    """Publish sanitized prose, or one neutral sentence when none survived."""
 
-def _bounded_summary(value: Any, fallback: str) -> str:
-    """Clamp YouTube descriptions like marketplace/release summaries (truncate, never fail on length)."""
-    raw = value if isinstance(value, str) and value.strip() else fallback
-    text = normalize_text(raw, 10_000)
-    if len(text) > 400:
-        text = text[:397].rstrip() + "…"
-    return normalize_text(text, 400)
+    return normalize_text(prose or NEUTRAL_SUMMARY, SUMMARY_MAX_CHARS)
+
+
+def _channel_key(value: Any) -> str:
+    return " ".join(str(value or "").split()).casefold()
+
+
+def _reupload_key(video: Mapping[str, Any]) -> tuple[str, str]:
+    """Group byte-different re-uploads of one title from one channel."""
+
+    title = "".join(
+        character
+        for character in " ".join(str(video.get("title", "")).split()).casefold()
+        if character.isalnum() or character.isspace()
+    )
+    return (_channel_key(video.get("channelTitle")), " ".join(title.split()))
 
 
 def parse_videos(payload: Any) -> list[dict[str, Any]]:
@@ -144,7 +171,11 @@ def parse_videos(payload: Any) -> list[dict[str, Any]]:
         statistics = raw.get("statistics")
         if not isinstance(snippet, dict) or not isinstance(statistics, dict):
             raise ValidationError("YouTube video snippet or statistics are invalid")
-        if not KEYWORD_RE.search(_snippet_text(snippet)):
+        title = normalize_text(snippet.get("title"), 160)
+        sanitized = sanitize_description(snippet.get("description"))
+        if not evaluate_eligibility(title=title, prose=sanitized.prose).eligible:
+            # Promotional, link-only, incidental, or amplified items never enter
+            # the lane. The closed reason codes stay internal to collection.
             continue
         published_raw = snippet.get("publishedAt")
         if not isinstance(published_raw, str):
@@ -158,8 +189,7 @@ def parse_videos(payload: Any) -> list[dict[str, Any]]:
         channel = snippet.get("channelTitle")
         if not isinstance(channel, str) or not channel.strip():
             channel = "YouTube"
-        title = normalize_text(snippet.get("title"), 160)
-        summary = _bounded_summary(snippet.get("description"), title)
+        summary = _summary_text(sanitized.prose)
         videos.append(
             {
                 "id": video_id,
@@ -175,10 +205,55 @@ def parse_videos(payload: Any) -> list[dict[str, Any]]:
     return videos
 
 
+def _dedupe_reuploads(videos: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one record per channel/title group, preferring the observed leader."""
+
+    grouped: dict[tuple[str, str], dict[str, Any]] = {}
+    for raw in videos:
+        video = dict(raw)
+        key = _reupload_key(video)
+        if not key[1]:
+            grouped[(key[0], str(video["id"]))] = video
+            continue
+        current = grouped.get(key)
+        if current is None:
+            grouped[key] = video
+            continue
+        challenger = (
+            -int(video.get("views", 0)),
+            parse_timestamp(str(video["publishedAt"])).timestamp(),
+            str(video["id"]),
+        )
+        incumbent = (
+            -int(current.get("views", 0)),
+            parse_timestamp(str(current["publishedAt"])).timestamp(),
+            str(current["id"]),
+        )
+        if challenger < incumbent:
+            grouped[key] = video
+    return list(grouped.values())
+
+
+def _cap_per_channel(
+    ordered: Sequence[Mapping[str, Any]], *, maximum: int = MAX_EVENTS_PER_CHANNEL
+) -> list[dict[str, Any]]:
+    """Apply the per-channel cap after ranking so order stays rank order."""
+
+    counts: dict[str, int] = {}
+    capped: list[dict[str, Any]] = []
+    for video in ordered:
+        channel = _channel_key(video.get("channelTitle"))
+        if channel and counts.get(channel, 0) >= maximum:
+            continue
+        counts[channel] = counts.get(channel, 0) + 1
+        capped.append(dict(video))
+    return capped
+
+
 def rank_youtube_videos(videos: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """Interleave top views, likes, and recent selections into a bounded lane."""
 
-    unique = {str(video["id"]): dict(video) for video in videos}
+    unique = {str(video["id"]): dict(video) for video in _dedupe_reuploads(videos)}
     by_views = sorted(unique.values(), key=lambda item: (-int(item["views"]), str(item["id"])))[:TOP_N]
     by_likes = sorted(unique.values(), key=lambda item: (-int(item["likes"]), str(item["id"])))[:TOP_N]
     by_recent = sorted(
@@ -194,8 +269,6 @@ def rank_youtube_videos(videos: Sequence[Mapping[str, Any]]) -> list[dict[str, A
                 continue
             ordered.append(item)
             seen.add(video_id)
-            if len(ordered) >= MAX_SECTION_EVENTS:
-                return ordered
     # zip stops at the shortest list; append any remainder from longer tops.
     for bucket in (by_views, by_likes, by_recent):
         for item in bucket:
@@ -204,9 +277,7 @@ def rank_youtube_videos(videos: Sequence[Mapping[str, Any]]) -> list[dict[str, A
                 continue
             ordered.append(item)
             seen.add(video_id)
-            if len(ordered) >= MAX_SECTION_EVENTS:
-                return ordered
-    return ordered
+    return _cap_per_channel(ordered)[:MAX_SECTION_EVENTS]
 
 
 def rank_youtube_events(events: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -232,6 +303,8 @@ def rank_youtube_events(events: Sequence[Mapping[str, Any]]) -> list[dict[str, A
         videos.append(
             {
                 "id": video_id,
+                "title": str(event.get("title", "")),
+                "channelTitle": str(entity.get("name", "")),
                 "publishedAt": event["occurredAt"],
                 "views": views,
                 "likes": likes,
@@ -250,7 +323,14 @@ def youtube_events(
     clock = discovered_at.astimezone(timezone.utc).replace(microsecond=0)
     observed = observed_at or format_timestamp(clock)
     events: list[dict[str, Any]] = []
-    for video in rank_youtube_videos(videos):
+    eligible = [
+        video
+        for video in videos
+        if evaluate_eligibility(
+            title=str(video.get("title", "")), prose=str(video.get("summary", ""))
+        ).eligible
+    ]
+    for video in rank_youtube_videos(eligible):
         video_id = str(video["id"])
         # ENTITY_ID_RE requires an alphanumeric first character; YouTube IDs may start with _/-.
         entity_id = f"yt:{video_id}"

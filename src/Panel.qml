@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.14+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.15+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -47,14 +47,15 @@ Item {
     popupBgIsLight ? 0.22 : 0.45)
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 10,
+    schemaVersion: 11,
     readThrough: "1970-01-01T00:00:00Z",
     readOverrides: ({}),
     saved: ({}),
     preferences: ({
       barVisible: true,
       imagesVisible: true,
-      sectionFilters: ({})
+      sectionFilters: ({}),
+      sectionVisibility: ({ core: true, plugins: true, youtube: true })
     })
   })
   property var installedPluginIds: []
@@ -66,6 +67,7 @@ Item {
   property bool readChangeInFlight: false
   property bool bulkReadInFlight: false
   property int sectionIndex: 0
+  property string requestedSection: "front-page"
   property int selectedIndex: 0
   property int storyViewportAnchorIndex: 0
   property string feedStatus: "First use"
@@ -89,8 +91,9 @@ Item {
   property bool localStateReady: false
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
-  // Session-only; default open so first-time readers notice shortcuts.
-  property bool keysLegendOpen: true
+  // Session-only; start collapsed so the rail stays quiet. Opening it is an
+  // explicit reader choice and is remembered until this panel instance closes.
+  property bool keysLegendOpen: false
   property string shortcutAction: ""
   property string shortcutState: "unknown"
   property string shortcutMessage: ""
@@ -133,9 +136,13 @@ Item {
   }
 
   readonly property var preferences: userState && userState.preferences
-    ? userState.preferences : ({ barVisible: true, imagesVisible: true, sectionFilters: ({}) })
-
-  readonly property var sections: [
+    ? userState.preferences : ({
+      barVisible: true,
+      imagesVisible: true,
+      sectionFilters: ({}),
+      sectionVisibility: ({ core: true, plugins: true, youtube: true })
+    })
+  readonly property var canonicalSections: [
     Object.assign({ id: "front-page" }, root.defaultSectionProfile("front-page")),
     Object.assign({ id: "for-you" }, root.defaultSectionProfile("for-you")),
     Object.assign({ id: "core" }, root.defaultSectionProfile("core")),
@@ -143,8 +150,17 @@ Item {
     Object.assign({ id: "youtube" }, root.defaultSectionProfile("youtube")),
     Object.assign({ id: "saved" }, root.defaultSectionProfile("saved"))
   ]
-  readonly property string currentSection: sections[sectionIndex].id
-  readonly property var currentProfile: sections[sectionIndex]
+  readonly property var hideableSections: ["core", "plugins", "youtube"]
+  readonly property var sectionVisibility: preferences.sectionVisibility
+    ? preferences.sectionVisibility
+    : ({ core: true, plugins: true, youtube: true })
+  readonly property var sections: visibleSections(canonicalSections, sectionVisibility)
+  readonly property string currentSection: sections.length
+    ? sections[Math.max(0, Math.min(sectionIndex, sections.length - 1))].id
+    : "front-page"
+  readonly property var currentProfile: sections.length
+    ? sections[Math.max(0, Math.min(sectionIndex, sections.length - 1))]
+    : root.defaultSectionProfile("front-page")
   readonly property var selectedStory: selectedIndex >= 0 && selectedIndex < stories.length
     ? stories[selectedIndex] : null
   readonly property var currentFilter: preferences.sectionFilters
@@ -356,6 +372,22 @@ Item {
     for (var index = 0; index < feed.events.length; index++)
       if (feed.events[index] && feed.events[index].image) count++
     return count
+  }
+
+  function sectionIsVisible(sectionId, visibility) {
+    var current = visibility || ({})
+    if (sectionId !== "core" && sectionId !== "plugins" && sectionId !== "youtube")
+      return true
+    return current[sectionId] !== false
+  }
+
+  function visibleSections(allSections, visibility) {
+    var result = []
+    for (var index = 0; index < allSections.length; index++) {
+      if (root.sectionIsVisible(allSections[index].id, visibility))
+        result.push(allSections[index])
+    }
+    return result
   }
 
   function defaultSectionProfile(section) {
@@ -704,6 +736,8 @@ Item {
       filterSummary = String(result.filterSummary || "No extra filters")
       sectionSources = String(result.sectionSources || "")
       filterOptions = result.filterOptions || []
+      if (result.visibleSections && result.visibleSections.length)
+        ensureVisibleSection()
       var preservedSelectedIndex = preserveViewport
         ? storyIndexById(preservedSelectedId) : -1
       var preservedAnchorIndex = preserveViewport
@@ -784,10 +818,30 @@ Item {
     startProcess(refreshProc, ["refresh"])
   }
 
+  function sectionIndexFor(sectionId) {
+    for (var index = 0; index < sections.length; index++) {
+      if (sections[index].id === sectionId) return index
+    }
+    return -1
+  }
+
+  function ensureVisibleSection() {
+    if (!sections.length) return
+    var current = sectionIndexFor(requestedSection)
+    if (current >= 0) {
+      if (sectionIndex !== current) sectionIndex = current
+      return
+    }
+    var fallback = sectionIndexFor("front-page")
+    if (fallback < 0) fallback = 0
+    selectSection(fallback)
+  }
+
   function selectSection(index) {
     if (index < 0 || index >= sections.length) return
     navigationFocus.forceActiveFocus()
     sectionIndex = index
+    requestedSection = sections[index].id
     selectedIndex = 0
     storyViewportAnchorIndex = 0
     unreadSessionRetainedIds = ({})
@@ -997,6 +1051,23 @@ Item {
     startProcess(stateProc, ["set-preferences", argument, value ? "true" : "false"])
   }
 
+  function setSectionVisibility(sectionId, visible) {
+    if (stateMutationPending) return
+    if (sectionId !== "core" && sectionId !== "plugins" && sectionId !== "youtube")
+      return
+    var next = {
+      core: sectionVisibility.core !== false,
+      plugins: sectionVisibility.plugins !== false,
+      youtube: sectionVisibility.youtube !== false
+    }
+    next[sectionId] = visible === true
+    startProcess(stateProc, [
+      "set-preferences",
+      "--section-visibility-json",
+      JSON.stringify(next)
+    ])
+  }
+
   function showPreferences() {
     if (!localStateReady || stateMutationPending || preferencesProc.running) return
     startProcess(preferencesProc, ["read"])
@@ -1123,6 +1194,7 @@ Item {
         var result = RadarModel.parseResponse(text)
         if (result.status === "ok") {
           root.userState = result.state || root.userState
+          root.ensureVisibleSection()
           if (result.markedRead !== undefined) {
             var marked = Number(result.markedRead || 0)
             root.statusDetail = marked > 0
@@ -1665,7 +1737,7 @@ Item {
                 Text {
                   visible: !root.keysLegendOpen
                   Layout.fillWidth: true
-                  text: "Esc/q · j/k · ↵/o · s · u · a · f · / · r · Tab · 1–6 · Home/End · ?"
+                  text: "Esc/q · j/k · ↵/o · s · u · a · f · / · r · Tab · 1–" + root.sections.length + " · Home/End · ?"
                   textFormat: Text.PlainText
                   color: root.quietTextColor
                   font.family: Style.font.family
@@ -1696,7 +1768,7 @@ Item {
                       { keys: "/", action: "search" },
                       { keys: "r", action: "refresh" },
                       { keys: "Tab", action: "sections" },
-                      { keys: "1–6", action: "jump" },
+                      { keys: "1–" + root.sections.length, action: "jump" },
                       { keys: "Home/End", action: "edges" },
                       { keys: "?", action: "keys" }
                     ]
@@ -2116,7 +2188,7 @@ Item {
           BorderSurface {
             anchors.centerIn: parent
             width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(620))
-            height: Math.min(parent.height - Style.spacing.panelPadding * 2, Style.space(390))
+            height: Math.min(parent.height - Style.spacing.panelPadding * 2, Style.space(560))
             color: Color.popups.background
             radius: Style.cornerRadius
             borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
@@ -2197,6 +2269,54 @@ Item {
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 wrapMode: Text.WordWrap
+              }
+
+              Text {
+                text: "SECTIONS"
+                textFormat: Text.PlainText
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: "Hide a source rail from this machine only. Front Page, For You, and Saved stay reachable. Hidden rails leave the section list, Tab cycle, and number keys, and they no longer keep the newspaper badge active."
+                textFormat: Text.PlainText
+                color: root.secondaryTextColor
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
+              }
+
+              Repeater {
+                model: [
+                  { id: "core", label: "Core" },
+                  { id: "plugins", label: "Plugins" },
+                  { id: "youtube", label: "YouTube" }
+                ]
+                RowLayout {
+                  required property var modelData
+                  Layout.fillWidth: true
+                  Text {
+                    Layout.fillWidth: true
+                    text: modelData.label
+                    textFormat: Text.PlainText
+                    color: Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.body
+                  }
+                  RadarButton {
+                    label: root.sectionIsVisible(modelData.id, root.sectionVisibility) ? "On" : "Off"
+                    selected: root.sectionIsVisible(modelData.id, root.sectionVisibility)
+                    enabled: root.localStateReady && !root.stateMutationPending
+                    onClicked: root.setSectionVisibility(
+                      modelData.id,
+                      !root.sectionIsVisible(modelData.id, root.sectionVisibility)
+                    )
+                  }
+                }
               }
 
               Text {
@@ -2282,7 +2402,7 @@ Item {
                   }
 
                   Text {
-                    text: "TIME WINDOW"
+                    text: root.currentSection === "youtube" ? "TIME RANGE" : "TIME WINDOW"
                     textFormat: Text.PlainText
                     color: Color.popups.text
                     font.family: Style.font.family

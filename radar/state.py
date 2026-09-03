@@ -17,6 +17,7 @@ from .constants import (
     FUTURE_SKEW_SECONDS,
     MAX_READ_OVERRIDES,
     MAX_SAVED,
+    OPTIONAL_CLIENT_SECTIONS,
     STATE_SCHEMA_VERSION,
     UPDATE_CHECK_MAX_BYTES,
     V9_CLIENT_SECTIONS,
@@ -34,9 +35,11 @@ from .validation import (
     validate_legacy_interests,
     validate_section_filter,
     validate_section_profile,
+    validate_section_visibility,
     validate_state,
 )
 from .filters import default_section_filter, default_section_filters
+from .sections import default_section_visibility, visible_client_sections
 
 EPOCH = "1970-01-01T00:00:00Z"
 LEGACY_CLIENT_SECTIONS = (
@@ -86,6 +89,7 @@ def default_state() -> dict[str, Any]:
             "barVisible": True,
             "imagesVisible": True,
             "sectionFilters": default_section_filters(),
+            "sectionVisibility": default_section_visibility(),
         },
     }
 
@@ -213,7 +217,7 @@ def _quarantine(path: Path) -> Path:
 
 
 def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate one published legacy shape before converting it to v10."""
+    """Validate one published legacy shape before converting it to the current schema."""
 
     old_version = raw.get("schemaVersion")
     if old_version not in {1, 2, 3, 4, 5, 6, 7, 8}:
@@ -256,6 +260,7 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
                 )
                 for section in CLIENT_SECTIONS
             }
+            preferences["sectionVisibility"] = default_section_visibility()
 
         if old_version >= 4:
             old_profiles = require_mapping(
@@ -282,8 +287,39 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
     )
 
 
+def _migrate_v10_state(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate state v10 and add the local section-visibility profile for v11."""
+
+    require_exact_keys(raw, MODERN_LEGACY_STATE_KEYS, "state v10")
+    preferences = require_mapping(raw.get("preferences"), "state v10 preferences")
+    require_exact_keys(
+        preferences,
+        {"barVisible", "imagesVisible", "sectionFilters"},
+        "state v10 preferences",
+    )
+    old_filters = require_mapping(preferences.get("sectionFilters"), "state v10 section filters")
+    require_exact_keys(old_filters, CLIENT_SECTIONS, "state v10 section filters")
+    return validate_state(
+        {
+            "schemaVersion": STATE_SCHEMA_VERSION,
+            "readThrough": raw.get("readThrough"),
+            "readOverrides": raw.get("readOverrides"),
+            "saved": raw.get("saved"),
+            "preferences": {
+                "barVisible": preferences["barVisible"],
+                "imagesVisible": preferences["imagesVisible"],
+                "sectionFilters": {
+                    section: validate_section_filter(old_filters[section])
+                    for section in CLIENT_SECTIONS
+                },
+                "sectionVisibility": default_section_visibility(),
+            },
+        }
+    )
+
+
 def _migrate_v9_state(raw: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate state v9 and add the YouTube section filter for v10."""
+    """Validate state v9, add YouTube filters, then finish on the current schema."""
 
     require_exact_keys(
         raw,
@@ -316,6 +352,7 @@ def _migrate_v9_state(raw: Mapping[str, Any]) -> dict[str, Any]:
                 "barVisible": preferences["barVisible"],
                 "imagesVisible": preferences["imagesVisible"],
                 "sectionFilters": section_filters,
+                "sectionVisibility": default_section_visibility(),
             },
         }
     )
@@ -339,6 +376,10 @@ def load_state(
             return migrated, None
         if isinstance(raw, dict) and raw.get("schemaVersion") == 9:
             migrated = _migrate_v9_state(raw)
+            atomic_write_json(path, migrated)
+            return migrated, None
+        if isinstance(raw, dict) and raw.get("schemaVersion") == 10:
+            migrated = _migrate_v10_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
         return validate_state(raw), None
@@ -458,6 +499,7 @@ def update_preferences(
     *,
     bar_visible: bool | None = None,
     images_visible: bool | None = None,
+    section_visibility: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     current = validate_state(dict(state))
     preferences = dict(current["preferences"])
@@ -465,6 +507,10 @@ def update_preferences(
         preferences["barVisible"] = bar_visible
     if images_visible is not None:
         preferences["imagesVisible"] = images_visible
+    if section_visibility is not None:
+        current_visibility = dict(preferences["sectionVisibility"])
+        current_visibility.update(section_visibility)
+        preferences["sectionVisibility"] = current_visibility
     current["preferences"] = preferences
     return validate_state(current)
 

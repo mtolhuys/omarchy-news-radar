@@ -361,6 +361,10 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertEqual("No extra filters", first["filterSummary"])
         self.assertNotIn("sectionRule", first)
         self.assertIn("Official Omarchy releases", first["sectionSources"])
+        lead = first["events"][0]
+        self.assertIn("listSummary", lead)
+        self.assertLessEqual(len(lead["listSummary"]), 220)
+        self.assertGreaterEqual(len(lead["summary"]), len(lead["listSummary"]))
 
         plugins = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
         metric_story = next(event for event in plugins["events"] if event.get("metricItems"))

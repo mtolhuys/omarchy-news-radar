@@ -8,8 +8,9 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
-from .constants import FEED_SCHEMA_VERSION, MAX_EVENTS
+from .constants import FEED_SCHEMA_VERSION, MAX_EVENTS, NEWS_FRONT_PAGE_QUOTA
 from .errors import ValidationError
+from .topics import diversify_by_topic
 from .validation import format_timestamp, parse_timestamp, validate_event, validate_feed
 
 
@@ -146,8 +147,20 @@ def front_page(
     add(event for event in ordered if event["classification"]["significance"] == "notable")
     add((event for event in ordered if event["type"] == "omarchy-released"), maximum=1)
     # Official news stays routine (D008/D048). Give Core announcements a small
-    # Front Page quota instead of marking every RSS item notable.
-    add((event for event in ordered if event["type"] == "omarchy-news"), maximum=3)
+    # Front Page quota instead of marking every RSS item notable, and spend
+    # that quota on distinct topics so one same-cycle story (a Foundation
+    # announcement plus its patronage follow-ups) cannot take every slot
+    # (D049). Core keeps every news item; only this quota is diversified.
+    add(
+        diversify_by_topic(
+            [
+                event
+                for event in ordered
+                if event["type"] == "omarchy-news" and event["id"] not in selected_ids
+            ],
+            NEWS_FRONT_PAGE_QUOTA,
+        )
+    )
     add(
         (
             event

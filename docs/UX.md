@@ -27,13 +27,13 @@ Version 1 is an on-demand normal desktop window paired with a default-on, option
 The panel has four stable visual zones:
 
 1. **Masthead:** Omarchy News Radar and compact window/update actions.
-2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; comfortably padded (preferred ~14% wide / ~22% narrow, capped) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail.
+2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; comfortably padded (preferred ~14% wide / ~22% narrow, capped) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail and starts collapsed.
 3. **Edition:** one lead item followed by compact secondary stories in a responsive reading grid; the list stays the skimmable index (~45% wide) so the inspector can breathe.
 4. **Story inspector:** optional preview image and credit, source, event type, occurrence time, tags, compatibility, verification boundary, summary, compact icon metrics and caveat, save action, human-facing marketplace page when applicable, and original-source action; receives a larger share of width (~36%) for the news body and actions.
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window geometry clamp to the active screen so large text cannot make the surface exceed the monitor.
 
-The reading surface does not carry publication telemetry. A subtle collapsible **Keys** footer at the bottom of the left **SECTIONS** rail shows the real bindings as quiet unboxed key·action pairs (no heavy keycap chrome); it starts open for discovery and remembers collapse only for the session (no schema). **Keys · ?** or keyboard `?` toggles it. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
+The reading surface does not carry publication telemetry. A subtle collapsible **Keys** footer at the bottom of the left **SECTIONS** rail shows the real bindings as quiet unboxed key·action pairs (no heavy keycap chrome); it starts collapsed so the rail stays quiet and remembers open/closed only for the session (no schema). **Keys · ?** or keyboard `?` toggles it. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
 
 ## Front page composition
 
@@ -41,7 +41,7 @@ The front page is finite. The initial viewport should communicate the most impor
 
 - One lead item may receive the largest treatment.
 - Up to six secondary items may appear above the fold.
-- Remaining activity is grouped by section and date.
+- List cards show a short cleaned teaser; the inspector keeps the full official article body.
 - Every story row states `UNREAD` or `READ`, section badges expose unread counts, and the inspector exposes the exact selected-story toggle.
 - No autoplay, carousel, ticker, infinite scroll, or continuously moving decoration is allowed. A visible Load more control may reveal the next twelve matches from the already downloaded edition, up to the feed bound.
 
@@ -64,14 +64,14 @@ All behavior must remain reachable without a pointer:
 | `/` | Focus search/filter input |
 | `r` | Check the published edition; **Check for updates** repeats this shortcut on hover |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
-| `1`–`6` | Switch between the primary sections including YouTube and Saved |
+| `1`–`N` | Switch between the currently visible primary sections |
 | `Home` / `End` | Select first or last story in the current section |
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
 
 ## Section settings, filters, and pagination
 
-Each section exposes a cogwheel named **Settings**. Names, icons, order, background, and source scope remain canonical so two sections cannot look interchangeable or imply that their editorial scope moved. The screen visibly lists that fixed source membership, then offers only actionable local refinements for time window, significance, unread-only, images-only, and relevant event types. There is no renaming control or explanatory filler.
+Each section exposes a cogwheel named **Settings**. Names, icons, order, background, and source scope remain canonical so two sections cannot look interchangeable or imply that their editorial scope moved. The screen visibly lists that fixed source membership, then offers only actionable local refinements for time window, significance, unread-only, images-only, and relevant event types. YouTube labels that same period control **TIME RANGE**. There is no renaming control or explanatory filler.
 
 Filters apply only to that section, persist in private state, never alter the public feed, and can be reset exactly. Counts reflect each section's active filter; search further narrows only the current visible projection. Under **Unread only**, a story deliberately read during the current view remains in its existing position, visibly changes to **READ**, and is labelled as temporarily retained until the user changes section, search, or filters. The true unread count decreases immediately; a later view excludes the read story normally.
 
@@ -115,7 +115,7 @@ The image preference always reports whether the current edition actually contain
 
 The main manifest declares both `panel` and `bar-widget`; normal enablement places one newspaper in the right section. The widget shows the deduplicated number of unread stories reachable through at least one current persistent section projection plus distinct publisher/source health. A story hidden by every section's Settings cannot keep the badge active, and one story appearing in multiple sections counts once. Left click summons or raises the same panel, middle click checks the published edition, and right click hides the widget after writing the local preference. Its hidden root is invisible, so Omarchy's module slot computes exact zero width and height rather than reserving a phantom gap.
 
-Tune Your Radar in the panel exposes “Top-bar newspaper” as an On/Off control, so a hidden widget can be restored through the global shortcut or documented IPC. While visible, it checks from the last real attempt every 15 minutes after success, retries a failure after five minutes, and watches the validated feed cache so unread and health change without opening the panel. Hiding stops its due-checked network timer. It emits no desktop pop-up notification and keeps no separate companion lifecycle.
+Tune Your Radar in the panel exposes “Top-bar newspaper”, story images, and Core/Plugins/YouTube visibility as On/Off controls, so a hidden widget or rail can be restored through the global shortcut or documented IPC. While visible, it checks from the last real attempt every 15 minutes after success, retries a failure after five minutes, and watches the validated feed cache so unread and health change without opening the panel. Hiding stops its due-checked network timer. It emits no desktop pop-up notification and keeps no separate companion lifecycle.
 
 ## Visual language
 

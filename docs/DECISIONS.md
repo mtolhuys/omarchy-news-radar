@@ -390,3 +390,27 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 
 **Consequence:** Adapter significance stays `routine` (D008). Front Page selects at most three recent `omarchy-news` events by an explicit quota. Settings discloses Omarchy News on Front Page/Core. Feed schema version remains 2 with an extended event-type and source-id enum; local state schema remains v10 with an extended filter-type enum. No API key is required.
 
+
+## D049 — Diversify Front Page news by topic cluster, keep every item in Core
+
+**Decision:** Core continues to list every official `omarchy-news` event. Front Page still admits at most three recent news items (D048) but spends that quota on distinct deterministic topic clusters first, then backfills in freshness order. Clustering uses closed stoplist tokens from the title and leading summary sentence. No rewriting, translation, sentiment, or popularity signal is involved.
+
+**Why:** A single-cycle Foundation/patronage announcement shipped as several RSS items and consumed the entire news quota, hiding the rest of the edition.
+
+**Consequence:** Same-topic follow-ups remain in Core and Saved. Front Page shows one item from that cluster before other current topics. A window that contains only one topic still fills the quota by freshness.
+
+## D050 — Local section visibility without hiding the edition
+
+**Decision:** State v11 adds `preferences.sectionVisibility` for the hideable source rails Core, Plugins, and YouTube. Each defaults to visible. Front Page, For You, and Saved cannot be hidden. Hidden rails leave the section list, Tab cycle, number keys, Settings destination, and newspaper unread union. Saved still keeps bookmarks from a hidden rail.
+
+**Why:** Readers asked to quiet unused lanes without losing the edition, the installed-plugin view, or bookmarks. Session-only visibility would reset on every open.
+
+**Consequence:** Valid v10 states migrate atomically and gain the default-on profile. Tune copy stays local-display only: no language selector, engagement, clickbait, keywords, muting, duration, captions, or AI controls.
+
+## D051 — Compact list teasers, full article in the inspector
+
+**Decision:** The client attaches a deterministic `listSummary` (at most 220 characters of cleaned leading prose) to each projected story. List cards and their accessible names use that teaser. The inspector continues to render the full validated `summary`, including the official Omarchy News article body added in 0.4.14.
+
+**Why:** Competitor reading surfaces stay scannable. Dumping an 8k body, sponsor line, or URL wall into the index makes Core and Front Page feel like sludge even when QML elides extra lines.
+
+**Consequence:** Source content is not rewritten or discarded. YouTube cards reuse the same teaser path on already-sanitized descriptions. Feed schema is unchanged.

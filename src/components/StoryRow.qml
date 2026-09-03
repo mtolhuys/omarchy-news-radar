@@ -31,8 +31,11 @@ FocusScope {
   activeFocusOnTab: true
 
   Accessible.role: Accessible.ListItem
+  readonly property string cardSummary: story
+    ? String(story.listSummary || story.summary || "")
+    : ""
   Accessible.name: story
-    ? (story.isUnread ? "Unread. " : "Read. ") + story.title + ". " + story.summary
+    ? (story.isUnread ? "Unread. " : "Read. ") + story.title + ". " + cardSummary
     : "Story"
   Accessible.selected: selected
   Accessible.focusable: true
@@ -95,7 +98,7 @@ FocusScope {
 
       Text {
         width: parent.width
-        text: root.story ? root.story.summary : ""
+        text: root.cardSummary
         textFormat: Text.PlainText
         color: root.secondaryTextColor
         font.family: Style.font.family

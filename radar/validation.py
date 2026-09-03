@@ -25,6 +25,7 @@ from .constants import (
     MAX_SAVED,
     FEED_SCHEMA_VERSION,
     MAX_LEGACY_INTERESTS,
+    OPTIONAL_CLIENT_SECTIONS,
     SECTIONS,
     SIGNIFICANCE,
     SOURCE_IDS,
@@ -497,6 +498,23 @@ def validate_legacy_interests(value: Any) -> list[str]:
     return interests
 
 
+def validate_section_visibility(value: Any) -> dict[str, bool]:
+    """Validate the local display choice for the hideable source rails.
+
+    Only the fixed source rails may be hidden. Front Page, For You and Saved
+    are always reachable, so they are not representable here.
+    """
+
+    visibility = require_mapping(value, "preferences.sectionVisibility")
+    require_exact_keys(visibility, OPTIONAL_CLIENT_SECTIONS, "preferences.sectionVisibility")
+    return {
+        section: require_bool(
+            visibility.get(section), f"preferences.sectionVisibility.{section}"
+        )
+        for section in OPTIONAL_CLIENT_SECTIONS
+    }
+
+
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     require_exact_keys(
@@ -523,7 +541,7 @@ def validate_state(value: Any) -> dict[str, Any]:
     preferences = require_mapping(state.get("preferences"), "preferences")
     require_exact_keys(
         preferences,
-        {"barVisible", "imagesVisible", "sectionFilters"},
+        {"barVisible", "imagesVisible", "sectionFilters", "sectionVisibility"},
         "preferences",
     )
     bar_visible = require_bool(preferences.get("barVisible"), "preferences.barVisible")
@@ -535,6 +553,7 @@ def validate_state(value: Any) -> dict[str, Any]:
         section: validate_section_filter(filters_raw[section])
         for section in CLIENT_SECTIONS
     }
+    section_visibility = validate_section_visibility(preferences.get("sectionVisibility"))
     return {
         "schemaVersion": STATE_SCHEMA_VERSION,
         "readThrough": read_through,
@@ -544,6 +563,7 @@ def validate_state(value: Any) -> dict[str, Any]:
             "barVisible": bar_visible,
             "imagesVisible": images_visible,
             "sectionFilters": section_filters,
+            "sectionVisibility": section_visibility,
         },
     }
 

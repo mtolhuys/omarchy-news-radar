@@ -132,7 +132,8 @@ class YouTubeSourceTests(unittest.TestCase):
         self.assertEqual(["dQwOmarchy1", "dQwOmarchy2"], [video["id"] for video in videos])
         self.assertLessEqual(len(videos[0]["summary"]), 400)
         self.assertTrue(videos[0]["summary"].endswith("…"))
-        self.assertEqual("Omarchy empty desc", videos[1]["summary"])
+        from radar.sources.youtube_text import NEUTRAL_SUMMARY
+        self.assertEqual(NEUTRAL_SUMMARY, videos[1]["summary"])
 
     def test_missing_key_fails_closed_and_retains_prior(self) -> None:
         inputs = FixtureInputs(

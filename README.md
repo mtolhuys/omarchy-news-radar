@@ -10,7 +10,7 @@ Omarchy News Radar is a visual, keyboard-first, source-linked activity reader fo
 
 ## Project status
 
-Version `0.4.14` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
+Version `0.4.15` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -65,7 +65,7 @@ The first run validates, clones, and enables the current committed checkout, ins
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install the published v0.4.14
+## Install the published v0.4.15
 
 Install the tagged public release directly with:
 
@@ -108,7 +108,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 
 ## Panel controls
 
-- `1`–`6`: Front Page, For You, Core, Plugins, YouTube, Saved.
+- `1`–`N`: jump the currently visible sections (Front Page, For You, Core, Plugins, YouTube, Saved; hidden rails leave the number keys).
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections.
 - `j` / `k` or arrow keys: move the selected story. Crossing the viewport bottom smoothly anchors the newly selected row at the top; crossing the top while moving upward keeps the highlight visibly anchored even during key repeat. Normal row-by-row movement continues while the next story remains visible. Down from the final loaded story focuses **Load more**; Up returns focus without moving the retained story or viewport; Enter loads the next page.
 - `Home` / `End`: first or last story.
@@ -118,7 +118,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 - `s`: save or unsave the selected story locally.
 - `r`: **Check for updates** once against the published static edition. Cached stories remain readable, newer news appears automatically, and normal success adds no status banner.
 - `Escape` or `q`: close the panel.
-- `Tune`: enable or disable the top-bar newspaper and story images.
+- `Tune`: enable or disable the top-bar newspaper, story images, and the Core, Plugins, and YouTube rails.
 - `⚙ Settings`: inspect the section's fixed sources, then locally refine time, significance, unread/image state, and story types. Names, icons, order, background, and source scope remain canonical.
 - `Mark all as read`: atomically mark every unread story matching the current section's Settings, including unloaded pages. Temporary search does not change this scope.
 - `Load more`: reveal the next twelve matching stories from the already validated bounded edition by pointer or keyboard.

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
-BUILD_ID = "news-radar-0.4.14"
+BUILD_ID = "news-radar-0.4.15"
 FEED_SCHEMA_VERSION = 2
-STATE_SCHEMA_VERSION = 10
+STATE_SCHEMA_VERSION = 11
 HELPER_PROTOCOL_VERSION = 1
 
 FEED_URL = "https://mtolhuijs.nl/news-radar/events.json"
@@ -25,6 +25,8 @@ MAX_LEGACY_INTERESTS = 12
 MAX_DIAGNOSTIC_BYTES = 64 * 1024
 UPDATE_CHECK_MAX_BYTES = 1024
 FUTURE_SKEW_SECONDS = 300
+# Front Page news slots, spent on distinct topic clusters first (D049).
+NEWS_FRONT_PAGE_QUOTA = 3
 
 EVENT_TYPES = frozenset(
     {
@@ -83,6 +85,13 @@ V9_CLIENT_SECTIONS = (
     "core",
     "plugins",
     "saved",
+)
+# Front Page, For You and Saved are the always-reachable projections. Only the
+# fixed source rails may be hidden locally for display (D050).
+OPTIONAL_CLIENT_SECTIONS = (
+    "core",
+    "plugins",
+    "youtube",
 )
 FILTER_PERIODS = frozenset({"all", "24h", "7d", "30d"})
 FILTER_SIGNIFICANCE = frozenset({"all", "notable", "critical"})

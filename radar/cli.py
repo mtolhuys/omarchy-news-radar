@@ -48,6 +48,22 @@ def _print(value: Any) -> None:
     print(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
 
 
+def _section_visibility_argument(value: str | None) -> dict[str, Any] | None:
+    """Parse the bounded local section-visibility object handed over by QML."""
+
+    if value is None:
+        return None
+    if len(value) > 512:
+        raise RadarError("section visibility exceeds its bound")
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise RadarError("section visibility must be a JSON object") from exc
+    if not isinstance(parsed, dict):
+        raise RadarError("section visibility must be a JSON object")
+    return parsed
+
+
 def client_main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="news-radar-client")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -71,6 +87,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     preferences = commands.add_parser("set-preferences")
     preferences.add_argument("--bar-visible", choices=("true", "false"))
     preferences.add_argument("--images-visible", choices=("true", "false"))
+    preferences.add_argument("--section-visibility-json")
     opening = commands.add_parser("open-source")
     opening.add_argument("--url", required=True)
     projection = commands.add_parser("project")
@@ -107,6 +124,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = set_preferences(
                 bar_visible=None if args.bar_visible is None else args.bar_visible == "true",
                 images_visible=None if args.images_visible is None else args.images_visible == "true",
+                section_visibility=_section_visibility_argument(args.section_visibility_json),
             )
         elif args.command == "open-source":
             result = open_source(args.url)
