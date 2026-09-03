@@ -11,6 +11,7 @@
 
 ### Changed
 - Keep one stable column split across sections so Core ↔ Plugins no longer jumps widths.
+- Keep the SECTIONS rail wide enough that Front Page and Plugins never truncate.
 - Core, and Front Page Omarchy News / Core-tagged stories, use quiet headline rows (title + human date, unread mark only). Plugins, YouTube, and For You keep denser teaser/metric/thumbnail cards.
 - The article reading pane leads with a large title, one `date · source` line, a divider, and the full 0.4.14 body; compact actions follow; TYPE/TRUST/AUDIT/COMPAT and the raw URL sit in a collapsed Details footer. Validated HTTPS links from RSS `content:encoded` render as accent-colored clickable labels and open through the same helper as Original source. YouTube keeps its thumbnail and prominent metrics.
 - Core and Front Page give the reading pane majority width (~60%). The Keys legend is only `Keys · ?` until opened; it no longer dumps the shortcut list while collapsed.

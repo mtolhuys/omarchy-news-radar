@@ -1695,11 +1695,11 @@ Item {
             spacing: Style.spacing.panelGap
 
             ColumnLayout {
-              // SECTIONS stays a compact rail. Core/Front Page give leftover
-              // width to the reading pane; Plugins/YouTube keep a denser list.
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.10
-              Layout.minimumWidth: Style.space(128)
-              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(144)
+              // SECTIONS stays one stable rail: wide enough for "Front Page"
+              // and "Plugins", never jumping when the active section changes.
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.14
+              Layout.minimumWidth: Style.space(168)
+              Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(184)
               Layout.fillHeight: true
               spacing: Style.spacing.sm
 
@@ -1842,7 +1842,7 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.28
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.30
               spacing: Style.spacing.md
 
               GridLayout {
@@ -2039,7 +2039,7 @@ Item {
               visible: !keySurface.narrow
               Layout.fillWidth: true
               Layout.fillHeight: true
-              Layout.preferredWidth: keySurface.narrow ? card.width * 0.44 : card.width * 0.60
+              Layout.preferredWidth: keySurface.narrow ? card.width * 0.44 : card.width * 0.54
               Layout.minimumWidth: Style.space(240)
               contentWidth: width
               contentHeight: inspector.implicitHeight
