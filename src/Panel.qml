@@ -2005,8 +2005,14 @@ Item {
                   width: storyList.width
                   story: payload
                   selected: index === root.selectedIndex
-                  quiet: RadarModel.usesQuietCard(root.currentSection, payload)
-                  lead: root.currentSection === "front-page" && index === 0
+                  // Narrow layout hides the reading pane, so treat selection as an
+                  // accordion: collapse every row, expand only the selected one.
+                  quiet: keySurface.narrow
+                    ? index !== root.selectedIndex
+                    : RadarModel.usesQuietCard(root.currentSection, payload)
+                  lead: !keySurface.narrow
+                    && root.currentSection === "front-page"
+                    && index === 0
                   onActivated: root.selectStory(index, true)
                 }
 
