@@ -6,7 +6,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from .curation import apply_curation, load_curation
 from .errors import ValidationError
@@ -40,6 +40,7 @@ from .sources.youtube import (
     API_ORIGIN as YOUTUBE_API_ORIGIN,
     PUBLIC_URL as YOUTUBE_PUBLIC_URL,
     SEARCH_QUERIES,
+    relevance_languages_for_search,
     search_url,
     videos_url,
 )
@@ -312,6 +313,7 @@ def collect_production(
     bootstrap_marketplace: bool,
     github_token: str | None = None,
     youtube_api_key: str | None = None,
+    youtube_preferred_languages: Sequence[str] | str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Fetch allowlisted machine sources, then collect transactionally."""
 
@@ -406,16 +408,28 @@ def collect_production(
             video_ids: list[str] = []
             seen_ids: set[str] = set()
             policy = FetchPolicy(GITHUB_MAX_BYTES, 20.0, frozenset({YOUTUBE_API_ORIGIN}))
-            for query in SEARCH_QUERIES:
-                page_bytes, _, _ = fetch_bytes(
-                    search_url(query=query, api_key=youtube_api_key),
-                    policy=policy,
-                    headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-collector/0.4"},
-                )
-                for video_id in parse_search_video_ids(decode_json(page_bytes, label="YouTube search")):
-                    if video_id not in seen_ids:
-                        seen_ids.add(video_id)
-                        video_ids.append(video_id)
+            for relevance_language in relevance_languages_for_search(
+                youtube_preferred_languages
+            ):
+                for query in SEARCH_QUERIES:
+                    page_bytes, _, _ = fetch_bytes(
+                        search_url(
+                            query=query,
+                            api_key=youtube_api_key,
+                            relevance_language=relevance_language,
+                        ),
+                        policy=policy,
+                        headers={
+                            "Accept": "application/json",
+                            "User-Agent": "omarchy-news-radar-collector/0.4",
+                        },
+                    )
+                    for video_id in parse_search_video_ids(
+                        decode_json(page_bytes, label="YouTube search")
+                    ):
+                        if video_id not in seen_ids:
+                            seen_ids.add(video_id)
+                            video_ids.append(video_id)
             videos: list[dict[str, Any]] = []
             for offset in range(0, len(video_ids), 50):
                 chunk = video_ids[offset : offset + 50]

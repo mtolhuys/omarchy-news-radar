@@ -115,6 +115,8 @@ The collector supports an offline fixture mode used by tests and `make feed-fixt
 
 ## YouTube Data API v3
 
+Search requests send `relevanceLanguage` from an ordered preferred-languages list (Forge default `en`, overridable with `YOUTUBE_PREFERRED_LANGUAGES`). YouTube may still return other languages when highly relevant. Multiple preferred languages are reserved for a future plugin preference that runs one search pass per language.
+
 Allowlisted origin and paths:
 
 ```text

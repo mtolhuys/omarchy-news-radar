@@ -9,9 +9,13 @@ from radar.collector import FixtureInputs, collect_from_fixtures, empty_snapshot
 from radar.errors import ValidationError
 from radar.model import front_page, project_section
 from radar.sources.youtube import (
+    normalize_preferred_languages,
     parse_search_video_ids,
     parse_videos,
+    preferred_languages_or_default,
     rank_youtube_videos,
+    relevance_languages_for_search,
+    search_url,
     should_refresh_youtube,
     youtube_events,
 )
@@ -24,6 +28,21 @@ CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
 class YouTubeSourceTests(unittest.TestCase):
     def fixture_videos(self):
         return json.loads((ROOT / "tests/fixtures/youtube-baseline.json").read_text(encoding="utf-8"))["videos"]
+
+
+    def test_search_url_biases_relevance_language(self) -> None:
+        url = search_url(query="Omarchy", api_key="test-key")
+        self.assertIn("relevanceLanguage=en", url)
+        self.assertIn("q=Omarchy", url)
+        dutch = search_url(query="Omarchy", api_key="test-key", relevance_language="nl")
+        self.assertIn("relevanceLanguage=nl", dutch)
+
+    def test_preferred_languages_normalize_and_primary_search_pass(self) -> None:
+        self.assertEqual(("en", "nl", "zh-Hans"), normalize_preferred_languages("en, nl, en, XX, zh-Hans"))
+        self.assertEqual(("en",), preferred_languages_or_default(None))
+        self.assertEqual(("en",), preferred_languages_or_default("bogus"))
+        # Multi-language preferences are accepted, but search still uses the primary today.
+        self.assertEqual(("nl",), relevance_languages_for_search(["nl", "en"]))
 
     def test_keyword_filter_and_ranking_interleave(self) -> None:
         search = {

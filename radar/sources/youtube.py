@@ -42,6 +42,13 @@ MAX_EVENTS_PER_CHANNEL = 2
 HQDEFAULT_WIDTH = 480
 HQDEFAULT_HEIGHT = 360
 MAX_METRIC_VALUE = 9_007_199_254_740_991
+# search.list accepts one relevanceLanguage per request (ISO 639-1, plus zh-Hans/zh-Hant).
+# Preferred languages are ordered; today only the first biases the search. Multiple
+# entries are reserved for a future plugin Tune preference that fans out one pass
+# per language and merges video IDs.
+DEFAULT_PREFERRED_LANGUAGES = ("en",)
+MAX_PREFERRED_LANGUAGES = 8
+LANGUAGE_CODE_RE = re.compile(r"^(?:[a-z]{2}|zh-Hans|zh-Hant)$")
 
 
 def watch_url(video_id: str) -> str:
@@ -52,7 +59,65 @@ def thumbnail_url(video_id: str) -> str:
     return f"{THUMB_ORIGIN}/vi/{video_id}/hqdefault.jpg"
 
 
-def search_url(*, query: str, api_key: str) -> str:
+def normalize_preferred_languages(value: object) -> tuple[str, ...]:
+    """Return ordered, de-duplicated YouTube relevanceLanguage codes.
+
+    Accepts a sequence or a comma-separated string. Invalid codes are dropped.
+    Empty input yields an empty tuple so callers can fall back to defaults.
+    """
+
+    raw: list[str] = []
+    if isinstance(value, str):
+        raw = [part.strip() for part in value.split(",")]
+    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for item in value:
+            if isinstance(item, str):
+                raw.append(item.strip())
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for code in raw:
+        if not code or not LANGUAGE_CODE_RE.fullmatch(code):
+            continue
+        if code in seen:
+            continue
+        seen.add(code)
+        ordered.append(code)
+        if len(ordered) >= MAX_PREFERRED_LANGUAGES:
+            break
+    return tuple(ordered)
+
+
+def preferred_languages_or_default(value: object | None = None) -> tuple[str, ...]:
+    """Resolve preferred languages, falling back to the English Forge default."""
+
+    if value is None:
+        return DEFAULT_PREFERRED_LANGUAGES
+    normalized = normalize_preferred_languages(value)
+    return normalized or DEFAULT_PREFERRED_LANGUAGES
+
+
+def relevance_languages_for_search(preferred: object | None = None) -> tuple[str, ...]:
+    """Languages to pass as search.list relevanceLanguage, one request each.
+
+    The Data API takes a single relevanceLanguage per call and may still return
+    other languages when they are highly relevant. Today we bias with the first
+    preferred language only. When the plugin starts sending a list, widen this
+    helper to return the full preferred tuple for multi-pass collection.
+    """
+
+    languages = preferred_languages_or_default(preferred)
+    return (languages[0],)
+
+
+def search_url(
+    *,
+    query: str,
+    api_key: str,
+    relevance_language: str | None = None,
+) -> str:
+    language = preferred_languages_or_default(
+        [relevance_language] if relevance_language else None
+    )[0]
     return (
         f"{API_BASE}/search?"
         + urlencode(
@@ -61,6 +126,7 @@ def search_url(*, query: str, api_key: str) -> str:
                 "type": "video",
                 "q": query,
                 "maxResults": str(MAX_SEARCH_RESULTS),
+                "relevanceLanguage": language,
                 "key": api_key,
             }
         )
