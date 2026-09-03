@@ -48,8 +48,12 @@ FocusScope {
   Accessible.focusable: true
   Accessible.onPressAction: root.activated()
 
+  // Keep the card chrome inside the list column so selected/focus rings do not
+  // paint over the SECTIONS / inspector pane dividers beside the ListView.
   BorderSurface {
     anchors.fill: parent
+    anchors.leftMargin: Style.spacing.hairline
+    anchors.rightMargin: Style.spacing.hairline
     radius: Style.cornerRadius
     color: root.selected
       ? Style.selectedFillFor(Color.foreground, Color.accent, Color.urgent)
