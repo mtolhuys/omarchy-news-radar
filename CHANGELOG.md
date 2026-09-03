@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-No changes yet.
+### Documentation
+- Refresh the README walkthrough with the current 0.4.14 public edition, full official Omarchy News detail, real plugin activity and metrics, section filters, and a Matte Black/Catppuccin Latte theme switch without unreviewed story imagery.
 
 ## 0.4.14 — 2026-09-03
 
