@@ -274,7 +274,7 @@ def validate_event(value: Any, *, public_only: bool = False) -> dict[str, Any]:
         "occurredAt": occurred_at,
         "discoveredAt": discovered_at,
         "title": normalize_text(event.get("title"), 160),
-        "summary": normalize_text(event.get("summary"), 400),
+        "summary": normalize_text(event.get("summary"), 8000),
         "source": {
             "label": normalize_text(source.get("label"), 60),
             "url": validate_https_url(source.get("url"), "source.url"),

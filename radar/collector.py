@@ -24,6 +24,7 @@ from .sources import (
     enrich_plugin_descriptions,
     parse_engagement,
     parse_marketplace,
+    enrich_omarchy_news,
     parse_news_rss,
     parse_releases,
     parse_search_video_ids,
@@ -104,6 +105,7 @@ def collect_from_fixtures(
     failed = dict(failed_sources or {})
     next_sources = dict(previous_sources)
     events: list[dict[str, Any]] = []
+    news_items_for_enrich: dict[str, dict[str, Any]] | None = None
     health: list[dict[str, Any]] = []
     checked_at = format_timestamp(clock)
     releases: dict[str, dict[str, Any]] | None = None
@@ -153,6 +155,7 @@ def collect_from_fixtures(
         if not isinstance(old_news, dict):
             old_news = {}
         events.extend(diff_news(old_news, news_items, discovered_at=clock, window_from=window_from))
+        news_items_for_enrich = news_items
         next_sources["omarchy-news"] = {"items": news_items, "checkedAt": checked_at}
         health.append(
             {
@@ -269,7 +272,10 @@ def collect_from_fixtures(
         retained_events.setdefault(event["id"], event)
     base_events = canonical_events(
         enrich_event_metrics(
-            enrich_plugin_descriptions(retained_events.values(), marketplace),
+            enrich_omarchy_news(
+                enrich_plugin_descriptions(retained_events.values(), marketplace),
+                news_items_for_enrich,
+            ),
             observed_at=checked_at,
             marketplace=marketplace,
             engagement=engagement,

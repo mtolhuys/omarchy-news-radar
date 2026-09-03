@@ -310,7 +310,7 @@
           "type": "object"
         },
         "summary": {
-          "maxLength": 400,
+          "maxLength": 8000,
           "minLength": 1,
           "type": "string"
         },

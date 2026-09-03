@@ -4,6 +4,12 @@
 
 No changes yet.
 
+## 0.4.14 — 2026-09-03
+
+- Omarchy News stories now carry the official RSS article body (plain text, up to 8k) in the detail pane; list rows still elide to a teaser.
+- Existing news items refresh their article text on the next collect without becoming new stories.
+- Bar widget scheduled refresh interval is 5 minutes so clients pick up Forge publishes faster.
+
 ## 0.4.13 — 2026-09-03
 
 ### Added

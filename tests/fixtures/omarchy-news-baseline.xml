@@ -23,7 +23,7 @@
       <pubDate>Fri, 28 Aug 2026 09:00:00 GMT</pubDate>
       <dc:creator>DHH</dc:creator>
       <description><![CDATA[The inaugural Core Team shares responsibility for the direction of the distro.]]></description>
-      <content:encoded><![CDATA[<p>The inaugural <strong>Core Team</strong> shares responsibility for the direction of the distro.</p>]]></content:encoded>
+      <content:encoded><![CDATA[<p>The inaugural <strong>Core Team</strong> shares responsibility for the direction of the distro.</p><p>This second paragraph exists so Radar can show a full article body instead of the teaser.</p>]]></content:encoded>
     </item>
   </channel>
 </rss>

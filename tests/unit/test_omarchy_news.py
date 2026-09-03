@@ -32,6 +32,8 @@ class OmarchyNewsSourceTests(unittest.TestCase):
         )
         self.assertEqual("Meet the Omarchy Core Team", items["meet-the-omarchy-core-team"]["title"])
         self.assertNotIn("<", items["meet-the-omarchy-core-team"]["summary"])
+        self.assertIn("Core Team", items["meet-the-omarchy-core-team"]["summary"])
+        self.assertGreater(len(items["meet-the-omarchy-core-team"]["summary"]), 20)
         self.assertEqual("2026-08-30T12:00:00Z", items["omarchy-quattro-ships"]["publishedAt"])
 
     def test_diff_emits_only_new_in_window_events(self) -> None:
