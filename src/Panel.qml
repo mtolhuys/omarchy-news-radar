@@ -21,6 +21,8 @@ Item {
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-shortcut" : ""
+  readonly property string brandLogoPath: manifest && manifest.__sourceDir
+    ? String(manifest.__sourceDir) + "/assets/omarchy-logo.svg" : ""
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME")
     || (Quickshell.env("HOME") + "/.cache")
   readonly property string pluginId: manifest && manifest.id
@@ -292,9 +294,21 @@ Item {
 
   function maximizeGeometry() { return itemGeometry(maximizeButton, maximizeButton.visible) }
   function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
-  function settingsGeometry() { return itemGeometry(settingsButton, settingsButton.visible) }
-  function markAllReadGeometry() { return itemGeometry(markAllReadButton, markAllReadButton.visible) }
-  function headerUnreadGeometry() { return itemGeometry(headerUnreadButton, headerUnreadButton.visible) }
+  function settingsGeometry() {
+    return keySurface.narrow
+      ? itemGeometry(narrowSettingsButton, narrowSettingsButton.visible)
+      : itemGeometry(settingsButton, settingsButton.visible)
+  }
+  function markAllReadGeometry() {
+    return keySurface.narrow
+      ? itemGeometry(narrowMarkAllReadButton, narrowMarkAllReadButton.visible)
+      : itemGeometry(markAllReadButton, markAllReadButton.visible)
+  }
+  function headerUnreadGeometry() {
+    return keySurface.narrow
+      ? itemGeometry(narrowHeaderUnreadButton, narrowHeaderUnreadButton.visible)
+      : itemGeometry(headerUnreadButton, headerUnreadButton.visible)
+  }
   function keysLegendGeometry() { return itemGeometry(keysLegendToggle, keysLegendToggle.visible) }
   function refreshGeometry() { return itemGeometry(refreshButton, refreshButton.visible) }
   function loadMoreGeometry() {
@@ -1563,25 +1577,40 @@ Item {
               Layout.fillWidth: true
               spacing: Style.spacing.controlGap
 
-              // No in-panel mark: the title already names the app, and the
-              // Apps/desktop icons keep the branded tile.
               Item {
                 Layout.fillWidth: true
                 implicitHeight: titleStack.implicitHeight
 
-                Text {
+                RowLayout {
                   id: titleStack
                   anchors.fill: parent
-                  text: "OMARCHY NEWS RADAR"
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.display
-                  font.bold: true
-                  font.letterSpacing: Style.spaceReal(1)
-                  verticalAlignment: Text.AlignVCenter
-                  Accessible.role: Accessible.Heading
-                  Accessible.name: text
+                  spacing: Style.spacing.md
+
+                  Image {
+                    Layout.preferredWidth: Style.font.displayLarge
+                    Layout.preferredHeight: Style.font.displayLarge
+                    source: root.brandLogoPath
+                    sourceSize.width: Style.font.displayLarge * 2
+                    sourceSize.height: Style.font.displayLarge * 2
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                    Accessible.ignored: true
+                  }
+
+                  Text {
+                    Layout.fillWidth: true
+                    text: "NEWS RADAR"
+                    textFormat: Text.PlainText
+                    color: Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.display
+                    font.bold: true
+                    font.letterSpacing: Style.spaceReal(1)
+                    verticalAlignment: Text.AlignVCenter
+                    Accessible.role: Accessible.Heading
+                    Accessible.name: "Omarchy News Radar"
+                  }
                 }
 
                 MouseArea {
@@ -2028,12 +2057,14 @@ Item {
                   spacing: Style.spacing.controlGap
 
                   RadarButton {
+                    id: narrowHeaderUnreadButton
                     label: root.currentFilter.unreadOnly ? "Unread only" : "All"
                     selected: root.currentFilter.unreadOnly
                     enabled: !root.stateMutationPending
                     onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
                   }
                   RadarButton {
+                    id: narrowMarkAllReadButton
                     label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
                     enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
                       && !root.refreshing && !projectProc.running
@@ -2041,6 +2072,7 @@ Item {
                     onClicked: root.markCurrentSectionRead()
                   }
                   RadarButton {
+                    id: narrowSettingsButton
                     label: "⚙ Settings"
                     selected: root.filterSummary !== "No extra filters"
                     enabled: !root.stateMutationPending

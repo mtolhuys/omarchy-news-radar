@@ -175,6 +175,16 @@ def validate_manifest() -> None:
         fail("manifest icon does not match the reviewed Omarchy-and-radar brand geometry")
     if (ROOT / "assets" / "io.github.mtolhuys.news-radar-light.svg").exists():
         fail("retired light-theme icon must not be shipped")
+    brand_logo_path = ROOT / "assets" / "omarchy-logo.svg"
+    if not brand_logo_path.is_file():
+        fail("official Omarchy title logo is missing")
+    brand_logo_text = brand_logo_path.read_text(encoding="utf-8")
+    lowered_brand_logo = brand_logo_text.casefold()
+    if any(token in lowered_brand_logo for token in forbidden_icon_tokens):
+        fail("Omarchy title logo must be inert self-contained SVG geometry")
+    for token in ('viewBox="0 0 1200 1200"', '#9ece6a', 'm1200 1200h-480v-80h400v-1040'):
+        if token not in brand_logo_text:
+            fail("Omarchy title logo does not match the reviewed official geometry")
     panel_mark_paths = (
         ROOT / "assets" / "io.github.mtolhuys.news-radar-panel.svg",
         ROOT / "assets" / "io.github.mtolhuys.news-radar-panel-light.svg",
@@ -231,6 +241,10 @@ def validate_manifest() -> None:
             fail(f"panel entry point lacks {required_text}")
     if f'news-radar-{version}+identity-1' not in qml:
         fail("panel runtime identity does not match the manifest version")
+    if 'String(manifest.__sourceDir) + "/assets/omarchy-logo.svg"' not in qml:
+        fail("panel title does not load the bundled Omarchy logo")
+    if 'text: "NEWS RADAR"' not in qml or 'text: "OMARCHY NEWS RADAR"' in qml:
+        fail("panel title must pair the Omarchy logo with the News Radar product name")
     forbidden = ("Qt.openUrlExternally", "shell -c", "bash -c")
     for value in forbidden:
         if value in qml:
