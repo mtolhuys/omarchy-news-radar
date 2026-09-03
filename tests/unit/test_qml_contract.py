@@ -130,6 +130,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("property bool inspectorFactsOpen: false", qml)
         self.assertIn("function inspectorMetaLine()", qml)
         self.assertIn("RadarModel.usesQuietCard", qml)
+        self.assertIn("keySurface.narrow\n                    ? index !== root.selectedIndex", qml)
         self.assertIn("RadarModel.isReaderArticle", qml)
         self.assertIn("RadarModel.humanDate", qml)
         self.assertNotIn("card.width * 0.13", qml)
