@@ -100,9 +100,16 @@ def diff_releases(
     discovered_at: datetime,
     window_from: datetime,
 ) -> list[dict[str, Any]]:
+    """Emit release events for current items inside the rolling window.
+
+    ``previous`` is call-site compat only. Baseline releases are still emitted
+    so Core release rows can rematerialize after ledger eviction.
+    """
+
+    del previous
     events: list[dict[str, Any]] = []
     for release_id, release in current.items():
-        if release_id in previous or parse_timestamp(release["publishedAt"]) < window_from:
+        if parse_timestamp(release["publishedAt"]) < window_from:
             continue
         suffix = " (prerelease)" if release["prerelease"] else ""
         source_url = str(release["url"])

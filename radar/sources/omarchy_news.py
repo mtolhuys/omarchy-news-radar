@@ -191,11 +191,18 @@ def diff_news(
     discovered_at: datetime,
     window_from: datetime,
 ) -> list[dict[str, Any]]:
-    """Emit new Omarchy News events inside the rolling window."""
+    """Emit Omarchy News events for current items inside the rolling window.
 
+    ``previous`` is retained for call-site compatibility. Items already present
+    in the baseline are still emitted so a ledger eviction can rematerialize
+    Core stories on the next successful collect. Callers merge with retained
+    events via setdefault so first-seen timestamps win.
+    """
+
+    del previous  # call-site compat; emission is window-scoped, not diff-only
     events: list[dict[str, Any]] = []
     for item_id, item in current.items():
-        if item_id in previous or parse_timestamp(item["publishedAt"]) < window_from:
+        if parse_timestamp(item["publishedAt"]) < window_from:
             continue
         source_url = str(item["url"])
         events.append(

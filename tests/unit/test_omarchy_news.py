@@ -72,7 +72,7 @@ class OmarchyNewsSourceTests(unittest.TestCase):
         kept = normalize_article_summary(summary, 8000)
         self.assertIn("\n\n", kept)
 
-    def test_diff_emits_only_new_in_window_events(self) -> None:
+    def test_diff_emits_in_window_events_including_known_baseline(self) -> None:
         baseline = parse_news_rss(self.fixture("omarchy-news-baseline.xml"))
         current = parse_news_rss(self.fixture("omarchy-news-next.xml"))
         events = diff_news(
@@ -81,13 +81,17 @@ class OmarchyNewsSourceTests(unittest.TestCase):
             discovered_at=CLOCK,
             window_from=datetime(2026, 6, 2, 14, 0, tzinfo=timezone.utc),
         )
-        self.assertEqual(["Patronage opens to everyone"], [event["title"] for event in events])
-        event = events[0]
+        titles = [event["title"] for event in events]
+        self.assertIn("Patronage opens to everyone", titles)
+        # Known baseline rows rematerialize so ledger eviction can heal Core.
+        self.assertEqual(3, len(events))
+        event = next(event for event in events if event["title"] == "Patronage opens to everyone")
         self.assertEqual("omarchy-news", event["type"])
         self.assertEqual("core", event["classification"]["section"])
         self.assertEqual("routine", event["classification"]["significance"])
         validate_event(event)
-        self.assertEqual([], diff_news(current, current, discovered_at=CLOCK, window_from=datetime(2026, 6, 2, tzinfo=timezone.utc)))
+        again = diff_news(current, current, discovered_at=CLOCK, window_from=datetime(2026, 6, 2, tzinfo=timezone.utc))
+        self.assertEqual(3, len(again))
 
     def test_rejects_malformed_foreign_and_unbounded_feeds(self) -> None:
         with self.assertRaises(ValidationError):
@@ -182,6 +186,46 @@ class OmarchyNewsSourceTests(unittest.TestCase):
         self.assertIn(RSS_URL, calls)
         self.assertIn("omarchy-news", snapshot["sources"])
         self.assertTrue(any(event["type"] == "omarchy-news" for event in feed["events"]))
+
+
+    def test_collector_rematerializes_evicted_core_news(self) -> None:
+        """Ledger eviction must not permanently lose known Omarchy News rows."""
+        from copy import deepcopy
+
+        inputs = FixtureInputs(
+            ROOT / "tests/fixtures/releases-baseline.json",
+            ROOT / "tests/fixtures/catalog-baseline.json",
+            ROOT / "tests/fixtures/community",
+            ROOT / "content/curation",
+            ROOT / "tests/fixtures/engagement-baseline.json",
+            omarchy_news=ROOT / "tests/fixtures/omarchy-news-next.xml",
+        )
+        feed, snapshot = collect_from_fixtures(
+            inputs,
+            previous_snapshot=None,
+            now=CLOCK,
+            bootstrap_marketplace=True,
+        )
+        news_before = [event for event in feed["events"] if event["type"] == "omarchy-news"]
+        self.assertGreaterEqual(len(news_before), 1)
+        # Simulate FIFO eviction: drop all omarchy-news from retained events,
+        # keep the source baseline so diffs would previously stay silent.
+        depleted = deepcopy(snapshot)
+        depleted["events"] = [
+            event for event in depleted["events"] if event.get("type") != "omarchy-news"
+        ]
+        feed2, snapshot2 = collect_from_fixtures(
+            inputs,
+            previous_snapshot=depleted,
+            now=CLOCK,
+            bootstrap_marketplace=False,
+        )
+        news_after = [event for event in feed2["events"] if event["type"] == "omarchy-news"]
+        self.assertEqual(len(news_before), len(news_after))
+        self.assertEqual(
+            {event["id"] for event in news_before},
+            {event["id"] for event in news_after},
+        )
 
 
 if __name__ == "__main__":

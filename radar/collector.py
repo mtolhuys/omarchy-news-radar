@@ -137,6 +137,15 @@ def collect_from_fixtures(
         previous_news = previous_sources.get("omarchy-news")
         if isinstance(previous_news, dict):
             next_sources["omarchy-news"] = previous_news
+            old_news = previous_news.get("items", {})
+            if isinstance(old_news, dict) and old_news:
+                # Rematerialize from the cached baseline even on not-modified,
+                # so Core news evicted from the ledger can return without
+                # waiting for the next RSS body change.
+                events.extend(
+                    diff_news(old_news, old_news, discovered_at=clock, window_from=window_from)
+                )
+                news_items_for_enrich = dict(old_news)
             health.append(
                 {
                     "id": "omarchy-news",

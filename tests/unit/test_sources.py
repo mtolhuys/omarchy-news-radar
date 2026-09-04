@@ -58,10 +58,24 @@ class SourceTests(unittest.TestCase):
             discovered_at=CLOCK,
             window_from=datetime(2026, 6, 2, 14, 0, tzinfo=timezone.utc),
         )
-        self.assertEqual(["Omarchy v4.0.2", "Omarchy v4.1.0-rc1 (prerelease)"], [event["title"] for event in events])
+        # Emits every in-window release, including ones already in the baseline,
+        # so Core release rows can rematerialize after ledger eviction.
+        self.assertEqual(
+            ["Omarchy v4.0.2", "Omarchy v4.1.0-rc1 (prerelease)"],
+            [event["title"] for event in events],
+        )
         prior_with_removed = dict(current)
         prior_with_removed.update(baseline)
-        self.assertEqual([], diff_releases(prior_with_removed, current, discovered_at=CLOCK, window_from=datetime(2026, 6, 2, 14, 0, tzinfo=timezone.utc)))
+        rematerialized = diff_releases(
+            prior_with_removed,
+            current,
+            discovered_at=CLOCK,
+            window_from=datetime(2026, 6, 2, 14, 0, tzinfo=timezone.utc),
+        )
+        self.assertEqual(
+            ["Omarchy v4.0.2", "Omarchy v4.1.0-rc1 (prerelease)"],
+            [event["title"] for event in rematerialized],
+        )
 
     def test_release_adapter_rejects_malformed_duplicate_and_unbounded_pages(self) -> None:
         with self.assertRaises(ValidationError):
