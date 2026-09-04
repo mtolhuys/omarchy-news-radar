@@ -30,17 +30,17 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 2. The user may install Radar's explicit XDG launcher entry, which adds **Omarchy News Radar** with its newspaper mark to Omarchy's normal Apps menu without touching unrelated entries.
 3. The user may run the explicit shortcut helper. It installs `Super+Alt+N` only when the personal configuration and live binding table both show that the chord is free; otherwise it refuses the change. Because an earlier explicit setup made its byte-exact marked block Radar-managed, an update rescan may automatically migrate only that exact unmodified 0.1.3 `toggle` block to `summon`. Every edited, personal, conflicting, multiple, symlinked, or ambiguous case remains unchanged, and **Update shortcut** remains a visible retry if automatic validation cannot complete.
 4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper summons the same window: closed Radar opens; an existing foreground or obscured Radar is raised and focused without toggling closed. Omarchy's `Super+Shift+N` Editor action remains unchanged.
-5. While its optional newspaper is visible, Radar checks one bounded static published edition from the last real attempt without blocking the cached edition; successful checks are at most every 15 minutes and failures retry after five. An adopted edition updates the passive unread badge with the panel closed. The badge deduplicates unread stories across the current persistent section projections, so every advertised story is reachable in the newspaper. It never implies that the desktop action collects upstream sources.
+5. While its optional newspaper is visible, Radar checks one bounded static published edition from the last real attempt without blocking the cached edition; successful checks and failures are retried at most every five minutes. An adopted edition updates the passive unread badge with the panel closed. The badge deduplicates unread stories across the current persistent section projections, so every advertised story is reachable in the newspaper. It never implies that the desktop action collects upstream sources.
 6. The front page and section rail show exactly how many stories remain unread; every row says `UNREAD` or `READ`, and any accepted reviewed link joins that finite edition without creating a separate empty lane. Under Unread only, a just-read row remains stable and visibly READ for the active view while the true count decreases, then leaves after a section, search, or filter change.
 7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, and Saved, with `Tab` and `Shift+Tab` cycling sections and Down/Enter reaching finite pagination.
 8. A fresh panel open marks its first visibly presented selection read once; deliberately selecting another item marks only that story read. Re-summoning an already open panel, refreshing, or rebuilding a projection does not repeat the initial action. Article stories open a reading pane with title, human date · source, and the full body; type, trust, audit, compatibility, and the raw URL stay in collapsed Details. YouTube and plugin stories may still show thumbnail and source-labelled aggregate metrics. The inspector and `u` shortcut can mark a story unread again; a separate explicit section action marks every unread story matching that section's persistent Settings filters read in one atomic transition.
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel never bulk-marks the edition. Apart from the one story visibly selected by a fresh open, stories the user did not deliberately select remain unread across close, refresh, and restart.
-11. Offline or failed checks preserve the last-known-good edition without displacing news with publisher diagnostics. A concise recovery message appears only when no usable edition exists; operational monitoring separately distinguishes source checks, publication, Pages propagation, and client cache age.
+11. Offline or failed checks preserve the last-known-good edition without displacing news with publisher diagnostics. A concise recovery message appears only when no usable edition exists; operational monitoring separately distinguishes source checks, Forge publication, and client cache age.
 12. The user can inspect each section's fixed source scope, add local filters, and reveal further matching stories in finite twelve-item steps.
 13. Right-clicking the newspaper hides it with no remaining bar gap. Tune Your Radar inside the panel restores it and controls story images.
 
-An owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts and imports the complete validated edition and mirrored images into private cache. The client retains its validated local-origin marker for downgrade protection without placing that implementation detail in the normal reader. Test fixtures must never masquerade as live news.
+An owner deliberately running the local checkout may use `make local-latest`. That command collects the same allowlisted public facts and imports the complete validated edition into private cache; current image references remain on the exact allowlisted marketplace/YouTube origins. The client retains its validated local-origin marker for downgrade protection without placing that implementation detail in the normal reader. Test fixtures must never masquerade as live news.
 
 ## Version 1 capabilities
 
@@ -53,7 +53,7 @@ An owner deliberately running the local checkout may use `make local-latest`. Th
 - Plugin retirement only after an explicit retirement signal or repeated confirmed absence.
 - Marketplace verification status changes.
 - Manually reviewed community tutorials, showcases, and project announcements.
-- Publisher-mirrored marketplace preview images when an official preview passes the fixed format, size, dimension, and origin checks.
+- Direct allowlisted marketplace preview images when an official preview passes the fixed format, size, dimension, path, and origin checks, plus fixed-shape allowlisted YouTube thumbnails.
 
 ### Relevance
 
@@ -107,7 +107,7 @@ Automated activity and editorial significance are separate facts. The collector 
 - Mandatory top-bar presence, desktop notifications, polling while the newspaper is hidden, or a resident daemon.
 - Claiming that marketplace verification is a complete security audit.
 - Treating views, hearts, command copies, stars, or release-asset downloads as installs, unique users, votes, rankings, safety, or editorial significance.
-- Mirroring entire articles, release notes, arbitrary screenshots, or repository content. Only bounded official marketplace preview thumbnails are mirrored.
+- Mirroring articles, release notes, arbitrary screenshots, repository content, or preview rasters onto the feed host. Only exact allowlisted marketplace/YouTube image references enter current editions.
 
 ## Milestone success criterion
 

@@ -167,7 +167,7 @@ Normalized marketplace state is keyed by canonical plugin ID and retains only fi
 }
 ```
 
-Stars, views, hearts, copy counts, release-asset downloads, repository update timestamps, observed commits, preview paths, and source fingerprints are not news identities. Valid counters may enrich an event created by another supported fact; valid preview metadata is retained only so the publisher can mirror its optional image.
+Stars, views, hearts, copy counts, release-asset downloads, repository update timestamps, observed commits, preview paths, and source fingerprints are not news identities. Valid counters may enrich an event created by another supported fact; valid preview metadata is retained only so the publisher can inspect the optional marketplace raster and emit its direct allowlisted `sourceUrl`.
 
 ## Local state
 

@@ -51,11 +51,11 @@ Changes to description, tags, category, stars, views, hearts, copy counts, repos
 
 Scheduled collection always diffs against the validated snapshot from the latest successfully deployed edition. The next snapshot becomes eligible only after that workflow run completes successfully. A missing or invalid continuity artifact fails publication; it never falls back silently to an older tracked snapshot. Rediscovery of an existing deterministic event ID retains its first observed occurrence/discovery times.
 
-After collection, publication compares the restored and successor snapshots. Every catalog ID that appears for the first time must have a validated `plugin-added` event in the successor ledger, and marketplace generation time may not move backwards. A missing addition fails the build before artifact upload or Pages deployment.
+After collection, publication compares the restored and successor snapshots. Every catalog ID that appears for the first time must have a validated `plugin-added` event in the successor ledger, and marketplace generation time may not move backwards. A missing addition fails the build before Forge publishes the artifact.
 
-### Preview mirroring
+### Preview pass-through
 
-An event created by a supported marketplace diff may carry its catalog preview thumbnail. Publication fetches only `https://plugins.omarchy.org/assets/img/plugins/...` through the closed redirect policy, caps each response at 1.5 MiB, requires matching PNG/JPEG/WebP Content-Type and magic, validates static image structure and declared dimensions up to 4,096 per side/12 million pixels, rejects SVG and animation, then names the asset by SHA-256. A fetch or validation failure removes only the optional image. Clients never receive the upstream preview URL.
+An event created by a supported marketplace diff may carry its catalog preview thumbnail. Publication fetches only `https://plugins.omarchy.org/assets/img/plugins/...` through the closed redirect policy, caps each response at 1.5 MiB, requires matching PNG/JPEG/WebP Content-Type and magic, validates static image structure and declared dimensions up to 4,096 per side/12 million pixels, and rejects SVG and animation. A successful image remains a direct `image.sourceUrl` on that exact origin/path family; the feed host does not retain or serve the raster. A fetch or validation failure removes only the optional image.
 
 One repository-level validated commit may represent multiple plugins and may change for reasons unrelated to a specific plugin. It is not a plugin-release signal.
 
@@ -141,4 +141,3 @@ This is an explicit D007 exception (D048). The Atom self link names `/news/rss.x
 The adapter accepts RSS 2.0 with `title`, `link`, `guid`, `pubDate`, optional `dc:creator`, `description`, and `content:encoded`. Item URLs must stay under `https://omarchy.org/news/YYYY/MM/<slug>`. Summaries prefer `content:encoded` then description, strip HTML, and may keep up to 8,000 characters so the inspector can show the official article. Validated HTTPS `href` values from `<a>` tags are preserved as `[label](https://...)` markers (relative `/…` paths resolve against `https://omarchy.org`); javascript and other unsafe destinations are dropped. List cards derive a short cleaned teaser from that body, using labels rather than URLs, and never replace the stored article. Event identity uses the guid permalink path slug; `occurredAt` uses `pubDate`.
 
 Diffing emits only newly observed items inside the rolling window. Failure retains the prior `omarchy-news` snapshot and emits no mass change. Successful items are classified into Core as `omarchy-news` with routine significance; Front Page admits at most three of them by quota rather than blanket notability (D008/D048). CI uses fixtures only and never calls the live feed during ordinary tests.
-

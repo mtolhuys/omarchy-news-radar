@@ -258,7 +258,7 @@
 
 ## D033 — Treat publication as best effort and expose its real age
 
-**Superseded (publisher):** Live publishing moved to Forge Laravel `news-radar:publish` every 10 minutes at `https://mtolhuijs.nl/news-radar/events.json`; GitHub Pages/Actions publication is retired. Stale-after-90-minutes and distinct timestamp facts still apply.
+**Superseded (publisher):** Live publishing moved to Forge Laravel `news-radar:publish` every five minutes at `https://mtolhuijs.nl/news-radar/events.json`; GitHub Pages/Actions publication is retired. Stale-after-90-minutes and distinct timestamp facts still apply.
 
 **Decision:** Keep the bounded static GitHub Pages architecture, request workflow schedules at minutes 8, 23, 38, and 53, retain manual dispatch for recovery, and define publication as stale only when artifact `publishedAt` is more than 90 minutes old. Record and present source `checkedAt`, collection `generatedAt`, artifact `publishedAt`, the documented Pages cache window, and local cache time as different facts.
 
@@ -282,7 +282,7 @@
 
 **Consequence:** The viewport decision uses settled selected-delegate geometry after layout, and the animation targets the exact `ListView.Beginning` position. The resulting top-row anchor is explicit panel state so an asynchronous read-state projection cannot return the selected row to the lower clip boundary. A read-only geometry probe lets disposable-lab acceptance prove that the crossing row is fully visible and top-aligned, and that the next Down changes selection without moving the viewport.
 
-## D036 — Discover unread editions without opening the panel
+## D036 — Discover unread editions without opening the panel (cadence superseded by D054)
 
 **Decision:** The visible newspaper records the last real network-check attempt independently from feed age. A success schedules the next check after 15 minutes; a failure retries after five minutes. A watched atomic feed replacement immediately reloads the shared unread/health indicator, with a 30-second local-only fallback for missed filesystem events. The hidden newspaper performs no network checks.
 
@@ -430,3 +430,11 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** Radar opens with index zero already selected and its complete story visible in the reader, but the prior D027 rule required an unrelated click or navigation round trip before that one story could become read. Waiting could never help because the initial projection did not enter the existing selection mutation path. That made the visible inspector and the durable unread model disagree about whether the user had read the story in front of them.
 
 **Consequence:** D027's exemption for the default selection on open is superseded only for one fresh-open story. The one-shot is consumed immediately before its asynchronous write, captures stable event identity and generation, and uses D042's transient retention under **Unread only**, so its row changes to **READ** without disappearing. A stale timer, automatic reprojection, rapid close/reopen, modal takeover, or immediate explicit navigation cannot lose the action, mark the wrong story, or duplicate that interaction. Hover, close, refresh, later feed adoption, and unrelated stories remain non-reading operations. The feed and local-state schemas do not change.
+
+## D054 — Match passive discovery to the five-minute Forge edition cadence
+
+**Decision:** The visible newspaper's due-checked client refresh interval is five minutes after either a successful or failed attempt. The private last-attempt record, single-shot scheduling, cache watch, overlap lock, hidden-widget stop, and no-notification boundaries from D036 remain unchanged.
+
+**Why:** Forge now publishes at most every five minutes. Waiting fifteen minutes after a successful client check could leave the passive unread badge two publication cycles behind, while conditional HTTP validation makes unchanged checks inexpensive and still transmits no installation identifier or reading state.
+
+**Consequence:** A visible newspaper can discover the next published edition within one five-minute client interval. Requests remain bounded by the shared private due-check record and cross-instance lock; hiding the newspaper stops the cadence. Feed and local-state schemas do not change.

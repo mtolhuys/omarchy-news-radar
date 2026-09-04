@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This scenario proves the authorized public repository and fixed Pages feed.
+# This scenario proves the authorized public repository and fixed Forge feed.
 # It never substitutes a local path for the public clone proof.
 
 omarchy_host_test() {
@@ -31,7 +31,7 @@ omarchy_host_test() {
   }
   wait_for_guest_state "public clone is enabled with paired panel and newspaper entry points" 20 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && \
-     jq -e '.version == \"0.4.15\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
+     jq -e '.version == \"0.4.16\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
 
   log "Proving documented public Apps-menu and shortcut setup"
   ssh_session "$launcher install" >"$RUN_DIR/news-radar-public-launcher-installed.json" || return 1

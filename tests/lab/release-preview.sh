@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Networked release-only marketing capture. Deterministic acceptance remains
-# fixture-driven; this journey renders the fixed public Pages edition inside a
+# fixture-driven; this journey renders the fixed public Forge edition inside a
 # disposable guest and records one exact Matte Black window crop.
 
 omarchy_host_test() {
@@ -34,8 +34,8 @@ omarchy_host_test() {
 
   log "Checking the fixed public edition and applying Matte Black"
   ssh_session "$helper refresh" >"$RUN_DIR/news-radar-preview-refresh.json" || return 1
-  wait_for_guest_state "public edition contains current stories and mirrored images" 30 ssh_session \
-    "jq -e '.events | length > 0 and any(.[]; (.image.path // \"\") | startswith(\"assets/images/\"))' \
+  wait_for_guest_state "public edition contains current stories and allowlisted images" 30 ssh_session \
+    "jq -e '.events | length > 0 and any(.[]; ((.image.sourceUrl // \"\") | startswith(\"https://plugins.omarchy.org/assets/img/plugins/\")) or ((.image.sourceUrl // \"\") | startswith(\"https://i.ytimg.com/vi/\")))' \
       \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/feed.json\"" || return 1
   ssh_session "omarchy-theme-set matte-black >/dev/null && omarchy-shell shell summon io.github.mtolhuys.news-radar" || return 1
   wait_for_guest_state "public edition is rendered by the local candidate" 30 ssh_session \

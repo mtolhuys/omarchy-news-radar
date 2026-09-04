@@ -27,9 +27,9 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Implement Omarchy release, marketplace catalog, and reviewed community adapters behind one interface.
 2. Implement explicit marketplace bootstrap with a bounded recent backfill, normalized tracked snapshot, two-generation diff, source-health handling, deterministic IDs, and no-event metadata churn.
 3. Implement curation overlay with restricted mutable fields.
-4. Implement bounded feed envelope, rolling live window, saved archive inputs, RSS, escaped static HTML, and publisher-mirrored content-addressed marketplace preview rasters.
+4. Implement bounded feed envelope, rolling live window, saved archive inputs, RSS, escaped static HTML, and publisher-validated direct allowlisted marketplace preview URLs without hosted raster output.
 5. Implement fixture mode and `make feed-fixture`.
-6. Implement an idempotent publish workflow that tests before generating a Pages artifact with least privileges.
+6. Implement an idempotent static artifact build with full validation before Forge publishes it through Laravel.
 
 **Done when:** A fixed two-generation fixture produces byte-stable JSON/RSS/HTML, first bootstrap emits no more than twelve recent listings, invalid images degrade to text, partial sources cannot manufacture retirements, and generated output validates itself.
 
@@ -58,7 +58,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 1. Implement one theme-native `bar-widget` with a code-native newspaper, a deduplicated actionable unread count across the current persistent section projections, and a source-health dot.
 2. Route left click to panel summon/raise, middle click to a bounded published-edition check, and right click to the local hide preference.
 3. Bind hidden state to exact invisible root geometry and watch local state so Tune in the panel can restore it.
-4. Reload exact enabled-plugin IDs before every coalesced indicator projection. Use `refresh-if-due` from a private last-attempt timestamp: 15 minutes after success, five minutes after failure, and only while visible. Dynamically schedule the exact next deadline, watch feed replacement for immediate unread/health propagation, and use the shared atomic lock to contain multi-monitor overlap.
+4. Reload exact enabled-plugin IDs before every coalesced indicator projection. Use `refresh-if-due` from a private last-attempt timestamp at most every five minutes and only while visible. Dynamically schedule the exact next deadline, watch feed replacement for immediate unread/health propagation, and use the shared atomic lock to contain multi-monitor overlap.
 
 **Done when:** Source tests and Plugin Lab geometry/pointer evidence prove default placement, closed-panel background unread adoption, immediate badge propagation, bounded failure retry, zero-gap hiding, restoration, no hidden refresh cadence, and clean unload.
 
@@ -116,4 +116,4 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 
 ## Final definition of done
 
-The entire local implementation is complete, clean, tested, documented, and proven in the disposable guest. The only acceptable remaining blockers are actions requiring new external authority, such as creating the remote repository, enabling GitHub Pages, publishing a release, registering a domain, or submitting to the marketplace.
+The entire local implementation is complete, clean, tested, documented, and proven in the disposable guest. The only acceptable remaining blockers are actions requiring explicit owner authority, such as pushing the candidate, updating Forge production, publishing a release, or submitting the exact commit to the marketplace.

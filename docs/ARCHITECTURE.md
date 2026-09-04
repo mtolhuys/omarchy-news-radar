@@ -3,7 +3,7 @@
 ## System overview
 
 ```text
-Forge Laravel (news-radar:publish every 10 minutes)
+Forge Laravel (news-radar:publish every 5 minutes)
   └─ Python collector on maintainer host
        ├─ Omarchy release adapter
        ├─ marketplace catalog adapter
@@ -29,7 +29,7 @@ Omarchy shell
 
 The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. Live collect → build → serve is owned by Forge Laravel on the maintainer host; the plugin remains a read-only HTTPS client with no application server, database, account service, background daemon, or bidirectional client API of its own. The visible bar widget owns one due-checked refresh timer inside the existing shell process. GitHub Pages is no longer the publication path (optional legacy only).
 
-The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed, build digest, and every referenced raster, then atomically imports the feed plus content-addressed images. Only after that complete import succeeds does it advance the private source baseline. A matching bounded marker makes the client project those assets as local file URLs. **Check for updates** still fetches the fixed live feed at `https://mtolhuijs.nl/news-radar/events.json`: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed and build digest, then atomically imports the feed. Current marketplace and YouTube images remain direct URLs on their exact allowlisted origins; validated legacy content-addressed paths from older editions remain supported. Only after that complete import succeeds does it advance the private source baseline. **Check for updates** still fetches the fixed live feed at `https://mtolhuijs.nl/news-radar/events.json`: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
 
 ## Target repository layout
 
@@ -190,7 +190,7 @@ Follow XDG ownership:
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.
 
-An imported local marker is honored only when its SHA-256 matches the canonical cached feed. Every referenced local raster is re-inspected for format, dimensions, static structure, byte bound, and content-addressed filename before the feed changes. Missing local image bytes produce text fallback rather than a direct upstream request.
+An imported local marker is honored only when its SHA-256 matches the canonical cached feed. Every referenced legacy local raster is re-inspected for format, dimensions, static structure, byte bound, and content-addressed filename before the feed changes. Missing legacy local image bytes produce text fallback rather than an unvalidated upstream request; current `sourceUrl` images remain restricted to their exact allowlisted origins and paths.
 
 ## Collector
 
@@ -206,7 +206,7 @@ Collection is transactional:
 4. Diff only successful current sources against their last successful prior state.
 5. Create events deterministically and merge reviewed curation.
 6. Validate the complete candidate feed.
-7. Fetch only declared marketplace preview thumbnails from `https://plugins.omarchy.org`, inspect bounded PNG/JPEG/WebP bytes and dimensions, and write successful images as SHA-256-addressed same-origin assets. Image failure omits that optional image, not its story.
+7. Fetch only declared marketplace preview thumbnails from `https://plugins.omarchy.org`, inspect bounded PNG/JPEG/WebP bytes and dimensions, and retain successful images as direct allowlisted `sourceUrl` references without storing the raster on the feed host. Image failure omits that optional image, not its story; YouTube thumbnail URLs are separately accepted only in their fixed allowlisted shape.
 8. Write generated artifacts to a temporary output tree.
 9. Publish the output tree and updated successful source states only after every global invariant passes.
 
@@ -218,7 +218,7 @@ Each Forge publish retains the restored snapshot separately through collection, 
 
 ## Static publication
 
-Forge Laravel `news-radar:publish` (every 10 minutes, without overlapping) collects and builds an immutable edition tree containing at least:
+Forge Laravel `news-radar:publish` (every five minutes, without overlapping) collects and builds an immutable edition tree containing at least:
 
 ```text
 dist/  (then served under /news-radar/)
@@ -226,7 +226,7 @@ dist/  (then served under /news-radar/)
 ├── events.json
 ├── feed.xml
 ├── assets/
-│   └── images/<sha256>.<ext>
+│   └── site.css
 └── archive/
 ```
 
@@ -248,7 +248,7 @@ The panel calls the maintained shell IPC and treats the returned plugin IDs as l
 
 The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, actionable unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The unread count is the unique union of unread event IDs surviving the five current persistent section projections, using the same enabled-plugin IDs and filters as the panel. Search and pagination remain transient and do not affect it. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
 
-While visible, one single-shot timer checks the fixed feed at most every 15 minutes after a successful attempt and retries a failed attempt after five minutes. Cadence comes from private `update-check.json`, not the edition's collection timestamp, so loading the shell shortly before an edition becomes old cannot defer the next check for another full interval. A feed-file watch reloads the canonical unread/health indicator immediately after either entry point adopts a valid edition; a 30-second local-only fallback covers missed filesystem events. The panel does not need to be opened. This is a passive bar indicator, not a desktop notification service.
+While visible, one single-shot timer checks the fixed feed at most every five minutes after either a successful or failed attempt. Cadence comes from private `update-check.json`, not the edition's collection timestamp, so loading the shell shortly before an edition becomes old cannot defer the next check for another full interval. A feed-file watch reloads the canonical unread/health indicator immediately after either entry point adopts a valid edition; a 30-second local-only fallback covers missed filesystem events. The panel does not need to be opened. This is a passive bar indicator, not a desktop notification service.
 
 ## Failure containment
 

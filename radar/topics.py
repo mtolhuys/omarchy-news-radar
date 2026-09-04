@@ -20,7 +20,7 @@ import unicodedata
 from typing import Any, Iterable, Mapping, Sequence
 
 # Topic tokens are Unicode letter runs of at least four characters. Digits and
-# version numbers are deliberately excluded: "0.4.15" is not a topic.
+# version numbers are deliberately excluded: "0.4.16" is not a topic.
 TOKEN_RE = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
 LEADING_SENTENCE_RE = re.compile(r"(?<=[.!?…。！？])\s")
 MAX_SENTENCE_CHARS = 200

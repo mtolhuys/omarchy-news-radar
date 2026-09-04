@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.15+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.4.16+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir

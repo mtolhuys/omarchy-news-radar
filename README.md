@@ -4,13 +4,13 @@
 
 > Press one key. Catch up with what changed across Omarchy.
 
-Omarchy News Radar is a visual, keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with an optional newspaper status widget, a full panel, a deterministic Python collector/publisher, a bounded static JSON/RSS/HTML edition with safe mirrored previews, and a cached local reader that remains useful offline.
+Omarchy News Radar is a visual, keyboard-first, source-linked activity reader for Omarchy releases, marketplace changes, and reviewed community work. It is an independent community project with an optional newspaper status widget, a full panel, a deterministic Python collector/publisher, a bounded static JSON/RSS/HTML edition with safe allowlisted previews, and a cached local reader that remains useful offline.
 
 ![Omarchy News Radar in use — official news, plugin activity, section filters, and dark/light themes](preview.gif)
 
 ## Project status
 
-Version `0.4.15` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
+Version `0.4.16` is the current release. The maintainer-controlled [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) may briefly remain on the previous immutable snapshot while its exact-commit update is reviewed. Marketplace verification is compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -18,7 +18,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 
 - A standard-library Python collector for published Omarchy releases, official Omarchy News RSS, bounded marketplace catalog diffs, official anonymous marketplace engagement aggregates, reviewed repository-owned community records, and allowlisted YouTube Data API v3 Omarchy video search.
 - A versioned normalized source snapshot with a rolling 90-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, immutable first-observation timestamps, and restricted curation overlays.
-- Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and allowlisted marketplace previews mirrored to same-origin content-addressed raster assets.
+- Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and direct allowlisted marketplace/YouTube preview URLs; marketplace rasters are structurally validated before publication and are not mirrored onto the feed host.
 - A fixed-origin client helper with cached-first reads, conditional `ETag`/`Last-Modified` refreshes, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, serialized atomic private XDG state, corrupt-state quarantine, saved items, bounded per-story read overrides, and explicit purge.
 - A resizable, maximizable theme-native QML window with normal `Alt+Tab`, summon-to-focus activation, contrast-safe text, images, icon metrics, source-derived plugin explanations, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, fixed section identity, per-section filters, finite keyboard/pointer pagination, search, source opening, restrained update progress, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
@@ -61,13 +61,13 @@ When you deliberately want to run this checkout on your daily desktop, use:
 make local-latest
 ```
 
-The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates and mirrors eligible marketplace images and atomically imports the edition, image assets, and matching private source baseline. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and advance that validated private baseline so an older change cannot be rediscovered as new. **Check for updates** still checks the live feed at `https://mtolhuijs.nl/news-radar/events.json`, refuses to downgrade newer local news, and automatically returns to the published stream as soon as it advances. Internal edition origin and publication diagnostics do not occupy the normal reading surface.
+The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates eligible marketplace images and atomically imports the edition and matching private source baseline; current images remain on the exact allowlisted marketplace/YouTube origins. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and advance that validated private baseline so an older change cannot be rediscovered as new. **Check for updates** still checks the live feed at `https://mtolhuijs.nl/news-radar/events.json`, refuses to downgrade newer local news, and automatically returns to the published stream as soon as it advances. Internal edition origin and publication diagnostics do not occupy the normal reading surface.
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
-## Install the published v0.4.15
+## Install the published v0.4.16
 
-Install the tagged public release directly with:
+Install the current public release directly from the repository's default branch with:
 
 ```bash
 omarchy plugin add https://github.com/mtolhuys/omarchy-news-radar --enable --yes

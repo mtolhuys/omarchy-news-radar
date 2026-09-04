@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
-BUILD_ID = "news-radar-0.4.15"
+BUILD_ID = "news-radar-0.4.16"
 FEED_SCHEMA_VERSION = 2
 STATE_SCHEMA_VERSION = 11
 HELPER_PROTOCOL_VERSION = 1

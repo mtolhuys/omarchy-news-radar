@@ -136,7 +136,7 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
         for request in FeedHandler.requests:
             self.assertEqual("GET", request["method"])
             self.assertEqual("application/json", request["accept"])
-            self.assertEqual("omarchy-news-radar-client/0.4.15", request["userAgent"])
+            self.assertEqual("omarchy-news-radar-client/0.4.16", request["userAgent"])
 
     def test_repeated_refresh_uses_conditional_get_and_keeps_valid_cache_on_304(self) -> None:
         first = refresh(self.environment, now=CLOCK)

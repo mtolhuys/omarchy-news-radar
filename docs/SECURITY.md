@@ -12,7 +12,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 
 ## Remote-content invariants
 
-- Render remote strings as plain text only. Do not interpret HTML, Markdown, SVG, upstream image URLs, ANSI escapes, QML, JavaScript, terminal sequences, or link markup.
+- Render remote strings as plain text only. Do not interpret HTML, Markdown, SVG, arbitrary image URLs, ANSI escapes, QML, JavaScript, terminal sequences, or link markup.
 - Render optional images only from allowlisted marketplace preview HTTPS URLs (`https://plugins.omarchy.org/assets/img/plugins/…`) or allowlisted YouTube thumbnails (`https://i.ytimg.com/vi/<id>/hqdefault.jpg`) recorded as `image.sourceUrl`, or from legacy content-addressed `image.path` values in older caches. The publisher accepts only bounded static PNG/JPEG/WebP from that exact marketplace image origin, verifies Content-Type/magic/structure/dimensions at build time, rejects SVG and animation, omits failures, and does not host rasters on the feed origin.
 - Enforce feed size, event count, string length, tag count, URL length, nesting, and timestamp bounds before a candidate reaches QML.
 - Accept source links only when they parse as public HTTPS URLs without credentials or control characters.
@@ -52,7 +52,7 @@ The optional application launcher uses one fixed desktop-entry name and one fixe
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
 
-At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private lock serializes every state read/modify/write transition across panel and bar helpers, preventing a concurrent read toggle, save, filter, or visibility change from overwriting another mutation. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` only while its local visibility preference is true: a successful attempt schedules 15 minutes later and a failed attempt schedules a five-minute retry. Hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private lock serializes every state read/modify/write transition across panel and bar helpers, preventing a concurrent read toggle, save, filter, or visibility change from overwriting another mutation. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` only while its local visibility preference is true: either outcome schedules another due check five minutes later. Hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
 ## Local checkout synchronization
 
@@ -101,8 +101,8 @@ The project must not claim perfect anonymity, sandboxing, or security auditing.
 
 - Runtime uses the current Omarchy/Arch environment and Python standard library only.
 - GitHub Actions are pinned to immutable commit SHAs before public release.
-- Workflow permissions are least privilege: read source by default and grant Pages/deployment permission only to the publish job.
-- The publication build has read-only Actions access solely to retrieve the exact source-state artifact from the latest successful deployment; the candidate is bounded and fully validated before use, and repository contents remain read-only.
+- Repository workflow permissions are least privilege and read source only; no GitHub Actions job publishes the feed or deploys Pages.
+- The Forge publication build restores the exact source-state snapshot from Laravel storage; the candidate is bounded and fully validated before publication, and repository contents remain read-only.
 - Production publication runs only after source tests and artifact validation.
 - Generated artifacts record source revision and a SHA-256 digest; clients do not treat a digest from the same origin as an independent signature.
 - No remote code, package, or font is downloaded. The publication build downloads allowlisted marketplace preview rasters only to validate them before recording their HTTPS `sourceUrl`; it does not retain or serve those bytes. Runtime downloads the project feed from the fixed feed origin and loads preview images only from the allowlisted marketplace and YouTube image origins (or legacy same-origin paths still present in an old cache).
