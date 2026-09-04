@@ -225,6 +225,8 @@ Background check cadence is disposable cache metadata, not reading state or feed
 
 The strict bounded record distinguishes an actual client attempt from source `checkedAt`, collection `generatedAt`, artifact `publishedAt`, and feed-cache modification time. `outcome` is only `success` or `failed`; malformed or materially future records are treated as absent so they cannot postpone a check. It contains no event IDs, preferences, installation facts, or user identifiers.
 
+HTTP revalidation is a separate disposable `feed-http.json` record with exact keys `schemaVersion`, `url`, `etag`, and `lastModified`. The URL must exactly equal the request's already allowlisted feed URL before either optional validator is sent. A valid `304` reuses only an already validated `feed.json`; malformed metadata or a missing feed cache falls back to an unconditional request. The record contains public response metadata only and is removed by explicit purge.
+
 ## Schema evolution
 
 Additive optional fields may appear within the active feed schema version. A semantic change to required fields, enums, ID calculation, read-state meaning, or validation bounds requires a new schema version plus explicit migration and compatibility tests. The publisher may offer multiple feed versions during a documented transition; the client never guesses across versions.

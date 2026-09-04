@@ -6,12 +6,13 @@ import json
 import math
 import os
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlencode, urljoin, urlsplit
 
-from .constants import CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN, YOUTUBE_IMAGE_ORIGIN
+from .constants import BUILD_ID, CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN, YOUTUBE_IMAGE_ORIGIN
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary, has_reader_image
 from .freshness import edition_timing, update_message
@@ -26,11 +27,13 @@ from .state import (
     StateLock,
     event_is_read,
     feed_cached_at,
+    load_feed_http,
     load_feed,
     load_state,
     load_update_check,
     purge,
     save_feed,
+    save_feed_http,
     save_state,
     save_update_check,
     set_event_read,
@@ -42,6 +45,16 @@ from .state import (
 from .validation import EVENT_ID_RE, parse_timestamp, validate_feed, validate_https_url
 
 MARKETPLACE_PLUGIN_PAGE = "https://plugins.omarchy.org/plugin.html"
+CLIENT_USER_AGENT = f"omarchy-news-radar-client/{BUILD_ID.removeprefix('news-radar-')}"
+
+
+@dataclass(frozen=True)
+class FeedFetch:
+    candidate: dict[str, Any] | None
+    status: int
+    url: str | None = None
+    etag: str | None = None
+    last_modified: str | None = None
 
 
 def response(status: str, **values: Any) -> dict[str, Any]:
@@ -66,7 +79,10 @@ def read_model(environment: Mapping[str, str] | None = None, *, now: datetime | 
     )
 
 
-def _test_feed(environment: Mapping[str, str]) -> dict[str, Any] | None:
+def _test_feed(
+    environment: Mapping[str, str],
+    validators: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | FeedFetch | None:
     if environment.get("OMARCHY_NEWS_RADAR_TEST_MODE") != "1":
         return None
     path = environment.get("OMARCHY_NEWS_RADAR_TEST_FEED")
@@ -84,30 +100,69 @@ def _test_feed(environment: Mapping[str, str]) -> dict[str, Any] | None:
             raise ValidationError("test timeout is outside its bound")
         parsed = urlsplit(url)
         origin = f"{parsed.scheme}://{parsed.netloc}"
-        data, _, _ = fetch_bytes(
+        return _fetch_feed_url(
             url,
             policy=FetchPolicy(
-                FEED_MAX_BYTES,
-                timeout,
-                frozenset({origin}),
-                allow_loopback_http=True,
+                FEED_MAX_BYTES, timeout, frozenset({origin}), allow_loopback_http=True
             ),
-            headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-client/0.1"},
+            validators=validators,
         )
-        return decode_json(data, label="test feed")
     raise ValidationError("test mode requires an explicit fixture path or loopback URL")
 
 
-def _fetch_feed(*, timeout: float = 12.0) -> dict[str, Any]:
+def _header(headers: Mapping[str, str], name: str) -> str | None:
+    lowered = name.lower()
+    return next((value for key, value in headers.items() if key.lower() == lowered), None)
+
+
+def _fetch_feed_url(
+    url: str,
+    *,
+    policy: FetchPolicy,
+    validators: Mapping[str, Any] | None = None,
+) -> FeedFetch:
+    request_headers = {"Accept": "application/json", "User-Agent": CLIENT_USER_AGENT}
+    applicable = validators if validators and validators.get("url") == url else None
+    if applicable:
+        if isinstance(applicable.get("etag"), str):
+            request_headers["If-None-Match"] = applicable["etag"]
+        if isinstance(applicable.get("lastModified"), str):
+            request_headers["If-Modified-Since"] = applicable["lastModified"]
+    data, response_headers, status = fetch_bytes(
+        url,
+        policy=policy,
+        headers=request_headers,
+        allow_not_modified=applicable is not None,
+    )
+    etag = _header(response_headers, "ETag")
+    last_modified = _header(response_headers, "Last-Modified")
+    if status == 304:
+        return FeedFetch(
+            None,
+            status,
+            url=url,
+            etag=etag or applicable.get("etag"),
+            last_modified=last_modified or applicable.get("lastModified"),
+        )
+    return FeedFetch(
+        decode_json(data, label="feed"),
+        status,
+        url=url,
+        etag=etag,
+        last_modified=last_modified,
+    )
+
+
+def _fetch_feed(
+    *, timeout: float = 12.0, validators: Mapping[str, Any] | None = None
+) -> FeedFetch:
     """Fetch production feed with a fixed URL and closed redirect origin."""
 
-    policy = FetchPolicy(FEED_MAX_BYTES, timeout, frozenset({FEED_ORIGIN}))
-    data, _, _ = fetch_bytes(
+    return _fetch_feed_url(
         FEED_URL,
-        policy=policy,
-        headers={"Accept": "application/json", "User-Agent": "omarchy-news-radar-client/0.1"},
+        policy=FetchPolicy(FEED_MAX_BYTES, timeout, frozenset({FEED_ORIGIN})),
+        validators=validators,
     )
-    return decode_json(data, label="feed")
 
 def _youtube_event_count(feed: Mapping[str, Any] | None) -> int:
     if not isinstance(feed, Mapping):
@@ -147,20 +202,36 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
                 save_update_check("failed", env, now=clock)
             except (RadarError, OSError):
                 pass
-            candidate = _test_feed(env)
-            if candidate is None:
-                candidate = _fetch_feed()
-            validated = validate_feed(candidate, now=clock, public_only=True)
+            validators = load_feed_http(env) if cached is not None else None
+            fetched = _test_feed(env, validators)
+            if fetched is None:
+                fetched = (
+                    _fetch_feed(validators=validators)
+                    if validators and validators.get("url") == FEED_URL
+                    else _fetch_feed()
+                )
+            if isinstance(fetched, Mapping):
+                fetched = FeedFetch(dict(fetched), 200)
+            if fetched.status == 304:
+                if cached is None:
+                    raise FetchError("http-error", "server returned 304 without a valid cached feed")
+                validated = cached
+                not_modified = True
+            else:
+                if fetched.candidate is None:
+                    raise FetchError("http-error", "server returned an empty feed response")
+                validated = validate_feed(fetched.candidate, now=clock, public_only=True)
+                not_modified = False
             published_timing = edition_timing(validated, now=clock)
-            candidate_is_newer = cached is None or (
+            candidate_is_newer = not not_modified and (cached is None or (
                 parse_timestamp(validated["generatedAt"])
                 > parse_timestamp(cached["generatedAt"])
-            )
+            ))
             adopt_for_youtube = _should_adopt_published_for_youtube(
                 cached,
                 validated,
                 local_edition=local is not None,
-            )
+            ) if not not_modified else False
             if candidate_is_newer or adopt_for_youtube:
                 previous_ids = {event["id"] for event in cached["events"]} if cached else set()
                 new_stories = sum(event["id"] not in previous_ids for event in validated["events"])
@@ -175,6 +246,17 @@ def refresh(environment: Mapping[str, str] | None = None, *, now: datetime | Non
                 new_stories = 0
                 edition_changed = False
                 cache_preserved = cached is not None
+
+            if fetched.url is not None:
+                try:
+                    save_feed_http(
+                        fetched.url,
+                        fetched.etag,
+                        fetched.last_modified,
+                        env,
+                    )
+                except (RadarError, OSError):
+                    pass
 
             if published_timing["publisherStale"]:
                 status = "stale-publication"

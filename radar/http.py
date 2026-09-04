@@ -57,6 +57,7 @@ def fetch_bytes(
     *,
     policy: FetchPolicy,
     headers: Mapping[str, str] | None = None,
+    allow_not_modified: bool = False,
 ) -> tuple[bytes, Mapping[str, str], int]:
     if not _allowed_url(url, policy):
         raise FetchError("validation-failed", "request URL is outside the allowlist")
@@ -93,6 +94,10 @@ def fetch_bytes(
     except FetchError:
         raise
     except urllib.error.HTTPError as exc:
+        if exc.code == 304 and allow_not_modified:
+            response_headers = dict(exc.headers.items()) if exc.headers else {}
+            exc.close()
+            return b"", response_headers, 304
         rate_remaining = exc.headers.get("X-RateLimit-Remaining") if exc.headers else None
         reason = "rate-limited" if exc.code == 429 or (exc.code == 403 and rate_remaining == "0") else "http-error"
         exc.close()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import errno
 import fcntl
 import os
+import re
 import stat
 import time
 from datetime import datetime, timedelta, timezone
@@ -13,6 +14,7 @@ from typing import Any, Mapping, Sequence
 
 from .constants import (
     CLIENT_SECTIONS,
+    FEED_HTTP_MAX_BYTES,
     FEED_MAX_BYTES,
     FUTURE_SKEW_SECONDS,
     MAX_READ_OVERRIDES,
@@ -147,6 +149,85 @@ def feed_cached_at(environment: Mapping[str, str] | None = None) -> datetime | N
 
 def update_check_path(environment: Mapping[str, str] | None = None) -> Path:
     return cache_root(environment) / "update-check.json"
+
+
+def feed_http_path(environment: Mapping[str, str] | None = None) -> Path:
+    return cache_root(environment) / "feed-http.json"
+
+
+def save_feed_http(
+    url: str,
+    etag: str | None,
+    last_modified: str | None,
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any] | None:
+    """Persist only bounded public cache validators for one exact feed URL."""
+
+    value = _validate_feed_http(
+        {
+            "schemaVersion": 1,
+            "url": url,
+            "etag": etag,
+            "lastModified": last_modified,
+        }
+    )
+    path = feed_http_path(environment)
+    if value["etag"] is None and value["lastModified"] is None:
+        refuse_symlink(path)
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        return None
+    atomic_write_json(path, value)
+    return value
+
+
+def load_feed_http(
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any] | None:
+    """Read disposable validators; malformed metadata means an unconditional GET."""
+
+    path = feed_http_path(environment)
+    try:
+        return _validate_feed_http(read_json_bounded(path, FEED_HTTP_MAX_BYTES))
+    except FileNotFoundError:
+        return None
+    except (StorageError, ValidationError):
+        return None
+
+
+def _validate_feed_http(raw: Any) -> dict[str, Any]:
+    value = require_mapping(raw, "feed HTTP metadata")
+    require_exact_keys(
+        value,
+        {"schemaVersion", "url", "etag", "lastModified"},
+        "feed HTTP metadata",
+    )
+    if type(value["schemaVersion"]) is not int or value["schemaVersion"] != 1:
+        raise ValidationError("feed HTTP metadata schemaVersion is invalid")
+    url = value["url"]
+    if (
+        not isinstance(url, str)
+        or not 1 <= len(url) <= 2048
+        or any(ord(character) < 32 or ord(character) == 127 for character in url)
+    ):
+        raise ValidationError("feed HTTP metadata URL is invalid")
+    etag = value["etag"]
+    if etag is not None and (
+        not isinstance(etag, str)
+        or len(etag) > 256
+        or re.fullmatch(r'(?:W/)?"[\x20-\x21\x23-\x7e]*"', etag) is None
+    ):
+        raise ValidationError("feed HTTP metadata ETag is invalid")
+    last_modified = value["lastModified"]
+    if last_modified is not None and (
+        not isinstance(last_modified, str)
+        or len(last_modified) > 128
+        or re.fullmatch(r"[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT", last_modified) is None
+    ):
+        raise ValidationError("feed HTTP metadata Last-Modified is invalid")
+    return dict(value)
 
 
 def save_update_check(
@@ -616,6 +697,7 @@ def purge(environment: Mapping[str, str] | None = None) -> list[str]:
     refuse_symlink(state_directory)
     candidates = [
         feed_path(environment),
+        feed_http_path(environment),
         update_check_path(environment),
         cache_root(environment) / "local-edition.json",
         cache_root(environment) / "local-source-snapshot.json",

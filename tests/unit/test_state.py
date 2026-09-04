@@ -23,12 +23,15 @@ from radar.state import (
     StateLock,
     default_state,
     event_is_read,
+    feed_http_path,
     feed_path,
+    load_feed_http,
     load_feed,
     load_state,
     load_update_check,
     purge,
     save_feed,
+    save_feed_http,
     save_state,
     save_update_check,
     set_event_read,
@@ -75,6 +78,12 @@ class StateTests(unittest.TestCase):
 
     def test_atomic_private_roundtrip_and_purge(self) -> None:
         save_feed(self.feed, self.environment, now=CLOCK)
+        save_feed_http(
+            "https://mtolhuijs.nl/news-radar/events.json",
+            '"feed-v1"',
+            "Mon, 31 Aug 2026 14:00:00 GMT",
+            self.environment,
+        )
         save_update_check("success", self.environment, now=CLOCK)
         save_state(default_state(), self.environment)
         atomic_write_json(
@@ -89,6 +98,7 @@ class StateTests(unittest.TestCase):
         self.assertEqual(0o600, feed_path(self.environment).stat().st_mode & 0o777)
         self.assertEqual(
             [
+                "feed-http.json",
                 "feed.json",
                 "local-source-snapshot.json",
                 "state.json",
@@ -97,6 +107,53 @@ class StateTests(unittest.TestCase):
             purge(self.environment),
         )
         self.assertFalse(update_check_path(self.environment).exists())
+        self.assertFalse(feed_http_path(self.environment).exists())
+
+    def test_feed_http_validators_are_bounded_private_and_fail_open(self) -> None:
+        value = save_feed_http(
+            "https://mtolhuijs.nl/news-radar/events.json",
+            '"feed-v1"',
+            "Mon, 31 Aug 2026 14:00:00 GMT",
+            self.environment,
+        )
+        self.assertEqual(
+            {
+                "schemaVersion": 1,
+                "url": "https://mtolhuijs.nl/news-radar/events.json",
+                "etag": '"feed-v1"',
+                "lastModified": "Mon, 31 Aug 2026 14:00:00 GMT",
+            },
+            value,
+        )
+        path = feed_http_path(self.environment)
+        self.assertEqual(0o600, path.stat().st_mode & 0o777)
+        self.assertEqual(value, load_feed_http(self.environment))
+
+        for malformed in (
+            {**value, "etag": "not-quoted"},
+            {**value, "lastModified": "yesterday"},
+            {**value, "url": "https://example.com/\nheader"},
+            {**value, "unexpected": True},
+        ):
+            atomic_write_json(path, malformed)
+            self.assertIsNone(load_feed_http(self.environment))
+
+        path.unlink()
+        sentinel = path.with_name("validator-sentinel.json")
+        sentinel.write_text("sentinel", encoding="utf-8")
+        path.symlink_to(sentinel)
+        self.assertIsNone(load_feed_http(self.environment))
+        with self.assertRaisesRegex(StorageError, "symlinked"):
+            save_feed_http(
+                value["url"], value["etag"], value["lastModified"], self.environment
+            )
+        self.assertEqual("sentinel", sentinel.read_text(encoding="utf-8"))
+        path.unlink()
+
+        self.assertIsNone(
+            save_feed_http(value["url"], None, None, self.environment)
+        )
+        self.assertFalse(path.exists())
 
     def test_update_check_metadata_is_bounded_private_and_fail_open(self) -> None:
         saved = save_update_check("failed", self.environment, now=CLOCK)

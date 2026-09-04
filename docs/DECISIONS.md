@@ -414,3 +414,11 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** A dense three-column data UI is not a news reader. Competitor surfaces keep the index quiet so the article can dominate. Compact teasers alone did not change the product character.
 
 **Consequence:** Source content is not rewritten or discarded. Dense cards still use `listSummary`. Feed schema is unchanged.
+
+## D052 — Revalidate the shared edition without retransferring it
+
+**Decision:** The client sends the current static product/version user agent and, after one fully validated `200` response, stores that public response's bounded `ETag` and `Last-Modified` values in private `feed-http.json`. Later refreshes send them only to the exact same allowlisted feed URL. A `304 Not Modified` succeeds only alongside an already validated last-known-good `feed.json`. Validator metadata is disposable, atomic, symlink-safe, mode `0600`, and included in explicit purge.
+
+**Why:** Re-downloading the complete shared edition on every unchanged background check wastes bandwidth and feed-host capacity. A unique install identifier or personalized endpoint is unnecessary for HTTP cache validation and would violate Radar's privacy boundary.
+
+**Consequence:** Existing clients and first-use requests continue to receive and validate ordinary `200` bodies. Updated clients preserve the exact cached edition on `304`, never treat an empty response as a feed, and fall back to an unconditional request when validator metadata is absent or invalid. No account, cookie, installation ID, reading state, filter, or machine fact enters the request. Feed and state schemas are unchanged.

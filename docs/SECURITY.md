@@ -29,7 +29,7 @@ The production feed origin is fixed in one module. Collector machine inputs are 
 - uses HTTPS with certificate verification;
 - uses explicit connect and total timeouts;
 - constrains redirects to the expected production origin family;
-- sends no cookies, authorization, installed-plugin IDs, saved IDs, read timestamps, machine identifiers, or custom tracking values;
+- sends a static versioned product user agent plus cache validators, but no cookies, authorization, installed-plugin IDs, saved IDs, read timestamps, machine identifiers, or custom tracking values;
 - streams into a bounded temporary file and aborts before exceeding 2 MiB;
 - validates the complete candidate before same-directory atomic replacement;
 - preserves the last-known-good cache on every failure.
@@ -38,7 +38,7 @@ Tests may inject a fixture file or loopback endpoint through an explicit test bo
 
 ## Local files
 
-Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename. The bounded `update-check.json` cache record contains only a schema version, UTC attempt timestamp, and `success`/`failed` outcome; malformed or materially future metadata is ignored so it can never postpone a check.
+Cache and state directories are private to the current user. Create files with restrictive permissions, refuse symlink targets, validate ownership where practical, write through a same-directory temporary file, flush, and atomically rename. The bounded `update-check.json` cache record contains only a schema version, UTC attempt timestamp, and `success`/`failed` outcome; malformed or materially future metadata is ignored so it can never postpone a check. The separate bounded `feed-http.json` contains only the exact public feed URL and its last validated `ETag`/`Last-Modified` values. It is sent only back to that same allowlisted URL, is ignored without a valid feed cache, and is purge-owned.
 
 The state parser accepts only its own bounded schema. Per-story read overrides are keyed only by validated event IDs, capped at the feed bound, and never transmitted. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
 
@@ -93,7 +93,7 @@ RSS/XML generation escapes every remote value and uses canonical HTTPS links. XM
 
 ## Privacy
 
-The feed host receives ordinary generic feed GET requests (JSON/RSS/HTML/CSS) and therefore sees network metadata inherent to HTTPS hosting, such as source IP and user agent. Preview rasters are fetched by the client directly from the allowlisted marketplace image origin. Radar adds no identifier or personalization. Local installed-plugin matching, filters, saves, and per-story reading state never leave the machine.
+The feed host receives ordinary generic feed GET requests (JSON/RSS/HTML/CSS) and therefore sees network metadata inherent to HTTPS hosting, such as source IP and the static Radar product/version user agent. Conditional requests may also contain the public response's `ETag` and `Last-Modified`. Preview rasters are fetched by the client directly from the allowlisted marketplace image origin. Radar adds no installation identifier or personalization. Local installed-plugin matching, filters, saves, and per-story reading state never leave the machine.
 
 The project must not claim perfect anonymity, sandboxing, or security auditing.
 

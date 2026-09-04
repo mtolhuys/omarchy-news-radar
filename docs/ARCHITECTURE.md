@@ -145,7 +145,7 @@ Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar l
 3. Render cached events immediately with explicit per-story `isUnread` decoration.
 4. Query `omarchy-shell shell listPlugins` to derive locally installed plugin IDs.
 5. Start at most one bounded refresh helper.
-6. Validate the candidate feed completely before atomically replacing cache or the visible current model.
+6. Treat a matching `304 Not Modified` as success only when a validated local feed exists; otherwise validate the candidate feed completely before atomically replacing cache or the visible current model.
 7. Preserve the cached model and surface a recoverable status if refresh fails.
 8. Prime keyboard focus only after the visible model exists.
 
@@ -180,6 +180,7 @@ Follow XDG ownership:
 | Path | Purpose |
 | --- | --- |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed-http.json` | Private bounded `ETag`/`Last-Modified` validators bound to the fixed feed URL; disposable and purge-owned |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json` | Private bounded timestamp/outcome for background check cadence; not publication freshness |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |

@@ -27,6 +27,8 @@ class FixtureServer(ThreadingHTTPServer):
 
 class FeedHandler(BaseHTTPRequestHandler):
     feed = (ROOT / "tests/fixtures/feed-valid.json").read_bytes()
+    etag = '"fixture-v1"'
+    last_modified = "Mon, 31 Aug 2026 14:00:00 GMT"
     requests: list[dict[str, str]] = []
 
     def log_message(self, format: str, *args: object) -> None:
@@ -36,6 +38,8 @@ class FeedHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body) if declared is None else declared))
+        self.send_header("ETag", type(self).etag)
+        self.send_header("Last-Modified", type(self).last_modified)
         self.end_headers()
         if body:
             self.wfile.write(body)
@@ -47,10 +51,21 @@ class FeedHandler(BaseHTTPRequestHandler):
                 "path": self.path,
                 "accept": self.headers.get("Accept", ""),
                 "userAgent": self.headers.get("User-Agent", ""),
+                "ifNoneMatch": self.headers.get("If-None-Match", ""),
+                "ifModifiedSince": self.headers.get("If-Modified-Since", ""),
             }
         )
         if self.path == "/feed":
-            self._send(self.feed)
+            if (
+                self.headers.get("If-None-Match") == type(self).etag
+                or self.headers.get("If-Modified-Since") == type(self).last_modified
+            ):
+                self.send_response(304)
+                self.send_header("ETag", type(self).etag)
+                self.send_header("Last-Modified", type(self).last_modified)
+                self.end_headers()
+            else:
+                self._send(self.feed)
         elif self.path == "/redirect":
             self.send_response(302)
             self.send_header("Location", "/feed")
@@ -92,6 +107,8 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         root = Path(self.temporary.name)
         FeedHandler.requests = []
+        FeedHandler.etag = '"fixture-v1"'
+        FeedHandler.last_modified = "Mon, 31 Aug 2026 14:00:00 GMT"
         self.server = FixtureServer(("127.0.0.1", 0), FeedHandler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -119,7 +136,21 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
         for request in FeedHandler.requests:
             self.assertEqual("GET", request["method"])
             self.assertEqual("application/json", request["accept"])
-            self.assertEqual("omarchy-news-radar-client/0.1", request["userAgent"])
+            self.assertEqual("omarchy-news-radar-client/0.4.15", request["userAgent"])
+
+    def test_repeated_refresh_uses_conditional_get_and_keeps_valid_cache_on_304(self) -> None:
+        first = refresh(self.environment, now=CLOCK)
+        self.assertEqual("updated", first["status"])
+
+        second = refresh(self.environment, now=CLOCK)
+        self.assertEqual("no-change", second["status"])
+        self.assertTrue(second["cachePreserved"])
+        self.assertEqual(2, len(FeedHandler.requests))
+        self.assertEqual('"fixture-v1"', FeedHandler.requests[1]["ifNoneMatch"])
+        self.assertEqual(
+            "Mon, 31 Aug 2026 14:00:00 GMT",
+            FeedHandler.requests[1]["ifModifiedSince"],
+        )
 
     def test_network_and_candidate_failures_preserve_last_known_good(self) -> None:
         self.assertEqual("updated", refresh(self.environment, now=CLOCK)["status"])
