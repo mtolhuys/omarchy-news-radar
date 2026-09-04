@@ -11,11 +11,11 @@ from typing import Any, Mapping, Sequence
 from .curation import apply_curation, load_curation
 from .errors import ValidationError
 from .errors import FetchError
-from .constants import ENGAGEMENT_MAX_BYTES, GITHUB_MAX_BYTES
+from .constants import ENGAGEMENT_MAX_BYTES, GITHUB_MAX_BYTES, MAX_EVENTS
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import atomic_write_json, canonical_json_bytes, read_json_bounded
 from .metrics import enrich_event_metrics
-from .model import canonical_events, make_feed
+from .model import canonical_events, event_sort_key, make_feed
 from .sources import (
     community_events,
     diff_marketplace,
@@ -46,7 +46,7 @@ from .sources.youtube import (
     search_url,
     videos_url,
 )
-from .validation import format_timestamp, parse_timestamp
+from .validation import format_timestamp, parse_timestamp, validate_event
 
 SNAPSHOT_SCHEMA = 2
 
@@ -67,13 +67,22 @@ def empty_snapshot() -> dict[str, Any]:
 
 
 def validate_snapshot(value: Any) -> dict[str, Any]:
+    """Validate persisted continuity without applying age-based retention."""
+
     if not isinstance(value, dict) or value.get("schemaVersion") != SNAPSHOT_SCHEMA:
         raise ValidationError("source snapshot is invalid")
     sources = value.get("sources")
     events = value.get("events", [])
     if not isinstance(sources, dict) or not isinstance(events, list):
         raise ValidationError("source snapshot is invalid")
-    normalized_events = canonical_events(events)
+    if len(events) > MAX_EVENTS:
+        raise ValidationError("source snapshot exceeds event bound")
+    normalized_events = [validate_event(event) for event in events]
+    event_ids = [event["id"] for event in normalized_events]
+    if len(set(event_ids)) != len(event_ids):
+        raise ValidationError("source snapshot contains duplicate event IDs")
+    if normalized_events != sorted(normalized_events, key=event_sort_key):
+        raise ValidationError("source snapshot events are not in canonical order")
     if normalized_events != events:
         raise ValidationError("source snapshot events are not canonical")
     return {
@@ -320,7 +329,8 @@ def collect_from_fixtures(
             marketplace=marketplace,
             engagement=engagement,
             releases=releases,
-        )
+        ),
+        now=clock,
     )
     overlays = load_curation(inputs.curation)
     curated_events, lead = apply_curation(base_events, overlays)

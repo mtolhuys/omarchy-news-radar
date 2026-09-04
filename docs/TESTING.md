@@ -53,6 +53,7 @@ make site
 - Source check, collection, artifact publication, and local-cache timestamps remain distinct; publication staleness is false at exactly 90 minutes and true one second later, with explicit legacy-feed fallback.
 - Repository CI has read-only permissions and tests source, contracts, and deterministic generators; it has no feed-publication or Pages deployment path.
 - Forge publication continuity selects Laravel's latest successfully deployed snapshot, rejects missing/invalid state, permits only the bounded fresh v1-to-v2 transition seed, and never falls back silently to stale committed state.
+- Canonical source snapshots load independently from the host date; validation rejects unsorted, duplicate, and over-bound event ledgers, while successor construction prunes expired events against the explicit fixed collection clock and produces identical output across different host dates.
 - Rediscovering a deterministic event through a lagging source snapshot preserves its first `occurredAt` and `discoveredAt`; Front Page includes only the newest official release rather than filling a core quota with historical releases.
 - HTML/XML/context escaping defeats hostile titles, summaries, URLs, Unicode, quotes, angle brackets, and control characters.
 - CSP and external-link attributes remain present.

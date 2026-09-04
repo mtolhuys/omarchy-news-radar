@@ -198,6 +198,8 @@ The collector is a Python standard-library application with pure source adapters
 
 Optional metric enrichment is a post-diff step. Successful source snapshots replace their own metric group; a failed optional metric source retains prior observed facts. Metrics never enter event identity, diff generation, curation, ordering, or Front Page selection.
 
+Restoring a source snapshot validates every event, the 500-event bound, unique IDs, and exact canonical ordering without applying wall-clock retention. Rolling retention belongs to successor construction and uses that collection's explicit clock.
+
 Collection is transactional:
 
 1. Fetch each allowlisted source using explicit headers, timeouts, size limits, and conditional request metadata where useful.

@@ -1,14 +1,26 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
-from radar.collector import FixtureInputs, collect_from_fixtures, collect_production, empty_snapshot, load_snapshot
+from radar.collector import (
+    FixtureInputs,
+    collect_from_fixtures,
+    collect_production,
+    empty_snapshot,
+    load_snapshot,
+    validate_snapshot,
+)
+from radar.constants import MAX_EVENTS
+from radar.errors import ValidationError
 from radar.io import canonical_json_bytes
+from radar.model import event_sort_key
 from radar.sources.marketplace import CATALOG_URL
 from radar.sources.marketplace_engagement import ENGAGEMENT_URL
 from radar.sources.omarchy_news import RSS_URL
@@ -16,6 +28,19 @@ from radar.sources.omarchy_releases import API_URL
 
 ROOT = Path(__file__).resolve().parents[2]
 CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
+
+
+def snapshot_event(*, index: int, occurred_at: datetime) -> dict[str, Any]:
+    event = deepcopy(
+        json.loads(
+            (ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8")
+        )["events"][0]
+    )
+    event["id"] = f"evt_{index:024x}"
+    timestamp = occurred_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    event["occurredAt"] = timestamp
+    event["discoveredAt"] = timestamp
+    return event
 
 
 class CollectorIntegrationTests(unittest.TestCase):
@@ -62,6 +87,85 @@ class CollectorIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(canonical_json_bytes(next_feed), canonical_json_bytes(retained))
         self.assertEqual(6, len(retained_snapshot["events"]))
+
+    def test_aged_canonical_snapshot_loads_without_using_the_host_clock(self) -> None:
+        event = snapshot_event(
+            index=1,
+            occurred_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        )
+        snapshot = {"schemaVersion": 2, "events": [event], "sources": {}}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "source-snapshot.json"
+            path.write_bytes(canonical_json_bytes(snapshot))
+            self.assertEqual(snapshot, load_snapshot(path))
+
+    def test_snapshot_rejects_events_outside_exact_canonical_order(self) -> None:
+        first = snapshot_event(index=1, occurred_at=CLOCK)
+        second = snapshot_event(index=2, occurred_at=CLOCK)
+        self.assertEqual([first, second], sorted([second, first], key=event_sort_key))
+
+        with self.assertRaisesRegex(ValidationError, "canonical order"):
+            validate_snapshot(
+                {"schemaVersion": 2, "events": [second, first], "sources": {}}
+            )
+
+    def test_snapshot_rejects_duplicate_event_ids(self) -> None:
+        event = snapshot_event(index=1, occurred_at=CLOCK)
+        with self.assertRaisesRegex(ValidationError, "duplicate event IDs"):
+            validate_snapshot(
+                {"schemaVersion": 2, "events": [event, deepcopy(event)], "sources": {}}
+            )
+
+    def test_snapshot_rejects_an_over_bound_event_ledger(self) -> None:
+        over_bound = [
+            snapshot_event(index=index, occurred_at=CLOCK)
+            for index in range(MAX_EVENTS + 1)
+        ]
+        with self.assertRaisesRegex(ValidationError, "event bound"):
+            validate_snapshot({"schemaVersion": 2, "events": over_bound, "sources": {}})
+
+    def test_successor_retention_uses_the_explicit_collection_clock(self) -> None:
+        expired = snapshot_event(index=1, occurred_at=CLOCK - timedelta(days=31))
+        previous = {"schemaVersion": 2, "events": [expired], "sources": {}}
+
+        with mock.patch("radar.model.datetime") as host_datetime:
+            host_datetime.now.return_value = datetime(2000, 1, 1, tzinfo=timezone.utc)
+            _, successor = collect_from_fixtures(
+                self.inputs("baseline"),
+                previous_snapshot=previous,
+                now=CLOCK,
+                bootstrap_marketplace=True,
+            )
+
+        self.assertNotIn(expired["id"], {event["id"] for event in successor["events"]})
+
+    def test_fixed_clock_collection_is_independent_of_the_host_date(self) -> None:
+        retained = snapshot_event(index=1, occurred_at=CLOCK - timedelta(days=1))
+        previous = {"schemaVersion": 2, "events": [retained], "sources": {}}
+
+        def collect_with_host_date(
+            host_date: datetime,
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+            with mock.patch("radar.model.datetime") as host_datetime:
+                host_datetime.now.return_value = host_date
+                return collect_from_fixtures(
+                    self.inputs("baseline"),
+                    previous_snapshot=previous,
+                    now=CLOCK,
+                    bootstrap_marketplace=True,
+                )
+
+        past_feed, past_snapshot = collect_with_host_date(
+            datetime(2000, 1, 1, tzinfo=timezone.utc)
+        )
+        future_feed, future_snapshot = collect_with_host_date(
+            datetime(2100, 1, 1, tzinfo=timezone.utc)
+        )
+        self.assertEqual(canonical_json_bytes(past_feed), canonical_json_bytes(future_feed))
+        self.assertEqual(
+            canonical_json_bytes(past_snapshot),
+            canonical_json_bytes(future_snapshot),
+        )
 
     def test_failed_source_preserves_snapshot_and_emits_no_mass_change(self) -> None:
         previous = load_snapshot(ROOT / "tests/fixtures/source-snapshot-baseline.json")

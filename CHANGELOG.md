@@ -6,6 +6,7 @@
 
 ### Fixed
 - Treat the first story visibly selected by a fresh panel open as read without requiring a navigation detour or pointer click. The one-shot uses the existing durable per-story write, retains that row under **Unread only**, and does not rearm on focus, refresh, reprojection, or later arrivals.
+- Validate restored source snapshots independently from wall-clock retention. Old canonical continuity can now be loaded on any host date, while successor construction still prunes the ledger against its explicit collection clock and rejects unsorted, duplicate, or over-bound event sets.
 
 ## 0.4.15 — 2026-09-03
 

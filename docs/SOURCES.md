@@ -109,7 +109,7 @@ Rules:
 
 ## Determinism
 
-Fixture inputs with a fixed clock produce byte-identical snapshots, events, RSS, and HTML. Network order, object key order, locale, local timezone, filesystem enumeration order, and current wall-clock time must not change event identity or content.
+Fixture inputs with a fixed clock produce byte-identical snapshots, events, RSS, and HTML. Loading a canonical bounded source snapshot is time-independent; rolling retention applies only when constructing its successor against that collection's explicit clock. Network order, object key order, locale, local timezone, filesystem enumeration order, and current wall-clock time must not change event identity or content.
 
 The collector supports an offline fixture mode used by tests and `make feed-fixture`. Production collection is a separate explicit command and never runs during ordinary unit tests.
 
