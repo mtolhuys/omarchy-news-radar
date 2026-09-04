@@ -338,6 +338,63 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('property string tooltipText: ""', button)
         self.assertIn("PanelToolTip", button)
 
+    def test_panel_reads_only_the_first_story_presented_by_a_fresh_open(self) -> None:
+        qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")
+        self.assertIn("property bool initialStoryReadPending: false", qml)
+        self.assertIn('property string initialStoryReadEventId: ""', qml)
+        self.assertIn("property int initialStoryReadGeneration: -1", qml)
+        self.assertIn("property int panelOpenGeneration: 0", qml)
+        self.assertIn("readonly property int initialStoryReadDelayMs: 650", qml)
+        self.assertIn("id: initialStoryReadTimer", qml)
+        self.assertIn("onTriggered: root.commitInitialStoryRead()", qml)
+
+        open_body = qml[qml.index("function open(payloadJson)"):qml.index("function stopOwnedProcesses()")]
+        self.assertLess(
+            open_body.index("if (opened && panelWindow.visible)"),
+            open_body.index("initialStoryReadPending = true"),
+        )
+        self.assertIn("panelOpenGeneration++", open_body)
+        self.assertIn("initialStoryReadEventId = \"\"", open_body)
+        self.assertIn("initialStoryReadTimer.stop()", open_body)
+
+        close_body = qml[qml.index("function close()"):qml.index("function dismiss()")]
+        self.assertIn("panelOpenGeneration++", close_body)
+        self.assertIn("cancelInitialStoryRead()", close_body)
+
+        schedule_body = qml[qml.index("function scheduleInitialStoryRead()"):qml.index("function cancelInitialStoryRead()")]
+        self.assertIn("!initialStoryReadPending", schedule_body)
+        self.assertIn("!panelWindow.visible", schedule_body)
+        self.assertNotIn("initialStoryReadPending = false", schedule_body)
+        self.assertIn("initialStoryReadEventId = eventId", schedule_body)
+        self.assertIn("initialStoryReadGeneration = panelOpenGeneration", schedule_body)
+        self.assertIn("initialStoryReadTimer.restart()", schedule_body)
+
+        read_body = qml[qml.index("function cancelInitialStoryRead()"):qml.index("function queueStoryRead(")]
+        self.assertIn("function cancelInitialStoryRead()", read_body)
+        self.assertIn("initialStoryReadTimer.stop()", read_body)
+        self.assertIn("function commitInitialStoryRead()", read_body)
+        self.assertIn("generation !== panelOpenGeneration", read_body)
+        self.assertIn("projectProc.running || pendingProjection", read_body)
+        self.assertIn('String(selectedStory.id || "") !== eventId', read_body)
+        self.assertIn("queueStoryRead(selectedStory, true)", read_body)
+        self.assertLess(
+            read_body.rindex("initialStoryReadPending = false"),
+            read_body.index("queueStoryRead(selectedStory, true)"),
+        )
+
+        selection_body = qml[qml.index("function selectStory(index, markRead)"):qml.index("function scheduleInitialStoryRead()")]
+        self.assertIn("if (markRead) cancelInitialStoryRead()", selection_body)
+        self.assertIn("cancelInitialStoryRead()\n    queueStoryRead(selectedStory", qml)
+        self.assertIn("selectSection(fallback, true)", qml)
+        self.assertIn("function selectSection(index, preserveInitialCandidate)", qml)
+        self.assertIn("if (preserveInitialCandidate !== true) cancelInitialStoryRead()", qml)
+        self.assertIn("function showPreferences() {\n    if (!localStateReady", qml)
+        self.assertIn("preferencesProc.running) return\n    cancelInitialStoryRead()", qml)
+        self.assertIn("function showSectionSettings() {\n    cancelInitialStoryRead()", qml)
+
+        projection_body = qml[qml.index("function handleProjection(raw)"):qml.index("function refreshFeed()")]
+        self.assertIn("scheduleInitialStoryRead()", projection_body)
+
     def test_every_section_boundary_uses_the_same_canonical_five_ids(self) -> None:
         expected = list(CLIENT_SECTIONS)
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

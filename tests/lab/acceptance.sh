@@ -12,6 +12,7 @@ omarchy_host_test() {
   local open_started_ms open_ready_ms dense_started_ms dense_ready_ms close_started_ms close_ready_ms
   local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before for_you_before
   local initial_bar_unread background_bar_unread runtime_identity_before runtime_identity_after
+  local initial_installed_ids initial_projection initial_selected_id initial_story_count initial_unread_count
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -350,10 +351,21 @@ omarchy_host_test() {
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" \
     >"$RUN_DIR/news-radar-seed-cache.json" || return 1
+  ssh_session "$helper set-section-filter --section front-page --filter-json '{\"period\":\"all\",\"significance\":\"all\",\"unreadOnly\":true,\"imagesOnly\":false,\"types\":[]}'" \
+    >"$RUN_DIR/news-radar-initial-unread-filter.json" || return 1
+  initial_installed_ids="$(ssh_session "$helper installed | jq -c '.pluginIds'")" || return 1
+  initial_projection="$(ssh_session "$helper project --section front-page --installed-json '$initial_installed_ids' --query ''")" || return 1
+  initial_selected_id="$(jq -r '.events[0].id' <<<"$initial_projection")" || return 1
+  initial_story_count="$(jq -r '.events | length' <<<"$initial_projection")" || return 1
+  initial_unread_count="$(jq -r '.unreadCounts["front-page"]' <<<"$initial_projection")" || return 1
+  [[ $initial_selected_id =~ ^evt_[0-9a-f]{24}$ && $initial_story_count =~ ^[0-9]+$ && $initial_unread_count =~ ^[1-9][0-9]*$ ]] || return 1
+  (( initial_story_count >= 2 )) || return 1
   ssh_guest "rm -f /tmp/news-radar-fixtures/current.json"
   press meta_l-alt-n
-  wait_for_guest_state "cached fixture remains visible after offline refresh" 20 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"Offline\" and .storyCount > 0 and (.selectedTitle | length > 0) and .noCacheNoticeVisible == false'" || return 1
+  wait_for_guest_state "fresh open reads exactly the first visible cached story without follow-up input" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg id '$initial_selected_id' --argjson stories '$initial_story_count' --argjson before '$initial_unread_count' '.opened == true and .status == \"Offline\" and .storyCount == \$stories and .selectedId == \$id and .selectedIsUnread == false and .unreadCount == (\$before - 1) and .retainedReadStories == 1 and .helperRunning == false and .noCacheNoticeVisible == false' && \
+     jq -e --arg id '$initial_selected_id' '.readOverrides[\$id] == true and (.readOverrides | length) == 1' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && \
+     $helper project --section front-page --installed-json '$initial_installed_ids' --query '' | jq -e --arg id '$initial_selected_id' '.events | any(.id != \$id and .isUnread == true)'" || return 1
   capture_console "success-news-radar-02-cached-offline"
   radar_control_geometry closeGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
@@ -362,6 +374,8 @@ omarchy_host_test() {
     press esc
     return 1
   fi
+  ssh_session "$helper set-section-filter --section front-page --filter-json '{\"period\":\"all\",\"significance\":\"all\",\"unreadOnly\":false,\"imagesOnly\":false,\"types\":[]}'" \
+    >"$RUN_DIR/news-radar-initial-filter-reset.json" || return 1
 
   log "Driving sections, search, save, source opening, and local relevance"
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
@@ -630,11 +644,13 @@ omarchy_host_test() {
   wait_for_guest_state "normal close does not bulk-mark unseen stories" 15 ssh_session \
     "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press meta_l-alt-n
-  wait_for_guest_state "the next panel session reports no newer edition and is ready" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No newer edition\" and .searchFocused == false'" || return 1
+  wait_for_guest_state "the next panel session presents its first default-section story as read without follow-up input" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No newer edition\" and .searchFocused == false and .section == \"front-page\" and .selectedIsUnread == false' && \
+     jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press 2
-  wait_for_guest_state "event introduced during the prior session is visibly unread" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedTitle == \"An event that arrived during the open session\" and .selectedIsUnread == true and .unreadCount > 0'" || return 1
+  wait_for_guest_state "explicit section navigation keeps the previously unseen arrival unread" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedTitle == \"An event that arrived during the open session\" and .selectedIsUnread == true' && \
+     jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   capture_console "success-news-radar-03-unread-story"
   radar_control_geometry readStateGeometry || return 1
   qmp_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
@@ -643,7 +659,7 @@ omarchy_host_test() {
      jq -e '.readOverrides[\"evt_000000000000000000000abc\"] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   capture_console "success-news-radar-03-read-story"
   press u
-  wait_for_guest_state "keyboard toggle restores the selected story to unread" 15 ssh_session \
+  wait_for_guest_state "keyboard toggle restores the selected story to unread for the batch-read proof" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == true' && \
      jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
 

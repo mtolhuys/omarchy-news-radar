@@ -47,11 +47,17 @@ omarchy_host_test() {
   press ret
   wait_for_guest_state "public Apps entry opens the installed panel" 20 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
-  wait_for_guest_state "public panel loads the fixed published edition with explicit unread state" 30 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .selectedIsUnread == true and .unreadCount > 0 and (.status == \"Updated\" or .status == \"No newer edition\" or .status == \"Cached\")'" || return 1
-  capture_console "success-news-radar-public-app-launcher"
+  wait_for_guest_state "public panel automatically reads the first story visibly presented by its fresh open" 30 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .selectedIsUnread == false and (.status == \"Updated\" or .status == \"No newer edition\" or .status == \"Cached\")'" || return 1
   selected_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedId'")" || return 1
   [[ $selected_id =~ ^evt_[0-9a-f]{24}$ ]] || return 1
+  wait_for_guest_state "public reader persists that automatic read through the ordinary per-story state" 15 ssh_session \
+    "jq -e --arg id '$selected_id' '.schemaVersion == 11 and .readOverrides[\$id] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  capture_console "success-news-radar-public-app-launcher"
+  press u
+  wait_for_guest_state "public reader can reverse the automatically read story to unread" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == true' && \
+     jq -e --arg id '$selected_id' '.schemaVersion == 11 and (.readOverrides | has(\$id) | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press u
   wait_for_guest_state "public reader persists only the selected story as read" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == false' && \

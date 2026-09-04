@@ -208,7 +208,7 @@
 
 **Consequence:** State v6 validates and atomically migrates v5, preserving saved items, seen state, global preferences, and every remaining section's name/filter while discarding only Community's profile/filter. A future reviewed record may still enter Front Page and local For You through the existing deterministic rules. Numeric navigation is `1`–`5`, Saved is `5`, and no empty Community state or settings surface remains.
 
-## D027 — Track deliberate per-story reading instead of rendered sessions
+## D027 — Track deliberate per-story reading instead of rendered sessions (default-open clause superseded by D053)
 
 **Decision:** State v7 supersedes D013's session-wide cutoff. Every story is explicitly `UNREAD` or `READ`; deliberate keyboard or pointer selection marks only that event read, and the inspector or `u` key can reverse it. Hover, default selection, refresh, and close never bulk-mark stories.
 
@@ -422,3 +422,11 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** Re-downloading the complete shared edition on every unchanged background check wastes bandwidth and feed-host capacity. A unique install identifier or personalized endpoint is unnecessary for HTTP cache validation and would violate Radar's privacy boundary.
 
 **Consequence:** Existing clients and first-use requests continue to receive and validate ordinary `200` bodies. Updated clients preserve the exact cached edition on `304`, never treat an empty response as a feed, and fall back to an unconditional request when validator metadata is absent or invalid. No account, cookie, installation ID, reading state, filter, or machine fact enters the request. Feed and state schemas are unchanged.
+
+## D053 — Read the first story actually presented by a fresh panel open
+
+**Decision:** A fresh panel open arms one one-shot reading action. The first successful non-empty projection captures its selected event ID and panel-open generation. After a brief single-shot dwell, Radar marks that exact story read through the existing durable per-event mutation only when the same generation remains visible and the same story remains selected. Automatic opening reprojections update the candidate and restart the dwell while the one-shot stays armed. Re-summoning an already open panel, refresh after completion, section or filter reprojection after completion, and later arrivals do not rearm it. An empty first-use projection keeps the action pending until a story is actually presented; closing, opening Tune or Settings, or an explicit story-reading interaction cancels it.
+
+**Why:** Radar opens with index zero already selected and its complete story visible in the reader, but the prior D027 rule required an unrelated click or navigation round trip before that one story could become read. Waiting could never help because the initial projection did not enter the existing selection mutation path. That made the visible inspector and the durable unread model disagree about whether the user had read the story in front of them.
+
+**Consequence:** D027's exemption for the default selection on open is superseded only for one fresh-open story. The one-shot is consumed immediately before its asynchronous write, captures stable event identity and generation, and uses D042's transient retention under **Unread only**, so its row changes to **READ** without disappearing. A stale timer, automatic reprojection, rapid close/reopen, modal takeover, or immediate explicit navigation cannot lose the action, mark the wrong story, or duplicate that interaction. Hover, close, refresh, later feed adoption, and unrelated stories remain non-reading operations. The feed and local-state schemas do not change.

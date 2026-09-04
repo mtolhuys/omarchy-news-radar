@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Treat the first story visibly selected by a fresh panel open as read without requiring a navigation detour or pointer click. The one-shot uses the existing durable per-story write, retains that row under **Unread only**, and does not rearm on focus, refresh, reprojection, or later arrivals.
+
 ## 0.4.15 — 2026-09-03
 
 ### Added

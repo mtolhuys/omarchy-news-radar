@@ -148,10 +148,11 @@ Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar l
 6. Treat a matching `304 Not Modified` as success only when a validated local feed exists; otherwise validate the candidate feed completely before atomically replacing cache or the visible current model.
 7. Preserve the cached model and surface a recoverable status if refresh fails.
 8. Prime keyboard focus only after the visible model exists.
+9. On a fresh open only, capture the first non-empty projection's selected event ID and panel-open generation, wait one brief single-shot dwell, and mark it read through the ordinary per-story helper only when that generation remains visible with the exact story still selected. Automatic opening reprojections replace the candidate and restart the dwell; explicit story interaction, Tune, Settings, or close cancels it.
 
 Dense-list keyboard movement reads the instantiated delegate geometry before changing selection. A next row already inside the viewport uses ordinary containment; a next row crossing the bottom resolves its exact `ListView.Beginning` offset and eases `contentY` there. This keeps variable-height rows fully visible without changing pointer flicking, pagination, projection, or read-state semantics.
 
-`close()` and component destruction must cancel or terminate owned network/model helpers, drain any already-requested per-story reading mutation, release the panel window, and leave no child process. Close never bulk-marks a session or edition. All cross-process state read/modify/write operations use one private kernel-backed lock so panel and bar mutations cannot overwrite each other.
+`close()` and component destruction must cancel or terminate owned network/model helpers, cancel an initial-story one-shot that has not yet reached a visible story, drain any already-requested per-story reading mutation, release the panel window, and leave no child process. Close never bulk-marks a session or edition. Re-summoning an already visible panel, refresh, and later projections do not rearm the one-shot. All cross-process state read/modify/write operations use one private kernel-backed lock so panel and bar mutations cannot overwrite each other.
 
 ## Client helper
 

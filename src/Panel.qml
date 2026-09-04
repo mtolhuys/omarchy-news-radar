@@ -66,6 +66,11 @@ Item {
   property var unreadCounts: ({})
   property var pendingReadChanges: ({})
   property var unreadSessionRetainedIds: ({})
+  property bool initialStoryReadPending: false
+  property string initialStoryReadEventId: ""
+  property int initialStoryReadGeneration: -1
+  property int panelOpenGeneration: 0
+  readonly property int initialStoryReadDelayMs: 650
   property bool readChangeInFlight: false
   property bool bulkReadInFlight: false
   property int sectionIndex: 0
@@ -133,6 +138,13 @@ Item {
     interval: 16
     repeat: true
     onTriggered: root.applyPendingViewportPreservation()
+  }
+
+  Timer {
+    id: initialStoryReadTimer
+    interval: root.initialStoryReadDelayMs
+    repeat: false
+    onTriggered: root.commitInitialStoryRead()
   }
 
   ListModel {
@@ -514,6 +526,7 @@ Item {
       return
     }
     opened = true
+    panelOpenGeneration++
     panelWindow.visible = true
     windowIntegrationStatus = "waiting"
     startProcess(windowProc, ["activate-window"])
@@ -525,6 +538,10 @@ Item {
     selectedIndex = 0
     storyViewportAnchorIndex = 0
     unreadSessionRetainedIds = ({})
+    initialStoryReadPending = true
+    initialStoryReadEventId = ""
+    initialStoryReadGeneration = -1
+    initialStoryReadTimer.stop()
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
     inspectShortcut()
@@ -555,6 +572,8 @@ Item {
 
   function close() {
     closingFromHost = true
+    panelOpenGeneration++
+    cancelInitialStoryRead()
     flushReadChanges()
     viewportPreservationTimer.stop()
     pendingViewportPreservation = false
@@ -887,6 +906,7 @@ Item {
         var restoreRevision = storyViewportRevision
         Qt.callLater(function() { root.restoreStoryViewport(restoreRevision) })
       }
+      scheduleInitialStoryRead()
     } else {
       stories = []
       renderedStoryModel.clear()
@@ -926,11 +946,12 @@ Item {
     }
     var fallback = sectionIndexFor("front-page")
     if (fallback < 0) fallback = 0
-    selectSection(fallback)
+    selectSection(fallback, true)
   }
 
-  function selectSection(index) {
+  function selectSection(index, preserveInitialCandidate) {
     if (index < 0 || index >= sections.length) return
+    if (preserveInitialCandidate !== true) cancelInitialStoryRead()
     navigationFocus.forceActiveFocus()
     sectionIndex = index
     requestedSection = sections[index].id
@@ -955,6 +976,7 @@ Item {
 
   function loadMore() {
     if (!hasMoreStories) return
+    cancelInitialStoryRead()
     storyViewportRevision++
     storyScrollAnimation.stop()
     var limits = Object.assign({}, sectionLimits)
@@ -1081,9 +1103,59 @@ Item {
 
   function selectStory(index, markRead) {
     if (index < 0 || index >= stories.length) return
+    if (markRead) cancelInitialStoryRead()
     inspectorFactsOpen = false
     selectedIndex = index
     if (markRead) queueStoryRead(stories[index], true)
+  }
+
+  function scheduleInitialStoryRead() {
+    if (!initialStoryReadPending || !opened || !panelWindow.visible || !selectedStory)
+      return
+    var eventId = String(selectedStory.id || "")
+    if (!eventId) return
+    // Automatic opening projections may replace the selected candidate. Keep
+    // the one-shot armed and restart its dwell until one candidate stays
+    // stable; generation plus event ID exclude later sessions and selections.
+    initialStoryReadEventId = eventId
+    initialStoryReadGeneration = panelOpenGeneration
+    initialStoryReadTimer.restart()
+  }
+
+  function cancelInitialStoryRead() {
+    initialStoryReadTimer.stop()
+    initialStoryReadPending = false
+    initialStoryReadEventId = ""
+    initialStoryReadGeneration = -1
+  }
+
+  function commitInitialStoryRead() {
+    var eventId = initialStoryReadEventId
+    var generation = initialStoryReadGeneration
+    if (!initialStoryReadPending) return
+    if (generation !== panelOpenGeneration || !opened || !panelWindow.visible) {
+      cancelInitialStoryRead()
+      return
+    }
+    if (preferencesOpen || sectionSettingsOpen) {
+      cancelInitialStoryRead()
+      return
+    }
+    if (projectProc.running || pendingProjection) {
+      initialStoryReadTimer.restart()
+      return
+    }
+    if (!eventId || !selectedStory || String(selectedStory.id || "") !== eventId) {
+      initialStoryReadEventId = ""
+      initialStoryReadGeneration = -1
+      scheduleInitialStoryRead()
+      return
+    }
+    initialStoryReadPending = false
+    initialStoryReadEventId = ""
+    initialStoryReadGeneration = -1
+    if (selectedStory.isUnread === true)
+      queueStoryRead(selectedStory, true)
   }
 
   function queueStoryRead(story, read) {
@@ -1115,17 +1187,20 @@ Item {
 
   function toggleSelectedRead() {
     if (!selectedStory || readMutationPending || bulkReadInFlight) return
+    cancelInitialStoryRead()
     queueStoryRead(selectedStory, selectedStory.isUnread === true)
   }
 
   function openSelected() {
     if (!selectedStory) return
+    cancelInitialStoryRead()
     queueStoryRead(selectedStory, true)
     openUrl(String(selectedStory.source.url))
   }
 
   function openMarketplacePage() {
     if (!selectedStory || !selectedStory.marketplaceUrl) return
+    cancelInitialStoryRead()
     queueStoryRead(selectedStory, true)
     openUrl(String(selectedStory.marketplaceUrl))
   }
@@ -1187,16 +1262,19 @@ Item {
 
   function showPreferences() {
     if (!localStateReady || stateMutationPending || preferencesProc.running) return
+    cancelInitialStoryRead()
     startProcess(preferencesProc, ["read"])
   }
 
   function showSectionSettings() {
+    cancelInitialStoryRead()
     sectionSettingsOpen = true
     Qt.callLater(function() { filterDoneButton.forceActiveFocus() })
   }
 
   function updateFilter(name, value) {
     if (stateMutationPending) return
+    cancelInitialStoryRead()
     var next = {
       period: currentFilter.period,
       significance: currentFilter.significance,
@@ -1225,6 +1303,7 @@ Item {
 
   function resetFilter() {
     if (stateMutationPending) return
+    cancelInitialStoryRead()
     resetSectionLimit(currentSection)
     unreadSessionRetainedIds = ({})
     startProcess(stateProc, [
@@ -1244,6 +1323,7 @@ Item {
     if (!helperPath || refreshing || projectProc.running
         || stateMutationPending || readMutationPending
         || Number(unreadCounts[currentSection] || 0) <= 0) return
+    cancelInitialStoryRead()
     bulkReadInFlight = true
     startProcess(stateProc, [
       "mark-section-read",
@@ -1414,6 +1494,7 @@ Item {
     interval: 160
     repeat: false
     onTriggered: {
+      root.cancelInitialStoryRead()
       root.unreadSessionRetainedIds = ({})
       root.requestProjection()
     }
@@ -1804,7 +1885,10 @@ Item {
             topPadding: Style.spacing.inputPaddingY
             bottomPadding: Style.spacing.inputPaddingY
             Accessible.name: "Search news"
-            onTextChanged: searchTimer.restart()
+            onTextChanged: {
+              root.cancelInitialStoryRead()
+              searchTimer.restart()
+            }
             Keys.onPressed: function(event) {
               if (event.key === Qt.Key_Escape) {
                 navigationFocus.forceActiveFocus()
