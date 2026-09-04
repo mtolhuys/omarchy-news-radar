@@ -5,10 +5,17 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from .constants import FEED_SCHEMA_VERSION, MAX_EVENTS, NEWS_FRONT_PAGE_QUOTA
+from .constants import (
+    EVENT_TRIM_PRIORITY,
+    FEED_SCHEMA_VERSION,
+    MAX_EVENTS,
+    NEWS_FRONT_PAGE_QUOTA,
+    PROTECTED_EVENT_TYPES,
+    RETENTION_DAYS,
+)
 from .errors import ValidationError
 from .topics import diversify_by_topic
 from .validation import format_timestamp, parse_timestamp, validate_event, validate_feed
@@ -35,11 +42,59 @@ def event_sort_key(event: Mapping[str, Any]) -> tuple[float, float, str]:
     )
 
 
-def canonical_events(events: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _trim_priority(event: Mapping[str, Any]) -> int:
+    return int(EVENT_TRIM_PRIORITY.get(str(event["type"]), 10))
+
+
+def retain_events(
+    events: Iterable[Mapping[str, Any]],
+    *,
+    now: datetime,
+    max_events: int = MAX_EVENTS,
+    retention_days: int = RETENTION_DAYS,
+) -> list[dict[str, Any]]:
+    """Bound the published ledger by age, then by type priority.
+
+    Stories older than ``retention_days`` are dropped. Within the window,
+    protected Core/YouTube types are kept preferentially so marketplace
+    verification floods cannot wipe them. Remaining slots fill with other
+    recent events, dropping ``plugin-verification-changed`` first.
+    """
+
+    through = now.astimezone(timezone.utc)
+    cutoff = through - timedelta(days=retention_days)
+    recent = [
+        dict(event)
+        for event in events
+        if parse_timestamp(event["occurredAt"]) >= cutoff
+    ]
+    ordered = sorted(recent, key=event_sort_key)
+    if len(ordered) <= max_events:
+        return ordered
+
+    protected = [
+        event
+        for event in ordered
+        if str(event["type"]) in PROTECTED_EVENT_TYPES
+    ]
+    if len(protected) >= max_events:
+        return protected[:max_events]
+
+    protected_ids = {event["id"] for event in protected}
+    remainder = [event for event in ordered if event["id"] not in protected_ids]
+    # Keep preferred first: lower trim priority, then newer (event_sort_key).
+    remainder.sort(key=lambda event: (_trim_priority(event),) + event_sort_key(event))
+    slots = max_events - len(protected)
+    kept = protected + remainder[:slots]
+    return sorted(kept, key=event_sort_key)
+
+
+def canonical_events(
+    events: Iterable[Mapping[str, Any]], *, now: datetime | None = None
+) -> list[dict[str, Any]]:
+    clock = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     validated = [validate_event(dict(event)) for event in events]
-    ordered = sorted(validated, key=event_sort_key)
-    if len(ordered) > MAX_EVENTS:
-        ordered = ordered[:MAX_EVENTS]
+    ordered = retain_events(validated, now=clock, max_events=MAX_EVENTS)
     if len({event["id"] for event in ordered}) != len(ordered):
         raise ValidationError("event IDs collide")
     return ordered
@@ -53,7 +108,7 @@ def make_feed(
     events: Iterable[Mapping[str, Any]],
     lead_event_id: str | None = None,
 ) -> dict[str, Any]:
-    ordered = canonical_events(events)
+    ordered = canonical_events(events, now=generated_at)
     through = generated_at.astimezone(timezone.utc)
     value: dict[str, Any] = {
         "schemaVersion": FEED_SCHEMA_VERSION,

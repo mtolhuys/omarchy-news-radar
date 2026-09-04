@@ -18,6 +18,25 @@ GITHUB_MAX_BYTES = 4 * 1024 * 1024
 ENGAGEMENT_MAX_BYTES = 2 * 1024 * 1024
 MAX_EVENTS = 500
 MAX_READ_OVERRIDES = MAX_EVENTS
+# Published ledger retention: keep at most MAX_EVENTS, prefer the last
+# RETENTION_DAYS, and never crowd out protected Core/YouTube types with
+# marketplace verification noise (see retain_events).
+RETENTION_DAYS = 30
+PROTECTED_EVENT_TYPES = frozenset(
+    {
+        "omarchy-released",
+        "omarchy-news",
+        "youtube-video",
+    }
+)
+# Higher score is dropped first when the ledger is over budget.
+EVENT_TRIM_PRIORITY = {
+    "plugin-verification-changed": 100,
+    "plugin-retired": 80,
+    "plugin-released": 60,
+    "plugin-added": 40,
+    "community-link": 20,
+}
 MAX_SAVED = 250
 # Retained only to validate and safely migrate state v2-v7. Interests are not
 # part of the current state or projection contract.
