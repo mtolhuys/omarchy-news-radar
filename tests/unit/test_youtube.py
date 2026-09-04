@@ -226,5 +226,37 @@ class YouTubeSourceTests(unittest.TestCase):
             parse_search_video_ids({"items": [{"id": {"videoId": "short"}}]})
 
 
+    def test_youtube_refresh_does_not_wipe_prior_lane(self) -> None:
+        """A thinner fresh ranking must not erase already-retained YouTube rows."""
+        from copy import deepcopy
+
+        inputs = FixtureInputs(
+            ROOT / "tests/fixtures/releases-baseline.json",
+            ROOT / "tests/fixtures/catalog-baseline.json",
+            ROOT / "tests/fixtures/community",
+            ROOT / "content/curation",
+            ROOT / "tests/fixtures/engagement-baseline.json",
+            ROOT / "tests/fixtures/youtube-baseline.json",
+        )
+        feed, snapshot = collect_from_fixtures(
+            inputs,
+            previous_snapshot=None,
+            now=CLOCK,
+            bootstrap_marketplace=True,
+        )
+        prior_ids = {event["id"] for event in feed["events"] if event["type"] == "youtube-video"}
+        self.assertTrue(prior_ids)
+        # Second collect with the same fixture should keep the lane (merge), not
+        # shrink it to empty when prior rows remain in-window.
+        feed2, _ = collect_from_fixtures(
+            inputs,
+            previous_snapshot=deepcopy(snapshot),
+            now=CLOCK,
+            bootstrap_marketplace=False,
+        )
+        after_ids = {event["id"] for event in feed2["events"] if event["type"] == "youtube-video"}
+        self.assertTrue(prior_ids <= after_ids)
+
+
 if __name__ == "__main__":
     unittest.main()

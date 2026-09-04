@@ -181,11 +181,26 @@ class YouTubeTextTests(unittest.TestCase):
             for index in range(4)
         ]
         ranked = rank_youtube_videos(videos)
-        self.assertEqual(2, len(ranked))
+        # index 0/1 share a title so reupload dedupe leaves 3 uniques; cap is 4.
+        self.assertEqual(3, len(ranked))
         self.assertEqual({"Same Channel"}, {item["channelTitle"] for item in ranked})
         self.assertEqual("id000000000", ranked[0]["id"])
         again = rank_youtube_videos(list(reversed(videos)))
         self.assertEqual([item["id"] for item in ranked], [item["id"] for item in again])
+        flooded = [
+            {
+                "id": f"flood{index:07d}",
+                "title": f"Omarchy deep dive {index}",
+                "channelTitle": "Prolific",
+                "publishedAt": f"2026-08-{10+index:02d}T12:00:00Z",
+                "views": 5000 - index,
+                "likes": 200 - index,
+            }
+            for index in range(8)
+        ]
+        capped = rank_youtube_videos(flooded)
+        self.assertEqual(4, len(capped))
+        self.assertEqual({"Prolific"}, {item["channelTitle"] for item in capped})
 
     def test_events_stay_off_front_page_and_validate(self) -> None:
         videos = parse_videos(

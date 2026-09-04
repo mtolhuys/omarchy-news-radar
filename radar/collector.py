@@ -38,8 +38,10 @@ from .sources.omarchy_news import MAX_RSS_BYTES, PUBLIC_URL as NEWS_PUBLIC_URL, 
 from .sources.omarchy_releases import API_URL, PUBLIC_URL
 from .sources.youtube import (
     API_ORIGIN as YOUTUBE_API_ORIGIN,
+    MAX_SECTION_EVENTS,
     PUBLIC_URL as YOUTUBE_PUBLIC_URL,
     SEARCH_QUERIES,
+    rank_youtube_events,
     relevance_languages_for_search,
     search_url,
     videos_url,
@@ -267,19 +269,47 @@ def collect_from_fixtures(
         event["id"]: event
         for event in previous["events"]
         if parse_timestamp(event["occurredAt"]) >= window_from
-        and not (
-            youtube_success
-            and (
-                event.get("type") == "youtube-video"
-                or event.get("classification", {}).get("section") == "youtube"
-            )
-        )
     }
     # A stale source baseline may rediscover the same deterministic event. Its
-    # first observed timestamps remain authoritative; current descriptions and
-    # metrics are refreshed below without making old activity look new again.
+    # first observed timestamps remain authoritative for non-YouTube rows.
+    # Fresh YouTube rows overwrite so views/likes refresh, and we never wipe
+    # the whole lane on a thin refresh (that previously left Core YouTube at 2).
     for event in events:
-        retained_events.setdefault(event["id"], event)
+        if event.get("type") == "youtube-video":
+            retained_events[event["id"]] = event
+        else:
+            retained_events.setdefault(event["id"], event)
+
+    if youtube_success:
+        youtube_rows = [
+            event
+            for event in retained_events.values()
+            if event.get("type") == "youtube-video"
+            or (event.get("classification") or {}).get("section") == "youtube"
+        ]
+        kept_ids = {event["id"] for event in rank_youtube_events(youtube_rows)[:MAX_SECTION_EVENTS]}
+        retained_events = {
+            event_id: event
+            for event_id, event in retained_events.items()
+            if event.get("type") != "youtube-video"
+            and (event.get("classification") or {}).get("section") != "youtube"
+            or event_id in kept_ids
+        }
+        next_sources["youtube"] = {
+            "checkedAt": checked_at,
+            "videoIds": [
+                str((event.get("entity") or {}).get("id"))
+                for event in rank_youtube_events(
+                    [
+                        event
+                        for event in retained_events.values()
+                        if event.get("type") == "youtube-video"
+                    ]
+                )
+                if (event.get("entity") or {}).get("id")
+            ],
+        }
+
     base_events = canonical_events(
         enrich_event_metrics(
             enrich_omarchy_news(

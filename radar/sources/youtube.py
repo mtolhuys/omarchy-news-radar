@@ -2,7 +2,7 @@
 
 Collection is deliberately conservative. Sponsor blocks, course funnels, and
 link walls are removed from descriptions, only substantive Omarchy activity
-enters the lane, and one channel can hold at most two slots so a prolific
+enters the lane, and one channel can hold at most four slots so a prolific
 uploader cannot become the section. All of it is deterministic text and
 position work: metrics never create, remove, or reorder an event outside the
 documented YouTube-only interleave.
@@ -38,7 +38,7 @@ MAX_VIDEOS_LOOKUP = 50
 TOP_N = 8
 MAX_SECTION_EVENTS = 24
 # One channel may hold at most this many lane slots after ranking.
-MAX_EVENTS_PER_CHANNEL = 2
+MAX_EVENTS_PER_CHANNEL = 4
 HQDEFAULT_WIDTH = 480
 HQDEFAULT_HEIGHT = 360
 MAX_METRIC_VALUE = 9_007_199_254_740_991
