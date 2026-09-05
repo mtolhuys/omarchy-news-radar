@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from radar.freshness import PAGES_CACHE_MAX_SECONDS, PUBLICATION_STALE_SECONDS, edition_timing
 from radar.shortcut import RADAR_COMMAND
+from scripts.validate_repo import validate_release_documentation
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,13 +16,11 @@ CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
 
 
 class ReleaseContractTests(unittest.TestCase):
-    def test_public_version_identity_and_install_heading_agree(self) -> None:
+    def test_checkout_identity_and_documented_release_status_agree(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
         version = manifest["version"]
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn(f"Version `{version}` is the current release.", readme)
-        self.assertIn(f"## Install the published v{version}", readme)
-        self.assertTrue((ROOT / "docs" / "release-notes" / f"{version}.md").is_file())
+        validate_release_documentation(version, readme, ROOT / "docs" / "release-notes")
         self.assertIn(
             f'BUILD_ID = "news-radar-{version}"',
             (ROOT / "radar" / "constants.py").read_text(encoding="utf-8"),
@@ -33,6 +33,71 @@ class ReleaseContractTests(unittest.TestCase):
             f'news-radar-{version}+identity-1',
             (ROOT / "src" / "Panel.qml").read_text(encoding="utf-8"),
         )
+
+    def test_documentation_accepts_a_published_checkout_and_a_later_local_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            notes = Path(directory)
+            (notes / "0.4.16.md").write_text("# Omarchy News Radar 0.4.16\n", encoding="utf-8")
+            readme = "## Install the published v0.4.16\n\nVersion `0.4.16` is the current release.\n"
+            validate_release_documentation("0.4.16", readme, notes)
+            (notes / "0.5.0.md").write_text(
+                "# Omarchy News Radar 0.5.0\n\nStatus: local candidate; not published.\n", encoding="utf-8"
+            )
+            candidate_readme = readme + "\nVersion `0.5.0` is a local candidate, not a published release.\n"
+            validate_release_documentation("0.5.0", candidate_readme, notes)
+
+    def test_candidate_cannot_impersonate_the_published_install_or_lack_matching_status(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            notes = Path(directory)
+            (notes / "0.4.16.md").write_text("# Omarchy News Radar 0.4.16\n", encoding="utf-8")
+            (notes / "0.5.0.md").write_text(
+                "# Omarchy News Radar 0.5.0\n\nStatus: local candidate; not published.\n", encoding="utf-8"
+            )
+            readme = (
+                "## Install the published v0.4.16\n\nVersion `0.4.16` is the current release.\n"
+                "\nVersion `0.5.0` is a local candidate, not a published release.\n"
+            )
+            invalid_readmes = (
+                readme.replace("Install the published v0.4.16", "Install the published v0.5.0"),
+                readme + "\n## Install the published v0.5.0\n",
+                readme.replace("Version `0.5.0` is a local candidate, not a published release.\n", ""),
+                readme.replace("Version `0.5.0` is a local candidate", "Version `0.5.1` is a local candidate"),
+                readme + "\nVersion `0.5.0` is the current release.\n",
+                readme + "\nVersion `0.5.1` is a local candidate, not a published release.\n",
+            )
+            for invalid_readme in invalid_readmes:
+                with self.subTest(readme=invalid_readme), self.assertRaises(SystemExit):
+                    validate_release_documentation("0.5.0", invalid_readme, notes)
+
+    def test_candidate_notes_must_match_identity_and_state_unpublished_status(self) -> None:
+        readme = (
+            "## Install the published v0.4.16\n\nVersion `0.4.16` is the current release.\n"
+            "\nVersion `0.5.0` is a local candidate, not a published release.\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            notes = Path(directory)
+            (notes / "0.4.16.md").write_text("# Omarchy News Radar 0.4.16\n", encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                validate_release_documentation("0.5.0", readme, notes)
+            for candidate_notes in (
+                "# Omarchy News Radar 0.4.16\n\nStatus: local candidate; not published.\n",
+                "# Omarchy News Radar 0.5.0\n\nReady to install.\n",
+            ):
+                with self.subTest(notes=candidate_notes):
+                    (notes / "0.5.0.md").write_text(candidate_notes, encoding="utf-8")
+                    with self.assertRaises(SystemExit):
+                        validate_release_documentation("0.5.0", readme, notes)
+
+    def test_promoting_candidate_requires_updating_notes_and_public_status_together(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            notes = Path(directory)
+            path = notes / "0.5.0.md"
+            path.write_text("# Omarchy News Radar 0.5.0\n\nStatus: local candidate; not published.\n", encoding="utf-8")
+            readme = "## Install the published v0.5.0\n\nVersion `0.5.0` is the current release.\n"
+            with self.assertRaises(SystemExit):
+                validate_release_documentation("0.5.0", readme, notes)
+            path.write_text("# Omarchy News Radar 0.5.0\n", encoding="utf-8")
+            validate_release_documentation("0.5.0", readme, notes)
 
     def test_forge_owns_publication_not_github_actions(self) -> None:
         workflows = ROOT / ".github/workflows"

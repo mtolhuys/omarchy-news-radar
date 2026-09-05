@@ -1,10 +1,14 @@
 # Release contract
 
-Version `0.4.16` makes a fresh panel open mark exactly its first visibly presented selected story read through the existing durable per-event path; repeated summons, refreshes, reprojections, and later arrivals do not repeat that action. Version `0.4.15` quiets YouTube, diversifies Front Page news by topic, adds local section visibility (state v11), turns Core and Front Page articles into a two-pane reader (quiet headline list, dominant article pane with clickable HTTPS body links, collapsed Details and Keys), and rearms the newspaper refresh timer. Version `0.4.13` adds Forge-collected official Omarchy News RSS into Core as `omarchy-news` events (D048), with fail-closed retention, a three-item Front Page quota, and no feed/state schema version bump. Version `0.4.12` replaces the layered full-glyph/full-radar overlay with one stable Omarchy-and-radar identity. The official full-strength `#9ece6a` logo is the primary silhouette; a compact amber radar occupies its central negative space. The manifest, Apps entry, and companion UIs use one opaque dark squircle. The panel title pairs the official Omarchy logo with the `NEWS RADAR` product name on the theme-native surface. The README uses the matching branded hero plus a current Plugin Lab walkthrough of article links, plugin imagery, filters, YouTube, compact layout, and dark/light themes. Root `preview.png` is a dedicated 1200×675 marketplace capture of that current reader rather than an export of the README banner. Version `0.4.11` previously used opacity-tuned full-symbol overlays and an outdated YouTube-focused README capture. No feed or state schema bump. The existing listing is maintainer-controlled; marketplace verification remains exact-commit compatibility evidence rather than a security audit.
+Version `0.5.0` is a local candidate. The published release remains `0.4.16`; no tag, release, marketplace promotion, Forge deployment, or public candidate install is implied by this checkout. The candidate adds a persistent Front Page brief of at most five source-linked groups, explicit new-brief and group/brief read actions, a first-use backlog choice, bounded gzip delivery, and a clearer installation path from the static web edition. Feed schema remains v2; local state moves to v12 with supported v1–v11 data preserved. See [candidate release notes](release-notes/0.5.0.md).
+
+The existing README walkthrough and marketplace preview show the released reader. They are not visual evidence for the candidate's new briefing and welcome states. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from local validation; marketplace verification is not a security audit.
 
 ## Candidate identity
 
-Record one clean Git commit and tag, manifest version, panel build identity, Python helper version, feed schema, generated artifact SHA-256, selected Omarchy source revision, and Plugin Lab ISO/base identity.
+For local validation, record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, and Plugin Lab ISO/base identity. Before publication, replace provisional evidence with one clean Git commit and the exact candidate tested. Record the tag only after owner-authorized publication.
+
+The manifest, Python package, helper build, and panel identify `0.5.0`. README installation and current-release status identify the separately published `0.4.16`. Repository validation accepts this explicit candidate status only with matching unpublished candidate notes; advancing publication requires updating all of these records together.
 
 ## Publishable checklist
 
@@ -15,31 +19,33 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 - A documented IPC route keeps the panel reachable without the shortcut.
 - The explicit XDG launcher helper adds one searchable Apps-menu row with the newspaper icon, refuses modified/unrelated targets, and removes only receipt-matching files.
 - Cached-first, refresh, offline, partial-source, invalid-feed, empty, and first-use states have visible recovery.
-- Front Page, For You, Core, Plugins, and Saved match the implemented model; reviewed community records remain an optional feed input rather than an empty dedicated section.
+- Front Page is a persisted brief of at most five groups with exact source-event membership. Explicit **New briefing** replaces it; refresh, reopening, and later arrivals never refill it. For You, Core, Plugins, YouTube, and Saved retain their source projections and finite local pagination; reviewed community records remain an optional input rather than an empty dedicated section.
 - The panel is a normal movable/resizable/maximizable window, participates in `Alt+Tab`, omits the unreliable minimize control, and closes through one shell lifecycle.
-- `Tab`/`Shift+Tab`, canonical section identity, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more behavior match the local projection model; the focused action labels Enter explicitly.
+- `Tab`/`Shift+Tab` cycles sections during normal navigation. `F6` enters/leaves Front Page briefing controls; Tab traverses their available actions, and expanded group history supports Up/Down/Home/End/Enter. Canonical sections, fixed-source disclosure, independent filters, exact resets, and arrow-key/Enter finite Load more in the other sections match the local projection model.
 - No publication-diagnostics strip occupies the reading surface; a subtle collapsible **Keys** footer at the bottom of the **SECTIONS** rail starts fully collapsed as `Keys · ?` with no shortcut dump and remembers the session choice; search exposes `/` and **Check for updates** exposes `R` on hover. Core and Front Page article cards are quiet headlines; the inspector puts `date · source`, the full article body, and compact actions before a collapsed Details footer.
-- Section headers expose an **All** / **Unread only** chip and keyboard `f` that toggle the existing persistent `unreadOnly` filter without a schema bump; Settings keeps its **Unread only** chip in sync; keyboard `a` matches **Mark all as read**; the Keys footer includes `a`, `f`, and `?`.
+- Section headers expose an **All** / **Unread only** chip and keyboard `f` using the persistent filter; Settings stays in sync. Keyboard `a` matches **Mark briefing read** on Front Page and the filtered **Mark all as read** action elsewhere. The Keys footer describes the applicable controls.
 - Bar click, `Super+Alt+N`, and Apps launch all summon one window; closed, obscured, foreground, rapid-repeat, Alt+Tab, explicit close, and reopen states are machine-asserted with real QMP input.
 - Available metrics have exact icon meanings, accessible labels, observation times, and marketplace caveats; raw metric endpoint links are absent, human plugin pages are used where applicable, and metrics cannot influence event creation or ranking.
 - Every story exposes an original validated HTTPS source.
-- Every row visibly distinguishes `UNREAD` from `READ`; section and newspaper counts use the same exact per-event predicate; the newspaper deduplicates unread IDs across all current persistent section projections and never advertises stories hidden by every section; a fresh open reads exactly its first visible selection once, deliberate selection and `u` affect only one story, and repeated summon/refresh/reprojection never mark another; the explicit filtered-section action atomically includes unloaded matches while close/refresh never bulk-mark; the default-on newspaper adopts and displays unread arrivals with the panel closed, uses the documented five-minute cadence, and its zero-gap hiding, Tune re-enable, animated refresh progress, health states, and no-desktop-pop-up boundary match the implementation.
-- For You uses only exact locally enabled plugin IDs; manual interests and section profiles have no control, CLI route, or current state member, and v1–v10 state migrates to v11 without losing supported data. Hidden source rails leave the nav and newspaper union; Front Page, For You, and Saved stay reachable.
+- Every row visibly distinguishes `UNREAD` from `READ`. Group counts include all unread member events; ordinary selection reads only the representative. **Mark group read** and **Mark briefing read** affect only their persisted exact members, including members hidden by a temporary search or filter. New arrivals remain unread, and expired members are disclosed rather than represented as completed reads.
+- A fresh open after onboarding reads exactly its first visible selection once; deliberate selection and `u` affect only one event, and repeated summon/refresh/reprojection never mark another. The welcome screen and **Browse current stories** do not read anything. **Start from today** is an explicit explained backlog action that preserves saves and local choices.
+- Section and newspaper counts use the same exact per-event predicate. The newspaper deduplicates unread IDs across the current persistent section projections and never advertises events hidden by every section. The explicit filtered-section read action includes unloaded matches, while close/refresh never bulk-mark. The newspaper adopts unread arrivals with the panel closed, uses the five-minute cadence, and retains zero-gap hiding, Tune re-enable, refresh progress, health states, and no desktop pop-ups.
+- For You and installed-plugin brief reasons use only exact locally enabled plugin IDs. Manual interests and section profiles have no control, CLI route, or current state member. State v1–v11 migrates to v12 without losing supported read overrides, read-through time, saves, filters, or visibility; existing users skip the welcome choice. Hidden source rails leave the nav and newspaper union; Front Page, For You, and Saved stay reachable.
 - YouTube collection on Forge requires optional `YOUTUBE_API_KEY`; CI remains fixture-only and never calls the live API.
 - No account, telemetry, AI summary, plugin installation action, or unsupported scraper is implied.
 
 ### Data and publication
 
 - First marketplace bootstrap emits at most twelve listings from the prior fourteen days and no historical flood.
-- Source adapters are bounded, allowlisted, deterministic, and fixture-tested.
+- Source adapters are bounded, allowlisted, deterministic, and fixture-tested. HTTP readers accept gzip with independent wire and decompressed limits, reject unsupported/corrupt/truncated encodings, preserve deadline and redirect restrictions, and keep the valid cache and validators on failed responses.
 - Every plugin-event summary uses the current validated marketplace description when available; description changes enrich existing events without creating or reordering them.
 - Source failure preserves prior state and cannot create mass retirement.
 - Forge Laravel `news-radar:publish` is scheduled every five minutes without overlapping; live feed is `https://mtolhuijs.nl/news-radar/events.json`. GitHub Actions publication and Pages are retired.
 - Every publish restores continuity state from Laravel storage (tracked transition seed only on first run); missing or invalid continuity fails closed, event first-observation timestamps are immutable, and the tracked v2 transition seed is accepted only while fresh.
-- Front Page selects the newest official release once, then current plugin/community activity; it never fills an artificial Core quota with older releases.
+- A new local brief considers unread events matching Front Page filters: critical notices, reviewed notable stories, the newest official release, official news, enabled-plugin activity, and a discovery when available. Same-plugin events share a group with each original source retained. Routine verification changes alone never consume a slot; metrics never rank candidates. The static web edition retains its existing editorial projection.
 - Feed metadata and internal client state separately identify source check, collection, artifact publication, and local cache time. Normal successful reading exposes none of that pipeline telemetry as content.
 - JSON, RSS, HTML, archive, and snapshot validate and are byte-stable under a fixed clock.
-- Generated HTML/XML escapes hostile content and the site uses a restrictive static security policy.
+- Generated HTML/XML escapes hostile content and the site uses a restrictive static security policy. The web edition has an official marketplace install link, discoverable RSS, a keyboard skip link, and fixed-origin title/description/social metadata, without scripts, tracking, or new publication asset paths.
 - Live feed size, event count, archive policy, and source-health metadata match the documented contract.
 - Marketplace previews are restricted to the exact allowlisted `plugins.omarchy.org` path family, byte/dimension validated before publication, and retained as direct `image.sourceUrl` values; YouTube thumbnails use only the fixed `i.ytimg.com/vi/<id>/hqdefault.jpg` shape. Images remain optional on failure and are not mirrored onto the feed host.
 
@@ -47,7 +53,7 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 
 - Manifest and every declared entry point validate.
 - Remote text remains plain data, image decoding is limited to the two validated allowlisted HTTPS image families (plus validated legacy same-origin rasters from older caches), and source opening is explicit.
-- Cache/state writes are private, bounded, symlink-safe, atomic, recoverable, and serialized across panel/bar helper processes.
+- Cache/state writes are private, bounded, symlink-safe, atomic, recoverable, and serialized across panel/bar helper processes. Brief and group mutations validate the exact persisted snapshot; the first-use **Start from today** choice validates the displayed event membership under the same lock used to save feeds, rejects changed editions, and preserves explicit unread choices.
 - Application launcher/icon writes are bounded, receipt-backed, symlink-safe, atomic, reversible, and never overwrite user-modified or unrelated files.
 - One refresh process maximum per entry point plus a cross-instance lock; the panel tears down on close and bar refresh polling stops when hidden.
 - Shortcut install/migrate/remove preserves unrelated Lua exactly and rolls back on reload or config error; the automatic update command cannot install a free chord.
@@ -67,11 +73,11 @@ Record one clean Git commit and tag, manifest version, panel build identity, Pyt
 ### Evidence and distribution
 
 - `make test`, `make validate`, `make feed-fixture`, and `make site` pass from a clean clone without unapproved downloads; `make collect-live` separately proves the allowlisted live build.
-- Plugin Lab fresh-install and released-0.1.3 upgrade acceptance pass for the exact candidate with inspected logs and screenshots.
+- Plugin Lab fresh-install, dedicated briefing, and released-0.1.3 upgrade acceptance pass for the exact candidate with inspected logs and screenshots. The briefing journey covers both welcome choices, per-event versus group read scope, explicit completion, reopen/arrival stability, offline operation, keyboard focus, and maintained light/dark layouts.
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
-- Public clean-clone installation, shortcut setup/removal, update, and plugin removal pass once the remote exists.
+- Public clean-clone installation, shortcut setup/removal, update, and plugin removal pass for the exact remotely available candidate. The existing `public-install.sh` remains pinned to published 0.4.16 and state v11; it proves only that released journey. Advance its identity and first-use/state assertions when publication is authorized, then run it against the exact candidate SHA.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed schema, screenshots, release notes, and evidence agree.
+- README, changelog, manifest, UI version, feed/state schemas, screenshots, release notes, and evidence distinguish the local candidate from the published release. Existing released screenshots carry an explicit label; candidate release media is refreshed from inspected candidate VM captures before promotion.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
 - No push, tag, release, marketplace submission, domain change, or external announcement occurs without owner authorization. GitHub Pages is not the live publication path.
 
@@ -93,7 +99,7 @@ Live publication is owned by Forge Laravel on the maintainer host. GitHub Action
 1. Push the reviewed clean candidate commit to the existing public repository at `https://github.com/mtolhuys/omarchy-news-radar`. Ensure Forge's `NEWS_RADAR_PATH` checkout can fast-forward or pull that commit before the next publish. Do not create the release or update the marketplace snapshot yet.
 2. Confirm Laravel schedule lists only `news-radar:publish` (every five minutes, without overlapping). Optionally run `php artisan news-radar:publish -v` once on the Forge host and verify the public JSON, RSS, HTML, allowlisted image references, build digest, source health, collection time, and `publishedAt` at `https://mtolhuijs.nl/news-radar/`.
 3. Wait for at least one successful scheduled Forge publish after the candidate is on the host checkout. Confirm continuity advanced in Laravel storage (no replay of the committed baseline as fresh news) and that public `publishedAt` matches the deployed build.
-4. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
+4. Advance the published-install scenario from its retained 0.4.16 contract to the reviewed candidate identity, schema, and welcome journey. In the disposable Plugin Lab, run `OMARCHY_NEWS_RADAR_PUBLIC_URL=https://github.com/mtolhuys/omarchy-news-radar OMARCHY_NEWS_RADAR_EXPECTED_COMMIT=<40-character-commit> ./bin/lab plugin tests/lab/public-install.sh`. Inspect the retained log and screenshot evidence and confirm the public clone resolved the exact intended commit.
 5. Review the release checklist and evidence record against that exact commit. Only then create the release tag.
 6. Use the marketplace's **Plugin verification** form with **Verify and publish a newer upstream commit**, the exact plugin ID, repository root URL, and full 40-character release SHA. The existing snapshot remains live while compatibility validation, the Automated Security Baseline, maintainer approval, testing, and deployment remain maintainer-controlled. Do not represent issue creation as promotion or as a security audit.
 
@@ -105,7 +111,8 @@ Normal snapshot advancement is a validated handoff in Laravel storage between su
 Release:
 Commit / tag:
 Manifest / panel / helper identity:
-Feed schema:
+Feed / state schemas:
+Local candidate or published status:
 Artifact SHA-256:
 Omarchy revision / ISO / lab base:
 

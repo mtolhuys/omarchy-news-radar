@@ -85,6 +85,41 @@ def validate_generated_fixture() -> None:
     validate_feed(json.loads(expected), now=datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc))
 
 
+def validate_release_documentation(version: str, readme: str, notes_directory: Path) -> None:
+    """Keep checkout identity distinct from an explicitly documented public release."""
+    published = re.findall(r"^Version `([0-9]+\.[0-9]+\.[0-9]+)` is the current release\.", readme, re.MULTILINE)
+    candidates = re.findall(
+        r"^Version `([0-9]+\.[0-9]+\.[0-9]+)` is a local candidate, not a published release\.",
+        readme,
+        re.MULTILINE,
+    )
+    if len(published) != 1 or len(candidates) > 1:
+        fail("README must identify one public release and at most one local candidate")
+    published_version = published[0]
+    installation_versions = re.findall(r"^## Install the published v([0-9]+\.[0-9]+\.[0-9]+)$", readme, re.MULTILINE)
+    if installation_versions != [published_version]:
+        fail("README installation heading does not match its published release")
+    if candidates:
+        if candidates != [version] or tuple(map(int, version.split("."))) <= tuple(map(int, published_version.split("."))):
+            fail("README local candidate does not match a newer manifest version")
+    elif version != published_version:
+        fail("README release status does not match the manifest version")
+
+    candidate_status = "Status: local candidate; not published."
+    for notes_version in {version, published_version}:
+        notes_path = notes_directory / f"{notes_version}.md"
+        if not notes_path.is_file():
+            fail(f"release notes are missing for {notes_version}")
+        notes = notes_path.read_text(encoding="utf-8")
+        if not notes.startswith(f"# Omarchy News Radar {notes_version}\n"):
+            fail(f"release notes heading does not match {notes_version}")
+        if notes_version == version and candidates:
+            if candidate_status not in notes.splitlines():
+                fail("local candidate release notes must explicitly state they are not published")
+        elif candidate_status in notes.splitlines():
+            fail("published release notes still claim local candidate status")
+
+
 def validate_manifest() -> None:
     path = ROOT / "manifest.json"
     if not path.exists():
@@ -113,12 +148,7 @@ def validate_manifest() -> None:
     if version != package_version.group(1) or version != build_version.group(1):
         fail("manifest, package, and helper versions disagree")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    if f"## Install the published v{version}" not in readme:
-        fail("README installation heading does not match the manifest version")
-    if f"Version `{version}` is the current release." not in readme:
-        fail("README release status does not match the manifest version")
-    if not (ROOT / "docs" / "release-notes" / f"{version}.md").is_file():
-        fail("release notes do not match the manifest version")
+    validate_release_documentation(version, readme, ROOT / "docs" / "release-notes")
     if manifest["kinds"] != ["panel", "bar-widget"] or set(manifest["entryPoints"]) != {"panel", "barWidget"}:
         fail("manifest must pair its panel with the optional bar widget")
     if manifest.get("keepLoaded") is not None or manifest.get("barWidget", {}).get("defaultSection") != "right":

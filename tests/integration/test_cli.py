@@ -78,6 +78,35 @@ class ClientCliIntegrationTests(unittest.TestCase):
         self.assertEqual("failed", payload["status"])
         self.assertEqual("installed plugin IDs are invalid JSON", payload["message"])
 
+    def test_explicit_briefing_and_onboarding_commands_share_one_snapshot(self) -> None:
+        code, prepared = self.run_client("ensure-briefing", "--installed-json", '["io.github.mtolhuys.disk-lens"]')
+        self.assertEqual(0, code)
+        code, projected = self.run_client("project", "--section", "front-page")
+        self.assertEqual(0, code)
+        self.assertEqual(prepared["briefing"]["id"], projected["briefing"]["id"])
+        group = next(event for event in projected["events"] if event["briefingReason"] == "installed")
+        code, marked = self.run_client("mark-briefing-group-read", "--briefing-id", projected["briefing"]["id"], "--event-id", group["briefingGroupId"])
+        self.assertEqual(0, code)
+        self.assertEqual(2, marked["markedRead"])
+        code, all_read = self.run_client("mark-briefing-read", "--briefing-id", projected["briefing"]["id"])
+        self.assertEqual(0, code)
+        self.assertGreaterEqual(all_read["markedRead"], 1)
+        code, skipped = self.run_client("start-from-today", "--feed-digest", projected["feedDigest"])
+        self.assertEqual(0, code)
+        self.assertTrue(skipped["state"]["onboardingComplete"])
+        self.assertEqual([], skipped["state"]["briefing"]["groups"])
+        code, replacement = self.run_client("new-briefing", "--installed-json", "[]")
+        self.assertEqual(0, code)
+        self.assertTrue(replacement["briefing"]["complete"])
+
+    def test_browse_cli_keeps_reading_state_and_invalid_action_fails_closed(self) -> None:
+        code, browsed = self.run_client("complete-onboarding")
+        self.assertEqual(0, code)
+        self.assertEqual({}, browsed["state"]["readOverrides"])
+        code, failed = self.run_client("mark-briefing-read", "--briefing-id", "invalid")
+        self.assertEqual(2, code)
+        self.assertEqual("failed", failed["status"])
+
 
 if __name__ == "__main__":
     unittest.main()

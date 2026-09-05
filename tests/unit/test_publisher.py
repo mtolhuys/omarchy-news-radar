@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 import struct
+from html.parser import HTMLParser
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -15,6 +16,19 @@ from radar.errors import ValidationError
 from radar.images import inspect_raster
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+class PageElements(HTMLParser):
+    def __init__(self, page: bytes) -> None:
+        super().__init__(convert_charrefs=True)
+        self.elements: list[tuple[str, dict[str, str | None]]] = []
+        self.feed(page.decode("utf-8"))
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.elements.append((tag, dict(attrs)))
+
+    def attributes(self, tag: str) -> list[dict[str, str | None]]:
+        return [attrs for name, attrs in self.elements if name == tag]
 
 
 class PublisherTests(unittest.TestCase):
@@ -40,6 +54,55 @@ class PublisherTests(unittest.TestCase):
         xml = render_rss(feed)
         ElementTree.fromstring(xml)
         self.assertNotIn(b"<script", xml)
+
+    def test_public_reader_exposes_install_walkthrough_and_feeds_without_active_content(self) -> None:
+        page = PageElements(render_html(self.feed))
+        anchors = {attrs["href"]: attrs for attrs in page.attributes("a")}
+        marketplace = "https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar"
+        walkthrough = "https://github.com/mtolhuys/omarchy-news-radar#readme"
+        for destination in (marketplace, walkthrough):
+            self.assertIn(destination, anchors)
+            self.assertEqual("noopener noreferrer external", anchors[destination]["rel"])
+        for destination in ("#news", "feed.xml", "events.json"):
+            self.assertIn(destination, anchors)
+        self.assertEqual("news", page.attributes("main")[0]["id"])
+        self.assertEqual("-1", page.attributes("main")[0]["tabindex"])
+        self.assertFalse({tag for tag, _ in page.elements} & {"script", "form", "iframe", "video"})
+        self.assertFalse(any(name.startswith("on") for _, attrs in page.elements for name in attrs))
+        for event in self.feed["events"]:
+            destination = event["source"]["url"]
+            if destination in anchors:
+                self.assertEqual("noopener noreferrer external", anchors[destination]["rel"])
+
+    def test_sharing_metadata_is_fixed_and_uses_existing_public_paths(self) -> None:
+        feed = copy.deepcopy(self.feed)
+        feed["events"][0]["title"] = 'Remote "title" <cannot> control the page'
+        page = PageElements(render_html(feed))
+        metadata = {
+            attrs.get("name", attrs.get("property")): attrs["content"]
+            for attrs in page.attributes("meta")
+            if "content" in attrs
+        }
+        canonical = next(attrs["href"] for attrs in page.attributes("link") if attrs.get("rel") == "canonical")
+        self.assertEqual("https://mtolhuijs.nl/news-radar/", canonical)
+        self.assertEqual(canonical, metadata["og:url"])
+        self.assertEqual("Omarchy News Radar — catch up with what changed", metadata["og:title"])
+        self.assertEqual(metadata["og:title"], metadata["twitter:title"])
+        self.assertEqual(metadata["description"], metadata["og:description"])
+        self.assertEqual(metadata["description"], metadata["twitter:description"])
+        self.assertEqual("summary", metadata["twitter:card"])
+        self.assertNotIn("og:image", metadata)
+        self.assertNotIn("twitter:image", metadata)
+
+    def test_empty_edition_retains_install_and_rss_paths(self) -> None:
+        feed = copy.deepcopy(self.feed)
+        feed["events"] = []
+        page_bytes = render_html(feed)
+        page = PageElements(page_bytes)
+        self.assertEqual([], page.attributes("article"))
+        self.assertIn(b"No stories in this edition yet.", page_bytes)
+        self.assertTrue(any(attrs.get("href") == "feed.xml" for attrs in page.attributes("a")))
+        self.assertTrue(any(attrs.get("class") == "install" for attrs in page.attributes("a")))
 
     def test_publish_outputs_complete_static_tree_and_digest(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

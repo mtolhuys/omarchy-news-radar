@@ -23,6 +23,7 @@ Omarchy shell
        ├─ bundled Python client helper
        ├─ last-known-good cache
        ├─ local read/saved/display/filter/presentation state
+       ├─ durable finite briefing and explicit first-use choice
        ├─ exact enabled-plugin matching
        └─ explicit HTTPS source opening
 ```
@@ -50,6 +51,7 @@ omarchy-news-radar/
 ├── radar/
 │   ├── __init__.py
 │   ├── model.py
+│   ├── briefing.py
 │   ├── filters.py
 │   ├── metrics.py
 │   ├── sections.py
@@ -89,7 +91,9 @@ omarchy-news-radar/
 │   ├── state-v7.schema.json
 │   ├── state-v8.schema.json
 │   ├── state-v9.schema.json
-│   └── state-v10.schema.json
+│   ├── state-v10.schema.json
+│   ├── state-v11.schema.json
+│   └── state-v12.schema.json
 ├── share/
 │   └── applications/
 │       └── io.github.mtolhuys.news-radar.desktop
@@ -142,17 +146,27 @@ Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar l
 
 1. Reset transient error state without changing reading state.
 2. Ask the client helper for the validated local cache and local user state.
-3. Render cached events immediately with explicit per-story `isUnread` decoration.
-4. Query `omarchy-shell shell listPlugins` to derive locally installed plugin IDs.
+3. Render the existing cached briefing and source sections with explicit per-story `isUnread` decoration. A missing briefing waits for initialization; ordinary projections and the bar never create one.
+4. Query `omarchy-shell shell listPlugins` to derive locally enabled plugin IDs, then call `ensure-briefing` once. An unavailable discovery result uses the existing fail-closed empty ID list. The command initializes only a missing snapshot and never replaces an existing or completed briefing.
 5. Start at most one bounded refresh helper.
 6. Treat a matching `304 Not Modified` as success only when a validated local feed exists; otherwise validate the candidate feed completely before atomically replacing cache or the visible current model.
 7. Preserve the cached model and surface a recoverable status if refresh fails.
 8. Prime keyboard focus only after the visible model exists.
-9. On a fresh open only, capture the first non-empty projection's selected event ID and panel-open generation, wait one brief single-shot dwell, and mark it read through the ordinary per-story helper only when that generation remains visible with the exact story still selected. Automatic opening reprojections replace the candidate and restart the dwell; explicit story interaction, Tune, Settings, or close cancels it.
+9. On a fresh open only, capture the first non-empty projection's selected event ID and panel-open generation, wait one brief single-shot dwell, and mark it read through the ordinary per-story helper only when that generation remains visible with the exact story still selected. Automatic opening reprojections replace the candidate and restart the dwell; explicit story interaction, Tune, Settings, the first-use choice, or close cancels it. First use cannot read a story while its welcome choice covers the reading surface.
 
 Dense-list keyboard movement reads the instantiated delegate geometry before changing selection. A next row already inside the viewport uses ordinary containment; a next row crossing the bottom resolves its exact `ListView.Beginning` offset and eases `contentY` there. This keeps variable-height rows fully visible without changing pointer flicking, pagination, projection, or read-state semantics.
 
-`close()` and component destruction must cancel or terminate owned network/model helpers, cancel an initial-story one-shot that has not yet reached a visible story, drain any already-requested per-story reading mutation, release the panel window, and leave no child process. Close never bulk-marks a session or edition. Re-summoning an already visible panel, refresh, and later projections do not rearm the one-shot. All cross-process state read/modify/write operations use one private kernel-backed lock so panel and bar mutations cannot overwrite each other.
+`close()` and component destruction must cancel or terminate owned network/model/briefing helpers, cancel an initial-story one-shot that has not yet reached a visible story, drain any already-requested per-story reading mutation, release the panel window, and leave no child process. Close never bulk-marks a session or edition. Re-summoning an already visible panel, refresh, and later projections do not rearm the one-shot. All cross-process state read/modify/write operations and feed replacements use one private kernel-backed state lock. Reading and first-use mutations load the current feed inside that lock, so replacement cannot change the edition halfway through the transition. The separate refresh lock still prevents overlapping network retrieval.
+
+## Finite local briefing
+
+`radar/briefing.py` selects a maximum of five groups from unread non-YouTube events that satisfy the persistent Front Page filters. It prioritizes reviewed critical and notable notices, the newest official release and one official news item, exact enabled-plugin matches, and one discovery when available. Critical notices may consume all five places. Routine verification changes alone never consume a place. Selection uses source facts and deterministic ordering, never metrics or generated impact prose. The public site's generic Front Page remains a separate non-personalized projection.
+
+State v12 stores the selected groups as exact event IDs plus a closed reason enum and the edition's collection timestamp. Each selected plugin groups only its occurrences present in that snapshot. Projections resolve those IDs against the validated cache and retain original titles, dates, and source links; a newer occurrence for the same plugin never joins silently. Reading, filtering, refreshing, changing installed plugins, and reopening preserve membership. Only **New briefing** replaces it, leaving skipped events unread. The bar reads the existing snapshot but does not initialize or replace it.
+
+The representative's `isUnread` remains its exact per-story reading fact. Group counts separately report unread members. Selecting or opening the representative reads only that event; opening another group source reads only that member. **Mark group read** and **Mark briefing read** are explicit bounded actions against the displayed snapshot digest. A stale digest is a benign no-op. Completion means every still-present member of that selected briefing has been read and no member has expired, not that the entire feed is read. Missing members receive an explicit expiration count instead of a false completion claim. Empty briefings remain empty and complete until the user requests another.
+
+New state starts with `onboardingComplete=false`. Every valid v1–v11 migration sets it true and preserves supported reading state, saves, and preferences. **Browse current stories** completes that choice without changing reads. **Start from today** requires the digest of the exact displayed event-ID set, marks that current backlog through per-event overrides, preserves explicit unread overrides, and stores an empty completed briefing. It never advances `readThrough` or uses the wall clock. A membership change between display and activation returns `stale-edition` without changing reading state, requiring another deliberate choice; a later-discovered event with an older occurrence timestamp remains unread.
 
 ## Client helper
 
@@ -163,6 +177,13 @@ news-radar-client read
 news-radar-client refresh
 news-radar-client refresh-if-due --minimum-age <seconds>
 news-radar-client indicator
+news-radar-client project --section <id> --installed-json <json-array>
+news-radar-client ensure-briefing --installed-json <json-array>
+news-radar-client new-briefing --installed-json <json-array>
+news-radar-client complete-onboarding
+news-radar-client start-from-today --feed-digest <64-character-sha256>
+news-radar-client mark-briefing-read --briefing-id <64-character-sha256>
+news-radar-client mark-briefing-group-read --briefing-id <64-character-sha256> --event-id <group-id>
 news-radar-client set-read --event-id <id> --read true|false
 news-radar-client mark-section-read --section <id> --installed-json <json-array>
 news-radar-client toggle-saved --event-id <id>
@@ -172,7 +193,11 @@ news-radar-client purge
 
 Exact flags may be refined during implementation, but each operation remains explicit, typed, non-interactive, bounded, and independently testable. `purge` is never invoked by disablement or ordinary removal; it is a deliberate user-data action.
 
+Every projection returns the local state, displayed feed-membership digest and matching event count, and briefing status alongside its existing section model. The first-use count and digest come from the same validated feed snapshot, so a stale cached QML model cannot describe a different backlog from the one the action targets. Briefing status distinguishes initialization, total/remaining groups, unread member events, completion, expired members, and whether more eligible unread events can form another briefing. A group row retains its original representative ID as `briefingGroupId` and exposes each available member's original source fields; none of these private facts enters a network request.
+
 The helper uses a fixed production feed origin compiled into one module. Tests may inject a fixture file or loopback test server through an explicit test-only flag or environment boundary that is disabled in public runtime paths.
+
+Feed requests advertise the static `Accept-Encoding: gzip` capability alongside JSON, the product user agent, and applicable HTTP validators. The standard-library HTTP helper accepts identity or gzip, including valid concatenated gzip members under one shared bound. Both transferred and decompressed feed bodies are capped independently at 2 MiB; decompression stops at one byte over the output bound, checks the total deadline between members, and rejects corrupt, truncated, trailing invalid, or unsupported encoded bodies before JSON validation. A `304` remains bodyless and reuses only a validated cached feed. Compression adds no endpoint, dependency, personalized header, or runtime process.
 
 ## Local storage
 
@@ -185,7 +210,7 @@ Follow XDG ownership:
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json` | Private bounded timestamp/outcome for background check cadence; not publication freshness |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |
-| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local display/filter/name preferences, and schema version |
+| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local display/filter preferences, first-use completion, exact briefing membership, and schema version |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/diagnostics.log` | Optional bounded local diagnostics without feed bodies or private paths |
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.
@@ -235,6 +260,8 @@ dist/  (then served under /news-radar/)
 Live feed URL: `https://mtolhuijs.nl/news-radar/events.json`. GitHub Actions `test.yml` still CI-tests the repository; `publication.yml` and GitHub Pages are retired as the publication path.
 
 The site contains no runtime framework, cookies, analytics, user input, service worker, external font, or client-side content fetch required for the initial page. Publisher output must escape every remote string for its destination context and use a strict Content Security Policy compatible with a static site.
+
+The public edition offers a fixed marketplace installation link, a link to the repository's desktop walkthrough, and RSS/JSON subscriptions. Its canonical URL and text-only social metadata describe the project independently of remote story text. A keyboard skip link targets the focusable news landmark. These links reuse existing public destinations and do not add a personal feed or publication endpoint.
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 

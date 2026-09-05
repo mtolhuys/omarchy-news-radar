@@ -10,6 +10,7 @@ from typing import Any, Iterable, Mapping
 from urllib.parse import urlsplit
 
 from .constants import (
+    BRIEFING_REASONS,
     CHANNELS,
     CLIENT_SECTIONS,
     COMPATIBILITY_BASIS,
@@ -21,6 +22,7 @@ from .constants import (
     MARKETPLACE_TRUST,
     METRIC_IDS,
     MAX_EVENTS,
+    MAX_BRIEFING_GROUPS,
     MAX_READ_OVERRIDES,
     MAX_SAVED,
     FEED_SCHEMA_VERSION,
@@ -537,11 +539,46 @@ def validate_section_visibility(value: Any) -> dict[str, bool]:
     }
 
 
+def validate_briefing(value: Any) -> dict[str, Any] | None:
+    """Validate a private finite snapshot without interpreting source content."""
+
+    if value is None:
+        return None
+    briefing = require_mapping(value, "briefing")
+    require_exact_keys(briefing, {"generatedAt", "groups"}, "briefing")
+    generated_at = require_string(briefing.get("generatedAt"), "briefing.generatedAt", 20, 20)
+    parse_timestamp(generated_at, "briefing.generatedAt")
+    raw_groups = require_list(briefing.get("groups"), "briefing.groups")
+    if len(raw_groups) > MAX_BRIEFING_GROUPS:
+        raise ValidationError("briefing exceeds its group bound")
+    groups: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw in raw_groups:
+        group = require_mapping(raw, "briefing group")
+        require_exact_keys(group, {"eventIds", "reason"}, "briefing group")
+        reason = require_string(group.get("reason"), "briefing reason", 1, 20)
+        if reason not in BRIEFING_REASONS:
+            raise ValidationError("briefing reason is unsupported")
+        event_ids = require_list(group.get("eventIds"), "briefing event IDs")
+        if not 1 <= len(event_ids) <= MAX_EVENTS:
+            raise ValidationError("briefing event IDs exceed their bound")
+        for event_id in event_ids:
+            if not isinstance(event_id, str) or not EVENT_ID_RE.fullmatch(event_id):
+                raise ValidationError("briefing event ID is invalid")
+            if event_id in seen:
+                raise ValidationError("briefing event IDs must be unique")
+            seen.add(event_id)
+        groups.append({"eventIds": list(event_ids), "reason": reason})
+    if len(seen) > MAX_EVENTS:
+        raise ValidationError("briefing exceeds its event bound")
+    return {"generatedAt": generated_at, "groups": groups}
+
+
 def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     require_exact_keys(
         state,
-        {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences"},
+        {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences", "onboardingComplete", "briefing"},
         "state",
     )
     if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
@@ -580,6 +617,8 @@ def validate_state(value: Any) -> dict[str, Any]:
         "schemaVersion": STATE_SCHEMA_VERSION,
         "readThrough": read_through,
         "readOverrides": read_overrides,
+        "onboardingComplete": require_bool(state.get("onboardingComplete"), "onboardingComplete"),
+        "briefing": validate_briefing(state.get("briefing")),
         "saved": saved,
         "preferences": {
             "barVisible": bar_visible,

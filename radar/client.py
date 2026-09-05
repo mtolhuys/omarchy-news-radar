@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -13,6 +14,7 @@ from typing import Any, Mapping
 from urllib.parse import urlencode, urljoin, urlsplit
 
 from .constants import BUILD_ID, CLIENT_SECTIONS, FEED_MAX_BYTES, FEED_ORIGIN, FEED_URL, HELPER_PROTOCOL_VERSION, MARKETPLACE_IMAGE_ORIGIN, YOUTUBE_IMAGE_ORIGIN
+from .briefing import BRIEFING_REASON_LABELS, briefing_id, briefing_members, compose_briefing, feed_membership_digest
 from .errors import FetchError, RadarError, StorageError, ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary, has_reader_image
 from .freshness import edition_timing, update_message
@@ -20,7 +22,7 @@ from .sections import SECTION_SOURCE_SUMMARIES, visible_client_sections
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import read_json_bounded
 from .local_edition import local_edition_metadata, local_image_url
-from .model import project_section
+from .model import event_sort_key, project_section
 from .reading import article_segments, list_summary
 from .state import (
     RefreshLock,
@@ -121,7 +123,7 @@ def _fetch_feed_url(
     policy: FetchPolicy,
     validators: Mapping[str, Any] | None = None,
 ) -> FeedFetch:
-    request_headers = {"Accept": "application/json", "User-Agent": CLIENT_USER_AGENT}
+    request_headers = {"Accept": "application/json", "Accept-Encoding": "gzip", "User-Agent": CLIENT_USER_AGENT}
     applicable = validators if validators and validators.get("url") == url else None
     if applicable:
         if isinstance(applicable.get("etag"), str):
@@ -342,20 +344,19 @@ def set_event_read_state(
 ) -> dict[str, Any]:
     """Persist one explicit story state against the validated current edition."""
 
-    feed = load_feed(environment, now=now)
-    if feed is None:
-        raise ValidationError("cannot change reading state without a valid cached feed")
-    events_by_id = {item["id"]: item for item in feed["events"]}
-    event = events_by_id.get(event_id)
-    if event is None:
-        state, _ = load_state(environment)
-        return response(
-            "stale-event",
-            message="The story changed during refresh; the current edition was left unchanged.",
-            state=state,
-        )
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
+        feed = load_feed(environment, now=now)
+        if feed is None:
+            raise ValidationError("cannot change reading state without a valid cached feed")
+        events_by_id = {item["id"]: item for item in feed["events"]}
+        event = events_by_id.get(event_id)
+        if event is None:
+            return response(
+                "stale-event",
+                message="The story changed during refresh; the current edition was left unchanged.",
+                state=state,
+            )
         updated = set_event_read(
             state,
             event,
@@ -378,12 +379,12 @@ def mark_section_read_state(
     installed = _parse_installed_plugin_ids(installed_json)
     if section not in CLIENT_SECTIONS:
         raise ValidationError("unknown projection section")
-    feed = load_feed(environment, now=now)
-    if feed is None:
-        raise ValidationError("cannot change reading state without a valid cached feed")
-    current_event_ids = {item["id"] for item in feed["events"]}
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
+        feed = load_feed(environment, now=now)
+        if feed is None:
+            raise ValidationError("cannot change reading state without a valid cached feed")
+        current_event_ids = {item["id"] for item in feed["events"]}
         section_events = _filtered_section_events(
             feed,
             state,
@@ -391,6 +392,8 @@ def mark_section_read_state(
             installed,
             now=now,
         )
+        if section == "front-page":
+            section_events = _filtered_briefing_members(feed, state, now=now)
         unread_events = [
             event for event in section_events if not event_is_read(state, event)
         ]
@@ -407,6 +410,113 @@ def mark_section_read_state(
         markedRead=len(unread_events),
         state=saved,
     )
+
+
+def _briefing_candidates(
+    feed: Mapping[str, Any], state: Mapping[str, Any], *, now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    ordered = sorted(feed["events"], key=event_sort_key)
+    latest_release = next((event["id"] for event in ordered if event["type"] == "omarchy-released"), None)
+    eligible = apply_section_filter(
+        [event for event in ordered if event["classification"]["section"] != "youtube"
+         and (event["type"] != "omarchy-released" or event["id"] == latest_release
+              or event["classification"]["significance"] in {"notable", "critical"})],
+        state["preferences"]["sectionFilters"]["front-page"],
+        read_through=state["readThrough"], read_overrides=state["readOverrides"], now=now,
+    )
+    return [event for event in eligible if not event_is_read(state, event)]
+
+
+def ensure_briefing(
+    installed_json: str, environment: Mapping[str, str] | None = None, *,
+    now: datetime | None = None, replace: bool = False,
+) -> dict[str, Any]:
+    """Initialize once after local plugin discovery, or explicitly replace it."""
+
+    installed = _parse_installed_plugin_ids(installed_json)
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        feed = load_feed(environment, now=now)
+        if feed is None:
+            return response("first-use", state=state)
+        if state["briefing"] is None or replace:
+            state["briefing"] = compose_briefing(
+                _briefing_candidates(feed, state, now=now),
+                generated_at=feed["generatedAt"], installed_plugin_ids=installed,
+            )
+            state = save_state(state, environment)
+    return response("ok", state=state, briefing=_briefing_status(feed, state, installed, now=now))
+
+
+def complete_onboarding(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Keep the backlog available after the explicit browse choice."""
+
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        state["onboardingComplete"] = True
+        state = save_state(state, environment)
+    return response("ok", state=state)
+
+
+def start_from_today(
+    feed_digest: str, environment: Mapping[str, str] | None = None, *, now: datetime | None = None,
+) -> dict[str, Any]:
+    """Read only the explicitly shown first-use backlog; never advance a clock."""
+
+    _validate_digest(feed_digest, "feed digest")
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        if state["onboardingComplete"]:
+            return response("onboarding-complete", state=state)
+        feed = load_feed(environment, now=now)
+        if feed is None or feed_membership_digest(feed) != feed_digest:
+            return response(
+                "stale-edition", state=state,
+                message="New stories arrived. Review the current edition before choosing Start from today again.",
+            )
+        # Preserve an explicit unread override. The new-user operation changes
+        # only ordinary backlog state; bookmarks and local choices stay intact.
+        backlog = [event for event in feed["events"] if state["readOverrides"].get(event["id"]) is not False]
+        marked = sum(not event_is_read(state, event) for event in backlog)
+        state = set_events_read(state, backlog, True, current_event_ids={event["id"] for event in feed["events"]})
+        state["onboardingComplete"] = True
+        state["briefing"] = {"generatedAt": feed["generatedAt"], "groups": []}
+        state = save_state(state, environment)
+    return response("ok", state=state, markedRead=marked)
+
+
+def _validate_digest(value: str, label: str) -> None:
+    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+        raise ValidationError(f"{label} is invalid")
+
+
+def mark_briefing_read(
+    snapshot_id: str, environment: Mapping[str, str] | None = None, *,
+    group_event_id: str | None = None, now: datetime | None = None,
+) -> dict[str, Any]:
+    """Read only source events named by the explicitly activated snapshot."""
+
+    _validate_digest(snapshot_id, "briefing ID")
+    if group_event_id is not None and not EVENT_ID_RE.fullmatch(group_event_id):
+        raise ValidationError("briefing group event ID is invalid")
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        snapshot = state["briefing"]
+        if snapshot is None or briefing_id(snapshot) != snapshot_id:
+            return response("stale-briefing", state=state, message="The briefing changed; review it before marking it read.")
+        feed = load_feed(environment, now=now)
+        if feed is None:
+            raise ValidationError("cannot change reading state without a valid cached feed")
+        if group_event_id is not None:
+            selected = [group for group in snapshot["groups"] if group["eventIds"][0] == group_event_id]
+            if not selected:
+                return response("stale-briefing", state=state, message="The group is no longer in this briefing.")
+            snapshot = {**snapshot, "groups": selected}
+        members = briefing_members(snapshot, feed["events"])
+        unread = [event for event in members if not event_is_read(state, event)]
+        state = set_events_read(state, unread, True, current_event_ids={event["id"] for event in feed["events"]})
+        state = save_state(state, environment)
+    return response("ok", state=state, markedRead=len(unread))
 
 
 def set_preferences(
@@ -607,6 +717,91 @@ def _parse_retained_read_ids(retained_read_ids_json: str) -> list[str]:
     return sorted(set(retained))
 
 
+def _filtered_briefing_members(
+    feed: Mapping[str, Any], state: Mapping[str, Any], *, now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    return apply_section_filter(
+        briefing_members(state["briefing"], feed["events"]),
+        state["preferences"]["sectionFilters"]["front-page"],
+        read_through=state["readThrough"], read_overrides=state["readOverrides"], now=now,
+    )
+
+
+def _briefing_status(
+    feed: Mapping[str, Any] | None, state: Mapping[str, Any], installed: list[str], *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    snapshot = state["briefing"]
+    groups = snapshot["groups"] if snapshot else []
+    by_id = {event["id"]: event for event in feed["events"]} if feed else {}
+    snapshot_ids = {event_id for group in groups for event_id in group["eventIds"]}
+    remaining = sum(
+        any(event_id in by_id and not event_is_read(state, by_id[event_id]) for event_id in group["eventIds"])
+        for group in groups
+    )
+    unread = sum(event_id in by_id and not event_is_read(state, by_id[event_id]) for event_id in snapshot_ids)
+    expired = len(snapshot_ids - by_id.keys())
+    other_brief = compose_briefing(
+        [event for event in _briefing_candidates(feed, state, now=now) if event["id"] not in snapshot_ids],
+        generated_at=feed["generatedAt"], installed_plugin_ids=installed,
+    ) if feed else None
+    available = sum(len(group["eventIds"]) for group in other_brief["groups"]) if other_brief else 0
+    return {
+        "id": briefing_id(snapshot) if snapshot else "",
+        "initialized": snapshot is not None,
+        "generatedAt": snapshot["generatedAt"] if snapshot else "",
+        "total": len(groups), "remaining": remaining, "unreadEvents": unread,
+        "complete": snapshot is not None and remaining == 0 and expired == 0,
+        "expiredEvents": expired, "availableUnread": available,
+        "hasNewStories": available > 0,
+    }
+
+
+def _briefing_rows(
+    feed: Mapping[str, Any], state: Mapping[str, Any], *, query: str = "",
+    retained_read_ids: list[str] | None = None, now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Project stable representatives while retaining each original source link."""
+
+    snapshot = state["briefing"]
+    if snapshot is None:
+        return []
+    by_id = {event["id"]: event for event in feed["events"]}
+    section_filter = state["preferences"]["sectionFilters"]["front-page"]
+    retained = set(retained_read_ids or ())
+    needle = " ".join(query.lower().split())
+    result: list[dict[str, Any]] = []
+    for group in snapshot["groups"]:
+        members = [by_id[event_id] for event_id in group["eventIds"] if event_id in by_id]
+        matching = apply_section_filter(
+            members, {**section_filter, "unreadOnly": False},
+            read_through=state["readThrough"], read_overrides=state["readOverrides"], now=now,
+        )
+        if not matching:
+            continue
+        if section_filter["unreadOnly"] and all(event_is_read(state, event) for event in matching) and not any(event["id"] in retained for event in matching):
+            continue
+        if needle and not any(
+            needle in " ".join([event["title"], event["summary"], event["entity"]["name"], " ".join(event["classification"]["tags"])]).lower()
+            for event in matching
+        ):
+            continue
+        representative = dict(matching[0])
+        representative.update({
+            "briefingGroupId": group["eventIds"][0],
+            "briefingReason": group["reason"],
+            "briefingReasonLabel": BRIEFING_REASON_LABELS[group["reason"]],
+            "briefingEventCount": len(members),
+            "briefingUnreadCount": sum(not event_is_read(state, event) for event in members),
+            "briefingEvents": [{
+                "id": event["id"], "title": event["title"], "occurredAt": event["occurredAt"],
+                "source": dict(event["source"]), "isUnread": not event_is_read(state, event),
+            } for event in members],
+        })
+        result.append(representative)
+    return result
+
+
 def _filtered_section_events(
     feed: Mapping[str, Any],
     state: Mapping[str, Any],
@@ -619,6 +814,8 @@ def _filtered_section_events(
 ) -> list[dict[str, Any]]:
     if section not in CLIENT_SECTIONS:
         raise ValidationError("unknown projection section")
+    if section == "front-page":
+        return _briefing_rows(feed, state, query=query, retained_read_ids=retained_read_ids, now=now)
     section_filter = state["preferences"]["sectionFilters"][section]
     return apply_section_filter(
         project_section(
@@ -665,9 +862,13 @@ def _persistent_section_events(
 def _unread_event_ids(
     state: Mapping[str, Any], events: list[dict[str, Any]]
 ) -> set[str]:
-    return {
-        event["id"] for event in events if not event_is_read(state, event)
-    }
+    result: set[str] = set()
+    for event in events:
+        if "briefingEvents" in event:
+            result.update(member["id"] for member in event["briefingEvents"] if member["isUnread"])
+        elif not event_is_read(state, event):
+            result.add(event["id"])
+    return result
 
 
 def projection_model(
@@ -686,8 +887,16 @@ def projection_model(
         raise ValidationError("projection limit is outside its bound")
     installed = _parse_installed_plugin_ids(installed_json)
     retained_read_ids = _parse_retained_read_ids(retained_read_ids_json)
-    feed = load_feed(environment, now=now)
-    state, _ = load_state(environment)
+    with StateLock(environment):
+        state, _ = load_state(environment, serialized=False)
+        feed = load_feed(environment, now=now)
+    context = {
+        "state": state,
+        "onboardingComplete": state["onboardingComplete"],
+        "feedDigest": feed_membership_digest(feed) if feed else "",
+        "feedEventCount": len(feed["events"]) if feed else 0,
+        "briefing": _briefing_status(feed, state, installed, now=now),
+    }
     names = CLIENT_SECTIONS
     if section not in names:
         raise ValidationError("unknown projection section")
@@ -708,6 +917,7 @@ def projection_model(
             sectionSources=SECTION_SOURCE_SUMMARIES[section],
             filterOptions=filter_options(section),
             visibleSections=list(visible_client_sections(state["preferences"]["sectionVisibility"])),
+            **context,
         )
     saved_ids = set(state["saved"])
     section_events = _persistent_section_events(feed, state, installed, now=now)
@@ -821,6 +1031,7 @@ def projection_model(
         sectionSources=SECTION_SOURCE_SUMMARIES[section],
         filterOptions=filter_options(section),
         visibleSections=list(visible_client_sections(state["preferences"]["sectionVisibility"])),
+        **context,
     )
 
 

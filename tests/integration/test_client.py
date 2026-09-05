@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest import mock
 
 from radar.client import (
+    ensure_briefing,
     indicator_model,
     installed_plugins,
     mark_section_read_state,
@@ -99,8 +100,9 @@ class ClientIntegrationTests(unittest.TestCase):
         self.assertEqual(2, len(projected["events"]))
         self.assertNotIn("installedPluginIds", result)
 
+        ensure_briefing("[]", self.environment, now=CLOCK)
         front_page = projection_model("front-page", "[]", "", self.environment, now=CLOCK)
-        self.assertIn("community-link", {event["type"] for event in front_page["events"]})
+        self.assertIn("discovery", {event["briefingReason"] for event in front_page["events"]})
         with self.assertRaisesRegex(ValidationError, "unknown projection section"):
             projection_model("community", "[]", "", self.environment, now=CLOCK)
 
@@ -192,6 +194,7 @@ class ClientIntegrationTests(unittest.TestCase):
 
     def test_saved_state_roundtrip_uses_only_validated_cache_event(self) -> None:
         refresh(self.environment, now=CLOCK)
+        ensure_briefing("[]", self.environment, now=CLOCK)
         event_id = projection_model(
             "front-page", "[]", "", self.environment, now=CLOCK
         )["events"][0]["id"]
@@ -202,6 +205,7 @@ class ClientIntegrationTests(unittest.TestCase):
 
     def test_indicator_read_state_and_display_preferences_stay_local(self) -> None:
         refresh(self.environment, now=CLOCK)
+        ensure_briefing("[]", self.environment, now=CLOCK)
         indicator = indicator_model(self.environment, now=CLOCK)
         self.assertGreater(indicator["unread"], 0)
         event_id = projection_model(
@@ -399,6 +403,7 @@ class ClientIntegrationTests(unittest.TestCase):
 
     def test_projection_paginates_decorates_metrics_and_applies_local_section_filter(self) -> None:
         refresh(self.environment, now=CLOCK)
+        ensure_briefing("[]", self.environment, now=CLOCK)
         first = projection_model("front-page", "[]", "", self.environment, now=CLOCK, limit=1)
         self.assertEqual(1, len(first["events"]))
         self.assertGreater(first["totalEvents"], 1)

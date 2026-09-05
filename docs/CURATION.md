@@ -9,9 +9,9 @@ Radar separates two questions:
 
 An automated event may be useful without being notable. A curated item must still have a provable source event or reviewed community record. Curation never invents facts, changes source timestamps, or hides trust metadata.
 
-## Front Page
+## Public edition
 
-The front page is composed deterministically from the live window:
+The generic public page is composed deterministically from the live window:
 
 1. Explicit `critical` items ordered by occurrence time.
 2. Explicit `notable` items ordered by occurrence time.
@@ -68,3 +68,11 @@ Never silently redirect an event to a different source or reuse an event ID for 
 ## Independence and conflicts
 
 Maintainers may curate their own work, but notable status for their own project requires a second reviewer once the project accepts outside contributions. Sponsored placement, paid ranking, affiliate links, and undisclosed conflicts are outside version 1.
+
+## Local finite briefing (D055)
+
+The desktop Front Page uses a persistent snapshot selected from unread events that survive its persistent filters. It holds at most five groups. Explicit critical notices may use every slot; otherwise one slot is reserved for a discovery when available. Reviewed notable items are considered first, then at most the newest eligible official release and one official news item, up to two enabled-plugin groups, and one new listing or reviewed community discovery. Capacity can leave fewer than five groups; the reader does not fill empty space with routine noise.
+
+Selecting a plugin gathers its eligible unread occurrences into the same group, preserving every original ID and source. Routine verification changes alone do not consume a slot, but remain visible within a selected plugin's group and in the source sections. Local reasons describe source significance or exact enabled-ID matching only. They do not claim that an update fixes, breaks, or is safe for a user's setup.
+
+This selection runs only on panel initialization or explicit New briefing. Read actions, source refresh, filters, and reopening do not refill it. The public HTML/RSS projection remains generic and is not changed into a personalized briefing; no installed IDs or reader state reach the server.

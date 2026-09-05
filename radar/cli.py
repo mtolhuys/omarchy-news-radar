@@ -12,9 +12,12 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .client import (
+    complete_onboarding,
+    ensure_briefing,
     installed_plugins,
     indicator_model,
     mark_section_read_state,
+    mark_briefing_read,
     open_source,
     projection_model,
     purge_state,
@@ -26,6 +29,7 @@ from .client import (
     toggle_saved_state,
     set_preferences,
     set_section_filter,
+    start_from_today,
 )
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
 from .errors import RadarError
@@ -79,6 +83,17 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("update-apply")
     commands.add_parser("purge")
     commands.add_parser("activate-window")
+    for name in ("ensure-briefing", "new-briefing"):
+        briefing = commands.add_parser(name)
+        briefing.add_argument("--installed-json", default="[]")
+    commands.add_parser("complete-onboarding")
+    first_use = commands.add_parser("start-from-today")
+    first_use.add_argument("--feed-digest", required=True)
+    for name in ("mark-briefing-read", "mark-briefing-group-read"):
+        briefing_reading = commands.add_parser(name)
+        briefing_reading.add_argument("--briefing-id", required=True)
+        if name == "mark-briefing-group-read":
+            briefing_reading.add_argument("--event-id", required=True)
     reading = commands.add_parser("set-read")
     reading.add_argument("--event-id", required=True)
     reading.add_argument("--read", required=True, choices=("true", "false"))
@@ -121,6 +136,17 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = apply_update()
         elif args.command == "activate-window":
             result = activate_window()
+        elif args.command in {"ensure-briefing", "new-briefing"}:
+            result = ensure_briefing(args.installed_json, replace=args.command == "new-briefing")
+        elif args.command == "complete-onboarding":
+            result = complete_onboarding()
+        elif args.command == "start-from-today":
+            result = start_from_today(args.feed_digest)
+        elif args.command in {"mark-briefing-read", "mark-briefing-group-read"}:
+            result = mark_briefing_read(
+                args.briefing_id,
+                group_event_id=args.event_id if args.command == "mark-briefing-group-read" else None,
+            )
         elif args.command == "set-read":
             result = set_event_read_state(args.event_id, args.read == "true")
         elif args.command == "mark-section-read":

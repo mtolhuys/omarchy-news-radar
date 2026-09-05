@@ -86,6 +86,8 @@ def default_state() -> dict[str, Any]:
         "schemaVersion": STATE_SCHEMA_VERSION,
         "readThrough": EPOCH,
         "readOverrides": {},
+        "onboardingComplete": False,
+        "briefing": None,
         "saved": {},
         "preferences": {
             "barVisible": True,
@@ -121,7 +123,10 @@ def load_feed(environment: Mapping[str, str] | None = None, *, now: datetime | N
 def save_feed(feed: Mapping[str, Any], environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
     validated = validate_feed(dict(feed), now=now, public_only=True)
     path = feed_path(environment)
-    atomic_write_json(path, validated)
+    # A first-use or reading transition must compare and write against one
+    # coherent edition. Refresh never replaces the feed halfway through it.
+    with StateLock(environment):
+        atomic_write_json(path, validated)
     if now is not None:
         try:
             timestamp = now.astimezone(timezone.utc).timestamp()
@@ -360,6 +365,8 @@ def _migrate_legacy_state(raw: Mapping[str, Any]) -> dict[str, Any]:
     return validate_state(
         {
             "schemaVersion": STATE_SCHEMA_VERSION,
+            "onboardingComplete": True,
+            "briefing": None,
             "readThrough": raw.get("readThrough") if old_version >= 7 else raw.get("seenThrough"),
             "readOverrides": raw.get("readOverrides") if old_version >= 7 else {},
             "saved": raw.get("saved"),
@@ -383,6 +390,8 @@ def _migrate_v10_state(raw: Mapping[str, Any]) -> dict[str, Any]:
     return validate_state(
         {
             "schemaVersion": STATE_SCHEMA_VERSION,
+            "onboardingComplete": True,
+            "briefing": None,
             "readThrough": raw.get("readThrough"),
             "readOverrides": raw.get("readOverrides"),
             "saved": raw.get("saved"),
@@ -426,6 +435,8 @@ def _migrate_v9_state(raw: Mapping[str, Any]) -> dict[str, Any]:
     return validate_state(
         {
             "schemaVersion": STATE_SCHEMA_VERSION,
+            "onboardingComplete": True,
+            "briefing": None,
             "readThrough": raw.get("readThrough"),
             "readOverrides": raw.get("readOverrides"),
             "saved": raw.get("saved"),
@@ -437,6 +448,18 @@ def _migrate_v9_state(raw: Mapping[str, Any]) -> dict[str, Any]:
             },
         }
     )
+
+
+def _migrate_v11_state(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Existing readers keep every reading fact and skip the new-user choice."""
+
+    require_exact_keys(raw, MODERN_LEGACY_STATE_KEYS, "state v11")
+    return validate_state({
+        **raw,
+        "schemaVersion": STATE_SCHEMA_VERSION,
+        "onboardingComplete": True,
+        "briefing": None,
+    })
 
 
 def load_state(
@@ -461,6 +484,10 @@ def load_state(
             return migrated, None
         if isinstance(raw, dict) and raw.get("schemaVersion") == 10:
             migrated = _migrate_v10_state(raw)
+            atomic_write_json(path, migrated)
+            return migrated, None
+        if isinstance(raw, dict) and raw.get("schemaVersion") == 11:
+            migrated = _migrate_v11_state(raw)
             atomic_write_json(path, migrated)
             return migrated, None
         return validate_state(raw), None

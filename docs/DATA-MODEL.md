@@ -173,7 +173,14 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
+  "onboardingComplete": true,
+  "briefing": {
+    "generatedAt": "2026-08-31T14:00:00Z",
+    "groups": [
+      {"eventIds": ["evt_8cb067f9ef7da216bcab4781"], "reason": "installed"}
+    ]
+  },
   "readThrough": "1970-01-01T00:00:00Z",
   "readOverrides": {
     "evt_8cb067f9ef7da216bcab4781": true
@@ -211,7 +218,7 @@ Saved records intentionally duplicate a small bounded subset so a bookmark survi
 
 `readThrough` is a migration baseline, not a session cursor. An event is read when its boolean `readOverrides[eventId]` exists and is true, unread when that override exists and is false, and otherwise read only when `occurredAt <= readThrough`. New installations use the Unix epoch baseline, so every current event starts unread. The panel never advances the baseline; its one initial visibly presented story per fresh open and deliberate per-story actions create or remove the smallest necessary override. The explicit filtered-section batch action applies that same rule to a validated list of at most 500 event IDs in one locked atomic write, including unloaded matches while ignoring temporary search. Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 
-State v11 adds `sectionVisibility` for the hideable Core, Plugins, and YouTube rails. Valid v1–v10 states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, legacy profile shapes and the v2–v7 interests array are strictly validated before being discarded, the removed Community filter stays removed, v9 gains a default YouTube section filter, and v10 gains the default-on visibility profile. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical names, icons, order, backgrounds, and source scope remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
+State v12 adds `onboardingComplete` and nullable `briefing`. Fresh defaults require the first-use choice; all valid v1–v11 migrations set onboarding complete, leave the briefing uninitialized, and never change existing reading decisions. The v11 `sectionVisibility` contract for the hideable Core, Plugins, and YouTube rails remains. Valid older states migrate atomically: the prior `seenThrough` value becomes `readThrough`, saved data and supported preferences survive, legacy profile shapes and the v2–v7 interests array are strictly validated before being discarded, the removed Community filter stays removed, v9 gains a default YouTube section filter, and v10 gains the default-on visibility profile. `readOverrides` is a canonical event-ID-to-boolean object capped at the feed's 500-event bound. Canonical names, icons, order, backgrounds, and source scope remain code-owned rather than hidden mutable state, and no migration or reading data is sent over the network.
 
 The stable client sections are `front-page`, `for-you`, `core`, `plugins`, `youtube`, and `saved`; they own the fixed name, projection, icon, order, source summary, filtering semantics, and network behavior. Feed classification `community` and event type `community-link` remain valid inputs to Front Page and For You, but are not client sections. YouTube stays in its own rail and does not enter Front Page in MVP.
 
@@ -230,3 +237,11 @@ HTTP revalidation is a separate disposable `feed-http.json` record with exact ke
 ## Schema evolution
 
 Additive optional fields may appear within the active feed schema version. A semantic change to required fields, enums, ID calculation, read-state meaning, or validation bounds requires a new schema version plus explicit migration and compatibility tests. The publisher may offer multiple feed versions during a documented transition; the client never guesses across versions.
+
+## Local briefing snapshot (state v12)
+
+`briefing` is null before explicit panel initialization, or exactly `{generatedAt, groups}`. Each of at most five groups stores a non-empty list of canonical unique event IDs and one closed reason: `critical`, `notable`, `core`, `installed`, or `discovery`. Across groups, membership is unique and capped at the live feed's 500-event bound. Original facts remain in the feed; the state does not copy article text or synthesize impact claims.
+
+The helper exposes a SHA-256 briefing identity, group identity, current retained members with original sources, remaining groups, unread member count, expired member count, and whether another eligible unread selection exists. Filtering and search can hide rows but cannot edit snapshot membership. An expired representative can be presented through a retained member while the original group ID remains stable. Missing members are disclosed and do not count as read completion.
+
+First-use Start from today uses a SHA-256 digest of sorted current feed IDs, accompanied by `feedEventCount` from the same projection. It never uses timestamps as a reading cursor. The helper verifies membership under the shared state lock before committing; a newly adopted edition and the reading action cannot interleave their critical sections. Start from today preserves explicit false overrides. Group/briefing actions likewise verify the current briefing identity and mark only its exact retained IDs. Ordinary projection and bar-indicator queries do not initialize a briefing. Only panel ensure, explicit New briefing, and the explicit first-use action can establish or replace one.

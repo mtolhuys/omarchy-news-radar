@@ -117,3 +117,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Final definition of done
 
 The entire local implementation is complete, clean, tested, documented, and proven in the disposable guest. The only acceptable remaining blockers are actions requiring explicit owner authority, such as pushing the candidate, updating Forge production, publishing a release, or submitting the exact commit to the marketplace.
+
+## 0.5.0 local candidate scope
+
+Implement D055–D057 as one reviewable candidate: state-v12 finite grouped briefing with explicit first-use and batch actions, gzip delivery with intact validation/caching bounds, and the generated public installation route. Preserve existing per-story reading, saved metadata, canonical sections, source provenance, optional images, and plugin lifecycle. Source tests and the disposable `tests/lab/briefing.sh` journey must accompany the existing acceptance suite. Exact installed-version impact analysis, contributor intake, and durable historical publishing remain subsequent product work; this candidate makes no such claims.

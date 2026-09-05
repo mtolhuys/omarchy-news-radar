@@ -122,6 +122,18 @@ FocusScope {
       }
 
       Text {
+        visible: !!root.story && root.story.briefingEventCount > 1
+        width: parent.width
+        text: root.story ? root.story.briefingEventCount + " updates · "
+          + root.story.briefingUnreadCount + " unread" : ""
+        textFormat: Text.PlainText
+        color: root.secondaryTextColor
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WordWrap
+      }
+
+      Text {
         visible: !root.quiet
         width: parent.width
         text: root.cardSummary

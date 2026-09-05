@@ -4,8 +4,10 @@
 # current candidate's ownership-preserving migration to summon activation.
 
 omarchy_host_test() {
-  local product_root lab_root plugin_dir shortcut viewport_width viewport_height bar_x bar_y
+  local product_root lab_root plugin_dir shortcut viewport_width viewport_height bar_x bar_y candidate_version
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+  candidate_version="$(jq -er '.version' "$product_root/manifest.json")" || return 1
+  [[ "$candidate_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
   # shellcheck source=/dev/null
   source "$lab_root/host-tests/helpers/pointer.sh"
@@ -72,7 +74,7 @@ omarchy_host_test() {
   ssh_guest "git -C /tmp/news-radar-upgrade-origin add -A && git -C /tmp/news-radar-upgrade-origin -c user.name=PluginLab -c user.email=lab@invalid commit -qm candidate"
   ssh_session "omarchy-plugin-update io.github.mtolhuys.news-radar --yes" >"$RUN_DIR/news-radar-candidate-update.log" || return 1
   wait_for_guest_state "candidate replaces plugin source" 20 ssh_session \
-    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && jq -e '.version == \"0.4.16\"' $plugin_dir/manifest.json && grep -Fq 'shell summon io.github.mtolhuys.news-radar' $plugin_dir/src/BarWidget.qml" || return 1
+    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && jq -e '.version == \"$candidate_version\"' $plugin_dir/manifest.json && grep -Fq 'shell summon io.github.mtolhuys.news-radar' $plugin_dir/src/BarWidget.qml" || return 1
 
   wait_for_guest_state "the update alone migrates the exact owned legacy action" 20 ssh_session \
     "$shortcut status | jq -e '.classification == \"owned\"' && grep -Fq 'shell summon io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && ! grep -Fq 'shell toggle io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && compgen -G \"\$HOME/.config/hypr/bindings.lua.news-radar-backup-*\" >/dev/null && test -z \"\$(hyprctl configerrors)\" && hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1

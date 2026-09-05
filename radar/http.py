@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import ssl
 import time
 import urllib.error
 import urllib.request
+import zlib
 from dataclasses import dataclass
 from ipaddress import ip_address
 from typing import Any, Mapping
@@ -68,6 +70,12 @@ def fetch_bytes(
     started = time.monotonic()
     try:
         with opener.open(request, timeout=policy.timeout_seconds) as response:
+            encodings = response.headers.get_all("Content-Encoding", [])
+            encoding = encodings[0].strip().lower() if len(encodings) == 1 else "identity"
+            if len(encodings) > 1 or encoding not in {"identity", "gzip"}:
+                raise FetchError("http-error", "response returned an unsupported Content-Encoding")
+            decoder = zlib.decompressobj(16 + zlib.MAX_WBITS) if encoding == "gzip" else None
+            declared_length = None
             content_length = response.headers.get("Content-Length")
             if content_length:
                 try:
@@ -80,6 +88,7 @@ def fetch_bytes(
                     raise FetchError("too-large", "response exceeds the configured size bound")
             chunks: list[bytes] = []
             total = 0
+            decoded_total = 0
             while True:
                 if time.monotonic() - started > policy.timeout_seconds:
                     raise FetchError("timeout", "request exceeded its total timeout")
@@ -89,7 +98,29 @@ def fetch_bytes(
                 total += len(chunk)
                 if total > policy.maximum_bytes:
                     raise FetchError("too-large", "response exceeds the configured size bound")
-                chunks.append(chunk)
+                if decoder is not None:
+                    pending = chunk
+                    while pending:
+                        if time.monotonic() - started > policy.timeout_seconds:
+                            raise FetchError("timeout", "request exceeded its total timeout")
+                        if decoder.eof:
+                            decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+                        try:
+                            # One extra output byte detects expansion beyond the bound without allocating it all.
+                            decoded = decoder.decompress(pending, policy.maximum_bytes + 1 - decoded_total)
+                        except zlib.error as exc:
+                            raise FetchError("http-error", "response returned invalid gzip data") from exc
+                        decoded_total += len(decoded)
+                        if decoded_total > policy.maximum_bytes:
+                            raise FetchError("too-large", "decoded response exceeds the configured size bound")
+                        chunks.append(decoded)
+                        pending = decoder.unused_data
+                else:
+                    chunks.append(chunk)
+            if declared_length is not None and total != declared_length:
+                raise FetchError("http-error", "response ended before its declared Content-Length")
+            if decoder is not None and not decoder.eof:
+                raise FetchError("http-error", "response returned truncated gzip data")
             return b"".join(chunks), dict(response.headers.items()), int(response.status)
     except FetchError:
         raise
@@ -102,6 +133,8 @@ def fetch_bytes(
         reason = "rate-limited" if exc.code == 429 or (exc.code == 403 and rate_remaining == "0") else "http-error"
         exc.close()
         raise FetchError(reason, f"server returned HTTP {exc.code}") from exc
+    except http.client.HTTPException as exc:
+        raise FetchError("http-error", "server returned an incomplete HTTP response") from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         detail = str(getattr(exc, "reason", exc)).lower()
         reason = "timeout" if "timed out" in detail else "network-error"

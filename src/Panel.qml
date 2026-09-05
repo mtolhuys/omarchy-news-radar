@@ -16,7 +16,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.4.16+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.5.0+identity-1"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -49,7 +49,9 @@ Item {
     popupBgIsLight ? 0.22 : 0.45)
   property var cachedFeed: null
   property var userState: ({
-    schemaVersion: 11,
+    schemaVersion: 12,
+    onboardingComplete: false,
+    briefing: null,
     readThrough: "1970-01-01T00:00:00Z",
     readOverrides: ({}),
     saved: ({}),
@@ -61,6 +63,19 @@ Item {
     })
   })
   property var installedPluginIds: []
+  property bool installedPluginsReady: false
+  property var briefing: ({ initialized: false, total: 0, remaining: 0, complete: false })
+  property string displayedFeedDigest: ""
+  property int displayedFeedEventCount: 0
+  property bool briefingControlsMode: false
+  property string briefingAction: ""
+  property string briefingMessage: ""
+  property bool briefingEnsureAttempted: false
+  readonly property bool onboardingVisible: localStateReady && !!cachedFeed
+    && userState.onboardingComplete === false
+  readonly property bool briefingVisible: currentSection === "front-page" && !!cachedFeed
+  readonly property bool briefingBusy: briefingProc.running || stateMutationPending
+    || readMutationPending || projectProc.running
   property var stories: []
   property var counts: ({})
   property var unreadCounts: ({})
@@ -195,11 +210,19 @@ Item {
   readonly property int availableImageCount: countEditionImages(cachedFeed)
   readonly property bool readMutationPending: readChangeInFlight
     || Object.keys(pendingReadChanges).length > 0
-  readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight
+  readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight || briefingProc.running
   readonly property bool anyHelperRunning: readProc.running || cacheSyncProc.running
     || refreshProc.running || projectProc.running
     || installedProc.running || preferencesProc.running || stateMutationPending || readMutationPending
     || openSourceProc.running || windowProc.running || shortcutProc.running || updateProc.running
+    || briefingProc.running
+
+  onOnboardingVisibleChanged: {
+    if (onboardingVisible) {
+      cancelInitialStoryRead()
+      Qt.callLater(function() { if (root.onboardingVisible) welcomeCard.focusChoice() })
+    }
+  }
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
@@ -210,6 +233,10 @@ Item {
       return "No stories match the current filter. Clear search to recover."
     if (!cachedFeed)
       return "No cached edition is available yet. Retry when online."
+    if (briefingVisible && briefing.initialized !== true)
+      return briefingMessage || "Preparing your briefing…"
+    if (briefingVisible && briefing.complete === true)
+      return "Your briefing is complete. Browse the other sections whenever you like."
     if (filterSummary !== "No extra filters")
       return "No stories match this section's local settings. Reset its filters or choose another section."
     return "This section is empty in the current bounded edition."
@@ -220,8 +247,8 @@ Item {
     if (filterSummary !== "No extra filters") parts.push(filterSummary)
     if (retainedReadStories > 0)
       parts.push(retainedReadStories + " just read shown until this view changes")
-    parts.push(totalStories + " stories")
-    parts.push(Number(unreadCounts[currentSection] || 0) + " unread")
+    parts.push(totalStories + (briefingVisible ? " briefing items" : " stories"))
+    parts.push(Number(unreadCounts[currentSection] || 0) + (briefingVisible ? " updates unread" : " unread"))
     return parts.join(" · ")
   }
 
@@ -288,7 +315,16 @@ Item {
       readerLayout: readerLayout,
       inspectorArticleMode: inspectorArticleMode,
       inspectorFactsOpen: inspectorFactsOpen,
-      emptyStateMessage: emptyStateMessage()
+      emptyStateMessage: emptyStateMessage(),
+      onboardingVisible: onboardingVisible,
+      briefing: briefing,
+      briefingBusy: briefingBusy,
+      briefingMessage: briefingMessage,
+      displayedFeedDigest: displayedFeedDigest,
+      selectedBriefingGroupId: selectedStory ? String(selectedStory.briefingGroupId || "") : "",
+      selectedBriefingEventIds: selectedStory && selectedStory.briefingEvents
+        ? selectedStory.briefingEvents.map(function(event) { return event.id }) : [],
+      selectedBriefingUnreadCount: selectedStory ? Number(selectedStory.briefingUnreadCount || 0) : 0
     })
   }
 
@@ -340,6 +376,15 @@ Item {
   }
   function shortcutMigrationGeometry() {
     return itemGeometry(shortcutMigrationButton, shortcutNotice.visible && shortcutMigrationButton.visible)
+  }
+  function startTodayGeometry() { return itemGeometry(welcomeCard.startButton, onboardingVisible) }
+  function browseStoriesGeometry() { return itemGeometry(welcomeCard.browseButton, onboardingVisible) }
+  function newBriefingGeometry() { return itemGeometry(briefingNotice.newButton, briefingNotice.visible) }
+  function finishBriefingGeometry() { return itemGeometry(briefingNotice.finishButton, briefingNotice.visible && briefingNotice.finishButton.visible) }
+  function groupReadGeometry() {
+    var group = keySurface.narrow ? storyList.headerItem : inspectorBriefingGroup
+    if (!group) return JSON.stringify({ visible: false })
+    return itemGeometry(group.readButton, group.visible && group.readButton.visible)
   }
 
   function storyViewportState() {
@@ -533,6 +578,9 @@ Item {
     feedStatus = "Loading cache"
     statusDetail = "Reading the last-known-good local edition."
     localStateReady = false
+    installedPluginsReady = false
+    briefingEnsureAttempted = false
+    briefingMessage = ""
     preferencesOpen = false
     sectionSettingsOpen = false
     selectedIndex = 0
@@ -562,6 +610,7 @@ Item {
     installedProc.running = false
     preferencesProc.running = false
     stateProc.running = false
+    briefingProc.running = false
     openSourceProc.running = false
     windowProc.running = false
     shortcutProc.running = false
@@ -624,6 +673,7 @@ Item {
         : "No validated edition is cached yet."
     }
     requestProjection()
+    ensureBriefing()
     refreshFeed()
   }
 
@@ -658,6 +708,7 @@ Item {
       generatedAt = String(result.feed.generatedAt || "")
       sourceHealth = RadarModel.sourceHealth(result.feed)
       requestProjection("preserve")
+      ensureBriefing()
     }
     if (result.status === "local-current") {
       feedStatus = "Local live edition"
@@ -689,7 +740,88 @@ Item {
     var result = RadarModel.parseResponse(raw)
     installedPluginIds = result.status === "ok" && Array.isArray(result.pluginIds)
       ? result.pluginIds : []
+    installedPluginsReady = true
+    ensureBriefing()
     requestProjection("preserve")
+  }
+
+  function ensureBriefing() {
+    if (!opened || !localStateReady || !cachedFeed || !installedPluginsReady
+        || briefingProc.running || briefingEnsureAttempted || userState.briefing) return
+    briefingEnsureAttempted = true
+    briefingAction = "ensure-briefing"
+    startProcess(briefingProc, ["ensure-briefing", "--installed-json", JSON.stringify(installedPluginIds)])
+  }
+
+  function runBriefingAction(action, eventId) {
+    if (!opened || briefingBusy || refreshing || !cachedFeed) return
+    cancelInitialStoryRead()
+    briefingMessage = ""
+    var argumentsList = [action]
+    if (action === "new-briefing" || action === "ensure-briefing")
+      argumentsList.push("--installed-json", JSON.stringify(installedPluginIds))
+    else if (action === "start-from-today") {
+      if (!displayedFeedDigest) return
+      argumentsList.push("--feed-digest", displayedFeedDigest)
+    } else if (action === "mark-briefing-read" || action === "mark-briefing-group-read") {
+      if (!briefing.id) return
+      argumentsList.push("--briefing-id", String(briefing.id))
+      if (action === "mark-briefing-group-read") argumentsList.push("--event-id", String(eventId))
+    }
+    briefingAction = action
+    startProcess(briefingProc, argumentsList)
+  }
+
+  function handleBriefingAction(raw) {
+    var result = RadarModel.parseResponse(raw)
+    if (!opened) return
+    userState = result.state || userState
+    if (result.status === "ok" || result.status === "onboarding-complete") {
+      briefingMessage = ""
+      if (briefingAction === "new-briefing" || briefingAction === "start-from-today") {
+        selectedIndex = 0
+        searchField.text = ""
+        unreadSessionRetainedIds = ({})
+      }
+      requestProjection(briefingAction === "new-briefing" ? "reset" : "preserve")
+      Qt.callLater(function() {
+        if (root.onboardingVisible) welcomeCard.focusChoice()
+        else {
+          root.briefingControlsMode = false
+          navigationFocus.forceActiveFocus()
+        }
+      })
+    } else {
+      briefingMessage = result.message || "The briefing could not be changed. Please try again."
+      requestProjection("preserve")
+    }
+  }
+
+  function openBriefingEvent(event) {
+    if (!event || !event.source) return
+    cancelInitialStoryRead()
+    queueStoryRead(event, true)
+    openUrl(String(event.source.url))
+  }
+
+  function focusBriefingControl(direction) {
+    var group = keySurface.narrow ? storyList.headerItem : inspectorBriefingGroup
+    var groupTargets = group && group.visible ? group.controlTargets() : []
+    var targets = briefingNotice.controlTargets().concat(groupTargets)
+    if (!targets.length) {
+      briefingControlsMode = false
+      navigationFocus.forceActiveFocus()
+      return
+    }
+    var current = -1
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i].activeFocus) current = i
+    }
+    var next = current < 0 ? (direction < 0 ? targets.length - 1 : 0)
+      : (current + direction + targets.length) % targets.length
+    if (keySurface.narrow && groupTargets.indexOf(targets[next]) >= 0)
+      storyList.positionViewAtBeginning()
+    targets[next].forceActiveFocus()
   }
 
   function requestProjection(viewportMode) {
@@ -821,6 +953,10 @@ Item {
   function handleProjection(raw) {
     var result = RadarModel.parseResponse(raw)
     if (result.status === "ok" || result.status === "first-use") {
+      userState = result.state || userState
+      briefing = result.briefing || briefing
+      displayedFeedDigest = String(result.feedDigest || "")
+      displayedFeedEventCount = Number(result.feedEventCount || 0)
       var preserveViewport = activeProjectionViewportMode === "preserve"
       var resumeTopAlignment = preserveViewport && storyScrollAnimation.running
       if (resumeTopAlignment) storyScrollAnimation.stop()
@@ -1110,7 +1246,8 @@ Item {
   }
 
   function scheduleInitialStoryRead() {
-    if (!initialStoryReadPending || !opened || !panelWindow.visible || !selectedStory)
+    if (!initialStoryReadPending || !opened || !panelWindow.visible || !selectedStory
+        || onboardingVisible || briefingProc.running)
       return
     var eventId = String(selectedStory.id || "")
     if (!eventId) return
@@ -1137,7 +1274,7 @@ Item {
       cancelInitialStoryRead()
       return
     }
-    if (preferencesOpen || sectionSettingsOpen) {
+    if (preferencesOpen || sectionSettingsOpen || onboardingVisible) {
       cancelInitialStoryRead()
       return
     }
@@ -1159,7 +1296,7 @@ Item {
   }
 
   function queueStoryRead(story, read) {
-    if (!story || !story.id || bulkReadInFlight) return
+    if (!story || !story.id || bulkReadInFlight || onboardingVisible || briefingProc.running) return
     var retained = Object.assign({}, unreadSessionRetainedIds)
     if (currentFilter.unreadOnly === true && read === true)
       retained[String(story.id)] = true
@@ -1320,6 +1457,10 @@ Item {
   }
 
   function markCurrentSectionRead() {
+    if (briefingVisible) {
+      runBriefingAction("mark-briefing-read")
+      return
+    }
     if (!helperPath || refreshing || projectProc.running
         || stateMutationPending || readMutationPending
         || Number(unreadCounts[currentSection] || 0) <= 0) return
@@ -1330,6 +1471,11 @@ Item {
       "--section", currentSection,
       "--installed-json", JSON.stringify(installedPluginIds)
     ])
+  }
+
+  Process {
+    id: briefingProc
+    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleBriefingAction(text) }
   }
 
   Process {
@@ -1541,7 +1687,35 @@ Item {
       focus: true
       Keys.onEscapePressed: root.handleEscape()
       Keys.onPressed: function(event) {
+        if (root.onboardingVisible) {
+          if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            welcomeCard.cycleChoice()
+            event.accepted = true
+          } else if (event.key === Qt.Key_Escape || (event.text || "").toLowerCase() === "q") {
+            root.handleEscape()
+            event.accepted = true
+          }
+          return
+        }
         if (root.sectionSettingsOpen || root.preferencesOpen) return
+        if (event.key === Qt.Key_F6 && root.briefingVisible) {
+          root.cancelInitialStoryRead()
+          root.briefingControlsMode = !root.briefingControlsMode
+          if (root.briefingControlsMode) root.focusBriefingControl(1)
+          else navigationFocus.forceActiveFocus()
+          event.accepted = true
+          return
+        }
+        if (root.briefingControlsMode) {
+          if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            root.focusBriefingControl(event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
+            event.accepted = true
+          } else if (event.key === Qt.Key_Escape || (event.text || "").toLowerCase() === "q") {
+            root.handleEscape()
+            event.accepted = true
+          }
+          return
+        }
         if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
           var backwards = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier)
           root.cycleSection(backwards ? -1 : 1)
@@ -1635,6 +1809,7 @@ Item {
         id: navigationFocus
         anchors.fill: parent
         focus: true
+        onActiveFocusChanged: if (activeFocus) root.briefingControlsMode = false
       }
 
       BorderSurface {
@@ -1902,6 +2077,17 @@ Item {
             }
           }
 
+          BriefingNotice {
+            id: briefingNotice
+            Layout.fillWidth: true
+            visible: root.briefingVisible && !root.onboardingVisible
+            briefing: root.briefing
+            busy: root.briefingBusy || root.refreshing || !root.installedPluginsReady
+            message: root.briefingMessage
+            onNewRequested: root.runBriefingAction("new-briefing")
+            onFinishRequested: root.runBriefingAction("mark-briefing-read")
+          }
+
           RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -2008,6 +2194,7 @@ Item {
                       { keys: "s", action: "save" },
                       { keys: "u", action: "read" },
                       { keys: "a", action: "all-read" },
+                      { keys: "F6", action: "briefing controls" },
                       { keys: "f", action: "unread" },
                       { keys: "/", action: "search" },
                       { keys: "r", action: "refresh" },
@@ -2118,6 +2305,7 @@ Item {
 
                   RadarButton {
                     id: markAllReadButton
+                    visible: !root.briefingVisible
                     label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
                     tooltipText: "Mark every unread story matching this section's Settings as read (A)"
                     enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
@@ -2150,6 +2338,7 @@ Item {
                   }
                   RadarButton {
                     id: narrowMarkAllReadButton
+                    visible: !root.briefingVisible
                     label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
                     enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
                       && !root.refreshing && !projectProc.running
@@ -2222,6 +2411,18 @@ Item {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+                header: BriefingGroup {
+                  id: narrowBriefingGroup
+                  visible: keySurface.narrow && root.briefingVisible && !!root.selectedStory
+                  width: storyList.width
+                  height: visible ? implicitHeight : 0
+                  maximumHistoryHeight: Math.min(Style.space(160), card.height * 0.25)
+                  story: root.selectedStory
+                  busy: root.briefingBusy || root.refreshing
+                  onReadRequested: function(groupId) { root.runBriefingAction("mark-briefing-group-read", groupId) }
+                  onSourceRequested: function(event) { root.openBriefingEvent(event) }
+                }
 
                 delegate: StoryRow {
                   required property var payload
@@ -2322,6 +2523,17 @@ Item {
                 id: inspector
                 width: parent.width
                 spacing: Style.spacing.panelGap
+
+                BriefingGroup {
+                  id: inspectorBriefingGroup
+                  visible: root.briefingVisible && !!root.selectedStory
+                  width: parent.width
+                  height: visible ? implicitHeight : 0
+                  story: root.selectedStory
+                  busy: root.briefingBusy || root.refreshing
+                  onReadRequested: function(groupId) { root.runBriefingAction("mark-briefing-group-read", groupId) }
+                  onSourceRequested: function(event) { root.openBriefingEvent(event) }
+                }
 
                 BorderSurface {
                   visible: !root.inspectorArticleMode && !!root.selectedStory && !!root.selectedStory.imageUrl
@@ -2578,6 +2790,27 @@ Item {
 
           }
 
+        }
+
+        Rectangle {
+          anchors.fill: parent
+          visible: root.onboardingVisible
+          z: 40
+          color: root.modalScrimColor
+          MouseArea { anchors.fill: parent }
+
+          WelcomeCard {
+            id: welcomeCard
+            anchors.centerIn: parent
+            width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(660))
+            busy: root.briefingBusy || root.refreshing
+            canStart: root.displayedFeedDigest !== ""
+            maximumHeight: parent.height - Style.spacing.panelPadding * 2
+            storyCount: root.displayedFeedEventCount
+            message: root.briefingMessage
+            onStartTodayRequested: root.runBriefingAction("start-from-today")
+            onBrowseRequested: root.runBriefingAction("complete-onboarding")
+          }
         }
 
         Rectangle {

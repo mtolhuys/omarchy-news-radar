@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import gzip
 import json
 import tempfile
 import threading
@@ -11,8 +12,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest import mock
 
+from radar import __version__
 from radar.client import refresh
 from radar.constants import FEED_MAX_BYTES
+from radar.state import feed_http_path, feed_path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
@@ -34,10 +37,12 @@ class FeedHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         return
 
-    def _send(self, body: bytes, *, status: int = 200, declared: int | None = None) -> None:
+    def _send(self, body: bytes, *, status: int = 200, declared: int | None = None, encoding: str | None = None) -> None:
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body) if declared is None else declared))
+        if encoding is not None:
+            self.send_header("Content-Encoding", encoding)
         self.send_header("ETag", type(self).etag)
         self.send_header("Last-Modified", type(self).last_modified)
         self.end_headers()
@@ -50,12 +55,13 @@ class FeedHandler(BaseHTTPRequestHandler):
                 "method": self.command,
                 "path": self.path,
                 "accept": self.headers.get("Accept", ""),
+                "acceptEncoding": self.headers.get("Accept-Encoding", ""),
                 "userAgent": self.headers.get("User-Agent", ""),
                 "ifNoneMatch": self.headers.get("If-None-Match", ""),
                 "ifModifiedSince": self.headers.get("If-Modified-Since", ""),
             }
         )
-        if self.path == "/feed":
+        if self.path in {"/feed", "/gzip"}:
             if (
                 self.headers.get("If-None-Match") == type(self).etag
                 or self.headers.get("If-Modified-Since") == type(self).last_modified
@@ -63,9 +69,14 @@ class FeedHandler(BaseHTTPRequestHandler):
                 self.send_response(304)
                 self.send_header("ETag", type(self).etag)
                 self.send_header("Last-Modified", type(self).last_modified)
+                if self.path == "/gzip":
+                    self.send_header("Content-Encoding", "gzip")
                 self.end_headers()
             else:
-                self._send(self.feed)
+                if self.path == "/gzip" and self.headers.get("Accept-Encoding") == "gzip":
+                    self._send(gzip.compress(self.feed, mtime=0), encoding="gzip")
+                else:
+                    self._send(self.feed)
         elif self.path == "/redirect":
             self.send_response(302)
             self.send_header("Location", "/feed")
@@ -76,6 +87,14 @@ class FeedHandler(BaseHTTPRequestHandler):
             self.end_headers()
         elif self.path == "/truncated":
             self._send(b"{")
+        elif self.path == "/gzip-truncated":
+            self._send(gzip.compress(self.feed, mtime=0)[:-8], encoding="gzip")
+        elif self.path == "/gzip-corrupt":
+            self._send(b"invalid gzip", encoding="gzip")
+        elif self.path == "/gzip-expanded-oversized":
+            self._send(gzip.compress(b"x" * (FEED_MAX_BYTES + 1), mtime=0), encoding="gzip")
+        elif self.path == "/unsupported-encoding":
+            self._send(self.feed, encoding="br")
         elif self.path == "/oversized":
             self._send(b"", declared=FEED_MAX_BYTES + 1)
         elif self.path == "/bad-length":
@@ -136,7 +155,41 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
         for request in FeedHandler.requests:
             self.assertEqual("GET", request["method"])
             self.assertEqual("application/json", request["accept"])
-            self.assertEqual("omarchy-news-radar-client/0.4.16", request["userAgent"])
+            self.assertEqual("gzip", request["acceptEncoding"])
+            self.assertEqual(f"omarchy-news-radar-client/{__version__}", request["userAgent"])
+
+    def test_gzip_feed_revalidates_without_changing_cache_on_304(self) -> None:
+        self.environment["OMARCHY_NEWS_RADAR_TEST_FEED_URL"] = self.origin + "/gzip"
+        result = refresh(self.environment, now=CLOCK)
+        self.assertEqual("updated", result["status"])
+        cached = feed_path(self.environment).read_bytes()
+        self.assertEqual(json.loads(FeedHandler.feed), json.loads(cached))
+        self.assertEqual("gzip", FeedHandler.requests[0]["acceptEncoding"])
+        self.assertEqual("", FeedHandler.requests[0]["ifNoneMatch"])
+
+        repeated = refresh(self.environment, now=CLOCK)
+        self.assertEqual("no-change", repeated["status"])
+        self.assertTrue(repeated["cachePreserved"])
+        self.assertEqual('"fixture-v1"', FeedHandler.requests[1]["ifNoneMatch"])
+        self.assertEqual(cached, feed_path(self.environment).read_bytes())
+
+    def test_bad_compressed_responses_preserve_feed_and_validators(self) -> None:
+        self.assertEqual("updated", refresh(self.environment, now=CLOCK)["status"])
+        cached = feed_path(self.environment).read_bytes()
+        validators = feed_http_path(self.environment).read_bytes()
+        for path, reason in (
+            ("/gzip-truncated", "http-error"),
+            ("/gzip-corrupt", "http-error"),
+            ("/gzip-expanded-oversized", "too-large"),
+            ("/unsupported-encoding", "http-error"),
+        ):
+            with self.subTest(path=path):
+                self.environment["OMARCHY_NEWS_RADAR_TEST_FEED_URL"] = self.origin + path
+                result = refresh(self.environment, now=CLOCK)
+                self.assertEqual(reason, result["reason"])
+                self.assertTrue(result["cachePreserved"])
+                self.assertEqual(cached, feed_path(self.environment).read_bytes())
+                self.assertEqual(validators, feed_http_path(self.environment).read_bytes())
 
     def test_repeated_refresh_uses_conditional_get_and_keeps_valid_cache_on_304(self) -> None:
         first = refresh(self.environment, now=CLOCK)

@@ -21,6 +21,7 @@ Omarchy News Radar ingests public remote metadata and renders it inside a long-r
 - Feed content cannot request another fetch, change settings, install code, run a command, alter ranking rules, or grant permission.
 - Metric values are inert bounded integers with fixed labels, timestamps, and HTTPS provenance URLs. They cannot create events or drive ranking. The QML projection strips raw metric URLs, renders only icon/value/accessible-label facts plus the marketplace caveat, and constructs human plugin pages from the fixed marketplace route and validated entity ID.
 - Section names, icons, order, backgrounds, and source membership are code-owned canonical identities. Local settings contain only strict filter enums/booleans and cannot introduce text, markup, colors, URLs, scope changes, or network requests.
+- Briefing reasons come from a closed code-owned enum. Groups contain only bounded canonical event IDs; their labels never imply an inferred compatibility change, security assessment, or automatically generated release summary. Every displayed member resolves to a validated cached event and its original HTTPS source.
 
 ## Client fetch
 
@@ -29,8 +30,9 @@ The production feed origin is fixed in one module. Collector machine inputs are 
 - uses HTTPS with certificate verification;
 - uses explicit connect and total timeouts;
 - constrains redirects to the expected production origin family;
-- sends a static versioned product user agent plus cache validators, but no cookies, authorization, installed-plugin IDs, saved IDs, read timestamps, machine identifiers, or custom tracking values;
-- streams into a bounded temporary file and aborts before exceeding 2 MiB;
+- sends a static versioned product user agent, `Accept: application/json`, `Accept-Encoding: gzip`, and applicable cache validators, but no cookies, authorization, installed-plugin IDs, saved IDs, read timestamps, machine identifiers, or custom tracking values;
+- reads bounded chunks and independently caps both encoded transfer bytes and decoded feed bytes at 2 MiB before JSON parsing; gzip output allocation is limited to the remaining bound plus one rejection byte;
+- accepts uncompressed fallback or valid gzip members with one shared decoded bound and total deadline, rejecting multiple or unsupported Content-Encoding fields, corrupt checksums, truncated streams, invalid trailing data, and incomplete declared HTTP bodies;
 - validates the complete candidate before same-directory atomic replacement;
 - preserves the last-known-good cache on every failure.
 
@@ -42,6 +44,12 @@ Cache and state directories are private to the current user. Create files with r
 
 The state parser accepts only its own bounded schema. Per-story read overrides are keyed only by validated event IDs, capped at the feed bound, and never transmitted. A corrupt state file is renamed to a bounded quarantine name and replaced by safe defaults. Never include full feed bodies, source responses, environment dumps, usernames, hostnames, tokens, or private paths in diagnostics.
 
+State v12 adds one boolean first-use choice and an optional briefing snapshot of at most five groups with at most 500 unique canonical event IDs in total. Duplicate membership, unsupported reasons, extra object keys, invalid timestamps, and exceeded bounds fail validation. Valid v1–v11 states migrate with their supported reading data, bookmarks, and preferences intact and skip the new-user choice; migration never marks stories read or creates a briefing.
+
+**Start from today** is an explicit first-use mutation, bound to the SHA-256 of the event IDs in the displayed validated edition. The digest is a local concurrency token, not an independent feed signature or tracking identifier. The helper compares membership and writes per-event overrides under the same private state lock used for feed replacement. A changed set returns `stale-edition` and preserves state; it never advances `readThrough`, which protects later-discovered backdated stories. Existing explicit unread overrides and bookmarks remain intact. **Browse current stories** changes only the first-use flag. A welcome surface blocks automatic reading until the choice is dismissed.
+
+Reading a representative never marks its related occurrences. Explicit group/briefing batch actions require the displayed snapshot digest and resolve only its recorded IDs against the current validated cache. Replacement or missing group identity produces a benign no-op; later arrivals are not included. Expired members are reported separately and cannot manufacture a completion claim. Preparing, refreshing, reopening, or closing a briefing never marks its unread members or silently replaces its selection.
+
 Section filters are validated local state. They select only from closed enums and booleans, never become query parameters, and never alter collector or feed requests. Load more changes only a bounded local projection limit.
 
 Saved items and cache are preserved on plugin disable or normal removal. A separate explicit purge action may remove only paths owned by Radar after resolving and validating their exact XDG locations.
@@ -52,7 +60,7 @@ The optional application launcher uses one fixed desktop-entry name and one fixe
 
 QML launches only fixed bundled helpers and maintained Omarchy desktop commands. Arguments are arrays, never interpolated shell strings. Remote values never choose an executable, flag name, environment variable, output path, or shell fragment.
 
-At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private lock serializes every state read/modify/write transition across panel and bar helpers, preventing a concurrent read toggle, save, filter, or visibility change from overwriting another mutation. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` only while its local visibility preference is true: either outcome schedules another due check five minutes later. Hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
+At most one refresh helper belongs to one panel or bar instance, and a kernel-backed advisory lock on a private, owned regular file rejects cross-monitor overlap. A separate private state lock serializes state read/modify/write transitions and atomic feed replacements across helpers. Reading, first-use, and briefing mutations load their feed within that lock, so a concurrent replacement cannot change their membership mid-transition; a concurrent save, filter, or visibility action cannot be overwritten. Network retrieval occurs outside the state lock. The kernel releases both locks if a helper exits abruptly. The bar uses `refresh-if-due` only while its local visibility preference is true: either outcome schedules another due check five minutes later. Hiding it stops that cadence. Helpers refuse UID `0` and never use sudo, polkit, a package manager, or systemd.
 
 ## Local checkout synchronization
 
@@ -89,11 +97,13 @@ Never expose a force-overwrite or action-replacement flag in version 1. Users wi
 
 Publisher output contextually escapes all strings. Generated HTML contains no raw remote HTML and no inline event handlers. Use a restrictive Content Security Policy, local static assets, safe `rel` attributes for external links, no forms, no analytics, no third-party script, and no service worker.
 
+The public install and walkthrough actions use fixed marketplace and repository URLs. Canonical and social-description metadata is code-owned and contextually escaped; remote story text cannot choose an install destination, alter page metadata, or inject markup. Text-only link previews add no remote social image or client script. The page uses `no-referrer` and retains safe external-link attributes.
+
 RSS/XML generation escapes every remote value and uses canonical HTTPS links. XML parsers used in tests must disable external entity resolution where relevant.
 
 ## Privacy
 
-The feed host receives ordinary generic feed GET requests (JSON/RSS/HTML/CSS) and therefore sees network metadata inherent to HTTPS hosting, such as source IP and the static Radar product/version user agent. Conditional requests may also contain the public response's `ETag` and `Last-Modified`. Preview rasters are fetched by the client directly from the allowlisted marketplace image origin. Radar adds no installation identifier or personalization. Local installed-plugin matching, filters, saves, and per-story reading state never leave the machine.
+The feed host receives ordinary generic feed GET requests (JSON/RSS/HTML/CSS) and therefore sees network metadata inherent to HTTPS hosting, such as source IP and the static Radar product/version user agent. Conditional requests may also contain the public response's `ETag` and `Last-Modified`; the gzip capability header is the same for every current client. Preview rasters are fetched by the client directly from the allowlisted marketplace image origin. Radar adds no installation identifier or personalization. Local installed-plugin matching, filters, saves, per-story reading state, briefing membership, and first-use choices never leave the machine.
 
 The project must not claim perfect anonymity, sandboxing, or security auditing.
 

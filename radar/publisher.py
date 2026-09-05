@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 from xml.etree import ElementTree as ET
 
+from .constants import FEED_URL, PLUGIN_ID
 from .io import canonical_json_bytes
 from .errors import FetchError, ValidationError
 from .http import FetchPolicy, fetch_bytes
@@ -21,6 +22,11 @@ from .model import front_page
 from .validation import format_timestamp, parse_timestamp, validate_feed
 
 CSP = "default-src 'none'; style-src 'self'; img-src 'self' https://plugins.omarchy.org https://i.ytimg.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+SITE_URL = FEED_URL.rsplit("/", 1)[0] + "/"
+MARKETPLACE_URL = f"https://plugins.omarchy.org/plugin.html?id={PLUGIN_ID}"
+WALKTHROUGH_URL = "https://github.com/mtolhuys/omarchy-news-radar#readme"
+PAGE_TITLE = "Omarchy News Radar — catch up with what changed"
+PAGE_DESCRIPTION = "Omarchy releases, official news and plugin activity, linked to their original sources. Read the web edition or bring Radar to your Omarchy desktop."
 
 
 def render_rss(feed: Mapping[str, Any]) -> bytes:
@@ -28,7 +34,7 @@ def render_rss(feed: Mapping[str, Any]) -> bytes:
     rss = ET.Element("rss", {"version": "2.0"})
     channel = ET.SubElement(rss, "channel")
     ET.SubElement(channel, "title").text = "Omarchy News Radar"
-    ET.SubElement(channel, "link").text = "https://mtolhuijs.nl/news-radar/"
+    ET.SubElement(channel, "link").text = SITE_URL
     ET.SubElement(channel, "description").text = "Source-linked Omarchy ecosystem activity. Independent community project."
     last_build = str(validated.get("publishedAt", validated["generatedAt"]))
     ET.SubElement(channel, "lastBuildDate").text = datetime.strptime(last_build, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
@@ -62,6 +68,8 @@ def _story(event: Mapping[str, Any], *, lead: bool = False) -> str:
                 f'alt="{html.escape(str(image["alt"]), quote=True)}" '
                 f'width="{int(image["width"])}" height="{int(image["height"])}" loading="lazy">\n  '
             )
+    if image_html:
+        class_name += " has-image"
     return f'''<article class="{class_name}">
   {image_html}<div class="copy">
   <p class="kicker">{section} · {occurred}</p>
@@ -86,26 +94,82 @@ def render_html(feed: Mapping[str, Any]) -> bytes:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="{html.escape(CSP, quote=True)}">
   <meta name="referrer" content="no-referrer">
-  <title>Omarchy News Radar</title>
+  <meta name="description" content="{html.escape(PAGE_DESCRIPTION, quote=True)}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Omarchy News Radar">
+  <meta property="og:title" content="{html.escape(PAGE_TITLE, quote=True)}">
+  <meta property="og:description" content="{html.escape(PAGE_DESCRIPTION, quote=True)}">
+  <meta property="og:url" content="{html.escape(SITE_URL, quote=True)}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{html.escape(PAGE_TITLE, quote=True)}">
+  <meta name="twitter:description" content="{html.escape(PAGE_DESCRIPTION, quote=True)}">
+  <title>{html.escape(PAGE_TITLE)}</title>
+  <link rel="canonical" href="{html.escape(SITE_URL, quote=True)}">
   <link rel="stylesheet" href="assets/site.css">
   <link rel="alternate" type="application/rss+xml" title="Omarchy News Radar" href="feed.xml">
 </head>
 <body>
+  <a class="skip-link" href="#news">Skip to the news</a>
   <header>
-    <p class="eyebrow">Independent community project</p>
+    <div class="masthead">
+      <p class="eyebrow">Independent community project</p>
+      <a href="feed.xml">Follow via RSS</a>
+    </div>
     <h1>Omarchy News Radar</h1>
-    <p class="deck">A calm, source-linked edition of meaningful Omarchy activity.</p>
-    <p class="health">Sources collected {generated} · artifact published {published} · {health}</p>
+    <p class="deck">Catch up on Omarchy releases, official news and plugin activity. Every story leads to its original source.</p>
+    <aside class="desktop" aria-labelledby="desktop-title">
+      <div>
+        <h2 id="desktop-title">Keep Radar on your desktop</h2>
+        <p>Find stories about your enabled plugins, save useful discoveries and pick up where you left off. Your reading state and plugin matching stay on your device.</p>
+      </div>
+      <nav class="desktop-actions" aria-label="Get the desktop plugin">
+        <a class="install" href="{html.escape(MARKETPLACE_URL, quote=True)}" rel="noopener noreferrer external">Install from the marketplace →</a>
+        <a href="{html.escape(WALKTHROUGH_URL, quote=True)}" rel="noopener noreferrer external">See the desktop walkthrough</a>
+      </nav>
+    </aside>
   </header>
-  <main>{stories if stories else '<p class="empty">This edition contains no events.</p>'}</main>
-  <footer><a href="events.json">JSON feed</a> · <a href="feed.xml">RSS</a></footer>
+  <main id="news" tabindex="-1" aria-label="Front page">{stories if stories else '<p class="empty">No stories in this edition yet. You can check back later or follow via RSS.</p>'}</main>
+  <footer>
+    <nav aria-label="Edition feeds"><a href="feed.xml">Follow via RSS</a> · <a href="events.json">JSON feed</a></nav>
+    <p>Independent community project. Original sources remain the authority.</p>
+    <details class="health"><summary>Publication details</summary><p>Sources collected {generated} · artifact published {published} · {health}</p></details>
+  </footer>
 </body>
 </html>
 '''
     return page.encode("utf-8")
 
 
-SITE_CSS = b'''*{box-sizing:border-box}body{margin:0 auto;max-width:1120px;padding:3rem 1.25rem;background:#101315;color:#e7e7e2;font:16px/1.6 ui-monospace,monospace}header{border-bottom:2px solid #e7e7e2;margin-bottom:2rem;padding-bottom:2rem}h1{font-size:clamp(2.5rem,8vw,5.5rem);letter-spacing:-.08em;line-height:.88;margin:.3rem 0 1rem}.eyebrow,.kicker,.meta,.health{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:#9aa0a3}.deck{font-size:1.25rem;max-width:46rem}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#4a5053}.story{background:#101315;padding:1.5rem}.story.lead{grid-column:1/-1;padding:2.5rem}.story img{display:block;width:100%;height:auto;max-height:18rem;object-fit:cover;margin:0 0 1rem}.story h2{font-size:1.55rem;line-height:1.1}.lead h2{font-size:clamp(2rem,5vw,3.8rem)}a{color:#e7e7e2;text-underline-offset:.2em}footer{padding:2rem 0}.empty{background:#101315;padding:2rem}@media(min-width:701px){.story.lead{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:2rem}.story.lead img{margin:0;max-height:26rem}}@media(max-width:700px){body{padding:2rem 1rem}main{display:block}.story{border-bottom:1px solid #4a5053}.story.lead{padding:1.5rem}}@media(prefers-color-scheme:light){body,.story,.empty{background:#f2f0e9;color:#181a1b}main{background:#aaa}.eyebrow,.kicker,.meta,.health{color:#596064}a{color:#181a1b}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}\n'''
+SITE_CSS = b'''*{box-sizing:border-box}
+:root{color-scheme:dark light;--paper:#101315;--ink:#e7e7e2;--secondary:#aeb5b8;--rule:#4a5053;--accent:#9ece6a}
+body{margin:0 auto;max-width:1120px;padding:2rem 1.25rem;background:var(--paper);color:var(--ink);font:1rem/1.6 ui-monospace,monospace;overflow-wrap:anywhere}
+header{border-bottom:2px solid var(--ink);margin-bottom:1.5rem;padding-bottom:1.5rem}
+.masthead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem 1rem;margin-bottom:1.5rem}
+.masthead p{margin:0}.masthead a,.desktop-actions{font-size:.875rem}
+h1{font-size:clamp(2.5rem,7vw,4.5rem);letter-spacing:-.065em;line-height:1.05;margin:.3rem 0 1rem}
+.eyebrow,.kicker,.meta{font-size:.8125rem;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary)}
+.deck{font-size:1.125rem;max-width:48rem;margin-bottom:1.5rem}
+.desktop{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem 2rem;border-top:1px solid var(--rule);padding-top:1.25rem}
+.desktop h2{font-size:1rem;margin:0 0 .5rem}.desktop p{max-width:43rem;font-size:.9375rem;margin:0;color:var(--secondary)}
+.desktop-actions{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:.75rem;max-width:20rem}
+.install{background:var(--accent);color:var(--paper);font-weight:700;padding:.65rem .85rem;text-decoration:none;border:1px solid var(--accent)}
+.install:hover{text-decoration:underline}
+main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--rule)}
+.story{background:var(--paper);padding:1.5rem;min-width:0}.story.lead{grid-column:1/-1;padding:2rem}.copy{min-width:0}
+.story img{display:block;width:100%;height:auto;max-height:18rem;object-fit:cover;margin:0 0 1rem}
+.story h2{font-size:1.55rem;line-height:1.2}.lead h2{font-size:clamp(2rem,5vw,3.25rem)}
+a{color:var(--ink);text-underline-offset:.2em}a:hover{text-decoration-thickness:2px}
+a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+.skip-link{position:fixed;left:1rem;top:0;transform:translateY(-200%);background:var(--paper);padding:.75rem;z-index:1}.skip-link:focus{transform:translateY(0)}
+footer{padding:2rem 0;font-size:.875rem}footer p,.health{color:var(--secondary)}.health summary{cursor:pointer}.health p{max-width:60rem}
+.empty{grid-column:1/-1;background:var(--paper);padding:2rem;margin:0}
+@media(min-width:701px){.story.lead.has-image{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:2rem}.story.lead img{margin:0;max-height:26rem}}
+@media(max-width:800px){.desktop{grid-template-columns:minmax(0,1fr)}.desktop-actions{max-width:none}}
+@media(max-width:700px){body{padding:1.5rem 1rem}main{display:block}.story{border-bottom:1px solid var(--rule)}.story.lead{padding:1.5rem}}
+@media(prefers-color-scheme:light){:root{--paper:#f2f0e9;--ink:#181a1b;--secondary:#50575a;--rule:#aaa;--accent:#355b17}}
+@media(forced-colors:active){.install{border-color:ButtonText}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+'''
 
 
 ImageFetcher = Callable[[str], tuple[bytes, str]]

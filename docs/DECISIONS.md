@@ -438,3 +438,27 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** Forge now publishes at most every five minutes. Waiting fifteen minutes after a successful client check could leave the passive unread badge two publication cycles behind, while conditional HTTP validation makes unchanged checks inexpensive and still transmits no installation identifier or reading state.
 
 **Consequence:** A visible newspaper can discover the next published edition within one five-minute client interval. Requests remain bounded by the shared private due-check record and cross-instance lock; hiding the newspaper stops the cadence. Feed and local-state schemas do not change.
+
+## D055 — Finish a persistent local briefing before asking for another
+
+**Decision:** Desktop Front Page becomes a state-v12 snapshot of at most five source-linked groups, using the deterministic unread selection in `radar/briefing.py`. Priority notices, official changes, exact enabled-plugin matches, and one discovery share finite capacity. A selected plugin keeps its distinct original occurrences in one group. Only panel initialization or explicit New briefing chooses membership; finishing, refreshing, searching, filtering, or reopening never refills it. Expired members are disclosed rather than called read.
+
+**Why:** A rolling marketplace stream can keep presenting hundreds of arrivals while offering no credible stopping point. The reader needs a small selection that stays finished, with clear local reasons and access to the complete existing sections.
+
+**Consequence:** The public feed and generic website retain schema v2 and their existing source contracts. State v12 adds onboarding and a bounded ID-only briefing. Valid v1–v11 migrations preserve reads, saves, and preferences and bypass first-use onboarding. Fresh users explicitly choose Browse current stories or Start from today. The latter checks displayed event membership and count, preserves explicit unread overrides and bookmarks, and never advances `readThrough`; late arrivals remain unread. Group and briefing batch actions validate the current snapshot token and touch only retained members. Feed adoption and these state transitions share the same lock. F6 exposes the briefing controls; grouped history supports keyboard selection and source opening. This supersedes earlier desktop Front Page composition quotas, while the public page retains its generic composition.
+
+## D056 — Negotiate compressed editions without weakening input bounds
+
+**Decision:** The desktop helper requests gzip. The bounded HTTP reader supports identity and gzip, enforcing the same caller byte limit independently on wire bytes and decoded bytes. It validates complete gzip members, checks deadlines, and rejects corrupt, truncated, unsupported, or stacked encodings before cache replacement. Conditional response handling stays intact.
+
+**Why:** A repetitive JSON edition compresses substantially. Negotiating the server's existing compression avoids unnecessary transfer without changing collection cadence, feed schema, or public origin.
+
+**Consequence:** This uses Python's standard-library zlib, adds no dependency, and transmits only a generic encoding capability. Tests cover boundaries, decompression expansion, checksums, trailing data, concatenated members, HTTP early close, identity responses, and 304 cache preservation. Actual production transfer savings depend on the serving stack honoring negotiation.
+
+## D057 — Give public readers a clear installation route
+
+**Decision:** The generated public HTML links prominently to the official marketplace listing, the installation walkthrough, and RSS. It uses text-only canonical/social metadata, accessible focus and skip navigation, human dates, and collapsed publication detail.
+
+**Why:** Someone who finds the public feed should be able to understand the desktop product and reach its maintained installation route without reading developer setup instructions.
+
+**Consequence:** Forge's existing generated file layout and CSP-compatible static renderer remain unchanged. No account, signup, tracker, executable install snippet, or new asset origin is introduced. Publication is a separate owner-authorized release step; local candidate documentation must not imply it has already happened.

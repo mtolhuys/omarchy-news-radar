@@ -36,6 +36,8 @@ For Omarchy runtime work, also read the maintained Plugin Lab `AGENTS.md`, `READ
 - Every visible claim links to its original source. Radar summarizes and organizes; it does not become the source of truth.
 - The plugin has no telemetry, accounts, tracking identifiers, remote read state, cookies, or personalized server requests.
 - Read state, saved items, installed plugin IDs, and preferences remain local. Generic feed retrieval and image retrieval from the two exact allowlisted marketplace/YouTube HTTPS families are the only normal client network requests.
+- Front Page is a durable local briefing of at most five source-linked groups. Only explicit New briefing replaces its membership; reading, refreshing, filtering, closing, and reopening never refill it. Group and briefing read actions affect only their exact retained member IDs.
+- First use offers Browse current stories or Start from today before any implicit reading. Start from today requires the displayed membership digest, preserves saved items and explicit unread overrides, and never advances the migration baseline. Existing valid states migrate without onboarding or bulk reading.
 - Per-section filters and finite pagination are local projections. `Tab`/`Shift+Tab` cycles sections; “Load more” expands the bounded local projection and never requests another remote page.
 - Optional views, hearts, command copies, repository stars, and release-asset download counts are labelled source facts with observation time and source URL. They never create events, affect identity, rank the front page, imply installs, unique people, votes, or security, or survive a successful source refresh as stale values.
 - No arbitrary web scraping, X scraping, AI-generated summaries, engagement bait, notification spam, or automatic “best plugin” claims belong in version 1.
@@ -85,6 +87,7 @@ Runtime acceptance belongs in the Plugin Lab:
 cd "$OMARCHY_PLUGIN_LAB_ROOT"
 ./bin/lab doctor
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/acceptance.sh
+./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/briefing.sh
 ./bin/lab plugin /absolute/path/to/omarchy-news-radar/tests/lab/public-install.sh
 ```
 
