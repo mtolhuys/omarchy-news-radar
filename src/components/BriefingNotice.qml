@@ -11,6 +11,7 @@ GridLayout {
   property alias finishButton: finish
   signal newRequested()
   signal finishRequested()
+  signal navigationRequested(int direction)
   columns: width < Style.space(700) ? 1 : 2
   columnSpacing: Style.spacing.panelGap
   rowSpacing: Style.spacing.sm
@@ -66,6 +67,8 @@ GridLayout {
     spacing: Style.spacing.controlGap
     RadarButton {
       id: finish
+      managesTab: true
+      onTabRequested: function(direction) { root.navigationRequested(direction) }
       visible: root.briefing.initialized && root.briefing.remaining > 0
       label: "Mark briefing read"
       tooltipText: "Mark only the updates included in this briefing read (A)"
@@ -74,6 +77,8 @@ GridLayout {
     }
     RadarButton {
       id: nextBriefing
+      managesTab: true
+      onTabRequested: function(direction) { root.navigationRequested(direction) }
       label: root.briefing.initialized ? "New briefing" : "Prepare briefing"
       tooltipText: "Choose a new short briefing from unread stories. Skipped stories stay unread."
       enabled: !root.busy && (!root.briefing.initialized || root.briefing.hasNewStories

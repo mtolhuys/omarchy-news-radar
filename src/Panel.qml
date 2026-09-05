@@ -262,6 +262,9 @@ Item {
   }
 
   function debugState() {
+    var group = keySurface.narrow ? storyList.headerItem : inspectorBriefingGroup
+    var controls = briefingNotice.controlTargets().concat(group && group.visible ? group.controlTargets() : [])
+    var focusedControl = controls.filter(function(item) { return item.activeFocus })
     return JSON.stringify({
       build: runtimeBuildIdentity,
       opened: opened,
@@ -319,6 +322,11 @@ Item {
       onboardingVisible: onboardingVisible,
       briefing: briefing,
       briefingBusy: briefingBusy,
+      briefingControlsMode: briefingControlsMode,
+      briefingControlLabels: controls.map(function(item) { return item.label || "Group updates" }),
+      briefingFocusedControl: focusedControl.length ? String(focusedControl[0].label || "Group updates") : "",
+      groupExpanded: !!group && group.expanded,
+      groupHistoryIndex: group ? group.historyIndex : -1,
       briefingMessage: briefingMessage,
       displayedFeedDigest: displayedFeedDigest,
       selectedBriefingGroupId: selectedStory ? String(selectedStory.briefingGroupId || "") : "",
@@ -819,8 +827,13 @@ Item {
     }
     var next = current < 0 ? (direction < 0 ? targets.length - 1 : 0)
       : (current + direction + targets.length) % targets.length
-    if (keySurface.narrow && groupTargets.indexOf(targets[next]) >= 0)
-      storyList.positionViewAtBeginning()
+    if (groupTargets.indexOf(targets[next]) >= 0) {
+      pendingViewportPreservation = false
+      storyViewportRevision++
+      storyScrollAnimation.stop()
+      if (keySurface.narrow) storyList.positionViewAtBeginning()
+      else inspectorScroll.contentY = 0
+    }
     targets[next].forceActiveFocus()
   }
 
@@ -2086,6 +2099,7 @@ Item {
             message: root.briefingMessage
             onNewRequested: root.runBriefingAction("new-briefing")
             onFinishRequested: root.runBriefingAction("mark-briefing-read")
+            onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
           }
 
           RowLayout {
@@ -2422,6 +2436,7 @@ Item {
                   busy: root.briefingBusy || root.refreshing
                   onReadRequested: function(groupId) { root.runBriefingAction("mark-briefing-group-read", groupId) }
                   onSourceRequested: function(event) { root.openBriefingEvent(event) }
+                  onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
                 }
 
                 delegate: StoryRow {
@@ -2512,6 +2527,7 @@ Item {
               }
 
               Flickable {
+                id: inspectorScroll
                 anchors.fill: parent
                 contentWidth: width
                 contentHeight: inspector.implicitHeight
@@ -2533,6 +2549,7 @@ Item {
                   busy: root.briefingBusy || root.refreshing
                   onReadRequested: function(groupId) { root.runBriefingAction("mark-briefing-group-read", groupId) }
                   onSourceRequested: function(event) { root.openBriefingEvent(event) }
+                  onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
                 }
 
                 BorderSurface {

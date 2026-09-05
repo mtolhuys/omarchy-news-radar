@@ -441,7 +441,7 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 
 ## D055 — Finish a persistent local briefing before asking for another
 
-**Decision:** Desktop Front Page becomes a state-v12 snapshot of at most five source-linked groups, using the deterministic unread selection in `radar/briefing.py`. Priority notices, official changes, exact enabled-plugin matches, and one discovery share finite capacity. A selected plugin keeps its distinct original occurrences in one group. Only panel initialization or explicit New briefing chooses membership; finishing, refreshing, searching, filtering, or reopening never refills it. Expired members are disclosed rather than called read.
+**Decision:** Desktop Front Page becomes a state-v12 snapshot of at most five source-linked groups, using the deterministic unread selection in `radar/briefing.py`. Priority notices, official changes, exact enabled-plugin matches, and one discovery share finite capacity. A selected plugin keeps its distinct original occurrences in one group. Only panel initialization or explicit New briefing chooses membership; finishing, refreshing, searching, filtering, or reopening never refills it. Explicit replacement prefers eligible unread IDs outside the current snapshot when another group can be selected, then falls back to the ordinary unread selection if none can. Skipped events remain unread, and no exclusion history accumulates beyond the current snapshot. Expired members are disclosed rather than called read.
 
 **Why:** A rolling marketplace stream can keep presenting hundreds of arrivals while offering no credible stopping point. The reader needs a small selection that stays finished, with clear local reasons and access to the complete existing sections.
 

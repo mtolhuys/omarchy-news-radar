@@ -11,8 +11,10 @@ FocusScope {
   property bool iconSpinning: false
   property bool selected: false
   property bool danger: false
+  property bool managesTab: false
   readonly property bool tooltipVisible: buttonToolTip.visible
   signal clicked()
+  signal tabRequested(int direction)
 
   implicitWidth: buttonContent.implicitWidth + Style.spacing.controlPaddingX * 2
   implicitHeight: Math.max(Style.spacing.controlHeight, buttonContent.implicitHeight + Style.spacing.controlPaddingY * 2)
@@ -86,4 +88,9 @@ FocusScope {
   Keys.onReturnPressed: root.clicked()
   Keys.onEnterPressed: root.clicked()
   Keys.onSpacePressed: root.clicked()
+  Keys.onPressed: function(event) {
+    if (!root.managesTab || (event.key !== Qt.Key_Tab && event.key !== Qt.Key_Backtab)) return
+    root.tabRequested(event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
+    event.accepted = true
+  }
 }

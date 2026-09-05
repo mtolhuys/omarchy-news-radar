@@ -27,6 +27,7 @@ MARKETPLACE_URL = f"https://plugins.omarchy.org/plugin.html?id={PLUGIN_ID}"
 WALKTHROUGH_URL = "https://github.com/mtolhuys/omarchy-news-radar#readme"
 PAGE_TITLE = "Omarchy News Radar — catch up with what changed"
 PAGE_DESCRIPTION = "Omarchy releases, official news and plugin activity, linked to their original sources. Read the web edition or bring Radar to your Omarchy desktop."
+MONTH_NAMES = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
 
 
 def render_rss(feed: Mapping[str, Any]) -> bytes:
@@ -55,6 +56,8 @@ def _story(event: Mapping[str, Any], *, lead: bool = False) -> str:
     source_label = html.escape(str(event["source"]["label"]))
     source_url = html.escape(str(event["source"]["url"]), quote=True)
     occurred = html.escape(str(event["occurredAt"]))
+    occurred_at = parse_timestamp(str(event["occurredAt"]))
+    occurred_label = f"{occurred_at.day} {MONTH_NAMES[occurred_at.month - 1]} {occurred_at.year}"
     section = html.escape(str(event["classification"]["section"]))
     trust = html.escape(str(event["trust"]["marketplace"]))
     class_name = "story lead" if lead else "story"
@@ -72,7 +75,7 @@ def _story(event: Mapping[str, Any], *, lead: bool = False) -> str:
         class_name += " has-image"
     return f'''<article class="{class_name}">
   {image_html}<div class="copy">
-  <p class="kicker">{section} · {occurred}</p>
+  <p class="kicker">{section} · <time datetime="{occurred}">{occurred_label}</time></p>
   <h2>{title}</h2>
   <p>{summary}</p>
   <p class="meta">Trust: {trust}</p>

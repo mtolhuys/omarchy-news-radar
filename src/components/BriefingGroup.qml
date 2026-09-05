@@ -13,8 +13,10 @@ ColumnLayout {
   property real maximumHistoryHeight: Style.space(220)
   readonly property string groupId: story ? String(story.briefingGroupId || "") : ""
   property alias readButton: markGroup
+  readonly property int historyIndex: history.currentIndex
   signal readRequested(string groupId)
   signal sourceRequested(var event)
+  signal navigationRequested(int direction)
   spacing: Style.spacing.sm
 
   function controlTargets() {
@@ -41,6 +43,8 @@ ColumnLayout {
     spacing: Style.spacing.controlGap
     RadarButton {
       id: toggleHistory
+      managesTab: true
+      onTabRequested: function(direction) { root.navigationRequested(direction) }
       visible: !!root.story && root.story.briefingEventCount > 1
       label: (root.expanded ? "Hide " : "Show ")
         + (root.story ? root.story.briefingEventCount : 0) + " updates"
@@ -48,6 +52,8 @@ ColumnLayout {
     }
     RadarButton {
       id: markGroup
+      managesTab: true
+      onTabRequested: function(direction) { root.navigationRequested(direction) }
       visible: !!root.story && root.story.briefingEventCount > 1
       label: "Mark group read"
       tooltipText: "Mark these source-linked updates read; other stories stay unread"
@@ -67,6 +73,7 @@ ColumnLayout {
   }
   ListView {
     id: history
+    readonly property string label: "Update history"
     visible: root.expanded && !!root.story && root.story.briefingEventCount > 1
     Layout.fillWidth: true
     Layout.preferredHeight: visible ? Math.min(root.maximumHistoryHeight, count * Style.space(96)) : 0
@@ -86,6 +93,11 @@ ColumnLayout {
       positionViewAtIndex(currentIndex, ListView.Contain)
     }
     Keys.onPressed: function(event) {
+      if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+        root.navigationRequested(event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
+        event.accepted = true
+        return
+      }
       if (!count) return
       if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
         root.sourceRequested(model[currentIndex])
@@ -145,6 +157,8 @@ ColumnLayout {
           RadarButton {
             label: "Source"
             activeFocusOnTab: false
+            managesTab: true
+            onTabRequested: function(direction) { root.navigationRequested(direction) }
             onClicked: root.sourceRequested(historyRow.modelData)
           }
         }

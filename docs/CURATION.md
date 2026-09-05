@@ -16,9 +16,8 @@ The generic public page is composed deterministically from the live window:
 1. Explicit `critical` items ordered by occurrence time.
 2. Explicit `notable` items ordered by occurrence time.
 3. The newest official Omarchy release when not already included.
-4. Installed-plugin events for the local “For You” projection.
-5. At most three official Omarchy News items, one distinct topic cluster first so a same-cycle Foundation/patronage story cannot take every slot, then freshness backfill (D049).
-6. A bounded mix of routine plugin and community activity, preventing one category from consuming the entire edition.
+4. At most three official Omarchy News items, one distinct topic cluster first so a same-cycle Foundation/patronage story cannot take every slot, then freshness backfill (D049).
+5. A bounded mix of routine plugin and community activity, preventing one category from consuming the entire edition.
 
 Server output may nominate a lead item, but the client verifies that the referenced event exists. Without an explicit lead, the first highest-significance event becomes the visual lead. Popularity and interaction counters never decide the lead, ordering, inclusion, or significance.
 
@@ -75,4 +74,4 @@ The desktop Front Page uses a persistent snapshot selected from unread events th
 
 Selecting a plugin gathers its eligible unread occurrences into the same group, preserving every original ID and source. Routine verification changes alone do not consume a slot, but remain visible within a selected plugin's group and in the source sections. Local reasons describe source significance or exact enabled-ID matching only. They do not claim that an update fixes, breaks, or is safe for a user's setup.
 
-This selection runs only on panel initialization or explicit New briefing. Read actions, source refresh, filters, and reopening do not refill it. The public HTML/RSS projection remains generic and is not changed into a personalized briefing; no installed IDs or reader state reach the server.
+This selection runs only on panel initialization or explicit New briefing. An explicit replacement prefers eligible unread IDs outside the current snapshot whenever they form another briefing; otherwise it uses the ordinary unread selection. Skipped events stay unread, and only the current snapshot is excluded, with no accumulated exclusion history. Read actions, source refresh, filters, and reopening do not refill it. The public HTML/RSS projection remains generic and is not changed into a personalized briefing; no installed IDs or reader state reach the server.

@@ -112,12 +112,16 @@ BorderSurface {
       spacing: Style.spacing.controlGap
       RadarButton {
         id: startToday
+        managesTab: true
+        onTabRequested: root.cycleChoice()
         label: root.busy ? "Please wait…" : "Start from today"
         enabled: !root.busy && root.canStart
         onClicked: root.startTodayRequested()
       }
       RadarButton {
         id: browse
+        managesTab: true
+        onTabRequested: root.cycleChoice()
         label: "Browse current stories"
         enabled: !root.busy
         onClicked: root.browseRequested()

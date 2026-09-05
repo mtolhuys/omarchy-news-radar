@@ -440,8 +440,21 @@ def ensure_briefing(
         if feed is None:
             return response("first-use", state=state)
         if state["briefing"] is None or replace:
-            state["briefing"] = compose_briefing(
-                _briefing_candidates(feed, state, now=now),
+            candidates = _briefing_candidates(feed, state, now=now)
+            alternative = None
+            if replace and state["briefing"] is not None:
+                previous_ids = {
+                    event_id for group in state["briefing"]["groups"] for event_id in group["eventIds"]
+                }
+                alternative = compose_briefing(
+                    [event for event in candidates if event["id"] not in previous_ids],
+                    generated_at=feed["generatedAt"], installed_plugin_ids=installed,
+                )
+            # An explicit next selection must make progress even when a
+            # higher-priority item in the previous brief remains unread.
+            # Keep only the current snapshot, not a growing exclusion history.
+            state["briefing"] = alternative if alternative and alternative["groups"] else compose_briefing(
+                candidates,
                 generated_at=feed["generatedAt"], installed_plugin_ids=installed,
             )
             state = save_state(state, environment)

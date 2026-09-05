@@ -133,6 +133,35 @@ class BriefingIntegrationTests(unittest.TestCase):
         self.assertEqual("stale-briefing", result["status"])
         self.assertEqual(state, result["state"])
 
+    def test_new_briefing_advances_past_unfinished_groups_without_reading_them(self) -> None:
+        before = self.begin()
+        self.assertTrue(before["briefing"]["hasNewStories"])
+        self.assertGreater(before["briefing"]["remaining"], 0)
+        previous_ids = {
+            event_id for group in before["state"]["briefing"]["groups"] for event_id in group["eventIds"]
+        }
+        result = ensure_briefing(INSTALLED, self.environment, now=CLOCK, replace=True)
+        replacement_ids = {
+            event_id for group in result["state"]["briefing"]["groups"] for event_id in group["eventIds"]
+        }
+        self.assertNotEqual(before["briefing"]["id"], result["briefing"]["id"])
+        self.assertTrue(replacement_ids)
+        self.assertTrue(previous_ids.isdisjoint(replacement_ids))
+        self.assertEqual(before["state"]["readOverrides"], result["state"]["readOverrides"])
+        for event in self.feed["events"]:
+            self.assertFalse(event_is_read(result["state"], event))
+
+    def test_new_briefing_selects_new_occurrence_without_older_unfinished_group_members(self) -> None:
+        before = self.begin()
+        original_group = next(group for group in before["state"]["briefing"]["groups"] if group["reason"] == "installed")
+        save_feed(self.newer_feed(same_plugin=True), self.environment, now=CLOCK + timedelta(minutes=1))
+        self.assertTrue(self.project()["briefing"]["hasNewStories"])
+        result = ensure_briefing(INSTALLED, self.environment, now=CLOCK + timedelta(minutes=1), replace=True)
+        new_group = next(group for group in result["state"]["briefing"]["groups"] if group["reason"] == "installed")
+        self.assertEqual(["evt_eeeeeeeeeeeeeeeeeeeeeeee"], new_group["eventIds"])
+        self.assertTrue(set(original_group["eventIds"]).isdisjoint(new_group["eventIds"]))
+        self.assertEqual(before["state"]["readOverrides"], result["state"]["readOverrides"])
+
     def test_expired_members_are_reported_without_false_completion(self) -> None:
         before = self.begin()
         newer = copy.deepcopy(self.feed)

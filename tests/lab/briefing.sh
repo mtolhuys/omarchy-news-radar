@@ -6,7 +6,7 @@
 omarchy_host_test() {
   local product_root lab_root start_epoch runtime_identity
   local plugin_dir viewport_width viewport_height brief_id replacement_id saved_id
-  local group_ids group_before group_after expected_source
+  local group_ids group_before group_after expected_source welcome_button_height
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -31,6 +31,34 @@ omarchy_host_test() {
     ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
       >"$RUN_DIR/briefing-$name.json" || return 1
     capture_console "success-briefing-$name"
+  }
+
+  briefing_key() {
+    local name="$1" key="$2" predicate="$3"
+    press "$key"
+    ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+      >"$RUN_DIR/briefing-key-$name.json" || return 1
+    if ! briefing_wait "keyboard focus after $name stays in the intended briefing control" "$predicate"; then
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+        >"$RUN_DIR/briefing-key-$name-failed.json" || true
+      capture_console "failure-briefing-key-$name"
+      return 1
+    fi
+  }
+
+  briefing_choices_fit() {
+    local name="$1" window geometry method
+    window="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+      | awk '/^\{.*\}$/ { value = $0 } END { print value }')" || return 1
+    for method in startTodayGeometry browseStoriesGeometry; do
+      geometry="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar '$method' ''" \
+        | awk '/^\{.*\}$/ { value = $0 } END { print value }')" || return 1
+      printf '%s\n' "$geometry" >"$RUN_DIR/briefing-$name-$method.json"
+      jq -e --argjson window "$window" \
+        '.visible == true and .width > 0 and .height > 0 and .x >= 0 and .y >= 0 and
+         (.x + .width) <= ($window.windowWidth + 1) and (.y + .height) <= ($window.windowHeight + 1)' \
+        <<<"$geometry" >/dev/null || return 1
+    done
   }
 
   briefing_click() {
@@ -123,7 +151,7 @@ omarchy_host_test() {
   sleep 1
   ssh_session "jq -e '.onboardingComplete == false and (.readOverrides | length) == 0' $scenario_state" || return 1
   briefing_capture 01-welcome-dark || return 1
-  briefing_click browseStoriesGeometry || return 1
+  press ret
   briefing_wait "Browse keeps the backlog and dismisses the welcome choice" \
     '.onboardingVisible == false and .briefing.total <= 5 and .briefingBusy == false and .storyCount > 0' || return 1
   brief_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.briefing.id'")"
@@ -154,13 +182,24 @@ omarchy_host_test() {
 
   log "Keyboard focus reaches expanded source history in the narrow layout"
   briefing_resize 820 680 || return 1
-  press f6
-  press tab
-  press tab
-  press ret
-  press tab
-  press down
-  press ret
+  briefing_key 01-f6 f6 \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Mark briefing read"' || return 1
+  briefing_key 02-tab-new tab \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "New briefing"' || return 1
+  briefing_key 03-backtab-finish shift-tab \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Mark briefing read"' || return 1
+  briefing_key 04-tab-new tab \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "New briefing"' || return 1
+  briefing_key 05-tab-show tab \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Show 3 updates"' || return 1
+  briefing_key 06-expand ret \
+    '.section == "front-page" and .groupExpanded == true and .briefingFocusedControl == "Hide 3 updates"' || return 1
+  briefing_key 07-tab-history tab \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Update history" and .groupHistoryIndex == 0' || return 1
+  briefing_key 08-history-down down \
+    '.section == "front-page" and .briefingFocusedControl == "Update history" and .groupHistoryIndex == 1' || return 1
+  briefing_key 09-history-source ret \
+    '.section == "front-page" and .selectedId == "evt_000000000000000000000b01"' || return 1
   expected_source="$(ssh_guest "jq -r '.events[] | select(.id == \"evt_000000000000000000000b02\") | .source.url' $scenario_root/fixtures/initial.json")"
   [[ $expected_source =~ ^https://github.com/example/radar-fixture/releases/tag/[0-9]+$ ]] || return 1
   wait_for_guest_state "Enter on the second history member opens its exact original source" 15 ssh_guest \
@@ -215,6 +254,23 @@ omarchy_host_test() {
   briefing_open || return 1
   briefing_wait "fresh private fixture state exposes Start from today" \
     '.onboardingVisible == true and .briefingBusy == false and .refreshing == false' || return 1
+  log "The welcome choices remain visible at 200 percent text size"
+  welcome_button_height="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -r '.height'")"
+  [[ $welcome_button_height =~ ^[0-9]+([.][0-9]+)?$ ]] || return 1
+  ssh_guest "if test -f \"\$HOME/.config/omarchy/shell.toml\"; then \
+      cp -p \"\$HOME/.config/omarchy/shell.toml\" $scenario_root/shell.toml.before; \
+    else touch $scenario_root/shell.toml.was-missing; fi && \
+    printf '[font]\nbase-size = 24\n' >\"\$HOME/.config/omarchy/shell.toml\"" || return 1
+  wait_for_guest_state "live Style increases the rendered welcome button height" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -e '.height > $welcome_button_height'" || return 1
+  wait_for_guest_state "both scaled welcome choices fit inside the actual window" 20 briefing_choices_fit welcome-200 || return 1
+  briefing_capture 10-welcome-text-200 || return 1
+  ssh_guest "if test -f $scenario_root/shell.toml.was-missing; then \
+      rm \"\$HOME/.config/omarchy/shell.toml\"; \
+    else cp -p $scenario_root/shell.toml.before \"\$HOME/.config/omarchy/shell.toml\"; fi" || return 1
+  wait_for_guest_state "restoring the guest font restores the welcome button size" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -e '.height == $welcome_button_height'" || return 1
+  briefing_choices_fit welcome-restored || return 1
   briefing_click startTodayGeometry || return 1
   briefing_wait "Start from today leaves an empty completed briefing" \
     '.onboardingVisible == false and .briefing.complete == true and .briefing.total == 0 and .briefingBusy == false' || return 1
