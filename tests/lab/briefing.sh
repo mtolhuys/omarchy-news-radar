@@ -6,7 +6,8 @@
 omarchy_host_test() {
   local product_root lab_root start_epoch runtime_identity
   local plugin_dir viewport_width viewport_height brief_id replacement_id saved_id
-  local group_ids group_before group_after expected_source welcome_button_height
+  local group_ids group_before group_after expected_source welcome_button_height section_index
+  local section_ids=(front-page for-you core plugins youtube saved)
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -44,8 +45,12 @@ omarchy_host_test() {
       capture_console "failure-briefing-key-$name"
       return 1
     fi
+    ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+      >"$RUN_DIR/briefing-key-$name.json"
   }
 
+  # Called indirectly by the bounded wait helper.
+  # shellcheck disable=SC2329
   briefing_choices_fit() {
     local name="$1" window geometry method
     window="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
@@ -59,6 +64,29 @@ omarchy_host_test() {
          (.x + .width) <= ($window.windowWidth + 1) and (.y + .height) <= ($window.windowHeight + 1)' \
         <<<"$geometry" >/dev/null || return 1
     done
+  }
+
+  # Called indirectly by the bounded wait helper.
+  # shellcheck disable=SC2329
+  briefing_frame_fits() {
+    local frame
+    frame="$(ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"📰 Omarchy News Radar\") | {title,at,size}]'")" || return 1
+    printf '%s\n' "$frame" >"$RUN_DIR/briefing-frame.json"
+    jq -e --argjson width "$viewport_width" --argjson height "$viewport_height" \
+      'length == 1 and all(.[]; .at[0] >= 0 and .at[1] >= 0 and
+       (.at[0] + .size[0]) <= $width and (.at[1] + .size[1]) <= $height)' \
+      <<<"$frame" >/dev/null
+  }
+
+  briefing_control_fits() {
+    local method="$1" geometry window
+    geometry="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar '$method' ''")" || return 1
+    window="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''")" || return 1
+    printf '%s\n' "$geometry" >"$RUN_DIR/briefing-text-200-$method.json"
+    jq -e --argjson window "$window" \
+      '.visible == true and .width > 0 and .height > 0 and .x >= 0 and .y >= 0 and
+       (.x + .width) <= ($window.windowWidth + 1) and (.y + .height) <= ($window.windowHeight + 1)' \
+      <<<"$geometry" >/dev/null
   }
 
   briefing_click() {
@@ -263,31 +291,60 @@ omarchy_host_test() {
     printf '[font]\nbase-size = 24\n' >\"\$HOME/.config/omarchy/shell.toml\"" || return 1
   wait_for_guest_state "live Style increases the rendered welcome button height" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -e '.height > $welcome_button_height'" || return 1
+  # Enlarging a previously moved floating window can leave its frame outside
+  # the monitor. Only reposition its existing frame; retain the inner layout
+  # pressure rather than making the window larger to pass the visual check.
+  ssh_session "hyprctl dispatch 'hl.dsp.window.move({ window = \"title:📰 Omarchy News Radar\", x = 0, y = 0 })' >/dev/null" || return 1
+  wait_for_guest_state "the enlarged floating window is wholly inside the monitor" 15 briefing_frame_fits || return 1
   wait_for_guest_state "both scaled welcome choices fit inside the actual window" 20 briefing_choices_fit welcome-200 || return 1
   briefing_capture 10-welcome-text-200 || return 1
-  ssh_guest "if test -f $scenario_root/shell.toml.was-missing; then \
-      rm \"\$HOME/.config/omarchy/shell.toml\"; \
-    else cp -p $scenario_root/shell.toml.before \"\$HOME/.config/omarchy/shell.toml\"; fi" || return 1
-  wait_for_guest_state "restoring the guest font restores the welcome button size" 20 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -e '.height == $welcome_button_height'" || return 1
-  briefing_choices_fit welcome-restored || return 1
   briefing_click startTodayGeometry || return 1
-  briefing_wait "Start from today leaves an empty completed briefing" \
+  briefing_wait "Start from today at 200 percent leaves an empty completed briefing" \
     '.onboardingVisible == false and .briefing.complete == true and .briefing.total == 0 and .briefingBusy == false' || return 1
   ssh_guest "jq -e --slurpfile expected $scenario_root/fixtures/expected.json \
     '. as \$state | .onboardingComplete == true and .readThrough == \"1970-01-01T00:00:00Z\" and \
      all(\$expected[0].initialIds[]; . as \$id | \$state.readOverrides[\$id] == true) and \
      (.saved | has(\"$saved_id\"))' $scenario_state" || return 1
-  briefing_capture 10-started-today || return 1
+  wait_for_guest_state "normal Front Page keeps New briefing in the 200 percent window" 15 briefing_control_fits newBriefingGeometry || return 1
+  briefing_wait "the expanded text produces a scrollable section rail" \
+    '.sectionRail.contentHeight > .sectionRail.viewport.height and .sectionRail.viewport.height > 0' || return 1
+  for section_index in "${!section_ids[@]}"; do
+    briefing_key "text-200-section-$section_index" "$((section_index + 1))" \
+      ".section == \"${section_ids[$section_index]}\" and .projecting == false and
+       .sectionRail.selectedFullyVisible == true and .sectionRail.viewport.x >= 0 and .sectionRail.viewport.y >= 0 and
+       (.sectionRail.viewport.x + .sectionRail.viewport.width) <= (.windowWidth + 1) and
+       (.sectionRail.viewport.y + .sectionRail.viewport.height) <= (.windowHeight + 1)" || return 1
+  done
+  briefing_capture 10-text-200-saved-section || return 1
+  briefing_key text-200-return-front 1 \
+    '.section == "front-page" and .sectionRail.selectedFullyVisible == true and .projecting == false' || return 1
+  briefing_capture 10-started-today-text-200 || return 1
+
+  # New briefing is disabled when all displayed events are read. Expose the
+  # later fixture while text is still enlarged, then activate the real control.
   ssh_guest "cp $scenario_root/fixtures/later.json $scenario_root/fixtures/current.json" || return 1
   press r
   briefing_wait "a newly discovered older occurrence stays outside the completed briefing" \
-    '.briefing.complete == true and .briefing.total == 0 and .briefing.hasNewStories == true and .refreshing == false' || return 1
+    '.briefing.complete == true and .briefing.total == 0 and .briefing.hasNewStories == true and .refreshing == false and .briefingBusy == false' || return 1
   ssh_guest "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000001a7e\") | not)' $scenario_state" || return 1
-  briefing_click newBriefingGeometry || return 1
-  briefing_wait "New briefing presents the late arrival as unread" \
+  briefing_key text-200-new-brief-focus f6 \
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "New briefing"' || return 1
+  briefing_control_fits newBriefingGeometry || return 1
+  briefing_key text-200-new-brief-activate ret \
     '.briefing.total == 1 and .briefing.remaining == 1 and .selectedId == "evt_000000000000000000001a7e" and .selectedIsUnread == true and .briefingBusy == false' || return 1
   ssh_guest "jq -e '.saved | has(\"$saved_id\")' $scenario_state" || return 1
+  ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState ''" \
+    >"$RUN_DIR/briefing-text-200-story-viewport.json" || return 1
+  jq -e '.available == true and .viewportHeight > 0' "$RUN_DIR/briefing-text-200-story-viewport.json" >/dev/null || return 1
+  briefing_capture 11-older-arrival-unread-text-200 || return 1
+
+  ssh_guest "if test -f $scenario_root/shell.toml.was-missing; then \
+      rm \"\$HOME/.config/omarchy/shell.toml\"; \
+    else cp -p $scenario_root/shell.toml.before \"\$HOME/.config/omarchy/shell.toml\"; fi" || return 1
+  wait_for_guest_state "restoring the guest font restores the welcome button size" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -e '.height == $welcome_button_height'" || return 1
+  briefing_wait "restored text retains the same unread late-arrival briefing" \
+    '.briefing.total == 1 and .briefing.remaining == 1 and .selectedId == "evt_000000000000000000001a7e" and .selectedIsUnread == true' || return 1
   briefing_capture 11-older-arrival-unread || return 1
 
   log "Removing the isolated candidate and checking runtime cleanup"

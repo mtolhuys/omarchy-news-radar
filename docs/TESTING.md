@@ -166,6 +166,8 @@ The same focused scenario captures dark, light, and narrow layouts, then resets 
 
 Review every captured state rather than merely checking that screenshots exist. Inspect clipping, overlap, reading order, focus, source labels, stale/offline disclosure, long text, contrast, scroll behavior, monitor fit, and visual hierarchy.
 
+The focused briefing journey also checks both first-use choices within the window at 200% text, visits every section through real keyboard input with its rail control visibly revealed, and opens the late arrival through the briefing controls before restoring the guest font configuration.
+
 The acceptance matrix includes maintained light and dark themes, 1366×768-equivalent narrow space, a normal wide display, 200% text scaling, reduced motion, keyboard-only operation, long Unicode content, 100+ event virtualization, and no-cache/offline recovery. Acceptance screenshots use synthetic public-safe content; the separately identified release preview uses only the validated public edition.
 
 ## Performance and resource boundaries

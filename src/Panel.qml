@@ -306,6 +306,7 @@ Item {
       filterSummary: filterSummary,
       retainedReadStories: retainedReadStories,
       sectionName: currentProfile.name,
+      sectionRail: JSON.parse(sectionRailGeometry()),
       sectionSources: sectionSources,
       windowVisible: panelWindow.visible,
       windowWidth: panelWindow.width,
@@ -345,6 +346,21 @@ Item {
       width: item.width,
       height: item.height,
       visible: visible === undefined ? item.visible : visible
+    })
+  }
+
+  function sectionRailGeometry() {
+    var viewport = JSON.parse(itemGeometry(sectionRail))
+    var selected = JSON.parse(itemGeometry(sectionButtons.itemAt(sectionIndex)))
+    return JSON.stringify({
+      viewport: viewport,
+      contentHeight: sectionRail.contentHeight,
+      contentY: sectionRail.contentY,
+      selected: selected,
+      selectedFullyVisible: selected.visible === true
+        && selected.x >= viewport.x - 1 && selected.y >= viewport.y - 1
+        && selected.x + selected.width <= viewport.x + viewport.width + 1
+        && selected.y + selected.height <= viewport.y + viewport.height + 1
     })
   }
 
@@ -1103,6 +1119,7 @@ Item {
     if (preserveInitialCandidate !== true) cancelInitialStoryRead()
     navigationFocus.forceActiveFocus()
     sectionIndex = index
+    Qt.callLater(sectionRail.revealSelected)
     requestedSection = sections[index].id
     inspectorFactsOpen = false
     selectedIndex = 0
@@ -2107,139 +2124,185 @@ Item {
             Layout.fillHeight: true
             spacing: Style.spacing.panelGap
 
-            ColumnLayout {
+            Flickable {
+              id: sectionRail
               // SECTIONS stays one stable rail: wide enough for "Front Page"
               // and "Plugins", never jumping when the active section changes.
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.16
               Layout.minimumWidth: Style.space(200)
               Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(228)
               Layout.fillHeight: true
-              spacing: Style.spacing.sm
+              Layout.minimumHeight: 0
+              contentWidth: width
+              contentHeight: Math.max(height, railContents.implicitHeight)
+              clip: true
+              boundsBehavior: Flickable.StopAtBounds
+              flickableDirection: Flickable.VerticalFlick
+              ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-              Text {
-                text: "SECTIONS"
-                textFormat: Text.PlainText
-                color: root.secondaryTextColor
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                font.bold: true
+              function revealItem(item) {
+                if (!item || height <= 0) return
+                var top = item.mapToItem(contentItem, 0, 0).y
+                var bottom = top + item.height
+                var next = contentY
+                if (top < next || item.height > height) next = top
+                else if (bottom > next + height) next = bottom - height
+                contentY = Math.max(0, Math.min(next, contentHeight - height))
               }
 
-              Repeater {
-                model: root.sections
-                SectionButton {
-                  required property var modelData
-                  required property int index
-                  Layout.fillWidth: true
-                  label: modelData.name
-                  icon: root.sectionIcon(modelData.icon)
-                  tone: modelData.tone
-                  count: Number(root.counts[modelData.id] || 0)
-                  unreadCount: Number(root.unreadCounts[modelData.id] || 0)
-                  selected: root.sectionIndex === index
-                  onClicked: root.selectSection(index)
+              function revealSelected() {
+                revealItem(sectionButtons.itemAt(root.sectionIndex))
+              }
+
+              onHeightChanged: Qt.callLater(revealSelected)
+              onContentHeightChanged: contentY = Math.max(0, Math.min(contentY, contentHeight - height))
+
+              Connections {
+                target: root
+                function onKeysLegendOpenChanged() {
+                  if (root.keysLegendOpen) Qt.callLater(function() { sectionRail.revealItem(keysLegend) })
                 }
               }
-
-              Item { Layout.fillHeight: true }
 
               ColumnLayout {
-                id: keysLegend
-                Layout.fillWidth: true
-                spacing: Style.space(4)
+                id: railContents
+                width: sectionRail.width
+                height: sectionRail.contentHeight
+                spacing: Style.spacing.sm
 
-                FocusScope {
-                  id: keysLegendToggle
-                  Layout.fillWidth: true
-                  implicitHeight: Math.max(Style.space(18), keysToggleLabel.implicitHeight + Style.space(2))
-                  activeFocusOnTab: true
-                  Accessible.role: Accessible.Button
-                  Accessible.name: keysToggleLabel.text
-                  Accessible.focusable: true
-                  Accessible.onPressAction: root.keysLegendOpen = !root.keysLegendOpen
-
-                  Text {
-                    id: keysToggleLabel
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
-                    textFormat: Text.PlainText
-                    color: keysToggleHover.hovered || parent.activeFocus
-                      ? root.secondaryTextColor
-                      : root.quietTextColor
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: false
-                  }
-
-                  HoverHandler { id: keysToggleHover }
-                  PanelToolTip {
-                    visible: keysToggleHover.hovered
-                    text: root.keysLegendOpen
-                      ? "Hide keyboard shortcuts (?)"
-                      : "Show keyboard shortcuts (?)"
-                    fontFamily: Style.font.family
-                  }
-                  MouseArea {
-                    anchors.fill: parent
-                    preventStealing: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.keysLegendOpen = !root.keysLegendOpen
-                  }
-                  Keys.onReturnPressed: root.keysLegendOpen = !root.keysLegendOpen
-                  Keys.onEnterPressed: root.keysLegendOpen = !root.keysLegendOpen
-                  Keys.onSpacePressed: root.keysLegendOpen = !root.keysLegendOpen
+                Text {
+                  text: "SECTIONS"
+                  textFormat: Text.PlainText
+                  color: root.secondaryTextColor
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.caption
+                  font.bold: true
                 }
 
-                Flow {
-                  id: keysLegendBody
-                  visible: root.keysLegendOpen
+                Repeater {
+                  id: sectionButtons
+                  model: root.sections
+                  onItemAdded: Qt.callLater(sectionRail.revealSelected)
+                  SectionButton {
+                    id: sectionButton
+                    required property var modelData
+                    required property int index
+                    Layout.fillWidth: true
+                    label: modelData.name
+                    icon: root.sectionIcon(modelData.icon)
+                    tone: modelData.tone
+                    count: Number(root.counts[modelData.id] || 0)
+                    unreadCount: Number(root.unreadCounts[modelData.id] || 0)
+                    selected: root.sectionIndex === index
+                    onClicked: root.selectSection(index)
+                    onActiveFocusChanged: if (activeFocus) sectionRail.revealItem(sectionButton)
+                    onSelectedChanged: if (selected) Qt.callLater(sectionRail.revealSelected)
+                    onYChanged: if (selected) Qt.callLater(sectionRail.revealSelected)
+                    onHeightChanged: if (selected) Qt.callLater(sectionRail.revealSelected)
+                  }
+                }
+
+                Item { Layout.fillHeight: true }
+
+                ColumnLayout {
+                  id: keysLegend
                   Layout.fillWidth: true
-                  Layout.preferredHeight: visible ? childrenRect.height : 0
                   spacing: Style.space(4)
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: "Keyboard shortcuts"
 
-                  Repeater {
-                    model: [
-                      { keys: "Esc/q", action: "close" },
-                      { keys: "j/k", action: "move" },
-                      { keys: "↵/o", action: "open" },
-                      { keys: "s", action: "save" },
-                      { keys: "u", action: "read" },
-                      { keys: "a", action: "all-read" },
-                      { keys: "F6", action: "briefing controls" },
-                      { keys: "f", action: "unread" },
-                      { keys: "/", action: "search" },
-                      { keys: "r", action: "refresh" },
-                      { keys: "Tab", action: "sections" },
-                      { keys: "1–" + root.sections.length, action: "jump" },
-                      { keys: "Home/End", action: "edges" },
-                      { keys: "?", action: "keys" }
-                    ]
-                    Row {
-                      required property var modelData
-                      required property int index
-                      spacing: Style.space(4)
+                  FocusScope {
+                    id: keysLegendToggle
+                    Layout.fillWidth: true
+                    implicitHeight: Math.max(Style.space(18), keysToggleLabel.implicitHeight + Style.space(2))
+                    activeFocusOnTab: true
+                    onActiveFocusChanged: if (activeFocus) sectionRail.revealItem(keysLegendToggle)
+                    Accessible.role: Accessible.Button
+                    Accessible.name: keysToggleLabel.text
+                    Accessible.focusable: true
+                    Accessible.onPressAction: root.keysLegendOpen = !root.keysLegendOpen
 
-                      Text {
-                        id: keycapText
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: modelData.keys
-                        textFormat: Text.PlainText
-                        color: root.secondaryTextColor
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.caption
-                        font.bold: false
-                      }
+                    Text {
+                      id: keysToggleLabel
+                      anchors.left: parent.left
+                      anchors.verticalCenter: parent.verticalCenter
+                      text: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
+                      textFormat: Text.PlainText
+                      color: keysToggleHover.hovered || parent.activeFocus
+                        ? root.secondaryTextColor
+                        : root.quietTextColor
+                      font.family: Style.font.family
+                      font.pixelSize: Style.font.caption
+                      font.bold: false
+                    }
 
-                      Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: modelData.action + (index < 12 ? " ·" : "")
-                        textFormat: Text.PlainText
-                        color: root.quietTextColor
-                        font.family: Style.font.family
-                        font.pixelSize: Style.font.caption
+                    HoverHandler { id: keysToggleHover }
+                    PanelToolTip {
+                      visible: keysToggleHover.hovered
+                      text: root.keysLegendOpen
+                        ? "Hide keyboard shortcuts (?)"
+                        : "Show keyboard shortcuts (?)"
+                      fontFamily: Style.font.family
+                    }
+                    MouseArea {
+                      anchors.fill: parent
+                      preventStealing: true
+                      cursorShape: Qt.PointingHandCursor
+                      onClicked: root.keysLegendOpen = !root.keysLegendOpen
+                    }
+                    Keys.onReturnPressed: root.keysLegendOpen = !root.keysLegendOpen
+                    Keys.onEnterPressed: root.keysLegendOpen = !root.keysLegendOpen
+                    Keys.onSpacePressed: root.keysLegendOpen = !root.keysLegendOpen
+                  }
+
+                  Flow {
+                    id: keysLegendBody
+                    visible: root.keysLegendOpen
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: visible ? childrenRect.height : 0
+                    spacing: Style.space(4)
+                    Accessible.role: Accessible.StaticText
+                    Accessible.name: "Keyboard shortcuts"
+
+                    Repeater {
+                      model: [
+                        { keys: "Esc/q", action: "close" },
+                        { keys: "j/k", action: "move" },
+                        { keys: "↵/o", action: "open" },
+                        { keys: "s", action: "save" },
+                        { keys: "u", action: "read" },
+                        { keys: "a", action: "all-read" },
+                        { keys: "F6", action: "briefing controls" },
+                        { keys: "f", action: "unread" },
+                        { keys: "/", action: "search" },
+                        { keys: "r", action: "refresh" },
+                        { keys: "Tab", action: "sections" },
+                        { keys: "1–" + root.sections.length, action: "jump" },
+                        { keys: "Home/End", action: "edges" },
+                        { keys: "?", action: "keys" }
+                      ]
+                      Row {
+                        required property var modelData
+                        required property int index
+                        spacing: Style.space(4)
+
+                        Text {
+                          id: keycapText
+                          anchors.verticalCenter: parent.verticalCenter
+                          text: modelData.keys
+                          textFormat: Text.PlainText
+                          color: root.secondaryTextColor
+                          font.family: Style.font.family
+                          font.pixelSize: Style.font.caption
+                          font.bold: false
+                        }
+
+                        Text {
+                          anchors.verticalCenter: parent.verticalCenter
+                          text: modelData.action + (index < 12 ? " ·" : "")
+                          textFormat: Text.PlainText
+                          color: root.quietTextColor
+                          font.family: Style.font.family
+                          font.pixelSize: Style.font.caption
+                        }
                       }
                     }
                   }
@@ -2473,7 +2536,9 @@ Item {
               }
 
               Item {
-                visible: root.stories.length > 0
+                // A finite briefing has no next page; reserve this space only
+                // for the browsable sections that can load more stories.
+                visible: root.stories.length > 0 && !root.briefingVisible
                 Layout.fillWidth: true
                 Layout.preferredHeight: visible ? Style.space(54) : 0
 
