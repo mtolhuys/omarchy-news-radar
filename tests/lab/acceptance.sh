@@ -955,6 +955,11 @@ omarchy_host_test() {
   wait_for_guest_state "plugin removal unloads files and preserves user state" 15 ssh_session \
     "test ! -e \"\$HOME/.config/omarchy/plugins/io.github.mtolhuys.news-radar\" && test -f \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" && omarchy-plugin-list --json | jq -e 'all(.[]; .id != \"io.github.mtolhuys.news-radar\")'" || return 1
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.disk-lens --yes" >/dev/null || return 1
+  # Remove only the exact dofile line this scenario added before deleting its
+  # companion target; Radar's own receipt cleanup was already asserted above.
+  ssh_session "grep -Fxv 'dofile(os.getenv(\"HOME\") .. \"/.config/omarchy/plugins/vbrosseau.alttab/omarchy-plugin/alttab-bindings.lua\")' \
+    \"\$HOME/.config/hypr/bindings.lua\" >/tmp/news-radar-bindings.cleaned && \
+    cat /tmp/news-radar-bindings.cleaned >\"\$HOME/.config/hypr/bindings.lua\" && hyprctl reload >/dev/null" || return 1
   ssh_session "omarchy-plugin-remove vbrosseau.alttab --yes && omarchy-plugin-remove omadock --yes" >/dev/null || return 1
   ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/news-radar-user-journal.log" || true
   if grep -E 'io\.github\.mtolhuys\.news-radar.*(failed to load|ReferenceError|TypeError)|(Panel|BarWidget)\.qml.*(error|Error)' \
