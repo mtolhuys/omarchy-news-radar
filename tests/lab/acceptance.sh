@@ -28,9 +28,15 @@ omarchy_host_test() {
   # projection, temporarily disabling visible controls between snapshots.
   # shellcheck disable=SC2329
   radar_idle() {
-    local attempt
+    local attempt snapshot
     for ((attempt = 0; attempt < 5; attempt++)); do
-      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.windowVisible == true and .helperRunning == false and .briefingBusy == false and .pendingProjection == false'" >/dev/null || return 1
+      snapshot="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''")" || return 1
+      printf '%s\n' "$snapshot" >>"$RUN_DIR/news-radar-readiness.jsonl"
+      if ! jq -e '.windowVisible == true and .helperRunning == false and .briefingBusy == false and .pendingProjection == false' <<<"$snapshot" >/dev/null; then
+        ssh_session "pgrep -af -u \"\$USER\" '([/]bin/news-radar-client|[r]adar[.]cli_client)' || true" \
+          >>"$RUN_DIR/news-radar-readiness-helpers.log" 2>&1 || true
+        return 1
+      fi
       sleep 0.25
     done
   }
