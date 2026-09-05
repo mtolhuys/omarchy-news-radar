@@ -335,7 +335,7 @@ omarchy_host_test() {
   ssh_guest "jq -e '.saved | has(\"$saved_id\")' $scenario_state" || return 1
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState ''" \
     >"$RUN_DIR/briefing-text-200-story-viewport.json" || return 1
-  jq -e '.available == true and .viewportHeight > 0' "$RUN_DIR/briefing-text-200-story-viewport.json" >/dev/null || return 1
+  jq -e '.available == true and .headlineFullyVisible == true' "$RUN_DIR/briefing-text-200-story-viewport.json" >/dev/null || return 1
   briefing_capture 11-older-arrival-unread-text-200 || return 1
 
   ssh_guest "if test -f $scenario_root/shell.toml.was-missing; then \

@@ -431,12 +431,15 @@ Item {
     }
     var top = row.y - storyList.contentY
     var bottom = top + row.height
+    var headline = row.headlineBounds()
     var anchorTop = anchorRow ? anchorRow.y - storyList.contentY : 0
     var anchorBottom = anchorRow ? anchorTop + anchorRow.height : 0
     return JSON.stringify({
       selectedIndex: selectedIndex,
       available: true,
       fullyVisible: top >= -0.5 && bottom <= storyList.height + 0.5,
+      headlineFullyVisible: top + headline.top >= -0.5
+        && top + headline.top + headline.height <= storyList.height + 0.5,
       topAligned: Math.abs(top) <= 1,
       top: top,
       bottom: bottom,
@@ -2337,6 +2340,7 @@ Item {
                 spacing: Style.spacing.sm
 
                 RowLayout {
+                  visible: !keySurface.narrow || !root.briefingVisible
                   Layout.fillWidth: true
                   spacing: Style.spacing.controlGap
 
@@ -2434,6 +2438,8 @@ Item {
 
               Text {
                 Layout.fillWidth: true
+                visible: !keySurface.narrow || !root.briefingVisible
+                  || root.filterSummary !== "No extra filters" || root.retainedReadStories > 0
                 text: root.sectionSummaryText()
                 textFormat: Text.PlainText
                 color: root.secondaryTextColor

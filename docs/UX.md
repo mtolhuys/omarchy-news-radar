@@ -37,7 +37,7 @@ The reading surface does not carry publication telemetry. A subtle collapsible *
 
 ## Front page composition
 
-Front Page is a persistent local briefing of at most five groups, selected once after cached news and locally enabled plugin IDs are available. It groups eligible unread occurrences of the same plugin without replacing their original titles, IDs, timestamps, or sources. A plain reason explains each selection. See D055 and the curation contract for the deterministic allocation.
+Front Page is a persistent local briefing of at most five groups, selected once after cached news and locally enabled plugin IDs are available. It groups eligible unread occurrences of the same plugin without replacing their original titles, IDs, timestamps, or sources. A plain reason explains each selection. Narrow layouts use the briefing notice as their heading and counts, avoiding a duplicate section heading and default summary; active filter and retained-read explanations remain visible. See D055 and the curation contract for the deterministic allocation.
 
 - Reading, refreshing, filtering, search, closing, and reopening preserve the exact snapshot. They do not refill its slots. New briefing explicitly replaces it from currently unread eligible stories; skipped stories remain unread.
 - The notice reports remaining groups and completion for this briefing only. Other sections remain available. An expired member is disclosed and does not imply that it was read; a new briefing can replace the expired snapshot.

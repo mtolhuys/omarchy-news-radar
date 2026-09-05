@@ -12,6 +12,11 @@ FocusScope {
   property bool quiet: false
   signal activated()
 
+  function headlineBounds() {
+    var point = headline.mapToItem(root, 0, 0)
+    return { top: point.y, height: headline.height }
+  }
+
   readonly property bool hasImage: !!story && !!story.imageUrl && !quiet
   // A selected surface must never keep the ambient muted token: some themes
   // intentionally make that token close to their selection fill.  Derive all
@@ -96,6 +101,7 @@ FocusScope {
       }
 
       Text {
+        id: headline
         width: parent.width
         text: root.story ? root.story.title : ""
         textFormat: Text.PlainText
