@@ -48,7 +48,7 @@ from .publication_state import (
     restore_publication_source_snapshot,
 )
 from .validation import parse_timestamp, validate_feed
-from .window import activate_window, prepare_window, finish_window_opening, remember_window
+from .window import activate_window, prepare_window, finish_window_opening, fit_window, remember_window
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -93,6 +93,9 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     finish_opening = commands.add_parser("finish-window-opening")
     finish_opening.add_argument("--token")
     commands.add_parser("remember-window")
+    fit = commands.add_parser("fit-window")
+    fit.add_argument("--minimum-width", required=True, type=int)
+    fit.add_argument("--minimum-height", required=True, type=int)
     commands.add_parser("insights-refresh")
     insights = commands.add_parser("insights-project")
     insights.add_argument("--installed-facts-json", default="[]")
@@ -163,6 +166,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = finish_window_opening(token=args.token)
         elif args.command == "remember-window":
             result = remember_window()
+        elif args.command == "fit-window":
+            result = fit_window(minimum_width=args.minimum_width, minimum_height=args.minimum_height)
         elif args.command == "insights-refresh":
             result = refresh_insights()
         elif args.command == "insights-project":

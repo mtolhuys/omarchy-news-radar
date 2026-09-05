@@ -12,7 +12,7 @@ Item {
   required property var sectionsModel
   required property var views
   function debugState() {
-    var group = views.keySurface.narrow ? views.readerList.list.headerItem : views.inspectorView.group
+    var group = views.keySurface.narrow ? views.readerList.group : views.inspectorView.group
     var controls = (panel.overviewVisible ? views.discoveryView.controlTargets() : views.briefingNotice.controlTargets().concat(group && group.visible ? group.controlTargets() : [])).concat(panel.overviewTools())
     var focusedControl = controls.filter(function(item) { return item.activeFocus })
     return JSON.stringify({
@@ -64,6 +64,9 @@ Item {
       windowVisible: views.panelWindow.visible,
       windowWidth: views.panelWindow.width,
       windowHeight: views.panelWindow.height,
+      windowMinimumWidth: windowLifecycle.minimumWidth,
+      windowMinimumHeight: windowLifecycle.minimumHeight,
+      windowFitPending: windowLifecycle.fitPending,
       maximized: views.panelWindow.maximized,
       windowIntegrationStatus: panel.windowIntegrationStatus,
       shortcutState: maintenance.shortcutState,
@@ -194,7 +197,7 @@ Item {
   }
 
   function groupReadGeometry() {
-    var group = views.keySurface.narrow ? views.readerList.list.headerItem : views.inspectorView.group
+    var group = views.keySurface.narrow ? views.readerList.group : views.inspectorView.group
     if (!group) return JSON.stringify({ visible: false })
     return itemGeometry(group.readButton, group.visible && group.readButton.visible)
   }

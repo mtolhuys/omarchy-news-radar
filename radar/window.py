@@ -197,6 +197,67 @@ def finish_window_opening(*, token: str | None = None, runner: RunCommand = subp
     return {"protocolVersion": 1, "status": "ok", "outcome": "opening-rule-cleared"}
 
 
+def fit_window(*, minimum_width: int, minimum_height: int,
+               runner: RunCommand = subprocess.run) -> dict[str, Any]:
+    """Keep an already mapped floating Radar inside its current usable monitor."""
+    from .window_geometry import integer, live_geometry, monitor_workareas, opening_geometry, validate_placement
+
+    integer(minimum_width, "minimum width", 64, 65536)
+    integer(minimum_height, "minimum height", 64, 65536)
+    clients = _json_command(["hyprctl", "clients", "-j"], runner=runner)
+    if not isinstance(clients, list) or not all(isinstance(c, dict) for c in clients):
+        raise RadarError("invalid Hyprland client list")
+    matches = [c for c in clients if c.get("title") == WINDOW_TITLE and c.get("initialTitle") == WINDOW_TITLE
+               and c.get("class") == WINDOW_CLASS and c.get("initialClass") == WINDOW_CLASS and c.get("mapped") is True]
+    if len(matches) > 1:
+        raise RadarError("Hyprland Radar client identity is ambiguous")
+    if not matches:
+        return {"protocolVersion": 1, "status": "ok", "outcome": "radar-not-mapped"}
+    client = matches[0]
+    address = client.get("address")
+    if not isinstance(address, str) or len(address) > 18 or ADDRESS_PATTERN.fullmatch(address) is None:
+        raise RadarError("Hyprland Radar client has invalid address")
+    if type(client.get("floating")) is not bool:
+        raise RadarError("Hyprland Radar client has invalid floating state")
+    modes = [integer(client.get(field, 0), field, 0, 3) for field in ("fullscreen", "fullscreenClient")]
+    maximized = any(modes)
+    monitor_id = integer(client.get("monitor"), "monitor id", -1, 65536)
+    at, size = client.get("at"), client.get("size")
+    if not isinstance(at, list) or len(at) != 2 or not isinstance(size, list) or len(size) != 2:
+        raise RadarError("invalid Radar client geometry")
+    monitors = monitor_workareas(_json_command(["hyprctl", "monitors", "-j"], runner=runner))
+    matching_monitors = [m for m in monitors if m["id"] == monitor_id]
+    if len(matching_monitors) > 1:
+        raise RadarError("Radar window monitor identity is ambiguous")
+    monitor = matching_monitors[0] if matching_monitors else None
+    current = validate_placement({
+        "schemaVersion": 1, "monitor": monitor["name"] if monitor else monitors[0]["name"],
+        "x": at[0], "y": at[1], "width": size[0], "height": size[1], "maximized": maximized,
+    })
+    if monitor:
+        fit = live_geometry(monitors, current, minimum_width=minimum_width, minimum_height=minimum_height)
+    else:
+        fit = opening_geometry(monitors, None, width=current["width"], height=current["height"],
+                               minimum_width=minimum_width, minimum_height=minimum_height)
+    if maximized or not client["floating"]:
+        # The compositor owns these frames, including their restore rectangle.
+        # Return new minimums but never resize tiles or alter maximize state.
+        fit.update({key: current[key] for key in ("x", "y", "width", "height", "maximized")})
+        target = next(m for m in monitors if m["name"] == fit["monitor"])
+        fit.update(localX=current["x"] - target["x"], localY=current["y"] - target["y"])
+        return {"protocolVersion": 1, "status": "ok", "outcome": "compositor-managed", "geometry": fit}
+    resized = (fit["width"], fit["height"]) != tuple(size)
+    moved = (fit["x"], fit["y"]) != tuple(at)
+    if resized:
+        _run(["hyprctl", "dispatch", 'hl.dsp.window.resize({ window = "address:' + address
+              + f'", x = {fit["width"]}, y = {fit["height"]} }})'], runner=runner)
+    if moved:
+        _run(["hyprctl", "dispatch", 'hl.dsp.window.move({ window = "address:' + address
+              + f'", x = {fit["x"]}, y = {fit["y"]} }})'], runner=runner)
+    return {"protocolVersion": 1, "status": "ok", "outcome": "refitted" if resized or moved else "unchanged",
+            "geometry": fit}
+
+
 def remember_window(*, environment: Any = None, runner: RunCommand = subprocess.run) -> dict[str, Any]:
     """Capture the one exact mapped Radar window without changing compositor state."""
     from .io import atomic_write_json

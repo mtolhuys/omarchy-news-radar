@@ -243,7 +243,7 @@ Item {
   }
 
   function focusBriefingControl(direction) {
-    var group = keySurface.narrow ? readerList.list.headerItem : inspectorView.group
+    var group = keySurface.narrow ? readerList.group : inspectorView.group
     var groupTargets = group && group.visible ? group.controlTargets() : []
     var targets = (overviewVisible ? discoveryView.controlTargets() : briefingNotice.controlTargets().concat(groupTargets)).concat(overviewTools())
     if (!targets.length) {
@@ -261,7 +261,7 @@ Item {
       storyViewportController.pendingViewportPreservation = false
       storyViewportController.storyViewportRevision++
       storyViewportController.animation.stop()
-      if (keySurface.narrow) readerList.list.positionViewAtBeginning()
+      if (keySurface.narrow) readerList.revealGroup()
       else inspectorView.contentY = 0
     }
     targets[next].forceActiveFocus()

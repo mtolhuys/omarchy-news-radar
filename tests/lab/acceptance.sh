@@ -34,6 +34,26 @@ omarchy_host_test() {
     done
   }
 
+  # Called indirectly by the bounded wait helper; record both frame and
+  # display data so a failed accessibility fit has concrete geometry evidence.
+  # shellcheck disable=SC2329
+  radar_frame_fits() {
+    local frame monitors
+    frame="$(ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"📰 Omarchy News Radar\")]'")" || return 1
+    monitors="$(ssh_session "hyprctl -j monitors")" || return 1
+    printf '%s\n' "$frame" >"$RUN_DIR/news-radar-accessibility-frame.json"
+    printf '%s\n' "$monitors" >"$RUN_DIR/news-radar-accessibility-monitors.json"
+    jq -e --argjson monitors "$monitors" '
+      .[0] as $frame
+      | (length == 1) as $unique
+      | [$monitors[] | select(.id == $frame.monitor)][0] as $monitor
+      | $unique and $monitor != null and $frame.at[0] >= ($monitor.x + $monitor.reserved[0])
+        and $frame.at[1] >= ($monitor.y + $monitor.reserved[1])
+        and ($frame.at[0] + $frame.size[0]) <= ($monitor.x + $monitor.width / $monitor.scale - $monitor.reserved[2])
+        and ($frame.at[1] + $frame.size[1]) <= ($monitor.y + $monitor.height / $monitor.scale - $monitor.reserved[3])
+    ' <<<"$frame" >/dev/null
+  }
+
   radar_for_you_news() {
     press 2
     wait_for_guest_state "For You opens the setup overview" 10 ssh_session \
@@ -890,9 +910,30 @@ omarchy_host_test() {
   ssh_session "omarchy-theme-set matte-black >/dev/null"
   capture_console "success-news-radar-10-dark-long"
   ssh_session "mkdir -p \"\$HOME/.config/omarchy\" && printf '[font]\nbase-size = 24\n' >\"\$HOME/.config/omarchy/shell.toml\""
+  wait_for_guest_state "live Style and the bounded geometry fit have settled at 200 percent" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.windowMinimumWidth >= 1440 and .windowMinimumHeight >= 960 and .windowFitPending == false and .helperRunning == false'" || return 1
+  wait_for_guest_state "live 200 percent text automatically fits the moved window" 20 radar_frame_fits || return 1
+  press home
+  wait_for_guest_state "enlarged text leaves a usable article viewport and visible heading" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.available == true and .viewportHeight >= 200 and .headlineFullyVisible == true'" || return 1
   capture_console "success-news-radar-11-text-200"
+  press pgdn
+  wait_for_guest_state "Page Down scrolls the enlarged article" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.contentY > .rowY'" || return 1
+  capture_console "success-news-radar-11-text-200-reading"
+  press esc
+  wait_for_guest_state "enlarged reader closes normally" 15 ssh_session \
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
+  press meta_l-alt-n
+  wait_for_guest_state "opening at 200 percent fits without manual repositioning" 20 radar_frame_fits || return 1
+  radar_for_you_news || return 1
+  press home
+  wait_for_guest_state "reopened enlarged reader exposes its headline" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.available == true and .viewportHeight >= 200 and .headlineFullyVisible == true'" || return 1
+  capture_console "success-news-radar-11-text-200-reopened"
   monitor_name="$(ssh_session "hyprctl -j monitors | jq -r '.[0].name'")"
   ssh_session "hyprctl keyword monitor '$monitor_name,1366x768@60,0x0,1' >/dev/null && hyprctl keyword animations:enabled false >/dev/null"
+  wait_for_guest_state "monitor changes keep Radar inside the usable area" 20 radar_frame_fits || return 1
   capture_console "success-news-radar-12-narrow-reduced-motion"
   close_started_ms="$(date +%s%3N)"
   press esc

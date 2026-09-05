@@ -82,13 +82,20 @@ omarchy_host_test() {
   # Called indirectly by the bounded wait helper.
   # shellcheck disable=SC2329
   briefing_frame_fits() {
-    local frame
-    frame="$(ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"📰 Omarchy News Radar\") | {title,at,size}]'")" || return 1
-    printf '%s\n' "$frame" >"$RUN_DIR/briefing-frame.json"
-    jq -e --argjson width "$viewport_width" --argjson height "$viewport_height" \
-      'length == 1 and all(.[]; .at[0] >= 0 and .at[1] >= 0 and
-       (.at[0] + .size[0]) <= $width and (.at[1] + .size[1]) <= $height)' \
-      <<<"$frame" >/dev/null
+    local frame monitors
+    frame="$(ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"📰 Omarchy News Radar\")]'")" || return 1
+    monitors="$(ssh_session "hyprctl -j monitors")" || return 1
+    printf '%s\n' "$frame" >"$RUN_DIR/briefing-accessibility-frame.json"
+    printf '%s\n' "$monitors" >"$RUN_DIR/briefing-accessibility-monitors.json"
+    jq -e --argjson monitors "$monitors" '
+      .[0] as $frame
+      | (length == 1) as $unique
+      | [$monitors[] | select(.id == $frame.monitor)][0] as $monitor
+      | $unique and $monitor != null and $frame.at[0] >= ($monitor.x + $monitor.reserved[0])
+        and $frame.at[1] >= ($monitor.y + $monitor.reserved[1])
+        and ($frame.at[0] + $frame.size[0]) <= ($monitor.x + $monitor.width / $monitor.scale - $monitor.reserved[2])
+        and ($frame.at[1] + $frame.size[1]) <= ($monitor.y + $monitor.height / $monitor.scale - $monitor.reserved[3])
+    ' <<<"$frame" >/dev/null
   }
 
   briefing_control_fits() {
@@ -314,13 +321,14 @@ omarchy_host_test() {
     printf '[font]\nbase-size = 24\n' >\"\$HOME/.config/omarchy/shell.toml\"" || return 1
   wait_for_guest_state "live Style increases the rendered welcome button height" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar browseStoriesGeometry '' | jq -e '.height > $welcome_button_height'" || return 1
-  # Enlarging a previously moved floating window can leave its frame outside
-  # the monitor. Only reposition its existing frame; retain the inner layout
-  # pressure rather than making the window larger to pass the visual check.
-  ssh_session "hyprctl dispatch 'hl.dsp.window.move({ window = \"title:📰 Omarchy News Radar\", x = 0, y = 0 })' >/dev/null" || return 1
-  wait_for_guest_state "the enlarged floating window is wholly inside the monitor" 15 briefing_frame_fits || return 1
+  wait_for_guest_state "live enlarged text automatically fits the existing window" 20 briefing_frame_fits || return 1
   wait_for_guest_state "both scaled welcome choices fit inside the actual window" 20 briefing_choices_fit welcome-200 || return 1
   briefing_capture 10-welcome-text-200 || return 1
+  briefing_close || return 1
+  briefing_open || return 1
+  wait_for_guest_state "opening with enlarged text fits the workarea" 20 briefing_frame_fits || return 1
+  wait_for_guest_state "fresh opening retains both enlarged first-use choices" 20 briefing_choices_fit welcome-reopened-200 || return 1
+  briefing_capture 10-welcome-reopened-text-200 || return 1
   wait_for_guest_state "Start today remains ready for input" 20 briefing_idle || return 1
   briefing_click startTodayGeometry || return 1
   briefing_wait "Start from today at 200 percent leaves an empty completed briefing" \

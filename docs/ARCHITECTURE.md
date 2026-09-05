@@ -198,6 +198,7 @@ news-radar-client prepare-window --width <pixels> --height <pixels> --minimum-wi
 news-radar-client finish-window-opening --token <opening-token>
 news-radar-client activate-window
 news-radar-client remember-window
+news-radar-client fit-window --minimum-width <pixels> --minimum-height <pixels>
 news-radar-client purge
 ```
 
@@ -317,3 +318,9 @@ The client companion cache has its own due checks, validators and lock. Local en
 `publisher.py` owns the atomic artifact transaction and RSS. `site/common.py`, `site/cards.py` and `site/pages.py` compose escaped documents, reusable cards and complete pages; `site/site.css` is a readable stylesheet. `publication_images.py` applies the existing exact-origin raster inspection, with at most twelve optional companion thumbnails and four concurrent inspections. Rejected or excess images are omitted without dropping the text. The server retains prior durable pages separately from the rolling producer output.
 
 Optional marketplace image inspection deduplicates URLs across event rows and runs at most four requests concurrently. A 60-second queue budget stops new requests; in-flight requests retain the existing 20-second timeout. Missed previews are omitted while every validated story survives. Discovery images have a separate twelve-item cap and the same bounded queue behavior. Inspection retains only small dimension records, not downloaded raster bodies.
+
+## Desktop composition and live geometry
+
+The panel composes separate session, reading, section, viewport, maintenance and window-lifecycle controllers. Presentation components own the Home, project details, reader, inspector, section rail and settings surfaces. The compact reader places its shared action toolbar inside the scrollable header so enlarged controls cannot consume the article viewport; wide layouts retain fixed reader controls.
+
+`WindowLifecycle` prepares the opening placement and debounces live font/minimum-size and monitor/work-area changes. `fit-window` validates the one exact mapped Radar client and current work areas, preserves a fitting user frame and clamps only when needed. It dispatches only addressed resize/move operations and never changes focus, creates rules or writes reading state. Tiled, maximized and fullscreen geometry remains compositor-managed. Close cancels fit work along with the other owned processes.

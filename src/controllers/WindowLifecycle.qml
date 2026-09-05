@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import "../Model.js" as RadarModel
 
 // The window maps only after placement and a local reading model are ready.
@@ -21,10 +22,13 @@ Item {
   property bool preparationReady: false
   property bool recoveryReady: false
   property bool closing: false
+  property bool fitPending: false
+  property int fitMinimumWidth: 0
+  property int fitMinimumHeight: 0
   property string openingToken: ""
   property string phase: "closed"
   property string status: "idle"
-  readonly property bool busy: prepare.running || activate.running || cleanup.running || remember.running
+  readonly property bool busy: prepare.running || activate.running || cleanup.running || remember.running || fit.running || fitPending
   signal revealed()
   signal closeReady()
   signal compositorClosed()
@@ -80,6 +84,9 @@ Item {
     closing = true
     readyDeadline.stop()
     geometryDelay.stop()
+    fitDelay.stop()
+    fit.running = false
+    fitPending = false
     phase = "closing"
     if (window.visible) {
       closeDeadline.restart()
@@ -93,6 +100,9 @@ Item {
     readyDeadline.stop()
     closeDeadline.stop()
     geometryDelay.stop()
+    fitDelay.stop()
+    fit.running = false
+    fitPending = false
     prepare.running = false
     activate.running = false
     remember.running = false
@@ -105,7 +115,56 @@ Item {
     if (requested && window.visible && phase === "visible" && !closing) geometryDelay.restart()
   }
 
+  // Reconcile accessibility and display changes with the current frame, not
+  // a stale saved placement. Ordinary user moves/resizes never trigger a fit.
+  function scheduleFit() {
+    if (!requested || !window.visible || closing) return
+    fitPending = true
+    var screen = window.screen
+    if (screen) {
+      fittedMinimumWidth = Math.max(64, Math.min(fittedMinimumWidth, screen.width))
+      fittedMinimumHeight = Math.max(64, Math.min(fittedMinimumHeight, screen.height))
+    }
+    geometryDelay.stop()
+    fitDelay.restart()
+  }
+
+  onMinimumWidthChanged: scheduleFit()
+  onMinimumHeightChanged: scheduleFit()
   onContentReadyChanged: revealIfReady()
+  Timer {
+    id: fitDelay
+    interval: 250
+    onTriggered: {
+      if (!root.requested || !root.window.visible || root.closing) return
+      if (fit.running || root.phase !== "visible") { restart(); return }
+      root.fitPending = false
+      root.fitMinimumWidth = root.minimumWidth
+      root.fitMinimumHeight = root.minimumHeight
+      root.launch(fit, ["fit-window", "--minimum-width", String(root.fitMinimumWidth),
+        "--minimum-height", String(root.fitMinimumHeight)])
+    }
+  }
+  Connections {
+    target: Quickshell
+    function onScreensChanged() { root.scheduleFit() }
+  }
+  Connections {
+    target: root.window.screen
+    function onGeometryChanged() { root.scheduleFit() }
+    function onPhysicalPixelDensityChanged() { root.scheduleFit() }
+  }
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (!event) return
+      // Layer changes can alter the reserved workarea without changing the
+      // monitor rectangle; the bounded helper reads the actual workarea.
+      if (["configreloaded", "openlayer", "closelayer", "monitoradded", "monitorremoved"].indexOf(String(event.name)) >= 0)
+        root.scheduleFit()
+    }
+  }
+
   Timer {
     id: readyDeadline
     interval: 2500
@@ -128,7 +187,7 @@ Item {
   Timer {
     id: geometryDelay
     interval: 250
-    onTriggered: if (!root.closing && root.requested && !remember.running)
+    onTriggered: if (!root.closing && root.requested && !remember.running && !fit.running && !root.fitPending)
       root.launch(remember, ["remember-window"])
   }
   Connections {
@@ -136,7 +195,7 @@ Item {
     function onWidthChanged() { root.scheduleRemember() }
     function onHeightChanged() { root.scheduleRemember() }
     function onWindowTransformChanged() { root.scheduleRemember() }
-    function onScreenChanged() { root.scheduleRemember() }
+    function onScreenChanged() { root.scheduleRemember(); root.scheduleFit() }
     function onMaximizedChanged() { root.scheduleRemember() }
     function onVisibleChanged() {
       if (!root.window.visible && root.requested && !root.closing) root.compositorClosed()
@@ -183,6 +242,27 @@ Item {
         root.status = result.status === "ok" ? String(result.outcome || "ready") : String(result.message || "Window focus unavailable")
         root.phase = "visible"
         root.clearOpeningRule()
+        root.scheduleRemember()
+      }
+    }
+  }
+  Process {
+    id: fit
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        if (!root.requested || !root.window.visible || root.closing) return
+        if (root.fitMinimumWidth !== root.minimumWidth || root.fitMinimumHeight !== root.minimumHeight) {
+          root.scheduleFit()
+          return
+        }
+        var result = RadarModel.parseResponse(text)
+        var geometry = result.geometry
+        if (result.status === "ok" && geometry) {
+          root.fittedMinimumWidth = geometry.minimumWidth
+          root.fittedMinimumHeight = geometry.minimumHeight
+          root.status = result.outcome
+        }
         root.scheduleRemember()
       }
     }

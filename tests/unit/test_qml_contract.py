@@ -193,7 +193,8 @@ class QmlContractTests(unittest.TestCase):
         reader = (ROOT / "src/components/ReaderList.qml").read_text(encoding="utf-8")
         actions = (ROOT / "src/controllers/ReaderActions.qml").read_text(encoding="utf-8")
         self.assertEqual(2, panel.count("visible: !keySurface.narrow && !root.overviewVisible && !!storyViewportController.selectedStory"))
-        self.assertIn("visible: root.narrow && !!root.viewport.selectedStory", reader)
+        self.assertIn("visible: root.narrow && !!root.viewport.selectedStory",
+                      (ROOT / "src/components/ReaderToolbar.qml").read_text(encoding="utf-8"))
         self.assertIn("root.recoveryLabel", reader)
         for label in ("Clear search", "Reset section filters", "Explore Front Page", "Your saved stories will appear here"):
             self.assertIn(label, panel)

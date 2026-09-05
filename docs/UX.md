@@ -33,6 +33,8 @@ Source-reader views have four stable visual zones; Home and My setup use the ove
 
 Wide layouts may use two visual columns, but the semantic and keyboard order remains one canonical sequence. Narrow and large-text layouts collapse to one column, place masthead/window controls on a reachable second row, and wrap story actions without changing content or controls. Preferred and minimum window dimensions clamp to the active screen dimensions. The section rail scrolls when its content exceeds the available height, and keyboard section changes reveal the selected control. When the rail fits, Keys remains at its bottom.
 
+In a compact reader, the shared action toolbar scrolls with the reading content and an already-loaded footer does not reserve the remaining viewport. Enlarging text while the window is open must leave a usable article viewport and reachable controls. Font and monitor changes preserve a fitting user placement and automatically refit an out-of-bounds floating frame without taking focus; normal tiling and maximization remain controlled by the compositor.
+
 The reading surface does not carry publication telemetry. A subtle collapsible **Keys** footer at the bottom of the left **SECTIONS** rail shows the real bindings as quiet unboxed key·action pairs (no heavy keycap chrome) only after it is opened; collapsed state is the single `Keys · ?` label with no shortcut preview. It remembers open/closed only for the session (no schema). **Keys · ?** or keyboard `?` toggles it. Search includes its `/` hint, **Check for updates** repeats `R` on hover, focused controls expose their actions, and the documented keyboard map remains complete. Meaningful secondary text uses a contrast-preserving tier derived from the panel foreground in both light and dark themes; the ambient muted token is not used for reader content.
 
 ## Front page composition
@@ -154,6 +156,8 @@ The window lifecycle prepares an exact pre-map float/placement rule before revea
 ## Empty selections and truthful status
 
 The story inspector, separator and story actions appear only when a story is selected. An empty section or search uses the available reading width for a concise explanation and one useful recovery action. A completed briefing keeps Home and its discoveries reachable through Front Page; it does not require a new briefing to explore them. Home and My setup reset their scrolling when changing routes, and keyboard actions cannot mark, save or open a nonexistent story.
+
+Project and workflow details traverse original source links in their rendered order before the share action. Opening a different detail starts at its heading; changing Follow/Mute within the same project preserves its scroll and focused control.
 
 Local development candidates that already contain every upstream commit do not display an update warning. Divergent history is described as unavailable automatic updating without claiming that the public branch is a newer release.
 

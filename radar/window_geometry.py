@@ -106,3 +106,23 @@ def opening_geometry(
         "maximized": bool(saved and existing and saved["maximized"]),
         "restored": existing is not None,
     }
+
+
+def live_geometry(
+    monitors: list[dict[str, Any]], current: dict[str, Any], *,
+    minimum_width: int, minimum_height: int,
+) -> dict[str, Any]:
+    """Fit a live frame without moving a valid user placement toward our margin."""
+    current = validate_placement(current)
+    fit = opening_geometry(monitors, current, width=current["width"], height=current["height"],
+                           minimum_width=minimum_width, minimum_height=minimum_height)
+    monitor = next((item for item in monitors if item["name"] == current["monitor"]), None)
+    if (monitor and current["width"] >= fit["minimumWidth"] and current["height"] >= fit["minimumHeight"]
+            and current["x"] >= monitor["left"] and current["y"] >= monitor["top"]
+            and current["x"] + current["width"] <= monitor["left"] + monitor["width"]
+            and current["y"] + current["height"] <= monitor["top"] + monitor["height"]):
+        # A user may intentionally put the frame closer to an edge than the
+        # default opening margin. Font/monitor checks must not undo that choice.
+        fit.update({key: current[key] for key in ("x", "y", "width", "height")})
+        fit.update(localX=current["x"] - monitor["x"], localY=current["y"] - monitor["y"])
+    return fit
