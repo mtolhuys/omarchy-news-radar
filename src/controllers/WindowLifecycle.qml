@@ -45,6 +45,7 @@ Item {
   readonly property bool windowActionRunning: windowAction.running
   function toggleMaximized() {
     if (!requested || !window.visible || closing || fullscreen || windowAction.running) return
+    trace("window-action-launch", {maximized: maximized})
     launch(windowAction, ["toggle-window-maximized"])
   }
   property string openingToken: ""
@@ -333,11 +334,14 @@ Item {
       onStreamFinished: {
         if (!root.requested || !root.window.visible || root.closing) return
         var result = RadarModel.parseResponse(text)
+        root.trace("window-action-output", {result: result})
         if (result.status !== "ok") root.status = result.message || "Window action unavailable"
         Hyprland.refreshToplevels()
         root.scheduleRemember()
       }
     }
+    stderr: StdioCollector { waitForEnd: true; onStreamFinished: if (text) root.trace("window-action-stderr", {text: text.slice(0, 2048)}) }
+    onExited: function(exitCode) { root.trace("window-action-exited", {exitCode: exitCode}) }
   }
   Process { id: cleanup; stdout: StdioCollector { waitForEnd: true } }
   Process {

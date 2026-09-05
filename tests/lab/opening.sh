@@ -189,6 +189,14 @@ omarchy_host_test() {
     jq -e --argjson current "$current" '. == $current' "$RUN_DIR/opening-neighbor-before.json" >/dev/null
   }
 
+  opening_window_evidence() {
+    local name="$1"
+    ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/$name-state.json" || true
+    ssh_session "hyprctl -j clients" >"$RUN_DIR/$name-clients.json" || true
+    ssh_session "$plugin_dir/bin/news-radar-client window-state" >"$RUN_DIR/$name-native.json" 2>&1 || true
+    capture_console "$name"
+  }
+
   opening_motion_start() {
     local name="$1"
     ssh_session "python3 $scenario_root/candidate/tests/lab/sample_opening.py $scenario_root/$name >$scenario_root/$name.log 2>&1 &"
@@ -290,14 +298,22 @@ omarchy_host_test() {
   opening_motion_finish opening-shortcut-summon || return 1
   saved_geometry="$(ssh_session "hyprctl -j clients | jq -c '.[] | select(.title == \"📰 Omarchy News Radar\") | {at,size}'")" || return 1
   briefing_click maximizeGeometry || return 1
-  wait_for_guest_state "Maximize changes the actual compositor mode" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and .fullscreen == 1)'" || return 1
+  if ! wait_for_guest_state "Maximize changes the actual compositor mode" 15 ssh_session \
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and .fullscreen == 1)'"; then
+    opening_window_evidence failed-native-maximize
+    return 1
+  fi
+  opening_window_evidence native-maximize
   briefing_wait "native maximize state and control settle" ' .maximized == true and .helperRunning == false' || return 1
   opening_neighbors_unchanged || return 1
   briefing_capture opening-native-maximized || return 1
   briefing_click maximizeGeometry || return 1
-  wait_for_guest_state "Restore recovers its normal frame with three apps untouched" 15 ssh_session \
-    "hyprctl -j clients | jq -e --argjson expected '$saved_geometry' '.[] | select(.title == \"📰 Omarchy News Radar\") | .fullscreen == 0 and {at,size} == \$expected'" || return 1
+  if ! wait_for_guest_state "Restore recovers its normal frame with three apps untouched" 15 ssh_session \
+    "hyprctl -j clients | jq -e --argjson expected '$saved_geometry' '.[] | select(.title == \"📰 Omarchy News Radar\") | .fullscreen == 0 and {at,size} == \$expected'"; then
+    opening_window_evidence failed-native-restore
+    return 1
+  fi
+  opening_window_evidence native-restore
   opening_neighbors_unchanged || return 1
 
   log "Reader entry is explicit and remembered window placement survives close"
