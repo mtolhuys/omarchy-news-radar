@@ -74,9 +74,9 @@ def _maximize_script(client: dict[str, Any], desired: int) -> str:
         f"or target.fullscreen_client ~= {client['fullscreenClient']} "
         f"or target.floating ~= {floating} or target.group ~= nil then "
         'error("Radar window changed before maximize action") end; '
-        "local result = hl.dsp.window.fullscreen_state({"
+        "local result = hl.dispatch(hl.dsp.window.fullscreen_state({"
         f'internal = {desired}, client = {desired}, action = "set", '
-        "layout_aware = true, window = target })(); "
+        "layout_aware = true, window = target })); "
         'if type(result) ~= "table" or result.ok ~= true then '
         'error("Radar maximize action was rejected") end'
     )

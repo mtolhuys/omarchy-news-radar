@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import shutil
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -10,7 +11,7 @@ from unittest.mock import patch
 from radar.cli import client_main
 from radar.errors import RadarError
 from radar.window import MAX_RESPONSE_BYTES, WINDOW_CLASS, WINDOW_TITLE
-from radar.window_actions import CONFIRM_ATTEMPTS, toggle_window_maximized, window_state
+from radar.window_actions import CONFIRM_ATTEMPTS, _maximize_script, toggle_window_maximized, window_state
 
 
 def client(**changes: object) -> dict[str, object]:
@@ -160,6 +161,54 @@ class WindowActionTests(unittest.TestCase):
                     with contextlib.redirect_stdout(output):
                         self.assertEqual(2, client_main([command]))
                     self.assertEqual("failed", json.loads(output.getvalue())["status"])
+
+
+@unittest.skipUnless(shutil.which("lua"), "Lua dispatcher checks require the Plugin Lab Lua runtime")
+class WindowDispatcherTests(unittest.TestCase):
+    def run_script(self, *, before: int, desired: int, alteration: str = "", reject: bool = False) -> None:
+        script = _maximize_script(client(fullscreen=before, fullscreenClient=before), desired)
+        # Hyprland v0.56.2 wraps factories in HL.Dispatcher userdata whose __call
+        # explicitly refuses invocation; only hl.dispatch can execute it. Model
+        # that contract with a non-callable Lua object, not a callable closure.
+        harness = f'''
+local window = {{mapped=true, class={json.dumps(WINDOW_CLASS)}, initial_class={json.dumps(WINDOW_CLASS)},
+  title={json.dumps(WINDOW_TITLE, ensure_ascii=False)}, initial_title={json.dumps(WINDOW_TITLE, ensure_ascii=False)},
+  address="0x123a", fullscreen={before}, fullscreen_client={before}, floating=true}}
+local calls = 0
+local dispatcherType = {{__call=function() error("dispatcher objects cannot be called directly") end}}
+hl = {{get_windows=function() return {{window}} end, dsp={{window={{}}}}}}
+hl.dsp.window.fullscreen_state = function(options)
+  return setmetatable({{options=options}}, dispatcherType)
+end
+hl.dispatch = function(dispatcher)
+  assert(getmetatable(dispatcher) == dispatcherType)
+  local options = dispatcher.options
+  assert(options.window == window and options.action == "set" and options.layout_aware == true)
+  assert(options.internal == {desired} and options.client == {desired})
+  calls = calls + 1
+  if {str(reject).lower()} then return {{ok=false, error="refused"}} end
+  window.fullscreen = options.internal
+  window.fullscreen_client = options.client
+  return {{ok=true, pass_event=false}}
+end
+{alteration}
+local ok = pcall(function() {script} end)
+assert(ok == {str(not alteration and not reject).lower()})
+assert(calls == {0 if alteration else 1})
+assert(window.fullscreen == {before if alteration or reject else desired})
+assert(window.floating == true)
+'''
+        result = subprocess.run(["lua", "-"], input=harness, capture_output=True, text=True, timeout=2)
+        self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_noncallable_dispatcher_maximizes_and_restores(self) -> None:
+        self.run_script(before=0, desired=1)
+        self.run_script(before=1, desired=0)
+
+    def test_native_guard_and_action_failure_remain_fail_closed(self) -> None:
+        self.run_script(before=0, desired=1, alteration='window.address = "0x999"')
+        self.run_script(before=0, desired=1, alteration='window.group = {}')
+        self.run_script(before=0, desired=1, reject=True)
 
 
 if __name__ == "__main__":
