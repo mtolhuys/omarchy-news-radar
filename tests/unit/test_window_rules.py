@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import unittest
 
-from radar.window_rules import clear_rule_script, opening_rule_script
+from radar.window_rules import clear_rule_script, confirm_rule_script, opening_rule_script
 
 GEOMETRY = dict(monitor="DP-1", width=1120, height=720, localX=16, localY=52, maximized=False)
 HARNESS = """
@@ -54,7 +54,8 @@ class WindowRuleLifecycleTests(unittest.TestCase):
         chunks = []
         for index in range(40):
             token = f"{index:032x}"
-            chunks.extend([opening_rule_script(GEOMETRY, token), clear_rule_script(token)])
+            chunks.extend([opening_rule_script(GEOMETRY, token), confirm_rule_script(GEOMETRY, token),
+                           clear_rule_script(token)])
         self.check_lua(*chunks, """
           assert(#declarations == 1, "identical opens must not append effects")
           assert(not named.enabled and omarchy_news_radar_opening_rule == named)
@@ -67,7 +68,9 @@ class WindowRuleLifecycleTests(unittest.TestCase):
     def test_old_expiry_and_close_cannot_disable_new_owner_even_when_handle_reused(self) -> None:
         self.check_lua(
             opening_rule_script(GEOMETRY, "a" * 32),
+            confirm_rule_script(GEOMETRY, "a" * 32),
             opening_rule_script(GEOMETRY, "b" * 32),
+            confirm_rule_script(GEOMETRY, "b" * 32),
             clear_rule_script("a" * 32),
             "assert(named.enabled); timers[1]:fire(); assert(named.enabled)",
             "assert(omarchy_news_radar_opening_timer == timers[2])",
@@ -79,13 +82,43 @@ class WindowRuleLifecycleTests(unittest.TestCase):
     def test_changed_geometry_and_expired_handle_are_redeclared(self) -> None:
         self.check_lua(
             opening_rule_script(GEOMETRY, "a" * 32),
+            confirm_rule_script(GEOMETRY, "a" * 32),
             opening_rule_script({**GEOMETRY, "localX": 100}, "b" * 32),
+            confirm_rule_script({**GEOMETRY, "localX": 100}, "b" * 32),
             "assert(#declarations == 2 and declarations[2].move[1] == 100)",
             "timers[1]:fire(); assert(named.enabled)",
             "named.expired = true",
             opening_rule_script({**GEOMETRY, "localX": 100}, "c" * 32),
+            confirm_rule_script({**GEOMETRY, "localX": 100}, "c" * 32),
             "assert(#declarations == 3 and not named.expired)",
             "timers[2]:fire(); assert(named.enabled)",
             "timers[3]:fire(); assert(not named.enabled)",
             "assert(declarations[3].match.initial_title == '^📰 Omarchy News Radar$')",
+        )
+
+    def test_unconfirmed_declaration_cannot_be_reused_even_if_cleanup_failed(self) -> None:
+        self.check_lua(
+            opening_rule_script(GEOMETRY, "a" * 32),
+            # Simulate an enabled partial declaration whose eval reported an
+            # unsupported field, followed by an unavailable cleanup command.
+            "assert(named.enabled and omarchy_news_radar_opening_spec == nil)",
+            opening_rule_script(GEOMETRY, "b" * 32),
+            "assert(#declarations == 2, 'a rejected spec must be redeclared')",
+            confirm_rule_script(GEOMETRY, "b" * 32),
+            "assert(omarchy_news_radar_opening_spec ~= nil)",
+            clear_rule_script("b" * 32),
+            opening_rule_script(GEOMETRY, "c" * 32),
+            confirm_rule_script(GEOMETRY, "c" * 32),
+            "assert(#declarations == 2, 'only acknowledged declarations can be reused')",
+            "timers[1]:fire(); timers[2]:fire(); assert(named.enabled)",
+        )
+
+    def test_late_confirmation_cannot_mark_the_new_owner_as_validated(self) -> None:
+        self.check_lua(
+            opening_rule_script(GEOMETRY, "a" * 32),
+            opening_rule_script({**GEOMETRY, "localX": 100}, "b" * 32),
+            "local accepted = pcall(function() " + confirm_rule_script(GEOMETRY, "a" * 32) + " end)",
+            "assert(not accepted and named.enabled and omarchy_news_radar_opening_spec == nil)",
+            confirm_rule_script({**GEOMETRY, "localX": 100}, "b" * 32),
+            "assert(omarchy_news_radar_opening_spec ~= nil)",
         )

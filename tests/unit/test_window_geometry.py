@@ -77,11 +77,11 @@ class WindowGeometryTests(unittest.TestCase):
 
     def test_pre_map_rule_is_named_exact_and_has_its_own_expiry(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            runner = Runner([monitor()], "ok")
+            runner = Runner([monitor()], "ok", "ok")
             result = prepare_window(width=1120, height=720, minimum_width=720, minimum_height=480,
                                     environment={"XDG_STATE_HOME": d}, runner=runner)
         self.assertEqual("prepared", result["outcome"])
-        script = runner.commands[-1][-1]
+        script = runner.commands[1][-1]
         self.assertEqual(["hyprctl", "eval"], runner.commands[-1][:2])
         self.assertIn('name = "omarchy-news-radar-opening"', script)
         self.assertIn('initial_class = "^org[.]quickshell$"', script)
@@ -138,15 +138,15 @@ class WindowGeometryTests(unittest.TestCase):
 
     def test_delayed_old_cleanup_cannot_address_the_next_preparation(self) -> None:
         with tempfile.TemporaryDirectory() as d, patch("radar.window.secrets.token_hex", side_effect=["a" * 32, "b" * 32]):
-            runner = Runner([monitor()], "ok", [monitor()], "ok", "ok")
+            runner = Runner([monitor()], "ok", "ok", [monitor()], "ok", "ok", "ok")
             first = prepare_window(width=1120, height=720, minimum_width=720, minimum_height=480,
                                    environment={"XDG_STATE_HOME": d}, runner=runner)
             second = prepare_window(width=1120, height=720, minimum_width=720, minimum_height=480,
                                     environment={"XDG_STATE_HOME": d}, runner=runner)
             finish_window_opening(token=first["openingToken"], runner=runner)
         self.assertNotEqual(first["openingToken"], second["openingToken"])
-        replacement = runner.commands[3][-1]
-        late_cleanup = runner.commands[4][-1]
+        replacement = runner.commands[4][-1]
+        late_cleanup = runner.commands[6][-1]
         self.assertIn('omarchy_news_radar_opening_token = "' + second["openingToken"] + '"', replacement)
         self.assertTrue(late_cleanup.startswith('if omarchy_news_radar_opening_token == "' + first["openingToken"] + '" then'))
         self.assertNotIn(second["openingToken"], late_cleanup)

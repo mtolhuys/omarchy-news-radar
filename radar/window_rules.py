@@ -26,9 +26,8 @@ def clear_rule_script(token: str | None = None) -> str:
     return f'if {OPENING_TOKEN} == "{token}" then {cleanup} end'
 
 
-def opening_rule_script(geometry: dict[str, Any], token: str) -> str:
-    """Use only geometry/token scalars already validated by the window helper."""
-    declaration = (
+def _declaration(geometry: dict[str, Any]) -> str:
+    return (
         '{ name = "omarchy-news-radar-opening", '
         'match = { class = "^org[.]quickshell$", title = "^📰 Omarchy News Radar$", '
         'initial_class = "^org[.]quickshell$", initial_title = "^📰 Omarchy News Radar$" }, '
@@ -37,6 +36,11 @@ def opening_rule_script(geometry: dict[str, Any], token: str) -> str:
         f'move = {{ {geometry["localX"]}, {geometry["localY"]} }}, '
         f'maximize = {str(geometry["maximized"]).lower()} }}'
     )
+
+
+def opening_rule_script(geometry: dict[str, Any], token: str) -> str:
+    """Use only geometry/token scalars already validated by the window helper."""
+    declaration = _declaration(geometry)
     # Fingerprint the complete declaration so a changed geometry or rule
     # contract cannot accidentally reuse an earlier spec after plugin reload.
     spec = json.dumps(declaration, ensure_ascii=False)
@@ -45,7 +49,7 @@ def opening_rule_script(geometry: dict[str, Any], token: str) -> str:
         f'{OPENING_TOKEN} = "{token}"; '
         f'if not {OPENING_RULE} or {OPENING_RULE}:is_enabled() == nil '
         f'or {OPENING_SPEC} ~= {spec} then '
-        f'{OPENING_RULE} = hl.window_rule({declaration}); {OPENING_SPEC} = {spec} end; '
+        f'{OPENING_SPEC} = nil; {OPENING_RULE} = hl.window_rule({declaration}) end; '
         f'{OPENING_RULE}:set_enabled(true); '
         f'assert({OPENING_RULE}:is_enabled() == true, "Radar opening rule was not enabled"); '
         f'local owned_rule = {OPENING_RULE}; local owned_token = {OPENING_TOKEN}; '
@@ -53,4 +57,18 @@ def opening_rule_script(geometry: dict[str, Any], token: str) -> str:
         f'if {OPENING_TOKEN} == owned_token and {OPENING_RULE} == owned_rule then '
         f'owned_rule:set_enabled(false); {OPENING_TIMER} = nil; {OPENING_TOKEN} = nil end '
         f'end, {{ timeout = {RULE_TIMEOUT_MS}, type = "oneshot" }})'
+    )
+
+
+def confirm_rule_script(geometry: dict[str, Any], token: str) -> str:
+    # hl.window_rule can return an enabled handle while recording invalid
+    # effects in eval's error response. Cache its specification only AFTER the
+    # first eval acknowledged success; even failed cleanup cannot make a
+    # partially accepted declaration reusable. A reload/expiry/new opening
+    # between evaluations fails closed without modifying the new owner's rule.
+    spec = json.dumps(_declaration(geometry), ensure_ascii=False)
+    return (
+        f'assert({OPENING_TOKEN} == "{token}" and {OPENING_RULE} '
+        f'and {OPENING_RULE}:is_enabled() == true, "Radar opening rule changed before confirmation"); '
+        f'{OPENING_SPEC} = {spec}'
     )

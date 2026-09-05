@@ -11,7 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .errors import RadarError
-from .window_rules import clear_rule_script, opening_rule_script
+from .window_rules import clear_rule_script, confirm_rule_script, opening_rule_script
 
 WINDOW_TITLE = "📰 Omarchy News Radar"
 WINDOW_CLASS = "org.quickshell"
@@ -151,6 +151,7 @@ def prepare_window(
     token = secrets.token_hex(16)
     try:
         _eval(opening_rule_script(geometry, token), runner=runner)
+        _eval(confirm_rule_script(geometry, token), runner=runner)
     except (RadarError, OSError, subprocess.SubprocessError):
         try:
             finish_window_opening(token=token, runner=runner)
