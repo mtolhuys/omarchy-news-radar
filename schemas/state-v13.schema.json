@@ -1,0 +1,329 @@
+{
+  "$defs": {
+    "httpsUrl": {
+      "maxLength": 2048,
+      "pattern": "^https://",
+      "type": "string"
+    },
+    "sectionFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "imagesOnly": {
+          "type": "boolean"
+        },
+        "period": {
+          "enum": [
+            "all",
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        "significance": {
+          "enum": [
+            "all",
+            "notable",
+            "critical"
+          ]
+        },
+        "types": {
+          "items": {
+            "enum": [
+              "omarchy-released",
+              "omarchy-news",
+              "plugin-added",
+              "plugin-released",
+              "plugin-retired",
+              "plugin-verification-changed",
+              "community-link",
+              "youtube-video"
+            ]
+          },
+          "maxItems": 8,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "unreadOnly": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "period",
+        "significance",
+        "unreadOnly",
+        "imagesOnly",
+        "types"
+      ],
+      "type": "object"
+    },
+    "timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  },
+  "$id": "https://mtolhuys.github.io/omarchy-news-radar/schemas/state-v13.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "briefing": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "generatedAt": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "eventIds": {
+                    "items": {
+                      "pattern": "^evt_[0-9a-f]{24}$",
+                      "type": "string"
+                    },
+                    "maxItems": 500,
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "reason": {
+                    "enum": [
+                      "critical",
+                      "notable",
+                      "core",
+                      "installed",
+                      "discovery",
+                      "followed"
+                    ]
+                  }
+                },
+                "required": [
+                  "eventIds",
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "maxItems": 5,
+              "type": "array"
+            }
+          },
+          "required": [
+            "generatedAt",
+            "groups"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "onboardingComplete": {
+      "type": "boolean"
+    },
+    "preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "barVisible": {
+          "type": "boolean"
+        },
+        "imagesVisible": {
+          "type": "boolean"
+        },
+        "sectionFilters": {
+          "additionalProperties": false,
+          "properties": {
+            "core": {
+              "$ref": "#/$defs/sectionFilter"
+            },
+            "for-you": {
+              "$ref": "#/$defs/sectionFilter"
+            },
+            "front-page": {
+              "$ref": "#/$defs/sectionFilter"
+            },
+            "plugins": {
+              "$ref": "#/$defs/sectionFilter"
+            },
+            "saved": {
+              "$ref": "#/$defs/sectionFilter"
+            },
+            "youtube": {
+              "$ref": "#/$defs/sectionFilter"
+            }
+          },
+          "required": [
+            "front-page",
+            "for-you",
+            "core",
+            "plugins",
+            "youtube",
+            "saved"
+          ],
+          "type": "object"
+        },
+        "sectionVisibility": {
+          "additionalProperties": false,
+          "properties": {
+            "core": {
+              "type": "boolean"
+            },
+            "plugins": {
+              "type": "boolean"
+            },
+            "youtube": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "core",
+            "plugins",
+            "youtube"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "barVisible",
+        "imagesVisible",
+        "sectionFilters",
+        "sectionVisibility"
+      ],
+      "type": "object"
+    },
+    "readOverrides": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "maxProperties": 500,
+      "propertyNames": {
+        "pattern": "^evt_[0-9a-f]{24}$"
+      },
+      "type": "object"
+    },
+    "readThrough": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "relevance": {
+      "additionalProperties": false,
+      "properties": {
+        "followedCreators": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "followedPlugins": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "followedSources": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mutedCreators": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mutedPlugins": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mutedSources": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "followedPlugins",
+        "followedSources",
+        "followedCreators",
+        "mutedPlugins",
+        "mutedSources",
+        "mutedCreators"
+      ],
+      "type": "object"
+    },
+    "saved": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "occurredAt": {
+            "$ref": "#/$defs/timestamp"
+          },
+          "savedAt": {
+            "$ref": "#/$defs/timestamp"
+          },
+          "sourceUrl": {
+            "$ref": "#/$defs/httpsUrl"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "savedAt",
+          "title",
+          "sourceUrl",
+          "occurredAt",
+          "type"
+        ],
+        "type": "object"
+      },
+      "maxProperties": 250,
+      "propertyNames": {
+        "pattern": "^evt_[0-9a-f]{24}$"
+      },
+      "type": "object"
+    },
+    "schemaVersion": {
+      "const": 13
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "readThrough",
+    "readOverrides",
+    "saved",
+    "preferences",
+    "onboardingComplete",
+    "briefing",
+    "relevance"
+  ],
+  "title": "Omarchy News Radar local state v13",
+  "type": "object"
+}

@@ -37,6 +37,7 @@ from .constants import (
     YOUTUBE_IMAGE_ORIGIN,
 )
 from .errors import ValidationError
+from .relevance import validate_relevance
 LEGACY_SECTION_ICON_IDS = frozenset(
     {"newspaper", "spark", "core", "plugins", "community", "saved"}
 )
@@ -140,10 +141,14 @@ def validate_https_url(value: Any, name: str = "URL") -> str:
     url = require_string(value, name, 1, 2048)
     if CONTROL_RE.search(url):
         raise ValidationError(f"{name} contains control characters")
-    parsed = urlsplit(url)
+    try:
+        parsed = urlsplit(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise ValidationError(f"{name} is malformed") from exc
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
         raise ValidationError(f"{name} must be a credential-free HTTPS URL")
-    if parsed.port not in (None, 443):
+    if port not in (None, 443):
         raise ValidationError(f"{name} uses an unsupported port")
     hostname = parsed.hostname.rstrip(".").lower()
     if hostname == "localhost" or "." not in hostname:
@@ -578,7 +583,7 @@ def validate_state(value: Any) -> dict[str, Any]:
     state = require_mapping(value, "state")
     require_exact_keys(
         state,
-        {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences", "onboardingComplete", "briefing"},
+        {"schemaVersion", "readThrough", "readOverrides", "saved", "preferences", "onboardingComplete", "briefing", "relevance"},
         "state",
     )
     if state.get("schemaVersion") != STATE_SCHEMA_VERSION:
@@ -619,6 +624,7 @@ def validate_state(value: Any) -> dict[str, Any]:
         "readOverrides": read_overrides,
         "onboardingComplete": require_bool(state.get("onboardingComplete"), "onboardingComplete"),
         "briefing": validate_briefing(state.get("briefing")),
+        "relevance": validate_relevance(state.get("relevance")),
         "saved": saved,
         "preferences": {
             "barVisible": bar_visible,

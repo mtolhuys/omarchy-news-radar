@@ -92,7 +92,12 @@ def fetch_bytes(
             while True:
                 if time.monotonic() - started > policy.timeout_seconds:
                     raise FetchError("timeout", "request exceeded its total timeout")
-                chunk = response.read(min(64 * 1024, policy.maximum_bytes + 1 - total))
+                # read(n) can keep filling n bytes while a slow trickle prevents
+                # the socket's inactivity timeout. read1 returns available body
+                # bytes after at most one raw read, so the total check runs again.
+                chunk = response.read1(min(64 * 1024, policy.maximum_bytes + 1 - total))
+                if time.monotonic() - started > policy.timeout_seconds:
+                    raise FetchError("timeout", "request exceeded its total timeout")
                 if not chunk:
                     break
                 total += len(chunk)

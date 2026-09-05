@@ -93,7 +93,9 @@ omarchy-news-radar/
 │   ├── state-v9.schema.json
 │   ├── state-v10.schema.json
 │   ├── state-v11.schema.json
-│   └── state-v12.schema.json
+│   ├── state-v12.schema.json
+│   ├── state-v13.schema.json
+│   └── insights-v1.schema.json
 ├── share/
 │   └── applications/
 │       └── io.github.mtolhuys.news-radar.desktop
@@ -117,7 +119,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
   "schemaVersion": 1,
   "id": "io.github.mtolhuys.news-radar",
   "name": "Omarchy News Radar",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "Maarten Tolhuijs",
   "description": "A keyboard-first front page for meaningful Omarchy activity.",
   "icon": "assets/io.github.mtolhuys.news-radar.svg",
@@ -128,7 +130,7 @@ Version 1 uses one third-party plugin with paired panel and bar entry points:
 }
 ```
 
-This is a target manifest, not permission to create it before `src/Panel.qml` exists and validation passes. The panel entry point is an `Item`, accepts current shell-injected properties, exposes `open(payloadJson)` and `close()`, and owns a normal `FloatingWindow`. The window is compositor-managed, resizable/maximizable, and follows ordinary task switching; it is not a `PanelWindow` or layer-shell overlay. Radar omits an unreliable minimize control.
+This excerpt describes the local candidate manifest, not a published release. The panel entry point is an `Item`, accepts current shell-injected properties, exposes `open(payloadJson)` and `close()`, and owns a normal `FloatingWindow`. The window is compositor-managed, resizable/maximizable, and follows ordinary task switching; it is not a `PanelWindow` or layer-shell overlay. Radar omits an unreliable minimize control.
 
 Every public activation route uses the shell's `summon` operation. Closed means create/open/focus; already open means raise and focus the same window, whether it is foreground or obscured. Repeated activation never serves as close. `Escape`, `q`, the rendered close control, and normal window-manager close remain the deliberate close routes. The panel's bounded window helper validates one exact mapped Radar client, floats it if necessary, then focuses that address; an ambiguous identity fails closed.
 
@@ -144,15 +146,15 @@ Omit `keepLoaded`. Omarchy keeps the declared bar widget within its normal bar l
 
 `open()` follows this order:
 
-1. Reset transient error state without changing reading state.
+1. Reset transient error state without changing reading state, and begin the exact pre-map placement preparation described in D059.
 2. Ask the client helper for the validated local cache and local user state.
 3. Render the existing cached briefing and source sections with explicit per-story `isUnread` decoration. A missing briefing waits for initialization; ordinary projections and the bar never create one.
 4. Query `omarchy-shell shell listPlugins` to derive locally enabled plugin IDs, then call `ensure-briefing` once. An unavailable discovery result uses the existing fail-closed empty ID list. The command initializes only a missing snapshot and never replaces an existing or completed briefing.
-5. Start at most one bounded refresh helper.
+5. Start at most one bounded news refresh helper and one independent optional insights refresh; neither blocks cached reading.
 6. Treat a matching `304 Not Modified` as success only when a validated local feed exists; otherwise validate the candidate feed completely before atomically replacing cache or the visible current model.
 7. Preserve the cached model and surface a recoverable status if refresh fails.
-8. Prime keyboard focus only after the visible model exists.
-9. On a fresh open only, capture the first non-empty projection's selected event ID and panel-open generation, wait one brief single-shot dwell, and mark it read through the ordinary per-story helper only when that generation remains visible with the exact story still selected. Automatic opening reprojections replace the candidate and restart the dwell; explicit story interaction, Tune, Settings, the first-use choice, or close cancels it. First use cannot read a story while its welcome choice covers the reading surface.
+8. Reveal after placement and local projection are ready, or after the bounded recovery deadline exposes a recoverable state. Network freshness is not a visibility prerequisite. Prime keyboard focus only after the visible model exists.
+9. Home and My setup never arm a read for hidden story content. In a visible source reader on a fresh open only, capture the first non-empty projection's selected event ID and panel-open generation, wait one brief single-shot dwell, and mark it read through the ordinary per-story helper only when that generation remains visible with the exact story still selected. Automatic opening reprojections replace the candidate and restart the dwell; explicit story interaction, Tune, Settings, the first-use choice, or close cancels it. First use cannot read a story while its welcome choice covers the reading surface.
 
 Dense-list keyboard movement reads the instantiated delegate geometry before changing selection. A next row already inside the viewport uses ordinary containment; a next row crossing the bottom resolves its exact `ListView.Beginning` offset and eases `contentY` there. This keeps variable-height rows fully visible without changing pointer flicking, pagination, projection, or read-state semantics.
 
@@ -160,9 +162,9 @@ Dense-list keyboard movement reads the instantiated delegate geometry before cha
 
 ## Finite local briefing
 
-`radar/briefing.py` selects a maximum of five groups from unread non-YouTube events that satisfy the persistent Front Page filters. It prioritizes reviewed critical and notable notices, the newest official release and one official news item, exact enabled-plugin matches, and one discovery when available. Critical notices may consume all five places. Routine verification changes alone never consume a place. Selection uses source facts and deterministic ordering, never metrics or generated impact prose. The public site's generic Front Page remains a separate non-personalized projection.
+`radar/briefing.py` selects a maximum of five groups from unread non-YouTube events that satisfy the persistent Front Page filters and local mutes. It prioritizes reviewed critical and notable notices, the newest official release and one official news item, exact enabled-plugin matches or explicit follows, and one discovery when available. Critical notices may consume all five places. Routine verification changes alone never consume a place. Selection uses source facts and deterministic ordering, never metrics or generated impact prose. The public site's generic Front Page remains a separate non-personalized projection.
 
-State v12 stores the selected groups as exact event IDs plus a closed reason enum and the edition's collection timestamp. Each selected plugin groups only its occurrences present in that snapshot. Projections resolve those IDs against the validated cache and retain original titles, dates, and source links; a newer occurrence for the same plugin never joins silently. Reading, filtering, refreshing, changing installed plugins, and reopening preserve membership. Only **New briefing** replaces it, leaving skipped events unread. Replacement first selects eligible unread IDs outside the current snapshot when they can form another briefing, so unfinished priority items cannot prevent the explicit next selection from advancing. With no alternative groups, it uses the ordinary unread selection. This excludes only the immediately previous snapshot and creates no growing history. The bar reads the existing snapshot but does not initialize or replace it.
+State v13 retains the selected groups introduced in v12 as exact event IDs plus a closed reason enum and the edition's collection timestamp. Each selected plugin groups only its occurrences present in that snapshot. Projections resolve those IDs against the validated cache and retain original titles, dates, and source links; a newer occurrence for the same plugin never joins silently. Reading, filtering, refreshing, changing installed plugins, and reopening preserve membership. Only **New briefing** replaces it, leaving skipped events unread. Replacement first selects eligible unread IDs outside the current snapshot when they can form another briefing, so unfinished priority items cannot prevent the explicit next selection from advancing. With no alternative groups, it uses the ordinary unread selection. This excludes only the immediately previous snapshot and creates no growing history. The bar reads the existing snapshot but does not initialize or replace it.
 
 The representative's `isUnread` remains its exact per-story reading fact. Group counts separately report unread members. Selecting or opening the representative reads only that event; opening another group source reads only that member. **Mark group read** and **Mark briefing read** are explicit bounded actions against the displayed snapshot digest. A stale digest is a benign no-op. Completion means every still-present member of that selected briefing has been read and no member has expired, not that the entire feed is read. Missing members receive an explicit expiration count instead of a false completion claim. Empty briefings remain empty and complete until the user requests another.
 
@@ -177,7 +179,11 @@ news-radar-client read
 news-radar-client refresh
 news-radar-client refresh-if-due --minimum-age <seconds>
 news-radar-client indicator
-news-radar-client project --section <id> --installed-json <json-array>
+news-radar-client installed
+news-radar-client project --section <id> --installed-json <json-array> --installed-facts-json <json-array> --installed-facts-status available|unavailable
+news-radar-client insights-refresh
+news-radar-client insights-project --installed-facts-json <json-array> --installed-facts-status available|unavailable
+news-radar-client set-relevance --kind plugin|source|creator --id <target-id> --mode follow|mute|clear
 news-radar-client ensure-briefing --installed-json <json-array>
 news-radar-client new-briefing --installed-json <json-array>
 news-radar-client complete-onboarding
@@ -188,6 +194,10 @@ news-radar-client set-read --event-id <id> --read true|false
 news-radar-client mark-section-read --section <id> --installed-json <json-array>
 news-radar-client toggle-saved --event-id <id>
 news-radar-client set-preferences [--bar-visible true|false] [--images-visible true|false]
+news-radar-client prepare-window --width <pixels> --height <pixels> --minimum-width <pixels> --minimum-height <pixels>
+news-radar-client finish-window-opening --token <opening-token>
+news-radar-client activate-window
+news-radar-client remember-window
 news-radar-client purge
 ```
 
@@ -207,10 +217,14 @@ Follow XDG ownership:
 | --- | --- |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed-http.json` | Private bounded `ETag`/`Last-Modified` validators bound to the fixed feed URL; disposable and purge-owned |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/insights.json` | Independent last-known-good optional source coverage |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/insights-http.json` | Validators bound to the fixed companion URL |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/insights-check.json` | Independent companion check cadence |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json` | Private bounded timestamp/outcome for background check cadence; not publication freshness |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/assets/images/` | Content-addressed rasters from an explicitly imported local edition |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/local-edition.json` | Bounded digest/revision marker for local-edition projection |
-| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local display/filter preferences, first-use completion, exact briefing membership, and schema version |
+| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/state.json` | Read baseline/overrides, saved items, local display/filter and follow/mute preferences, first-use completion, exact briefing membership, and schema version |
+| `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/window.json` | Bounded private placement metadata, separate from reading state |
 | `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/diagnostics.log` | Optional bounded local diagnostics without feed bodies or private paths |
 
 Use private directories, mode `0600` files where the platform permits, same-directory temporary files, `fsync`, and atomic rename. Refuse symlinked cache/state targets. A failed candidate never truncates or replaces good data.
@@ -261,7 +275,7 @@ Live feed URL: `https://mtolhuijs.nl/news-radar/events.json`. GitHub Actions `te
 
 The site contains no runtime framework, cookies, analytics, user input, service worker, external font, or client-side content fetch required for the initial page. Publisher output must escape every remote string for its destination context and use a strict Content Security Policy compatible with a static site.
 
-The public edition offers a fixed marketplace installation link, a link to the repository's desktop walkthrough, and RSS/JSON subscriptions. Its canonical URL and text-only social metadata describe the project independently of remote story text. A keyboard skip link targets the focusable news landmark. These links reuse existing public destinations and do not add a personal feed or publication endpoint.
+The public edition offers a fixed marketplace installation link, a link to the repository's desktop walkthrough, and RSS/JSON subscriptions. The expanded candidate also generates generic story, discovery and weekly pages, an independent `insights.json`, and escaped social SVGs under `assets/share/`. Page metadata uses fixed canonical destinations and context-escaped source text. A keyboard skip link targets the focusable news landmark. None of these artifacts contains a personal feed or local setup data.
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 
@@ -271,11 +285,11 @@ Before collection, publish restores continuity state from Laravel storage (or a 
 
 The panel calls the maintained shell IPC and treats the returned plugin IDs as local data. Matching is exact on canonical plugin ID. Do not send installed IDs to the feed host and do not infer installation from repository names or display names.
 
-“For You” includes only events whose entity plugin ID exactly matches an enabled local plugin. Radar does not derive or store a second manual-interest relevance path.
+“For You” includes events whose entity plugin ID exactly matches an enabled local plugin, plus events matching explicit local project/source/creator follows, subject to mutes. The removed free-text manual-interest path remains absent. My setup uses bounded local names and exact versions; an explicit shell `firstParty` flag excludes uncovered built-in components without guessing from ID prefixes. Successful empty discovery and unavailable discovery remain distinct.
 
 ## Optional bar indicator
 
-The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, actionable unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The unread count is the unique union of unread event IDs surviving the five current persistent section projections, using the same enabled-plugin IDs and filters as the panel. Search and pagination remain transient and do not affect it. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
+The main manifest declares one non-multiple `bar-widget`, defaulted to the right section. It renders a code-native newspaper, actionable unread count, and publisher/source health dot; left click summons and raises the panel, middle click checks the published edition, and right click persists `barVisible=false`. The unread count is the unique union of unread event IDs surviving the currently visible persistent section projections, using the same enabled-plugin IDs and filters as the panel. Search and pagination remain transient and do not affect it. The widget root binds `visible` to that preference, and current Omarchy `ModuleSlot` geometry maps an invisible item to exact zero width/height. A local state-file watch restores it when Tune Your Radar sets the preference true.
 
 While visible, one single-shot timer checks the fixed feed at most every five minutes after either a successful or failed attempt. Cadence comes from private `update-check.json`, not the edition's collection timestamp, so loading the shell shortly before an edition becomes old cannot defer the next check for another full interval. A feed-file watch reloads the canonical unread/health indicator immediately after either entry point adopts a valid edition; a 30-second local-only fallback covers missed filesystem events. The panel does not need to be opened. This is a passive bar indicator, not a desktop notification service.
 
@@ -291,3 +305,15 @@ While visible, one single-shot timer checks the fixed feed at most every five mi
 - Window-manager close follows the same shell hide path; maximize, resize, and `Alt+Tab` do not alter panel state.
 - Pagination and per-section filters operate only on the validated cache projection and cannot expand the network boundary. Down from the final visible story focuses Load more; Enter expands by twelve and returns navigation to the prior last story so the next Down reaches the first new item without an implicit read.
 - Returning Up from the focused Load more control transfers focus only: the already selected final row and live `contentY` remain unchanged. Under Unread only, QML sends a bounded list of event IDs read during the current view; Python validates those IDs and permits only those otherwise-matching read events through the projection. Persistent unread counts are computed without the exception, and changing section, search, or filter clears it.
+
+## Source-backed companion and public rendering
+
+`insights.py` validates the independent insights-v1 contract and owns strict version precedence. `insights_builder.py` selects reviewed collection members, explicit release-coverage projects, recent event projects and deterministic catalog backfill within the 100-project bound. `sources/release_notes.py` retrieves only the seven repository-owned API paths, at most 30 stable releases each, with 2 MiB responses, 15-second deadlines, no redirects and four concurrent requests. It strips active markup and code blocks deterministically. Prior valid facts are optional input; no companion data enters the news continuity snapshot.
+
+The client companion cache has its own due checks, validators and lock. Local enabled-plugin facts join exact public IDs; a manifest read is a bounded data read, never a repository command. Projection selects setup updates, discovery cards and version-specific notes without sending local data. Explicit follow/mute targets use stable IDs, not display names.
+
+`client.py` retains its import-compatible facade over separate feed, briefing, projection, reading, setup and insight modules; `state_schema.py` owns pure defaults and migrations. `insights.projectDetails` retains unfiltered bounded source context for reachable stories and workflow members when search or mutes hide their overview cards. `provenance.py` requires historical repository agreement before attaching current project/release notes or creator targets. Optional note failure preserves richer prior details only for the same version and source while retaining newly collected releases. Fenced and indented code examples never become extracted changes.
+
+`publisher.py` owns the atomic artifact transaction and RSS. `site/common.py`, `site/cards.py` and `site/pages.py` compose escaped documents, reusable cards and complete pages; `site/site.css` is a readable stylesheet. `publication_images.py` applies the existing exact-origin raster inspection, with at most twelve optional companion thumbnails and four concurrent inspections. Rejected or excess images are omitted without dropping the text. The server retains prior durable pages separately from the rolling producer output.
+
+Optional marketplace image inspection deduplicates URLs across event rows and runs at most four requests concurrently. A 60-second queue budget stops new requests; in-flight requests retain the existing 20-second timeout. Missed previews are omitted while every validated story survives. Discovery images have a separate twelve-item cap and the same bounded queue behavior. Inspection retains only small dimension records, not downloaded raster bodies.

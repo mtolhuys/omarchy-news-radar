@@ -24,7 +24,7 @@ An optional XDG application entry exposes **Omarchy News Radar** with its bundle
 
 Version 1 is an on-demand normal desktop window paired with a default-on, optional top-bar newspaper. The panel entry point creates a compositor-managed `FloatingWindow` with a bounded minimum size. It is movable, resizable, maximizable, and participates in ordinary `Alt+Tab`; closing it through window management follows the same state/process teardown as `Escape`. Radar does not expose a minimize button because that action is unreliable in the supported hosted-window lifecycle.
 
-The panel has four stable visual zones:
+Source-reader views have four stable visual zones; Home and My setup use the overview described below:
 
 1. **Masthead:** Omarchy News Radar and compact window/update actions.
 2. **Section rail:** Front Page, For You, Core, Plugins, YouTube, and Saved with bounded counts; a compact capped rail (preferred ~10–12% wide / ~22% narrow) so labels and counts fit without empty gutters; the collapsible **Keys** legend lives at the bottom of this rail as `Keys · ?` and starts fully collapsed with no shortcut dump.
@@ -37,7 +37,7 @@ The reading surface does not carry publication telemetry. A subtle collapsible *
 
 ## Front page composition
 
-Front Page is a persistent local briefing of at most five groups, selected once after cached news and locally enabled plugin IDs are available. It groups eligible unread occurrences of the same plugin without replacing their original titles, IDs, timestamps, or sources. A plain reason explains each selection. Narrow layouts use the briefing notice as their heading and counts, avoiding a duplicate section heading and default summary; active filter and retained-read explanations remain visible. See D055 and the curation contract for the deterministic allocation.
+Front Page contains a persistent local briefing of at most five groups alongside its Home discoveries and setup updates. The briefing is selected once after cached news and locally enabled plugin IDs are available. It groups eligible unread occurrences of the same plugin without replacing their original titles, IDs, timestamps, or sources. A plain reason explains each selection. In the briefing reader, narrow layouts use the briefing notice as their heading and counts, avoiding a duplicate section heading and default summary; active filter and retained-read explanations remain visible. See D055 and the curation contract for the deterministic allocation.
 
 - Reading, refreshing, filtering, search, closing, and reopening preserve the exact snapshot. They do not refill its slots. New briefing explicitly replaces it from currently unread eligible stories; skipped stories remain unread.
 - The notice reports remaining groups and completion for this briefing only. Other sections remain available. An expired member is disclosed and does not imply that it was read; a new briefing can replace the expired snapshot.
@@ -54,14 +54,15 @@ All behavior must remain reachable without a pointer:
 | Key | Action |
 | --- | --- |
 | `Super+Alt+N` | Summon or raise Radar after explicit conflict-free setup |
-| `Escape` or `q` | Close Radar |
-| `j` / `Down` | Select next story; crossing the viewport bottom anchors that complete row at the top |
-| `k` / `Up` | Select previous story; crossing the viewport top keeps that row visibly anchored |
-| `Enter` or `o` | Open selected original source |
+| `Escape` | Leave details or an open control surface, then close Radar |
+| `q` | Close Radar during normal navigation |
+| `j` / `Down` | Select next overview card or story; crossing the story viewport bottom anchors that complete row at the top |
+| `k` / `Up` | Select previous overview card or story; crossing the story viewport top keeps that row visibly anchored |
+| `Enter` or `o` | Open the selected overview card, or the selected original source in a reader |
 | `s` | Save or unsave selected story locally |
 | `u` | Mark the selected story read or unread locally |
 | `a` | Mark this briefing read on Front Page; elsewhere mark unread stories matching this section's Settings read |
-| `F6` | Enter or leave briefing controls; Tab / Shift+Tab cycles their available actions |
+| `F6` | Enter or leave Home, My setup, or briefing controls; Tab / Shift+Tab cycles their available cards and actions |
 | `Up` / `Down`, `Home` / `End`, `Enter` in group history | Choose a source occurrence, then open its original source |
 | `f` | Toggle this section's **Unread only** filter (same as the header chip) |
 | `?` | Show or hide the collapsible Keys legend |
@@ -69,7 +70,7 @@ All behavior must remain reachable without a pointer:
 | `r` | Check the published edition; **Check for updates** repeats this shortcut on hover |
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
 | `1`–`N` | Switch between the currently visible primary sections |
-| `Home` / `End` | Select first or last story in the current section |
+| `Home` / `End` | Select first or last card or story in the current view |
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
 
@@ -87,7 +88,7 @@ The initial projection contains at most twelve stories. Keyboard movement never 
 
 Every projected story has one explicit local `isUnread` fact; a grouped row additionally shows the number of unread members, which can remain positive after its representative was read. On first use, a modal offers **Browse current stories** and **Start from today** before any implicit reading. Browse is the initially focused non-destructive choice. Tab cycles the two choices; Enter activates the focused choice. At large text sizes, the explanation scrolls and the choices remain reachable. The displayed count and membership digest come from the same locked projection. Start from today marks exactly those retained IDs read, preserves saves, preferences, and explicit unread overrides, and leaves later arrivals unread regardless of occurrence time. A changed membership requires a fresh displayed choice. Valid existing v1–v11 states migrate with onboarding already complete and no read changes.
 
-After onboarding, a fresh panel open treats its first visibly presented selected story as read once after a brief stable dwell. The one-shot waits for the first non-empty projection, captures that event ID and panel-open generation, and uses the same per-story mutation only if the same generation remains visible with that exact story still selected. Automatic opening reprojections update the candidate and restart the dwell rather than losing or duplicating the action. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation likewise marks only the selected event ID read and cancels any pending automatic action. Pointer hover, re-summoning an already open panel, refresh, section/filter reprojection, and later arrivals do not repeat the initial action. Opening Tune or Settings before the dwell completes cancels it because the story is no longer the active surface. The inspector action and `u` key toggle the selected story in either direction; **Mark group read**, **Mark briefing read**, and the other sections' **Mark all as read** actions each state their distinct batch scope.
+After onboarding, a fresh panel open into a source reader treats its first visibly presented selected story as read once after a brief stable dwell. Home, My setup, and insight details never read a hidden story. The one-shot waits for the first non-empty projection, captures that event ID and panel-open generation, and uses the same per-story mutation only if the same generation remains visible with that exact story still selected. Automatic opening reprojections update the candidate and restart the dwell rather than losing or duplicating the action. A pointer click, `j`/`k`, `Home`/`End`, or source/plugin-page activation likewise marks only the selected event ID read and cancels any pending automatic action. Pointer hover, re-summoning an already open panel, refresh, section/filter reprojection, and later arrivals do not repeat the initial action. Opening Tune or Settings before the dwell completes cancels it because the story is no longer the active surface. The inspector action and `u` key toggle the selected story in either direction; **Mark group read**, **Mark briefing read**, and the other sections' **Mark all as read** actions each state their distinct batch scope.
 
 Closing, refreshing, or merely rendering a feed never marks unrelated stories read. On a fresh open after onboarding, an initially empty projection keeps the one-shot armed so the first story actually presented by that open receives the same behavior; closing cancels it. The first-use choice also cancels the one-shot, so browsing leaves the backlog unread. State v12 retains the migrated `readThrough` baseline, bounded canonical `readOverrides`, saved records, and preferences; it adds the local onboarding choice and exact briefing snapshot. Overrides outside the current bounded edition are pruned on the next reading-state mutation. Saved state is independent from read state. Events no longer present in the live bounded feed may remain in local saved metadata with their original source fields.
 
@@ -132,10 +133,28 @@ Tune Your Radar in the panel exposes “Top-bar newspaper”, story images, and 
 - Accent marks focus, selection, and one lead rule. Urgent color is reserved for actual source or compatibility warnings.
 - A selected row must pair its fill with explicit primary and secondary foregrounds. It must never keep an ambient muted token that can blend into the selected fill; this is visually accepted in maintained dark and light themes.
 - Dense metadata remains secondary inside collapsed Details; the main reading path prioritizes headline, `date · source`, full article body, and intentional actions.
-- Any motion is bounded to active refresh. There is no perpetual radar sweep or persistent pipeline-status copy.
+- Motion is limited to active refresh, brief viewport adjustments, and normal compositor window transitions. There is no perpetual radar sweep or persistent pipeline-status copy.
 
 ## Accessibility boundary
 
 The panel must expose meaningful roles, names, focus order, selected state, section counts, refresh status, source health, and actionable labels. Visual columns must not create a different reading order from keyboard or assistive technology.
 
 Release acceptance includes keyboard-only traversal, visible focus in light and dark themes, long titles, repaired control characters, narrow layout, 200% text scaling, reduced motion, and exact text alternatives for icons and trust markers. Full screen-reader claims require explicit assistive-technology evidence and must not be inferred from QML metadata alone.
+
+## Expanded home, setup and relevance (0.5.0)
+
+Front Page opens a scrollable home overview. The retained brief is one section alongside setup changes, reviewed workflows and a small project discovery selection. A finished brief remains finished and those other sections remain useful. No hidden reader selection is implicitly read; opening a briefing card deliberately enters the reader. Source-section read behavior remains unchanged.
+
+For You offers My setup and news views. A setup card leads with the enabled version, documented version and a precise comparison label. Unknown or incomparable versions say so. Details provide plain-text source notes and original links; they never install or update software. Workflow details explain the idea, its review basis and the related projects. A project can be opened from a workflow and Back returns to that workflow before leaving details.
+
+Context & follows exposes project, source and stable creator targets. Follow, Mute future news and clear controls operate on local state. Following & muted exposes the complete saved choices even when their source story is no longer visible. Muting changes future selection and source browsing; it cannot rewrite the current briefing or hide Saved. Every control must remain keyboard-reachable and visible at large text sizes.
+
+The window lifecycle prepares an exact pre-map float/placement rule before revealing the normal window. Cached local projection has priority over network freshness, with a bounded recovery deadline. Saved geometry is clamped to usable connected-monitor space, and repeated summon keeps the active control. Final runtime evidence determines the precise compositor-close persistence boundary; do not claim unsupported older compositor behavior.
+
+## Empty selections and truthful status
+
+The story inspector, separator and story actions appear only when a story is selected. An empty section or search uses the available reading width for a concise explanation and one useful recovery action. A completed briefing keeps Home and its discoveries reachable through Front Page; it does not require a new briefing to explore them. Home and My setup reset their scrolling when changing routes, and keyboard actions cannot mark, save or open a nonexistent story.
+
+Local development candidates that already contain every upstream commit do not display an update warning. Divergent history is described as unavailable automatic updating without claiming that the public branch is a newer release.
+
+The public Home presents at most seven selected headlines with short readable teasers before its workflow ideas. A weekly edition and RSS remain available for broader browsing. Article links retain usable source destinations; card teasers show their labels without raw link syntax. Marketplace metadata appears only where applicable.

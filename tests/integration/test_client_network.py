@@ -250,7 +250,7 @@ class ClientNetworkIntegrationTests(unittest.TestCase):
         environment = dict(self.environment)
         del environment["OMARCHY_NEWS_RADAR_TEST_MODE"]
         production = json.loads((ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8"))
-        with mock.patch("radar.client._fetch_feed", return_value=copy.deepcopy(production)) as fetch:
+        with mock.patch("radar.client_feed._fetch_feed", return_value=copy.deepcopy(production)) as fetch:
             result = refresh(environment, now=CLOCK)
         self.assertEqual("updated", result["status"])
         fetch.assert_called_once_with()

@@ -10,7 +10,7 @@ from .constants import CLIENT_SECTIONS, OPTIONAL_CLIENT_SECTIONS
 # source scope behind each canonical section.
 SECTION_SOURCE_SUMMARIES = {
     "front-page": "Official Omarchy releases and Omarchy News \u00b7 Omarchy Plugin Marketplace \u00b7 repository-reviewed community links",
-    "for-you": "The same fixed sources, narrowed locally by exact enabled plugin IDs",
+    "for-you": "The same fixed sources, narrowed by locally enabled plugins and follows; local mutes apply",
     "core": "Official Omarchy GitHub releases and Omarchy News RSS",
     "plugins": "Omarchy Plugin Marketplace and linked public repositories",
     "youtube": "Omarchy-related YouTube videos collected through the YouTube Data API",

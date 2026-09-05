@@ -64,3 +64,9 @@ A proposed dependency requires a recorded decision covering:
 - removal and migration plan.
 
 Convenience, fashionable tooling, or reducing a small amount of straightforward code is not sufficient.
+
+## Expanded candidate integration
+
+The optional companion and explicit local relevance use the same Python standard library and current Omarchy commands. Bounded parallel producer fetches and thumbnail inspections use `concurrent.futures.ThreadPoolExecutor`; no worker daemon or package is installed. The window preparation helper uses the current Hyprland Lua `hl.window_rule` and `hl.timer` interfaces already used by maintained Omarchy launchers. Compatibility must be proven against the exact tested runtime; a generic legacy fallback is not a substitute for correct first-map behavior.
+
+Offline site builds do not fetch images or release notes. An explicit production collect may fetch the reviewed release API paths. `site --published-at` supplies a fixed UTC publication clock for deterministic preview and tests. Laravel's serving changes use its existing PHP stack; they require a separate application deployment from the plugin release.

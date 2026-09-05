@@ -16,6 +16,7 @@ BRIEFING_REASON_LABELS = {
     "notable": "Reviewed notable story",
     "core": "Official Omarchy change",
     "installed": "Matched an enabled plugin",
+    "followed": "Followed on this desktop",
     "discovery": "A discovery from the current edition",
 }
 
@@ -37,6 +38,7 @@ def compose_briefing(
     *,
     generated_at: str,
     installed_plugin_ids: Iterable[str] = (),
+    followed_event_ids: Iterable[str] = (),
 ) -> dict[str, Any]:
     """Choose at most five unread groups without generating an impact claim.
 
@@ -55,6 +57,7 @@ def compose_briefing(
         key=event_sort_key,
     )
     installed = set(installed_plugin_ids)
+    followed = set(followed_event_ids)
     groups: list[dict[str, Any]] = []
     chosen: set[str] = set()
     chosen_plugins: set[str] = set()
@@ -100,6 +103,8 @@ def compose_briefing(
     add((event for event in ordered if event["entity"]["kind"] == "plugin"
          and event["entity"]["id"] in installed and event["type"] != "plugin-verification-changed"),
         "installed", slots=2, cap=main_cap)
+    add((event for event in ordered if event["id"] in followed and event["type"] != "plugin-verification-changed"),
+        "followed", slots=2, cap=main_cap)
     add(discoveries, "discovery", slots=1, cap=MAX_BRIEFING_GROUPS)
     return {"generatedAt": generated_at, "groups": groups}
 

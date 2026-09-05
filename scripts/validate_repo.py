@@ -34,6 +34,20 @@ def tracked_files() -> list[Path]:
     return [ROOT / item.decode("utf-8") for item in completed.stdout.split(b"\0") if item]
 
 
+def property_signal_collisions(source: str) -> set[str]:
+    """Catch explicit change signals, which qmllint does not diagnose for aliases."""
+    properties = set(re.findall(r"\bproperty\s+(?:alias|[\w<>]+)\s+(\w+)\s*:", source))
+    signals = set(re.findall(r"\bsignal\s+(\w+)\s*\(", source))
+    return signals & {name + "Changed" for name in properties}
+
+
+def validate_qml_declarations() -> None:
+    for path in (ROOT / "src").rglob("*.qml"):
+        collisions = property_signal_collisions(path.read_text(encoding="utf-8"))
+        if collisions:
+            fail(f"{path.relative_to(ROOT)} redeclares property change signals: {', '.join(sorted(collisions))}")
+
+
 def validate_tracked_text() -> None:
     text_suffixes = {
         ".md", ".py", ".qml", ".js", ".json", ".xml", ".svg", ".css", ".yml", ".yaml", ".sh", ".lua", ".toml", ""
@@ -269,23 +283,25 @@ def validate_manifest() -> None:
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
         if required_text not in qml:
             fail(f"panel entry point lacks {required_text}")
-    if f'news-radar-{version}+identity-1' not in qml:
+    if f'news-radar-{version}+identity-2' not in qml:
         fail("panel runtime identity does not match the manifest version")
     if 'String(manifest.__sourceDir) + "/assets/omarchy-logo.svg"' not in qml:
         fail("panel title does not load the bundled Omarchy logo")
-    if 'text: "NEWS RADAR"' not in qml or 'text: "OMARCHY NEWS RADAR"' in qml:
+    ui_sources = {path: path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.qml")}
+    ui = "\n".join(ui_sources.values())
+    if 'text: "NEWS RADAR"' not in ui or 'text: "OMARCHY NEWS RADAR"' in qml:
         fail("panel title must pair the Omarchy logo with the News Radar product name")
     forbidden = ("Qt.openUrlExternally", "shell -c", "bash -c")
     for value in forbidden:
-        if value in qml:
+        if value in ui:
             fail(f"panel contains forbidden runtime path: {value}")
-    if qml.count("Text.RichText") != 1:
+    if ui.count("Text.RichText") != 1:
         fail("panel may use Text.RichText only once, for the article reading pane")
-    if "textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText" not in qml:
+    if "textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText" not in ui:
         fail("article body RichText must be constrained to inspectorArticleMode")
-    if "function openArticleLink(url)" not in qml or "linkColor: Color.accent" not in qml:
+    if "function openArticleLink(url)" not in ui or "linkColor: Color.accent" not in ui:
         fail("article links must use accent styling and openArticleLink")
-    if "RadarModel.articleBodyHtml" not in qml or "RadarModel.acceptedHttpsUrl" not in qml:
+    if "RadarModel.articleBodyHtml" not in ui or "RadarModel.acceptedHttpsUrl" not in ui:
         fail("article links must be built from escaped segments, not raw feed HTML")
     for helper_name in ("news-radar-client", "news-radar-shortcut", "news-radar-launcher"):
         helper = (ROOT / "bin" / helper_name).read_text(encoding="utf-8")
@@ -298,7 +314,7 @@ def validate_manifest() -> None:
     for forbidden_update in ("merge --ff-only", "git pull", "git reset"):
         if forbidden_update in update_source:
             fail(f"plugin update helper must not implement its own git mutation: {forbidden_update}")
-    panel_source = (ROOT / "src" / "Panel.qml").read_text(encoding="utf-8")
+    panel_source = ui
     for required_update_ui in ("pluginUpdateNotice", "Update plugin", '"update-status"', '"update-apply"'):
         if required_update_ui not in panel_source:
             fail(f"panel lacks plugin update UI contract: {required_update_ui}")
@@ -462,6 +478,7 @@ def main() -> int:
         fail("Python compilation failed")
     validate_tracked_text()
     validate_json_files()
+    validate_qml_declarations()
     validate_generated_fixture()
     validate_manifest()
     validate_workflows()

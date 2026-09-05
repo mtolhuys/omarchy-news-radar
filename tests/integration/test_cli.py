@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from radar.cli import client_main
+from radar.cli import client_main, repository_main
 from radar.client import indicator_model, refresh
 from radar.io import atomic_write_json
 
@@ -106,6 +106,66 @@ class ClientCliIntegrationTests(unittest.TestCase):
         code, failed = self.run_client("mark-briefing-read", "--briefing-id", "invalid")
         self.assertEqual(2, code)
         self.assertEqual("failed", failed["status"])
+
+    def test_insight_and_relevance_commands_keep_personalization_in_local_projection(self) -> None:
+        self.environment["OMARCHY_NEWS_RADAR_TEST_INSIGHTS"] = str(ROOT / "tests/fixtures/insights-valid.json")
+        code, refreshed = self.run_client("insights-refresh")
+        self.assertEqual(0, code)
+        self.assertEqual("cached", refreshed["status"])
+        facts = '[{"id":"io.github.mtolhuys.disk-lens","version":"0.4.0"}]'
+        code, result = self.run_client("project", "--section", "plugins", "--installed-facts-json", facts)
+        self.assertEqual(0, code)
+        self.assertEqual("behind", result["mySetup"][0]["comparisonState"])
+        code, changed = self.run_client("set-relevance", "--kind", "creator", "--id", "github:example", "--mode", "follow")
+        self.assertEqual(0, code)
+        self.assertEqual({}, changed["state"]["readOverrides"])
+        code, independent = self.run_client("insights-project", "--installed-facts-json", facts)
+        self.assertEqual(0, code)
+        self.assertEqual("github:example", independent["relevanceControls"][0]["id"])
+        code, cleared = self.run_client("set-relevance", "--kind", "creator", "--id", "github:example", "--mode", "clear")
+        self.assertEqual(0, code)
+        self.assertEqual([], cleared["relevanceControls"])
+
+    def test_invalid_installed_facts_and_missing_optional_insights_do_not_reset_state(self) -> None:
+        code, before = self.run_client("set-relevance", "--kind", "source", "--id", "marketplace", "--mode", "mute")
+        self.assertEqual(0, code)
+        code, failed = self.run_client("project", "--section", "plugins", "--installed-facts-json", '[{"id":"../bad","version":"1.0.0"}]')
+        self.assertEqual(2, code)
+        code, result = self.run_client("insights-project")
+        self.assertEqual(0, code)
+        self.assertEqual("missing", result["insights"]["status"])
+        self.assertEqual(before["state"], result["state"])
+
+    def test_empty_and_unavailable_installed_facts_have_distinct_cli_status(self) -> None:
+        for command in (("insights-project",), ("project", "--section", "for-you")):
+            code, available = self.run_client(*command, "--installed-facts-json", "[]")
+            self.assertEqual(0, code)
+            self.assertTrue(available["insights"]["installedFactsAvailable"])
+            code, unavailable = self.run_client(*command, "--installed-facts-status", "unavailable")
+            self.assertEqual(0, code)
+            self.assertFalse(unavailable["insights"]["installedFactsAvailable"])
+
+    def test_site_is_offline_and_fixed_clock_outputs_are_deterministic(self) -> None:
+        insights = json.loads((ROOT / "tests/fixtures/insights-valid.json").read_text())
+        insights["projects"][0]["image"] = {
+            "sourceUrl": "https://plugins.omarchy.org/assets/img/plugins/example.png",
+            "alt": "A preview", "credit": "Marketplace", "width": 100, "height": 100,
+        }
+        base = Path(self.temporary.name)
+        insight_path = base / "insights.json"
+        atomic_write_json(insight_path, insights)
+        first = base / "first"
+        second = base / "second"
+        with mock.patch("radar.publication_images.fetch_bytes", side_effect=AssertionError("offline site attempted network")) as fetch:
+            for destination in (first, second):
+                with redirect_stdout(io.StringIO()):
+                    code = repository_main(["site", "--feed", str(ROOT / "tests/fixtures/feed-valid.json"),
+                                            "--insights", str(insight_path), "--output", str(destination),
+                                            "--published-at", "2026-08-31T14:00:00Z"])
+                self.assertEqual(0, code)
+            fetch.assert_not_called()
+        for filename in ("events.json", "insights.json", "index.html", "discover/inspect-disk-space/index.html"):
+            self.assertEqual((first / filename).read_bytes(), (second / filename).read_bytes())
 
 
 if __name__ == "__main__":

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "publishedAt": "2026-08-31T14:00:00Z",
+  "projects": [
+    {
+      "id": "io.github.mtolhuys.disk-lens",
+      "kind": "plugin",
+      "name": "Omarchy Disk Lens",
+      "description": "Inspect disk use.",
+      "source": {
+        "label": "Project release notes",
+        "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases"
+      },
+      "creatorId": "github:mtolhuys",
+      "releases": [
+        {
+          "version": "0.4.1",
+          "publishedAt": "2026-08-31T13:00:00Z",
+          "title": "Disk Lens 0.4.1",
+          "summary": "Source release notes for 0.4.1",
+          "changes": [
+            {
+              "text": "A documented change for 0.4.1",
+              "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/0.4.1"
+            }
+          ],
+          "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/0.4.1"
+        },
+        {
+          "version": "0.4.0",
+          "publishedAt": "2026-08-31T13:00:00Z",
+          "title": "Disk Lens 0.4.0",
+          "summary": "Source release notes for 0.4.0",
+          "changes": [
+            {
+              "text": "A documented change for 0.4.0",
+              "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/0.4.0"
+            }
+          ],
+          "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens/releases/tag/0.4.0"
+        }
+      ]
+    },
+    {
+      "id": "org.example.notes",
+      "kind": "plugin",
+      "name": "Workspace Notes",
+      "description": "Keep workspace notes.",
+      "source": {
+        "label": "Project",
+        "url": "https://github.com/example/omarchy-notes"
+      },
+      "creatorId": "github:example",
+      "releases": []
+    }
+  ],
+  "collections": [
+    {
+      "id": "inspect-disk-space",
+      "title": "Inspect your disk space",
+      "summary": "A useful disk workflow.",
+      "body": "Open Disk Lens and consult its original documentation.",
+      "projectIds": [
+        "io.github.mtolhuys.disk-lens"
+      ],
+      "source": {
+        "label": "Project release notes",
+        "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases"
+      },
+      "shareUrl": "https://mtolhuijs.nl/news-radar/discover/inspect-disk-space/",
+      "reviewedAt": "2026-08-31T14:00:00Z",
+      "sourceLinks": [
+        {
+          "label": "Project release notes",
+          "url": "https://github.com/mtolhuys/omarchy-disk-lens/releases"
+        }
+      ]
+    }
+  ]
+}

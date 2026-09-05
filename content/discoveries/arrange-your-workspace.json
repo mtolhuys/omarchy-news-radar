@@ -1,0 +1,14 @@
+{
+  "id": "arrange-your-workspace",
+  "title": "Give every window a place",
+  "summary": "Arrange your working windows with Layout Presets, then use Shelf as a temporary stop for the files moving between them.",
+  "body": "Start with the windows you actually use for a task. Layout Presets previews arrangements for the focused workspace and applies the selected proportions to its tiled windows. It adapts its choices to the window count; stacked arrangements depend on the active tiling layout.\n\nShelf provides a separate place to park local files and folders at a screen edge. Drag an item onto it, then drag it into a destination app when you need it. It remembers paths, so removing a shelf entry does not delete the original file.\n\nThis is a workflow idea based on the two authors' documentation, rather than a tested integration between the plugins. Try each independently and choose the behavior that fits your workspace. The source links explain layout restrictions and Shelf's edge and pin settings.",
+  "projectIds": ["sridhar.layout-presets", "sridhar.shelf"],
+  "source": {"label": "Layout Presets documentation", "url": "https://github.com/srikat/omarchy-layout-presets#readme"},
+  "sourceLinks": [
+    {"label": "Layout Presets: layouts and interactions", "url": "https://github.com/srikat/omarchy-layout-presets#layouts"},
+    {"label": "Shelf: using the drop zone", "url": "https://github.com/srikat/omarchy-shelf#using-it"}
+  ],
+  "shareUrl": "https://mtolhuijs.nl/news-radar/discover/arrange-your-workspace/",
+  "reviewedAt": "2026-09-05T00:00:00Z"
+}

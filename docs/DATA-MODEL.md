@@ -4,7 +4,7 @@
 
 The feed is a versioned public contract, not an internal dump of source responses. It must be compact, deterministic, bounded, forward-migratable, and sufficient for every version 1 client view without requiring clients to understand marketplace or GitHub payloads.
 
-Unknown required schema versions fail closed. Unknown optional fields are ignored. Missing required fields, invalid enum values, impossible timestamps, duplicate IDs, unsafe URLs, or exceeded bounds invalidate the candidate feed.
+Unsupported schema versions and unknown object fields fail closed. Only explicitly supported optional fields are accepted. Missing required fields, invalid enum values, impossible timestamps, duplicate IDs, unsafe URLs, or exceeded bounds invalidate the candidate feed.
 
 ## Feed envelope
 
@@ -173,7 +173,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 
 ```json
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "onboardingComplete": true,
   "briefing": {
     "generatedAt": "2026-08-31T14:00:00Z",
@@ -193,6 +193,14 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
       "occurredAt": "2026-08-31T09:00:00Z",
       "type": "plugin-released"
     }
+  },
+  "relevance": {
+    "followedPlugins": [],
+    "mutedPlugins": [],
+    "followedSources": [],
+    "mutedSources": [],
+    "followedCreators": [],
+    "mutedCreators": []
   },
   "preferences": {
     "barVisible": true,
@@ -236,12 +244,24 @@ HTTP revalidation is a separate disposable `feed-http.json` record with exact ke
 
 ## Schema evolution
 
-Additive optional fields may appear within the active feed schema version. A semantic change to required fields, enums, ID calculation, read-state meaning, or validation bounds requires a new schema version plus explicit migration and compatibility tests. The publisher may offer multiple feed versions during a documented transition; the client never guesses across versions.
+The active feed schema has closed object shapes, including its supported optional fields. Adding fields requires an explicitly compatible versioned contract; older strict v2 clients must continue receiving an unchanged v2 shape. The 0.5.0 candidate therefore places richer public data in the independent insights-v1 companion. Changes to required fields, enums, ID calculation, read-state meaning, or validation bounds require a new schema version plus explicit migration and compatibility tests. The client never guesses across versions.
 
-## Local briefing snapshot (state v12)
+## Local briefing snapshot (introduced in state v12)
 
-`briefing` is null before explicit panel initialization, or exactly `{generatedAt, groups}`. Each of at most five groups stores a non-empty list of canonical unique event IDs and one closed reason: `critical`, `notable`, `core`, `installed`, or `discovery`. Across groups, membership is unique and capped at the live feed's 500-event bound. Original facts remain in the feed; the state does not copy article text or synthesize impact claims.
+`briefing` is null before explicit panel initialization, or exactly `{generatedAt, groups}`. Each of at most five groups stores a non-empty list of canonical unique event IDs and one closed reason: `critical`, `notable`, `core`, `installed`, `discovery`, or `followed` (added in v13). Across groups, membership is unique and capped at the live feed's 500-event bound. Original facts remain in the feed; the state does not copy article text or synthesize impact claims.
 
 The helper exposes a SHA-256 briefing identity, group identity, current retained members with original sources, remaining groups, unread member count, expired member count, and whether another eligible unread selection exists. Filtering and search can hide rows but cannot edit snapshot membership. An expired representative can be presented through a retained member while the original group ID remains stable. Missing members are disclosed and do not count as read completion.
 
 First-use Start from today uses a SHA-256 digest of sorted current feed IDs, accompanied by `feedEventCount` from the same projection. It never uses timestamps as a reading cursor. The helper verifies membership under the shared state lock before committing; a newly adopted edition and the reading action cannot interleave their critical sections. Start from today preserves explicit false overrides. Group/briefing actions likewise verify the current briefing identity and mark only its exact retained IDs. Ordinary projection and bar-indicator queries do not initialize a briefing. Only panel ensure, explicit New briefing, and the explicit first-use action can establish or replace one.
+
+## Insights v1 and local state v13
+
+The companion envelope is exactly `{schemaVersion: 1, publishedAt, projects, collections}`, bounded to 2 MiB. It is independent of the rolling event timestamp and digest. Project IDs are canonical entity IDs; each project carries `kind`, `name`, `description`, `source`, optional `creatorId`/allowlisted `image`, and at most 30 releases. Each release has an exact version, upstream publication time, title, plain-text summary, up to twelve source-linked changes and original source URL. Versions are compared only under strict SemVer precedence (with a conventional optional v prefix) or an exact nonempty match. Unknown schemes do not imply an update.
+
+A collection has an immutable lowercase alphanumeric slug with single separating hyphens, up to 80 characters, title, summary, plain-text body, up to twenty unique known project IDs, source, optional additional source links/image, fixed public `shareUrl`, and an accurate UTC review time. It creates no event and changes no news significance. Full shapes are enforced by `schemas/insights-v1.schema.json` and the runtime validator.
+
+Local installed facts retain the backward-compatible `{id, version}` shape and may add a bounded plain-text `name` and explicit boolean `firstParty`. They are neither stored in the public companion nor transmitted. Projection receives availability separately so an empty enabled-plugin list does not imply discovery failure. Its `insights.projectDetails` array retains all covered project details independently from filtered Home/My setup lists, preserving source context for searches, Saved and the current briefing. Version-specific story explanations additionally require matching historical repository provenance; a matching ID and version alone cannot transfer another owner's notes.
+
+State v13 retains v12 onboarding and briefing data and adds exactly six `relevance` arrays: `followedPlugins`, `mutedPlugins`, `followedSources`, `mutedSources`, `followedCreators`, `mutedCreators`. Their combined bound is 500 targets. Each target can be followed, muted or clear; conflicting states are invalid. GitHub creator identities use `github:<lowercase-owner>`. Display-only YouTube channel names do not become creator identities. A `followed` briefing reason is added. Valid v12 states preserve their exact onboarding choice and snapshot; valid earlier states preserve supported reads, saves and preferences and skip onboarding. No schema migration constitutes a read action.
+
+Private window geometry is separate from this reading schema. The lifecycle helper validates and clamps it against current logical monitor bounds; no local monitor or geometry fact enters either public feed.

@@ -122,3 +122,11 @@ The project must not claim perfect anonymity, sandboxing, or security auditing.
 Before public release, add a root `SECURITY.md` with private reporting instructions. Reports must not include real user binding files, tokens, browsing data, private plugins, or host diagnostics in public issues.
 
 Forge may hold `YOUTUBE_API_KEY` for server-side collection only. Clients never receive the key, and the repository must not contain a real key.
+
+## Optional insights and local relevance (0.5.0)
+
+The only new normal client URL is the fixed HTTPS companion `https://mtolhuijs.nl/news-radar/insights.json`. Its independently bounded cache, HTTP validators, due metadata and lock contain generic public facts. Its failure leaves news readable. Installed IDs, exact manifest versions, local queries and follow/mute choices never become headers, query parameters or request bodies. Manifests are read only beneath the fixed user plugin root, must be nonsymlink regular bounded files, and must match the requested canonical ID. Unavailable or incomparable versions remain unknown.
+
+Plain-text explanations and workflow records remain untrusted display data. The producer's GitHub path set is repository-owned; catalog changes cannot choose another path. All published text and page metadata are contextually escaped, links stay HTTPS, images retain exact origin/shape and bounded raster inspection, and no remote Markdown, code block, HTML or script runs. Source-page titles may enter escaped per-story social metadata but cannot choose canonical, stylesheet or install destinations.
+
+Local relevance adds six bounded validated ID arrays with visible controls and a combined 500-target cap. A mute never silently removes an existing briefing member or a saved item. Temporary pre-map compositor rules match Radar's exact class and title, expire after eight seconds and are removed on normal completion/cancellation; geometry is private local UI state. These rules do not alter persistent Hyprland configuration.

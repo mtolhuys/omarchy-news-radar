@@ -98,6 +98,37 @@ class PluginUpdateTests(unittest.TestCase):
         self.assertEqual(self.base, status["installedCommit"])
         self.assertEqual(tip, status["availableCommit"])
 
+    def test_local_candidate_containing_upstream_has_no_update_warning(self) -> None:
+        (self.plugin / "candidate.txt").write_text("candidate\n", encoding="utf-8")
+        self._git("add", "candidate.txt")
+        self._git("commit", "-m", "local candidate")
+        candidate = self._rev("HEAD")
+        with mock.patch("radar.plugin_update.shutil.which", return_value="/usr/bin/omarchy-plugin-update"):
+            status = inspect_update(self.env)
+            applied = apply_update(self.env)
+        self.assertEqual("current", status["state"])
+        self.assertFalse(status["updateAvailable"])
+        self.assertFalse(status["canApply"])
+        self.assertEqual("", status["message"])
+        self.assertEqual(candidate, status["installedCommit"])
+        self.assertEqual(self.base, status["availableCommit"])
+        self.assertEqual("ok", applied["status"])
+        self.assertEqual(candidate, self._rev("HEAD"))
+
+    def test_divergent_upstream_is_blocked_without_claiming_a_newer_release(self) -> None:
+        (self.plugin / "candidate.txt").write_text("candidate\n", encoding="utf-8")
+        self._git("add", "candidate.txt")
+        self._git("commit", "-m", "local candidate")
+        tip = self._advance_remote()
+        with mock.patch("radar.plugin_update.shutil.which", return_value="/usr/bin/omarchy-plugin-update"):
+            status = inspect_update(self.env)
+        self.assertEqual("blocked", status["state"])
+        self.assertTrue(status["updateAvailable"])
+        self.assertFalse(status["canApply"])
+        self.assertEqual(tip, status["availableCommit"])
+        self.assertIn("local history", status["message"])
+        self.assertNotIn("newer", status["message"])
+
     def test_blocked_when_dirty(self) -> None:
         (self.plugin / "dirt.txt").write_text("nope\n", encoding="utf-8")
         with mock.patch("radar.plugin_update.shutil.which", return_value="/usr/bin/omarchy-plugin-update"):

@@ -30,7 +30,7 @@ class ReleaseContractTests(unittest.TestCase):
             (ROOT / "radar" / "__init__.py").read_text(encoding="utf-8"),
         )
         self.assertIn(
-            f'news-radar-{version}+identity-1',
+            f'news-radar-{version}+identity-2',
             (ROOT / "src" / "Panel.qml").read_text(encoding="utf-8"),
         )
 

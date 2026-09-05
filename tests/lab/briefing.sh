@@ -14,11 +14,13 @@ omarchy_host_test() {
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
   # shellcheck source=/dev/null
   source "$lab_root/host-tests/helpers/pointer.sh"
+  # shellcheck source=/dev/null
+  source "$product_root/tests/lab/pointer.sh"
   # The disposable guest expands this path, never the host.
   # shellcheck disable=SC2016
   plugin_dir='$HOME/.config/omarchy/plugins/io.github.mtolhuys.news-radar'
   runtime_identity="$(sed -n 's/.*property string runtimeBuildIdentity: "\([^"]*\)".*/\1/p' "$product_root/src/Panel.qml")"
-  [[ $runtime_identity =~ ^news-radar-[0-9]+\.[0-9]+\.[0-9]+\+identity-1$ ]] || return 1
+  [[ $runtime_identity =~ ^news-radar-[0-9]+\.[0-9]+\.[0-9]+\+identity-2$ ]] || return 1
   start_epoch="$(date +%s)"
 
   briefing_wait() {
@@ -100,7 +102,7 @@ omarchy_host_test() {
     read -r window_x window_y <<<"$position"
     local_x="$(jq -r '(.x + .width / 2) | floor' <<<"$geometry")"
     local_y="$(jq -r '(.y + .height / 2) | floor' <<<"$geometry")"
-    qmp_pointer_tap "$viewport_width" "$viewport_height" "$((window_x + local_x))" "$((window_y + local_y))" left
+    radar_pointer_tap "$viewport_width" "$viewport_height" "$((window_x + local_x))" "$((window_y + local_y))" left
   }
 
   briefing_open() {
@@ -109,15 +111,21 @@ omarchy_host_test() {
     bar_x="$(jq -r '.[] | select(.id == "io.github.mtolhuys.news-radar" and .visible == true) | (.x + .width / 2) | floor' <<<"$geometry")"
     bar_y="$(jq -r '.[] | select(.id == "io.github.mtolhuys.news-radar" and .visible == true) | (.y + .height / 2) | floor' <<<"$geometry")"
     [[ $bar_x =~ ^[0-9]+$ && $bar_y =~ ^[0-9]+$ ]] || return 1
-    qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left || return 1
-    briefing_wait "newspaper opens the exact candidate window" \
-      ".opened == true and .windowVisible == true and .build == \"$runtime_identity\" and .localStateReady == true"
+    radar_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left || return 1
+    if ! briefing_wait "newspaper opens the exact candidate window" \
+      ".opened == true and .windowVisible == true and .build == \"$runtime_identity\" and .localStateReady == true"; then
+      ssh_session "journalctl --user --since '@$start_epoch' --no-pager" >"$RUN_DIR/failed-opening-journal.log" || true
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/failed-opening-state.json" 2>&1 || true
+      ssh_session "hyprctl -j clients" >"$RUN_DIR/failed-opening-clients.json" || true
+      capture_console failed-opening
+      return 1
+    fi
   }
 
   briefing_close() {
     press esc
     wait_for_guest_state "Escape closes the panel and its helpers" 15 ssh_session \
-      "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'"
+      "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '([/]bin/news-radar-client|[r]adar[.]cli_client)'"
   }
 
   briefing_resize() {
@@ -186,6 +194,7 @@ omarchy_host_test() {
   [[ $brief_id =~ ^[0-9a-f]{64}$ ]] || return 1
   saved_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedId'")"
   [[ $saved_id =~ ^evt_[0-9a-f]{24}$ ]] || return 1
+  briefing_key enter-reader ret ' .homeVisible == false and .selectedIsUnread == false' || return 1
   press s
   wait_for_guest_state "Save persists the selected original story" 15 ssh_session \
     "jq -e '.saved | has(\"$saved_id\")' $scenario_state" || return 1
@@ -333,9 +342,11 @@ omarchy_host_test() {
   briefing_key text-200-new-brief-activate ret \
     '.briefing.total == 1 and .briefing.remaining == 1 and .selectedId == "evt_000000000000000000001a7e" and .selectedIsUnread == true and .briefingBusy == false' || return 1
   ssh_guest "jq -e '.saved | has(\"$saved_id\")' $scenario_state" || return 1
-  ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState ''" \
-    >"$RUN_DIR/briefing-text-200-story-viewport.json" || return 1
-  jq -e '.available == true and .headlineFullyVisible == true' "$RUN_DIR/briefing-text-200-story-viewport.json" >/dev/null || return 1
+  briefing_key text-200-late-card down \
+    '.homeVisible == true and .selectedHomeKind == "story" and .selectedIsUnread == true' || return 1
+  ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar homeCardGeometry ''" \
+    >"$RUN_DIR/briefing-text-200-home-card.json" || return 1
+  briefing_control_fits homeCardGeometry || return 1
   briefing_capture 11-older-arrival-unread-text-200 || return 1
 
   ssh_guest "if test -f $scenario_root/shell.toml.was-missing; then \

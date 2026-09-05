@@ -462,3 +462,27 @@ The invariant is the rendered anchor rather than the raw `ListView.contentY` num
 **Why:** Someone who finds the public feed should be able to understand the desktop product and reach its maintained installation route without reading developer setup instructions.
 
 **Consequence:** Forge's existing generated file layout and CSP-compatible static renderer remain unchanged. No account, signup, tracker, executable install snippet, or new asset origin is introduced. Publication is a separate owner-authorized release step; local candidate documentation must not imply it has already happened.
+
+## D058 — Add source-backed discovery and local setup context to 0.5.0
+
+**Decision:** Keep news feed schema v2 unchanged and publish an independent, optional schema-v1 `https://mtolhuijs.nl/news-radar/insights.json`. It contains at most 100 source-linked projects, 30 documented stable releases per project and 30 reviewed workflow collections. A fixed repository-owned GitHub release allowlist provides bounded plain-text explanations; catalog metadata cannot authorize another endpoint. Upstream release times remain upstream facts. Missing notes mean unknown coverage, not an inferred changelog. Previously validated notes may survive a temporary producer failure when their project and source still match. A successful empty release index clears that coverage.
+
+**Why:** Readers need to understand a change and find useful things to try after completing their brief. Fetching per-machine information from the server would compromise the shared-feed privacy design. Expanding the strict existing event envelope would also break older clients unnecessarily.
+
+**Consequence:** Home combines the finite brief with reviewed collections, setup changes and discoveries. Opening Home does not mark its hidden selected story read; entering its reader is explicit. My setup reads only bounded, ID-matching, nonsymlink local manifests for enabled plugins. Unknown versions remain unknown; SemVer precedence and exact matching replace guesswork. State v13 adds bounded local followed/muted plugin, source and stable-creator IDs; valid v1–v12 migrations preserve their supported state. Every choice is visible and clearable. Follows affect future selection, while mutes preserve existing brief membership and Saved. The optional companion has its own private cache, validators, lock and due checks, so its failure cannot invalidate the news cache. D050's prohibition on local muting and the earlier briefing-only release scope are superseded.
+
+## D059 — Prepare window placement before the first visible frame
+
+**Decision:** Use the current Hyprland Lua API to install a short-lived rule matching only Radar's exact class and title before its normal FloatingWindow maps. A window lifecycle controller prepares bounded saved geometry, waits for the local projection with a bounded recovery deadline, reveals the window, focuses the exact mapped address, and removes the rule. The compositor expires it after eight seconds even if the shell dies. No generic Quickshell rule or persistent desktop config is written.
+
+**Why:** Mapping before the asynchronous float helper runs can briefly tile Radar, resize neighboring windows and then animate it into a different geometry. Recreating an unplaced window on every open also loses the user's preferred size.
+
+**Consequence:** Geometry lives separately from reading state, is clamped to a connected monitor's usable logical rectangle, and falls back safely when a monitor disappears. Re-summoning preserves the focused control and selection. Close/cancel paths stop owned work and remove temporary rules. Real mapped-window samples and neighboring-window rectangles with animations enabled must prove the result in Plugin Lab; settled screenshots alone are insufficient. Exact compositor-close persistence and runtime compatibility are reported with the final evidence.
+
+## D060 — Publish useful permanent URLs and recover across feed promotion
+
+**Decision:** The producer generates inert source-linked story pages at `stories/<event-id>/`, workflow pages at `discover/<slug>/`, and one current ISO-week page at `editions/YYYY-Www/`, alongside events, RSS and the insights companion. A readable static stylesheet and small rendering modules replace the embedded page generator. The Laravel serving/publishing integration uses an explicit public path policy, preserves older published HTML, negotiates gzip/identity correctly, uses representation-specific validators, and stages validated successor continuity before replacing public files.
+
+**Why:** A useful shared link must survive the rolling feed. Promoting public data before continuity is recoverable can otherwise lose the baseline that distinguishes a new marketplace listing from an old one. Mutable CSS must also refresh after a release.
+
+**Consequence:** HTML is indexable and bounded to 256 KiB per page; retained HTML is bounded to 20,000 files and 256 MiB with a visible publication failure at the cap. JSON and internal publication state are not indexable; the journal is never public. HEAD/304 responses carry no body, gzip and identity have distinct ETags with Vary, and byte accounting measures the selected body. No personalized URL, tracking identifier, account or new runtime dependency is introduced. Server source tests and publication interruption recovery are separate evidence from a production deployment. Public deployment remains an explicit owner action.

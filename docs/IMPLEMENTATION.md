@@ -36,7 +36,7 @@ This plan is ordered to retire the highest-risk contracts before visual polish. 
 ## Phase 3 — Build the client helper
 
 1. Implement fixed-origin bounded HTTPS refresh, redirect policy, candidate validation, cache locking, and atomic last-known-good replacement.
-2. Implement state read, v1–v8-to-v9 migration, bounded per-event read overrides, saved toggle, private bar/image preferences, strict per-section filters, canonical section identities, indicator model, quarantine, cross-process state locking, legacy-interest/profile removal, and explicit purge.
+2. Implement state read, v1–v12-to-v13 migration, bounded per-event read overrides, saved toggle, private bar/image and follow/mute preferences, strict per-section filters, canonical section identities, indicator model, quarantine, cross-process state locking, legacy-interest/profile removal, and explicit purge. Preserve v12 onboarding and briefing choices; older supported states skip onboarding without changing reads.
 3. Return small versioned JSON responses designed for QML rather than exposing internal exceptions.
 4. Add loopback integration tests for success, timeout, redirect, oversize, truncation, invalid schema, concurrent refresh, and offline cache.
 
@@ -120,4 +120,4 @@ The entire local implementation is complete, clean, tested, documented, and prov
 
 ## 0.5.0 local candidate scope
 
-Implement D055–D057 as one reviewable candidate: state-v12 finite grouped briefing with explicit first-use and batch actions, gzip delivery with intact validation/caching bounds, and the generated public installation route. Preserve existing per-story reading, saved metadata, canonical sections, source provenance, optional images, and plugin lifecycle. Source tests and the disposable `tests/lab/briefing.sh` journey must accompany the existing acceptance suite. Exact installed-version impact analysis, contributor intake, and durable historical publishing remain subsequent product work; this candidate makes no such claims.
+Implement D055–D060 as one reviewable candidate: finite grouped briefing, state-v13 local follow/mute controls, source-backed setup comparisons, reviewed discoveries, corrected opening geometry, bounded gzip delivery and durable public pages. Keep event schema v2 and validate the separate optional insights-v1 companion. Preserve reading and saved-state contracts while Home remains non-reading until a story is opened. Split orchestration, domain projection, state migration, window lifecycle and presentation into named modules with clear dependency directions. Source tests, publication failure/recovery checks, browser review and disposable real desktop journeys must accompany the release. Contributor intake, remote profiles, automatic installation and generated compatibility advice remain outside scope.

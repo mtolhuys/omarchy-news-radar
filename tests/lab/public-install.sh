@@ -65,7 +65,7 @@ omarchy_host_test() {
   capture_console "success-news-radar-public-read-state"
   press esc
   wait_for_guest_state "Apps-launched public panel closes" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '([/]bin/news-radar-client|[r]adar[.]cli_client)'" || return 1
 
   ssh_session "$shortcut status" >"$RUN_DIR/news-radar-public-shortcut-status.json" || return 1
   jq -e '.status == "ok" and .classification == "free" and .binding == "SUPER + ALT + N"' \
@@ -77,7 +77,7 @@ omarchy_host_test() {
   capture_console "success-news-radar-public-install"
   press esc
   wait_for_guest_state "public panel closes without an owned helper" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '([/]bin/news-radar-client|[r]adar[.]cli_client)'" || return 1
 
   log "Removing the shortcut before the public plugin"
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-public-shortcut-removed.json" || return 1

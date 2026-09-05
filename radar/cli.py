@@ -13,6 +13,9 @@ from typing import Any, Sequence
 
 from .client import (
     complete_onboarding,
+    insights_model,
+    refresh_insights,
+    set_relevance,
     ensure_briefing,
     installed_plugins,
     indicator_model,
@@ -32,9 +35,10 @@ from .client import (
     start_from_today,
 )
 from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
-from .errors import RadarError
+from .errors import FetchError, RadarError
 from .plugin_update import apply_update, inspect_update
-from .io import atomic_write_json
+from .io import atomic_write_json, read_json_bounded
+from .insights import INSIGHTS_MAX_BYTES, validate_insights
 from .local_edition import import_local_edition
 from .local_collection import commit_local_source_snapshot, prepare_local_source_snapshot
 from .publisher import publish
@@ -44,7 +48,7 @@ from .publication_state import (
     restore_publication_source_snapshot,
 )
 from .validation import parse_timestamp, validate_feed
-from .window import activate_window
+from .window import activate_window, prepare_window, finish_window_opening, remember_window
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -83,6 +87,21 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("update-apply")
     commands.add_parser("purge")
     commands.add_parser("activate-window")
+    prepare = commands.add_parser("prepare-window")
+    for flag in ("width", "height", "minimum-width", "minimum-height"):
+        prepare.add_argument("--" + flag, required=True, type=int)
+    finish_opening = commands.add_parser("finish-window-opening")
+    finish_opening.add_argument("--token")
+    commands.add_parser("remember-window")
+    commands.add_parser("insights-refresh")
+    insights = commands.add_parser("insights-project")
+    insights.add_argument("--installed-facts-json", default="[]")
+    insights.add_argument("--installed-facts-status", choices=("available", "unavailable"), default="available")
+    insights.add_argument("--query", default="")
+    relevance = commands.add_parser("set-relevance")
+    relevance.add_argument("--kind", required=True, choices=("plugin", "source", "creator"))
+    relevance.add_argument("--id", required=True)
+    relevance.add_argument("--mode", required=True, choices=("follow", "mute", "clear"))
     for name in ("ensure-briefing", "new-briefing"):
         briefing = commands.add_parser(name)
         briefing.add_argument("--installed-json", default="[]")
@@ -111,6 +130,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     projection = commands.add_parser("project")
     projection.add_argument("--section", required=True)
     projection.add_argument("--installed-json", default="[]")
+    projection.add_argument("--installed-facts-json", default="[]")
+    projection.add_argument("--installed-facts-status", choices=("available", "unavailable"), default="available")
     projection.add_argument("--query", default="")
     projection.add_argument("--limit", type=int, default=12)
     projection.add_argument("--retained-read-ids-json", default="[]")
@@ -136,6 +157,19 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = apply_update()
         elif args.command == "activate-window":
             result = activate_window()
+        elif args.command == "prepare-window":
+            result = prepare_window(width=args.width, height=args.height, minimum_width=args.minimum_width, minimum_height=args.minimum_height)
+        elif args.command == "finish-window-opening":
+            result = finish_window_opening(token=args.token)
+        elif args.command == "remember-window":
+            result = remember_window()
+        elif args.command == "insights-refresh":
+            result = refresh_insights()
+        elif args.command == "insights-project":
+            result = insights_model(args.installed_facts_json, query=args.query,
+                                    installed_facts_available=args.installed_facts_status == "available")
+        elif args.command == "set-relevance":
+            result = set_relevance(args.kind, args.id, args.mode)
         elif args.command in {"ensure-briefing", "new-briefing"}:
             result = ensure_briefing(args.installed_json, replace=args.command == "new-briefing")
         elif args.command == "complete-onboarding":
@@ -178,6 +212,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
                 args.query,
                 limit=args.limit,
                 retained_read_ids_json=args.retained_read_ids_json,
+                installed_facts_json=args.installed_facts_json,
+                installed_facts_available=args.installed_facts_status == "available",
             )
         else:
             result = purge_state()
@@ -214,6 +250,10 @@ def build_fixture(*, second_generation: bool, output: Path, snapshot_output: Pat
     return feed
 
 
+def _offline_preview_image(_url: str) -> tuple[bytes, str]:
+    raise FetchError("offline", "images are not fetched for offline previews")
+
+
 def repository_main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m radar")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -224,6 +264,9 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
     site = commands.add_parser("site")
     site.add_argument("--feed", type=Path, default=ROOT / "tests/fixtures/feed-valid.json")
     site.add_argument("--output", type=Path, default=ROOT / "dist")
+    site.add_argument("--snapshot", type=Path, default=ROOT / "state/source-snapshot.json")
+    site.add_argument("--insights", type=Path)
+    site.add_argument("--published-at")
     commands.add_parser("validate-feed").add_argument("path", type=Path)
     local_import = commands.add_parser("import-local-edition")
     local_import.add_argument("--edition", type=Path, required=True)
@@ -246,6 +289,7 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
     collect.add_argument("--snapshot", type=Path, default=ROOT / "state/source-snapshot.json")
     collect.add_argument("--output", type=Path, default=ROOT / "dist")
     collect.add_argument("--bootstrap-marketplace", action="store_true")
+    collect.add_argument("--previous-insights", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.command == "feed-fixture":
@@ -255,7 +299,12 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             value = json.loads(args.feed.read_text(encoding="utf-8"))
             feed = validate_feed(value, now=parse_timestamp(value["generatedAt"]))
             revision = os.environ.get("SOURCE_REVISION", "working-tree")
-            _print({"status": "ok", **publish(feed, args.output, source_revision=revision)})
+            from .insights_builder import build_insights
+            published_at = parse_timestamp(args.published_at) if args.published_at else datetime.now(timezone.utc).replace(microsecond=0)
+            insights = validate_insights(read_json_bounded(args.insights, INSIGHTS_MAX_BYTES), now=published_at) if args.insights else build_insights(
+                load_snapshot(args.snapshot), published_at=published_at, content_directory=ROOT / "content/discoveries", fetch_releases=False,
+            )
+            _print({"status": "ok", **publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights, image_fetcher=_offline_preview_image)})
         elif args.command == "collect":
             previous = load_snapshot(args.snapshot)
             clock = datetime.now(timezone.utc).replace(microsecond=0)
@@ -270,12 +319,15 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
                 youtube_preferred_languages=os.environ.get("YOUTUBE_PREFERRED_LANGUAGES"),
             )
             revision = os.environ.get("GITHUB_SHA", os.environ.get("SOURCE_REVISION", "working-tree"))
-            result = publish(
-                feed,
-                args.output,
-                source_revision=revision,
-                published_at=datetime.now(timezone.utc).replace(microsecond=0),
-            )
+            from .insights_builder import build_insights
+            published_at = datetime.now(timezone.utc).replace(microsecond=0)
+            previous_path = args.previous_insights or args.output / "insights.json"
+            previous_insights = None
+            if args.previous_insights is not None or previous_path.exists():
+                previous_insights = validate_insights(read_json_bounded(previous_path, INSIGHTS_MAX_BYTES), now=published_at)
+            insights = build_insights(snapshot, published_at=published_at, content_directory=ROOT / "content/discoveries",
+                                     fetch_releases=True, github_token=os.environ.get("GITHUB_TOKEN"), previous_insights=previous_insights)
+            result = publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights)
             save_snapshot(args.snapshot, snapshot)
             _print({"status": "ok", "events": len(feed["events"]), **result})
         elif args.command == "validate-feed":

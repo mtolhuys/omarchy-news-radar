@@ -135,7 +135,9 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         return payload
     payload["availableCommit"] = available
 
-    if available == installed:
+    # A local release candidate can already contain every public commit. That
+    # is current with upstream, not an update that failed to fast-forward.
+    if available == installed or _can_fast_forward(plugin_dir, available, installed):
         payload["state"] = "current"
         payload["message"] = ""
         return payload
@@ -144,8 +146,8 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         payload["state"] = "blocked"
         payload["updateAvailable"] = True
         payload["message"] = (
-            "A newer News Radar exists, but this checkout cannot fast-forward "
-            "(local commits or divergent history)."
+            "Upstream changes are available, but this checkout has local history. "
+            "Automatic update is unavailable."
         )
         return payload
 

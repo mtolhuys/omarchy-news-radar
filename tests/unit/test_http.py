@@ -22,8 +22,8 @@ class BodyResponse(io.BytesIO):
         self.status = 200
         self.bytes_read = 0
 
-    def read(self, size: int = -1) -> bytes:
-        result = super().read(size)
+    def read1(self, size: int = -1) -> bytes:
+        result = super().read1(size)
         self.bytes_read += len(result)
         return result
 
@@ -77,8 +77,66 @@ class HttpBodyTests(unittest.TestCase):
 
     def test_gzip_members_cannot_bypass_the_total_timeout(self) -> None:
         encoded = gzip.compress(b"x", mtime=0) + gzip.compress(b"y", mtime=0)
-        with mock.patch("radar.http.time.monotonic", side_effect=[0, 0, 0, 6]):
+        with mock.patch("radar.http.time.monotonic", side_effect=[0, 0, 0, 0, 6]):
             self.assert_fetch_error("timeout", encoded)
+
+    def test_eof_arriving_after_the_total_deadline_does_not_complete_a_response(self) -> None:
+        clock = [0.0]
+        original_read = BodyResponse.read1
+
+        def late_eof(response, size=-1):
+            data = original_read(response, size)
+            if not data:
+                clock[0] = 6.0
+            return data
+
+        with mock.patch.object(BodyResponse, "read1", new=late_eof), \
+                mock.patch("radar.http.time.monotonic", side_effect=lambda: clock[0]):
+            self.assert_fetch_error("timeout", b"{}", encoding=None)
+
+    def test_slow_body_trickle_returns_control_before_filling_the_read_buffer(self) -> None:
+        # Exercise real HTTPResponse/BufferedReader semantics without a socket
+        # or wall-clock sleeps: every body byte advances the virtual clock.
+        for encoding, body in ((None, b"x" * 100), ("gzip", gzip.compress(b"x" * 100, mtime=0))):
+            with self.subTest(encoding=encoding):
+                clock = [0.0]
+                header = b"HTTP/1.1 200 OK\r\nContent-Length: " + str(len(body)).encode() + b"\r\n"
+                if encoding:
+                    header += b"Content-Encoding: gzip\r\n"
+                header += b"\r\n"
+
+                class TrickleRaw(io.RawIOBase):
+                    body_bytes_read = 0
+                    headers_sent = False
+
+                    def readable(self):
+                        return True
+
+                    def readinto(self, buffer):
+                        if not self.headers_sent:
+                            self.headers_sent = True
+                            buffer[:len(header)] = header
+                            return len(header)
+                        if self.body_bytes_read == len(body):
+                            return 0
+                        buffer[0] = body[self.body_bytes_read]
+                        self.body_bytes_read += 1
+                        clock[0] += 1.0
+                        return 1
+
+                raw = TrickleRaw()
+                socket = mock.Mock()
+                socket.makefile.return_value = io.BufferedReader(raw)
+                response = http.client.HTTPResponse(socket)
+                response.begin()
+                with mock.patch("radar.http.urllib.request.build_opener") as opener, \
+                        mock.patch("radar.http.time.monotonic", side_effect=lambda: clock[0]):
+                    opener.return_value.open.return_value = response
+                    with self.assertRaises(FetchError) as raised:
+                        fetch_bytes("https://feed.example/events.json",
+                                    policy=FetchPolicy(1024, 5.0, frozenset({"https://feed.example"})))
+                self.assertEqual("timeout", raised.exception.reason)
+                self.assertEqual(6, raw.body_bytes_read, "Do not wait for the entire body before checking the deadline.")
 
     def test_gzip_encoded_body_is_bounded_even_when_it_expands_to_two_bytes(self) -> None:
         encoded = bytearray(gzip.compress(b"{}", mtime=0))
@@ -129,7 +187,7 @@ class HttpBodyTests(unittest.TestCase):
                 )
 
     def test_truncated_chunked_http_returns_a_typed_error(self) -> None:
-        with mock.patch.object(BodyResponse, "read", side_effect=http.client.IncompleteRead(b"{")):
+        with mock.patch.object(BodyResponse, "read1", side_effect=http.client.IncompleteRead(b"{")):
             self.assert_fetch_error("http-error", b"{}", encoding=None)
 
     def test_304_remains_bodyless_even_when_it_describes_a_gzip_representation(self) -> None:

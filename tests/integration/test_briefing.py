@@ -236,6 +236,7 @@ class BriefingIntegrationTests(unittest.TestCase):
         state = default_state()
         state.pop("briefing")
         state.pop("onboardingComplete")
+        state.pop("relevance")
         state["schemaVersion"] = 11
         state["readThrough"] = "2026-08-01T00:00:00Z"
         state["readOverrides"] = {self.feed["events"][0]["id"]: False}
@@ -290,7 +291,7 @@ class BriefingIntegrationTests(unittest.TestCase):
             except BaseException as exc:
                 errors.append(exc)
 
-        with mock.patch("radar.client.set_events_read", side_effect=controlled_read):
+        with mock.patch("radar.client_briefing.set_events_read", side_effect=controlled_read):
             reader = threading.Thread(target=start)
             writer = threading.Thread(target=write)
             reader.start()

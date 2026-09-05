@@ -5,10 +5,11 @@ from __future__ import annotations
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
 BUILD_ID = "news-radar-0.5.0"
 FEED_SCHEMA_VERSION = 2
-STATE_SCHEMA_VERSION = 12
+STATE_SCHEMA_VERSION = 13
 HELPER_PROTOCOL_VERSION = 1
 
 FEED_URL = "https://mtolhuijs.nl/news-radar/events.json"
+INSIGHTS_URL = "https://mtolhuijs.nl/news-radar/insights.json"
 FEED_ORIGIN = "https://mtolhuijs.nl"
 MARKETPLACE_IMAGE_ORIGIN = "https://plugins.omarchy.org"
 YOUTUBE_IMAGE_ORIGIN = "https://i.ytimg.com"
@@ -19,7 +20,7 @@ ENGAGEMENT_MAX_BYTES = 2 * 1024 * 1024
 MAX_EVENTS = 500
 MAX_READ_OVERRIDES = MAX_EVENTS
 MAX_BRIEFING_GROUPS = 5
-BRIEFING_REASONS = ("critical", "notable", "core", "installed", "discovery")
+BRIEFING_REASONS = ("critical", "notable", "core", "installed", "followed", "discovery")
 # Published ledger retention: keep at most MAX_EVENTS, prefer the last
 # RETENTION_DAYS, and never crowd out protected Core/YouTube types with
 # marketplace verification noise (see retain_events).

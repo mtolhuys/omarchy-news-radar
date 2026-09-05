@@ -11,6 +11,8 @@ omarchy_host_test() {
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
   # shellcheck source=/dev/null
   source "$lab_root/host-tests/helpers/pointer.sh"
+  # shellcheck source=/dev/null
+  source "$product_root/tests/lab/pointer.sh"
 
   stage_revision() {
     local revision="$1"
@@ -59,7 +61,7 @@ omarchy_host_test() {
   obscure_radar || return 1
   bar_x="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.x + (.width / 2) | floor)'")"
   bar_y="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.y + (.height / 2) | floor)'")"
-  qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
+  radar_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
   wait_for_guest_state "released v0.1.3 bar toggle closes obscured Radar" 10 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
 
@@ -89,7 +91,7 @@ omarchy_host_test() {
   obscure_radar || return 1
   bar_x="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.x + (.width / 2) | floor)'")"
   bar_y="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.y + (.height / 2) | floor)'")"
-  qmp_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
+  radar_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
   wait_radar "candidate bar summon raises obscured Radar" || {
     ssh_session "hyprctl -j activewindow; hyprctl -j clients; omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-candidate-bar-failure.log" 2>&1 || true
     return 1

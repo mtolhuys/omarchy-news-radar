@@ -71,7 +71,7 @@ class LocalEditionIntegrationTests(unittest.TestCase):
             pictured["imageUrl"],
         )
 
-        with mock.patch("radar.client._fetch_feed", return_value=self.published_feed) as fetch:
+        with mock.patch("radar.client_feed._fetch_feed", return_value=self.published_feed) as fetch:
             current = refresh(self.environment, now=NOW)
         fetch.assert_called_once()
         self.assertEqual("local-current", current["status"])
@@ -84,7 +84,7 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         newer["publishedAt"] = "2026-08-31T14:04:00Z"
         newer["window"]["through"] = "2026-08-31T14:04:00Z"
 
-        with mock.patch("radar.client._fetch_feed", return_value=newer) as fetch:
+        with mock.patch("radar.client_feed._fetch_feed", return_value=newer) as fetch:
             current = refresh(self.environment, now=NOW)
 
         fetch.assert_called_once()
@@ -121,7 +121,7 @@ class LocalEditionIntegrationTests(unittest.TestCase):
             }
         ]
 
-        with mock.patch("radar.client._fetch_feed", return_value=older) as fetch:
+        with mock.patch("radar.client_feed._fetch_feed", return_value=older) as fetch:
             current = refresh(self.environment, now=NOW)
 
         fetch.assert_called_once()
@@ -138,7 +138,7 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         older_without["generatedAt"] = "2026-08-31T13:40:00Z"
         older_without["publishedAt"] = "2026-08-31T13:40:00Z"
         older_without["window"]["through"] = "2026-08-31T13:40:00Z"
-        with mock.patch("radar.client._fetch_feed", return_value=older_without) as fetch:
+        with mock.patch("radar.client_feed._fetch_feed", return_value=older_without) as fetch:
             refused = refresh(self.environment, now=NOW)
         fetch.assert_called_once()
         self.assertEqual("local-current", refused["status"])
@@ -174,7 +174,7 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         marker["feedSha256"] = "0" * 64
         atomic_write_json(marker_path(self.environment), marker)
         self.assertEqual("published", read_model(self.environment, now=NOW)["editionMode"])
-        with mock.patch("radar.client._fetch_feed", side_effect=OSError("offline")) as fetch:
+        with mock.patch("radar.client_feed._fetch_feed", side_effect=OSError("offline")) as fetch:
             result = refresh(self.environment, now=NOW)
         fetch.assert_called_once()
         self.assertEqual("offline", result["status"])

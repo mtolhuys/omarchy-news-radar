@@ -58,7 +58,7 @@ omarchy_host_test() {
 
   press esc
   wait_for_guest_state "preview closes without an owned helper" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '[/]bin/news-radar-client'" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && ! pgrep -u \"\$USER\" -f '([/]bin/news-radar-client|[r]adar[.]cli_client)'" || return 1
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.news-radar --yes" >/dev/null || return 1
   wait_for_guest_state "preview candidate removes cleanly" 15 ssh_session \
     "test ! -e $plugin_dir && omarchy-plugin-list --json | jq -e 'all(.[]; .id != \"io.github.mtolhuys.news-radar\")'" || return 1

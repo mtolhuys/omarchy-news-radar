@@ -32,8 +32,8 @@ Maintainers, newsletter authors, and external feed consumers are secondary users
 4. Launching the Apps entry, pressing `Super+Alt+N`, or left-clicking the newspaper summons the same window: closed Radar opens; an existing foreground or obscured Radar is raised and focused without toggling closed. Omarchy's `Super+Shift+N` Editor action remains unchanged.
 5. While its optional newspaper is visible, Radar checks one bounded static published edition from the last real attempt without blocking the cached edition; successful checks and failures are retried at most every five minutes. An adopted edition updates the passive unread badge with the panel closed. The badge deduplicates unread stories across the current persistent section projections, so every advertised story is reachable in the newspaper. It never implies that the desktop action collects upstream sources.
 6. On first use, Browse current stories keeps the unread backlog; Start from today explicitly marks only the displayed edition read while preserving saves and explicit unread overrides. Existing installations retain their reading state without a new welcome prompt. Front Page then holds a persistent briefing of at most five groups, with source-linked plugin occurrences grouped together and plain reasons for inclusion. Its completion state survives refresh and reopen; only New briefing chooses another selection. The front page and section rail show exactly how many stories remain unread; every row says `UNREAD` or `READ`, and any accepted reviewed link joins that finite edition without creating a separate empty lane. Under Unread only, a just-read row remains stable and visibly READ for the active view while the true count decreases, then leaves after a section, search, or filter change.
-7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, and Saved, with `Tab` and `Shift+Tab` cycling sections and Down/Enter reaching finite pagination.
-8. After first-use choice has completed, a fresh panel open marks its first visibly presented selection read once; deliberately selecting another item marks only that story read. Re-summoning an already open panel, refreshing, or rebuilding a projection does not repeat the initial action. Article stories open a reading pane with title, human date · source, and the full body; type, trust, audit, compatibility, and the raw URL stay in collapsed Details. YouTube and plugin stories may still show thumbnail and source-labelled aggregate metrics. The inspector and `u` shortcut can mark a story unread again; Front Page offers explicit Mark group read and Mark briefing read actions for exact snapshot members, while other sections retain the explicit action that marks every unread story matching their persistent Settings filters read in one atomic transition.
+7. The normal resizable window participates in `Alt+Tab`; the user navigates by keyboard or pointer through Front Page, For You, Core, Plugins, YouTube, and Saved, with `Tab` and `Shift+Tab` cycling sections and Down/Enter reaching finite pagination.
+8. After first-use choice has completed, a fresh panel open into a source reader marks its first visibly presented selection read once; Home and My setup do not read hidden stories. Deliberately selecting another story marks only that story read. Re-summoning an already open panel, refreshing, or rebuilding a projection does not repeat the initial action. Article stories open a reading pane with title, human date · source, and the full body; type, trust, audit, compatibility, and the raw URL stay in collapsed Details. YouTube and plugin stories may still show thumbnail and source-labelled aggregate metrics. The inspector and `u` shortcut can mark a story unread again; Front Page offers explicit Mark group read and Mark briefing read actions for exact snapshot members, while other sections retain the explicit action that marks every unread story matching their persistent Settings filters read in one atomic transition.
 9. Opening a source launches the default browser only after explicit activation.
 10. Closing the panel never bulk-marks the edition. Apart from the one story visibly selected by a fresh open, stories the user did not deliberately select remain unread across close, refresh, and restart.
 11. Offline or failed checks preserve the last-known-good edition without displacing news with publisher diagnostics. A concise recovery message appears only when no usable edition exists; operational monitoring separately distinguishes source checks, Forge publication, and client cache age.
@@ -57,8 +57,7 @@ An owner deliberately running the local checkout may use `make local-latest`. Th
 
 ### Relevance
 
-- “For You” matches events against exact locally enabled plugin IDs.
-- Category and tag filters operate locally.
+- “For You” matches events against exact locally enabled plugin IDs or explicit local project/source/creator follows, subject to local mutes.
 - Saved items and bounded per-story read overrides remain local.
 - Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
 - Names, icons, order, and source scope are canonical section identity and are not user-editable; only the filters that change which stories are shown persist per section.
@@ -99,7 +98,7 @@ Automated activity and editorial significance are separate facts. The collector 
 ## Non-goals for version 1
 
 - A Laravel News-style editorial business, original reporting operation, advertising product, job board, or sponsorship system.
-- Accounts, comments, reactions, follows, cloud bookmarks, analytics, telemetry, or recommendation profiles.
+- Accounts, comments, reactions, cloud follows, cloud bookmarks, analytics, telemetry, or remote recommendation profiles. Explicit local follow/mute choices are supported in the 0.5.0 candidate (D058).
 - A general-purpose RSS reader or social-media client.
 - Automatic scraping of X, Reddit, arbitrary websites, or GitHub discussions.
 - AI-written summaries, autonomous editorial judgment, sentiment analysis, or generated safety conclusions.
@@ -107,8 +106,18 @@ Automated activity and editorial significance are separate facts. The collector 
 - Mandatory top-bar presence, desktop notifications, polling while the newspaper is hidden, or a resident daemon.
 - Claiming that marketplace verification is a complete security audit.
 - Treating views, hearts, command copies, stars, or release-asset downloads as installs, unique users, votes, rankings, safety, or editorial significance.
-- Mirroring articles, release notes, arbitrary screenshots, repository content, or preview rasters onto the feed host. Only exact allowlisted marketplace/YouTube image references enter current editions.
+- Mirroring arbitrary articles, screenshots, repository trees, or preview rasters onto the feed host. D058 permits bounded plain-text release explanations from explicitly reviewed repositories. Only exact allowlisted marketplace/YouTube image references enter current editions.
 
 ## Milestone success criterion
 
 The first release succeeds when a clean Omarchy Quattro guest can install the plugin, see a correctly sized newspaper indicator, hide it without a gap, restore it from the panel, confirm that `Super+Alt+N` is free, install Radar's exact managed binding without changing the Editor shortcut, open a polished image-capable cached front page, distinguish every read story from every unread story, mark one story read and unread without changing its neighbors, close without bulk-marking the edition, see bounded refresh progress, load another page entirely by keyboard, identify an installed-plugin match, open an original HTTPS source, survive offline and malformed-feed states without losing good data, close cleanly, remove its managed binding so the chord is free again, and uninstall without shell or Hyprland errors.
+
+## Expanded 0.5.0 candidate
+
+The candidate combines a finite briefing with three enduring reasons to open Radar: source-backed explanations, discoveries worth trying, and the context of the reader's own setup. Front Page presents the retained brief alongside reviewed workflows, documented setup updates, and a small project selection. Completing the briefing does not remove those other uses. Opening the home overview does not read its hidden first story.
+
+My setup compares exact local enabled-plugin manifests with documented public releases. Bounded local names label uncovered projects; explicit shell `firstParty` metadata excludes built-in components unless they have documented project coverage. A successful empty setup is distinct from failed discovery. Unknown or incomparable versions stay explicit, and a catalog observation time never substitutes for a release date. Only strict SemVer precedence or an exact version match supports a comparison. Coverage is bounded and incomplete; this is an explanation surface, not an update manager or compatibility checker. Omarchy itself is the platform, not a plugin discovery; its source notes remain available with an unknown installed version when no reliable version fact exists.
+
+Following and muting a project, source or stable creator are explicit local choices with visible clear controls. Follows influence future For You results and briefing selection; mutes affect future selections and source browsing. An existing briefing keeps its exact membership, and Saved remains accessible. No preference, enabled-plugin ID, version or query leaves the device.
+
+Reviewed workflow records explain a practical use, identify their sources and review date, and distinguish documentation-based ideas from tested integrations. Public story pages, discovery pages and a weekly edition give people useful links to share. They contain generic public facts only. This scope supersedes the earlier 0.5.0 briefing-only boundary.

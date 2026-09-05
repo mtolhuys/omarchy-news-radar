@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "Model.js" as RadarModel
 import "components"
+import "controllers"
 
 Item {
   id: root
@@ -16,7 +15,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.5.0+identity-1"
+  readonly property string runtimeBuildIdentity: "news-radar-0.5.0+identity-2"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -47,531 +46,113 @@ Item {
   readonly property color modalScrimColor: Qt.rgba(
     Color.foreground.r, Color.foreground.g, Color.foreground.b,
     popupBgIsLight ? 0.22 : 0.45)
-  property var cachedFeed: null
-  property var userState: ({
-    schemaVersion: 12,
-    onboardingComplete: false,
-    briefing: null,
-    readThrough: "1970-01-01T00:00:00Z",
-    readOverrides: ({}),
-    saved: ({}),
-    preferences: ({
-      barVisible: true,
-      imagesVisible: true,
-      sectionFilters: ({}),
-      sectionVisibility: ({ core: true, plugins: true, youtube: true })
-    })
-  })
-  property var installedPluginIds: []
-  property bool installedPluginsReady: false
-  property var briefing: ({ initialized: false, total: 0, remaining: 0, complete: false })
-  property string displayedFeedDigest: ""
-  property int displayedFeedEventCount: 0
+  property bool homeMode: true
+  property bool setupMode: true
+  property var detailItem: null
+  property var detailParents: []
+  readonly property bool homeVisible: sectionNavigation.currentSection === "front-page" && homeMode
+  readonly property bool setupVisible: sectionNavigation.currentSection === "for-you" && setupMode
+  readonly property bool overviewVisible: homeVisible || setupVisible
   property bool briefingControlsMode: false
-  property string briefingAction: ""
-  property string briefingMessage: ""
-  property bool briefingEnsureAttempted: false
-  readonly property bool onboardingVisible: localStateReady && !!cachedFeed
-    && userState.onboardingComplete === false
-  readonly property bool briefingVisible: currentSection === "front-page" && !!cachedFeed
-  readonly property bool briefingBusy: briefingProc.running || stateMutationPending
-    || readMutationPending || projectProc.running
-  property var stories: []
-  property var counts: ({})
-  property var unreadCounts: ({})
-  property var pendingReadChanges: ({})
-  property var unreadSessionRetainedIds: ({})
-  property bool initialStoryReadPending: false
-  property string initialStoryReadEventId: ""
-  property int initialStoryReadGeneration: -1
-  property int panelOpenGeneration: 0
-  readonly property int initialStoryReadDelayMs: 650
-  property bool readChangeInFlight: false
-  property bool bulkReadInFlight: false
-  property int sectionIndex: 0
-  property string requestedSection: "front-page"
-  property int selectedIndex: 0
-  property int storyViewportAnchorIndex: 0
-  property string feedStatus: "First use"
-  property string statusDetail: "No validated cache yet. Radar will check the published edition."
-  property string sourceHealth: "No validated source status"
-  property string generatedAt: ""
-  property var editionTiming: ({})
-  property string editionMode: "published"
-  property bool refreshing: false
-  property bool pendingProjection: false
-  property string activeProjectionViewportMode: "reset"
-  property string pendingProjectionViewportMode: "reset"
-  property int storyViewportRevision: 0
-  property bool pendingViewportPreservation: false
-  property real pendingViewportContentY: 0
-  property int pendingViewportAnchorIndex: -1
-  property real pendingViewportAnchorTop: 0
-  property int pendingViewportRevision: -1
-  property int pendingViewportAttempts: 0
-  property int forcedTopAnchorIndex: -1
-  property bool localStateReady: false
+  readonly property bool briefingVisible: sectionNavigation.currentSection === "front-page" && !!feedSession.cachedFeed
   property bool preferencesOpen: false
   property bool sectionSettingsOpen: false
   // Session-only; start collapsed so the rail stays quiet. Opening it is an
   // explicit reader choice and is remembered until this panel instance closes.
   property bool keysLegendOpen: false
-  property string shortcutAction: ""
-  property string shortcutState: "unknown"
-  property string pluginUpdateState: "unknown"
-  property string pluginUpdateMessage: ""
-  property bool pluginUpdateCanApply: false
-  property string shortcutMessage: ""
-  property string windowIntegrationStatus: "idle"
-  property int totalStories: 0
-  property int retainedReadStories: 0
-  property bool hasMoreStories: false
-  property string filterSummary: "No extra filters"
-  property string sectionSources: ""
-  property var filterOptions: []
-  property int pageSize: 12
-  property var sectionLimits: ({
-    "front-page": 12,
-    "for-you": 12,
-    "core": 12,
-    "plugins": 12,
-    "youtube": 12,
-    "saved": 12
-  })
+  readonly property string windowIntegrationStatus: windowController.status
 
-  NumberAnimation {
-    id: storyScrollAnimation
-    target: storyList
-    property: "contentY"
-    duration: 140
-    easing.type: Easing.OutCubic
-    onStopped: root.applyPendingViewportPreservation()
-  }
-
-  Timer {
-    id: viewportPreservationTimer
-    interval: 16
-    repeat: true
-    onTriggered: root.applyPendingViewportPreservation()
-  }
-
-  Timer {
-    id: initialStoryReadTimer
-    interval: root.initialStoryReadDelayMs
-    repeat: false
-    onTriggered: root.commitInitialStoryRead()
-  }
-
-  ListModel {
-    id: renderedStoryModel
-    dynamicRoles: true
-  }
-
-  readonly property var preferences: userState && userState.preferences
-    ? userState.preferences : ({
-      barVisible: true,
-      imagesVisible: true,
-      sectionFilters: ({}),
-      sectionVisibility: ({ core: true, plugins: true, youtube: true })
-    })
-  readonly property var canonicalSections: [
-    Object.assign({ id: "front-page" }, root.defaultSectionProfile("front-page")),
-    Object.assign({ id: "for-you" }, root.defaultSectionProfile("for-you")),
-    Object.assign({ id: "core" }, root.defaultSectionProfile("core")),
-    Object.assign({ id: "plugins" }, root.defaultSectionProfile("plugins")),
-    Object.assign({ id: "youtube" }, root.defaultSectionProfile("youtube")),
-    Object.assign({ id: "saved" }, root.defaultSectionProfile("saved"))
-  ]
-  readonly property var hideableSections: ["core", "plugins", "youtube"]
-  readonly property var sectionVisibility: preferences.sectionVisibility
-    ? preferences.sectionVisibility
-    : ({ core: true, plugins: true, youtube: true })
-  readonly property var sections: visibleSections(canonicalSections, sectionVisibility)
-  readonly property string currentSection: sections.length
-    ? sections[Math.max(0, Math.min(sectionIndex, sections.length - 1))].id
-    : "front-page"
-  readonly property var currentProfile: sections.length
-    ? sections[Math.max(0, Math.min(sectionIndex, sections.length - 1))]
-    : root.defaultSectionProfile("front-page")
-  readonly property var selectedStory: selectedIndex >= 0 && selectedIndex < stories.length
-    ? stories[selectedIndex] : null
-  readonly property bool inspectorYouTube: !!selectedStory
-    && String(selectedStory.type || "") === "youtube-video"
-  readonly property bool inspectorHasMetrics: !!selectedStory
-    && !!selectedStory.metricItems
-    && selectedStory.metricItems.length > 0
-  readonly property bool readerLayout: currentSection === "core" || currentSection === "front-page"
-  readonly property bool inspectorArticleMode: RadarModel.isReaderArticle(selectedStory)
+  readonly property bool inspectorYouTube: !!storyViewportController.selectedStory
+    && String(storyViewportController.selectedStory.type || "") === "youtube-video"
+  readonly property bool inspectorHasMetrics: !!storyViewportController.selectedStory
+    && !!storyViewportController.selectedStory.metricItems
+    && storyViewportController.selectedStory.metricItems.length > 0
+  readonly property bool readerLayout: sectionNavigation.currentSection === "core" || sectionNavigation.currentSection === "front-page"
+  readonly property bool inspectorArticleMode: RadarModel.isReaderArticle(storyViewportController.selectedStory)
   property bool inspectorFactsOpen: false
-  readonly property var currentFilter: preferences.sectionFilters
-    && preferences.sectionFilters[currentSection]
-      ? preferences.sectionFilters[currentSection]
-      : ({ period: "all", significance: "all", unreadOnly: false, imagesOnly: false, types: [] })
-  readonly property int availableImageCount: countEditionImages(cachedFeed)
-  readonly property bool readMutationPending: readChangeInFlight
-    || Object.keys(pendingReadChanges).length > 0
-  readonly property bool stateMutationPending: stateProc.running || bulkReadInFlight || briefingProc.running
-  readonly property bool anyHelperRunning: readProc.running || cacheSyncProc.running
-    || refreshProc.running || projectProc.running
-    || installedProc.running || preferencesProc.running || stateMutationPending || readMutationPending
-    || openSourceProc.running || windowProc.running || shortcutProc.running || updateProc.running
-    || briefingProc.running
+  readonly property bool anyHelperRunning: feedSession.busy || readerActions.busy || readerActions.readMutationPending
+    || windowController.busy || pluginMaintenance.busy
 
-  onOnboardingVisibleChanged: {
-    if (onboardingVisible) {
-      cancelInitialStoryRead()
-      Qt.callLater(function() { if (root.onboardingVisible) welcomeCard.focusChoice() })
+  Connections {
+    target: feedSession
+    function onOnboardingVisibleChanged() {
+      if (feedSession.onboardingVisible) {
+        readerActions.cancelInitialStoryRead()
+        Qt.callLater(function() { if (feedSession.onboardingVisible) welcomeCard.focusChoice() })
+      }
     }
   }
+
+  function storyViewportState() { return storyViewportController.storyViewportState() }
+
+  function debugState() { return diagnostics.debugState() }
+  function itemGeometry(item, visible) { return diagnostics.itemGeometry(item, visible) }
+  function sectionRailGeometry() { return diagnostics.sectionRailGeometry() }
+  function maximizeGeometry() { return diagnostics.maximizeGeometry() }
+  function closeGeometry() { return diagnostics.closeGeometry() }
+  function settingsGeometry() { return diagnostics.settingsGeometry() }
+  function markAllReadGeometry() { return diagnostics.markAllReadGeometry() }
+  function headerUnreadGeometry() { return diagnostics.headerUnreadGeometry() }
+  function keysLegendGeometry() { return diagnostics.keysLegendGeometry() }
+  function refreshGeometry() { return diagnostics.refreshGeometry() }
+  function loadMoreGeometry() { return diagnostics.loadMoreGeometry() }
+  function filterUnreadGeometry() { return diagnostics.filterUnreadGeometry() }
+  function filterImagesGeometry() { return diagnostics.filterImagesGeometry() }
+  function filterResetGeometry() { return diagnostics.filterResetGeometry() }
+  function pluginPageGeometry() { return diagnostics.pluginPageGeometry() }
+  function readStateGeometry() { return diagnostics.readStateGeometry() }
+  function tuneGeometry() { return itemGeometry(masthead.tuneButton, masthead.tuneButton.visible) }
+  function tuneNewspaperGeometry() { return diagnostics.tuneNewspaperGeometry() }
+  function shortcutMigrationGeometry() { return diagnostics.shortcutMigrationGeometry() }
+  function startTodayGeometry() { return diagnostics.startTodayGeometry() }
+  function browseStoriesGeometry() { return diagnostics.browseStoriesGeometry() }
+  function newBriefingGeometry() { return diagnostics.newBriefingGeometry() }
+  function finishBriefingGeometry() { return diagnostics.finishBriefingGeometry() }
+  function homeCardGeometry() { return diagnostics.homeCardGeometry() }
+  function groupReadGeometry() { return diagnostics.groupReadGeometry() }
+  function setupNewsGeometry() { return itemGeometry(setupNewsButton, setupNewsButton.visible) }
 
   function runtimeIdentity() {
     return runtimeBuildIdentity
   }
 
   function emptyStateMessage() {
-    if (searchField.text)
+    if (masthead.search.text)
       return "No stories match the current filter. Clear search to recover."
-    if (!cachedFeed)
+    if (!feedSession.cachedFeed)
       return "No cached edition is available yet. Retry when online."
-    if (briefingVisible && briefing.initialized !== true)
-      return briefingMessage || "Preparing your briefing…"
-    if (briefingVisible && briefing.complete === true)
+    if (briefingVisible && feedSession.briefing.initialized !== true)
+      return feedSession.briefingMessage || "Preparing your briefing…"
+    if (briefingVisible && feedSession.briefing.complete === true)
       return "Your briefing is complete. Browse the other sections whenever you like."
-    if (filterSummary !== "No extra filters")
+    if (feedSession.filterSummary !== "No extra filters")
       return "No stories match this section's local settings. Reset its filters or choose another section."
-    return "This section is empty in the current bounded edition."
+    if (sectionNavigation.currentSection === "saved")
+      return "Your saved stories will appear here. Save a story to keep it for later."
+    return "There are no stories in this section of the current edition."
+  }
+
+  function emptyRecoveryLabel() {
+    if (!feedSession.cachedFeed) return "Check for updates"
+    if (masthead.search.text) return "Clear search"
+    if (feedSession.filterSummary !== "No extra filters") return "Reset section filters"
+    return "Explore Front Page"
+  }
+  function recoverEmptyView() {
+    if (!feedSession.cachedFeed) feedSession.refreshFeed()
+    else if (masthead.search.text) masthead.search.text = ""
+    else if (feedSession.filterSummary !== "No extra filters") readerActions.resetFilter()
+    else sectionNavigation.selectSection(sectionNavigation.sectionIndexFor("front-page"))
   }
 
   function sectionSummaryText() {
     var parts = []
-    if (filterSummary !== "No extra filters") parts.push(filterSummary)
-    if (retainedReadStories > 0)
-      parts.push(retainedReadStories + " just read shown until this view changes")
-    parts.push(totalStories + (briefingVisible ? " briefing items" : " stories"))
-    parts.push(Number(unreadCounts[currentSection] || 0) + (briefingVisible ? " updates unread" : " unread"))
+    if (feedSession.filterSummary !== "No extra filters") parts.push(feedSession.filterSummary)
+    if (feedSession.retainedReadStories > 0)
+      parts.push(feedSession.retainedReadStories + " just read shown until this view changes")
+    parts.push(feedSession.totalStories + (briefingVisible ? " briefing items" : " stories"))
+    parts.push(Number(feedSession.unreadCounts[sectionNavigation.currentSection] || 0) + (briefingVisible ? " updates unread" : " unread"))
     return parts.join(" · ")
-  }
-
-  function inspectorMetaLine() {
-    if (!selectedStory) return ""
-    var date = RadarModel.humanDate(String(selectedStory.occurredAt || ""))
-    var source = selectedStory.source && selectedStory.source.label
-      ? String(selectedStory.source.label) : ""
-    if (date && source) return date + " · " + source
-    return date || source
-  }
-
-  function debugState() {
-    var group = keySurface.narrow ? storyList.headerItem : inspectorBriefingGroup
-    var controls = briefingNotice.controlTargets().concat(group && group.visible ? group.controlTargets() : [])
-    var focusedControl = controls.filter(function(item) { return item.activeFocus })
-    return JSON.stringify({
-      build: runtimeBuildIdentity,
-      opened: opened,
-      section: currentSection,
-      selectedIndex: selectedIndex,
-      selectedId: selectedStory ? selectedStory.id : "",
-      selectedTitle: selectedStory ? selectedStory.title : "",
-      selectedHasImage: selectedStory ? !!selectedStory.imageUrl : false,
-      selectedMetricIds: selectedStory && selectedStory.metricItems
-        ? selectedStory.metricItems.map(function(metric) { return metric.id }) : [],
-      selectedMarketplaceUrl: selectedStory ? String(selectedStory.marketplaceUrl || "") : "",
-      selectedIsUnread: selectedStory ? selectedStory.isUnread === true : false,
-      storyCount: stories.length,
-      status: feedStatus,
-      editionMode: editionMode,
-      publisherStale: editionTiming.publisherStale === true,
-      timing: editionTiming,
-      statusDetail: statusDetail,
-      noCacheNoticeVisible: noCacheNotice.visible,
-      availableImageCount: availableImageCount,
-      refreshing: refreshing,
-      refreshIndicatorVisible: refreshButton.iconSpinning,
-      refreshTooltipVisible: refreshButton.tooltipVisible,
-      helperRunning: anyHelperRunning,
-      localStateReady: localStateReady,
-      barVisiblePreference: preferences.barVisible !== false,
-      searchFocused: searchField.activeFocus,
-      unreadCount: Number(root.unreadCounts[currentSection] || 0),
-      bulkReadInFlight: bulkReadInFlight,
-      preferencesOpen: preferencesOpen,
-      sectionSettingsOpen: sectionSettingsOpen,
-      totalStories: totalStories,
-      hasMoreStories: hasMoreStories,
-      loadMoreFocused: loadMoreButton.activeFocus,
-      loadMoreLabel: loadMoreButton.label,
-      sectionLimit: Number(sectionLimits[currentSection] || pageSize),
-      pendingProjection: pendingProjection,
-      projecting: projectProc.running,
-      filterSummary: filterSummary,
-      retainedReadStories: retainedReadStories,
-      sectionName: currentProfile.name,
-      sectionRail: JSON.parse(sectionRailGeometry()),
-      sectionSources: sectionSources,
-      windowVisible: panelWindow.visible,
-      windowWidth: panelWindow.width,
-      windowHeight: panelWindow.height,
-      maximized: panelWindow.maximized,
-      windowIntegrationStatus: windowIntegrationStatus,
-      shortcutState: shortcutState,
-      shortcutMessage: shortcutMessage,
-      keysLegendOpen: keysLegendOpen,
-      readerLayout: readerLayout,
-      inspectorArticleMode: inspectorArticleMode,
-      inspectorFactsOpen: inspectorFactsOpen,
-      emptyStateMessage: emptyStateMessage(),
-      onboardingVisible: onboardingVisible,
-      briefing: briefing,
-      briefingBusy: briefingBusy,
-      briefingControlsMode: briefingControlsMode,
-      briefingControlLabels: controls.map(function(item) { return item.label || "Group updates" }),
-      briefingFocusedControl: focusedControl.length ? String(focusedControl[0].label || "Group updates") : "",
-      groupExpanded: !!group && group.expanded,
-      groupHistoryIndex: group ? group.historyIndex : -1,
-      briefingMessage: briefingMessage,
-      displayedFeedDigest: displayedFeedDigest,
-      selectedBriefingGroupId: selectedStory ? String(selectedStory.briefingGroupId || "") : "",
-      selectedBriefingEventIds: selectedStory && selectedStory.briefingEvents
-        ? selectedStory.briefingEvents.map(function(event) { return event.id }) : [],
-      selectedBriefingUnreadCount: selectedStory ? Number(selectedStory.briefingUnreadCount || 0) : 0
-    })
-  }
-
-  function itemGeometry(item, visible) {
-    if (!item) return JSON.stringify({ visible: false })
-    var point = item.mapToItem(null, 0, 0)
-    return JSON.stringify({
-      x: point.x,
-      y: point.y,
-      width: item.width,
-      height: item.height,
-      visible: visible === undefined ? item.visible : visible
-    })
-  }
-
-  function sectionRailGeometry() {
-    var viewport = JSON.parse(itemGeometry(sectionRail))
-    var selected = JSON.parse(itemGeometry(sectionButtons.itemAt(sectionIndex)))
-    return JSON.stringify({
-      viewport: viewport,
-      contentHeight: sectionRail.contentHeight,
-      contentY: sectionRail.contentY,
-      selected: selected,
-      selectedFullyVisible: selected.visible === true
-        && selected.x >= viewport.x - 1 && selected.y >= viewport.y - 1
-        && selected.x + selected.width <= viewport.x + viewport.width + 1
-        && selected.y + selected.height <= viewport.y + viewport.height + 1
-    })
-  }
-
-  function maximizeGeometry() { return itemGeometry(maximizeButton, maximizeButton.visible) }
-  function closeGeometry() { return itemGeometry(closeButton, closeButton.visible) }
-  function settingsGeometry() {
-    return keySurface.narrow
-      ? itemGeometry(narrowSettingsButton, narrowSettingsButton.visible)
-      : itemGeometry(settingsButton, settingsButton.visible)
-  }
-  function markAllReadGeometry() {
-    return keySurface.narrow
-      ? itemGeometry(narrowMarkAllReadButton, narrowMarkAllReadButton.visible)
-      : itemGeometry(markAllReadButton, markAllReadButton.visible)
-  }
-  function headerUnreadGeometry() {
-    return keySurface.narrow
-      ? itemGeometry(narrowHeaderUnreadButton, narrowHeaderUnreadButton.visible)
-      : itemGeometry(headerUnreadButton, headerUnreadButton.visible)
-  }
-  function keysLegendGeometry() { return itemGeometry(keysLegendToggle, keysLegendToggle.visible) }
-  function refreshGeometry() { return itemGeometry(refreshButton, refreshButton.visible) }
-  function loadMoreGeometry() {
-    return itemGeometry(loadMoreButton, loadMoreButton.visible)
-  }
-  function filterUnreadGeometry() { return itemGeometry(unreadFilterButton, unreadFilterButton.visible) }
-  function filterImagesGeometry() { return itemGeometry(imagesFilterButton, imagesFilterButton.visible) }
-  function filterResetGeometry() { return itemGeometry(filterResetButton, filterResetButton.visible) }
-  function pluginPageGeometry() { return itemGeometry(pluginPageButton, pluginPageButton.visible) }
-  function readStateGeometry() {
-    return keySurface.narrow
-      ? itemGeometry(narrowReadButton, narrowReadButton.visible)
-      : itemGeometry(readStateButton, readStateButton.visible)
-  }
-  function tuneNewspaperGeometry() {
-    return itemGeometry(barPreferenceButton, preferencesOpen && barPreferenceButton.visible)
-  }
-  function shortcutMigrationGeometry() {
-    return itemGeometry(shortcutMigrationButton, shortcutNotice.visible && shortcutMigrationButton.visible)
-  }
-  function startTodayGeometry() { return itemGeometry(welcomeCard.startButton, onboardingVisible) }
-  function browseStoriesGeometry() { return itemGeometry(welcomeCard.browseButton, onboardingVisible) }
-  function newBriefingGeometry() { return itemGeometry(briefingNotice.newButton, briefingNotice.visible) }
-  function finishBriefingGeometry() { return itemGeometry(briefingNotice.finishButton, briefingNotice.visible && briefingNotice.finishButton.visible) }
-  function groupReadGeometry() {
-    var group = keySurface.narrow ? storyList.headerItem : inspectorBriefingGroup
-    if (!group) return JSON.stringify({ visible: false })
-    return itemGeometry(group.readButton, group.visible && group.readButton.visible)
-  }
-
-  function storyViewportState() {
-    var row = selectedIndex >= 0 ? storyList.itemAtIndex(selectedIndex) : null
-    var anchorRow = storyViewportAnchorIndex >= 0
-      ? storyList.itemAtIndex(storyViewportAnchorIndex) : null
-    if (!row) {
-      return JSON.stringify({
-        selectedIndex: selectedIndex,
-        available: false,
-        fullyVisible: false,
-        topAligned: false,
-        viewportHeight: storyList.height,
-        contentY: storyList.contentY,
-        contentHeight: storyList.contentHeight,
-        listCount: storyList.count,
-        anchorIndex: storyViewportAnchorIndex,
-        scrolling: storyScrollAnimation.running
-      })
-    }
-    var top = row.y - storyList.contentY
-    var bottom = top + row.height
-    var headline = row.headlineBounds()
-    var anchorTop = anchorRow ? anchorRow.y - storyList.contentY : 0
-    var anchorBottom = anchorRow ? anchorTop + anchorRow.height : 0
-    return JSON.stringify({
-      selectedIndex: selectedIndex,
-      available: true,
-      fullyVisible: top >= -0.5 && bottom <= storyList.height + 0.5,
-      headlineFullyVisible: top + headline.top >= -0.5
-        && top + headline.top + headline.height <= storyList.height + 0.5,
-      topAligned: Math.abs(top) <= 1,
-      top: top,
-      bottom: bottom,
-      viewportHeight: storyList.height,
-      contentY: storyList.contentY,
-      contentHeight: storyList.contentHeight,
-      originY: storyList.originY,
-      rowY: row.y,
-      anchorIndex: storyViewportAnchorIndex,
-      anchorAvailable: !!anchorRow,
-      anchorTop: anchorTop,
-      anchorFullyVisible: !!anchorRow
-        && anchorTop >= -0.5 && anchorBottom <= storyList.height + 0.5,
-      anchorTopAligned: !!anchorRow && Math.abs(anchorTop) <= 1,
-      scrolling: storyScrollAnimation.running
-    })
-  }
-
-  function startProcess(process, argumentsList) {
-    if (!helperPath) {
-      feedStatus = "Failed"
-      statusDetail = "The bundled client helper path is unavailable."
-      return
-    }
-    if (process.running) process.running = false
-    process.command = [helperPath].concat(argumentsList)
-    Qt.callLater(function() {
-      if (root.opened || process === stateProc || process === readingProc || process === openSourceProc)
-        process.running = true
-    })
-  }
-
-  function runShortcutHelper(action) {
-    if (!shortcutHelperPath || shortcutProc.running) return
-    shortcutAction = action
-    shortcutProc.command = [shortcutHelperPath, action]
-    shortcutProc.running = true
-  }
-
-  function inspectPluginUpdate() {
-    if (!helperPath || updateProc.running) return
-    if (pluginUpdateState === "updating") return
-    startProcess(updateProc, ["update-status"])
-  }
-
-  function applyPluginUpdate() {
-    if (!helperPath || updateProc.running) return
-    if (!pluginUpdateCanApply && pluginUpdateState !== "failed") return
-    pluginUpdateState = "updating"
-    pluginUpdateMessage = "Updating News Radar…"
-    startProcess(updateProc, ["update-apply"])
-  }
-
-  function handlePluginUpdate(raw) {
-    var result = RadarModel.parseResponse(raw)
-    var state = String(result.state || "")
-    var message = String(result.message || "")
-    pluginUpdateCanApply = result.canApply === true
-    if (state === "behind" && result.updateAvailable === true) {
-      pluginUpdateState = "behind"
-      pluginUpdateMessage = message || "A newer News Radar is available."
-      pluginUpdateCanApply = result.canApply === true
-    } else if (state === "updated") {
-      pluginUpdateState = "updated"
-      pluginUpdateMessage = message || "News Radar updated. The panel will reload with the new version."
-      pluginUpdateCanApply = false
-    } else if (state === "failed" || result.status === "failed") {
-      pluginUpdateState = "failed"
-      pluginUpdateMessage = message || "News Radar update failed."
-      pluginUpdateCanApply = true
-    } else if (state === "blocked" && result.updateAvailable === true) {
-      pluginUpdateState = "blocked"
-      pluginUpdateMessage = message || "A newer News Radar exists, but this checkout cannot update automatically."
-      pluginUpdateCanApply = false
-    } else if (state === "check-failed") {
-      // Stay quiet on transient network blips; keep any existing behind notice.
-      if (pluginUpdateState !== "behind" && pluginUpdateState !== "failed" && pluginUpdateState !== "updating") {
-        pluginUpdateState = "unknown"
-        pluginUpdateMessage = ""
-        pluginUpdateCanApply = false
-      }
-    } else {
-      pluginUpdateState = "current"
-      pluginUpdateMessage = ""
-      pluginUpdateCanApply = false
-    }
-  }
-
-  function inspectShortcut() {
-    runShortcutHelper("status")
-  }
-
-  function migrateShortcut() {
-    shortcutState = "updating"
-    shortcutMessage = "Updating the exact Radar-owned shortcut…"
-    runShortcutHelper("install")
-  }
-
-  function countEditionImages(feed) {
-    if (!feed || !Array.isArray(feed.events)) return 0
-    var count = 0
-    for (var index = 0; index < feed.events.length; index++)
-      if (feed.events[index] && feed.events[index].image) count++
-    return count
-  }
-
-  function sectionIsVisible(sectionId, visibility) {
-    var current = visibility || ({})
-    if (sectionId !== "core" && sectionId !== "plugins" && sectionId !== "youtube")
-      return true
-    return current[sectionId] !== false
-  }
-
-  function visibleSections(allSections, visibility) {
-    var result = []
-    for (var index = 0; index < allSections.length; index++) {
-      if (root.sectionIsVisible(allSections[index].id, visibility))
-        result.push(allSections[index])
-    }
-    return result
-  }
-
-  function defaultSectionProfile(section) {
-    var values = {
-      "front-page": { name: "Front Page", icon: "newspaper", tone: "clear" },
-      "for-you": { name: "For You", icon: "spark", tone: "clear" },
-      "core": { name: "Core", icon: "core", tone: "clear" },
-      "plugins": { name: "Plugins", icon: "plugins", tone: "clear" },
-      "youtube": { name: "YouTube", icon: "youtube", tone: "clear" },
-      "saved": { name: "Saved", icon: "saved", tone: "clear" }
-    }
-    return values[section]
   }
 
   function sectionIcon(iconId) {
@@ -588,253 +169,83 @@ Item {
 
   function open(payloadJson) {
     closingFromHost = false
-    if (opened && panelWindow.visible) {
-      panelWindow.visible = true
-      windowIntegrationStatus = "waiting"
-      startProcess(windowProc, ["activate-window"])
-      Qt.callLater(function() {
-        navigationFocus.forceActiveFocus()
-      })
+    if (opened) {
+      windowController.begin()
       return
     }
     opened = true
-    panelOpenGeneration++
-    panelWindow.visible = true
-    windowIntegrationStatus = "waiting"
-    startProcess(windowProc, ["activate-window"])
-    feedStatus = "Loading cache"
-    statusDetail = "Reading the last-known-good local edition."
-    localStateReady = false
-    installedPluginsReady = false
-    briefingEnsureAttempted = false
-    briefingMessage = ""
     preferencesOpen = false
     sectionSettingsOpen = false
-    selectedIndex = 0
-    storyViewportAnchorIndex = 0
-    unreadSessionRetainedIds = ({})
-    initialStoryReadPending = true
-    initialStoryReadEventId = ""
-    initialStoryReadGeneration = -1
-    initialStoryReadTimer.stop()
-    startProcess(readProc, ["read"])
-    startProcess(installedProc, ["installed"])
-    inspectShortcut()
-    inspectPluginUpdate()
-    Qt.callLater(function() {
-      if (root.opened) {
-        navigationFocus.forceActiveFocus()
-      }
-    })
+    storyViewportController.selectedIndex = 0
+    storyViewportController.storyViewportAnchorIndex = 0
+    readerActions.begin()
+    feedSession.begin()
+    pluginMaintenance.inspectShortcut()
+    pluginMaintenance.inspectPluginUpdate()
+    windowController.begin()
   }
 
   function stopOwnedProcesses() {
     searchTimer.stop()
-    readProc.running = false
-    cacheSyncProc.running = false
-    refreshProc.running = false
-    projectProc.running = false
-    installedProc.running = false
-    preferencesProc.running = false
-    stateProc.running = false
-    briefingProc.running = false
-    openSourceProc.running = false
-    windowProc.running = false
-    shortcutProc.running = false
-    updateProc.running = false
-    refreshing = false
-    bulkReadInFlight = false
+    pluginMaintenance.stop()
+    feedSession.stop()
+    readerActions.stop()
   }
 
   function close() {
     closingFromHost = true
-    panelOpenGeneration++
-    cancelInitialStoryRead()
-    flushReadChanges()
-    viewportPreservationTimer.stop()
-    pendingViewportPreservation = false
-    pendingViewportAttempts = 0
-    forcedTopAnchorIndex = -1
+    storyViewportController.preservationTimer.stop()
+    storyViewportController.pendingViewportPreservation = false
+    storyViewportController.pendingViewportAttempts = 0
+    storyViewportController.forcedTopAnchorIndex = -1
     opened = false
     preferencesOpen = false
     sectionSettingsOpen = false
     stopOwnedProcesses()
-    panelWindow.visible = false
+    windowController.stop()
     closingFromHost = false
   }
 
   function dismiss() {
+    readerActions.cancelInitialStoryRead()
+    windowController.requestClose()
+  }
+
+  function finishClosing() {
     root.close()
     if (shell && typeof shell.hide === "function") shell.hide(pluginId)
   }
 
   function handleEscape() {
-    if (sectionSettingsOpen) {
+    if (detailItem) {
+      closeInsight()
+    } else if (sectionSettingsOpen) {
       sectionSettingsOpen = false
       navigationFocus.forceActiveFocus()
     } else if (preferencesOpen) {
       preferencesOpen = false
       navigationFocus.forceActiveFocus()
-    } else if (searchField.activeFocus) {
+    } else if (masthead.search.activeFocus) {
       navigationFocus.forceActiveFocus()
     } else dismiss()
   }
 
-  function handleRead(raw) {
-    var result = RadarModel.parseResponse(raw)
-    userState = result.state || userState
-    localStateReady = true
-    editionMode = String(result.editionMode || "published")
-    editionTiming = result.timing || ({})
-    if (result.feed) {
-      cachedFeed = result.feed
-      generatedAt = String(result.feed.generatedAt || "")
-      sourceHealth = RadarModel.sourceHealth(result.feed)
-      feedStatus = "Cached"
-      statusDetail = "Showing the validated local edition while Radar checks the published edition."
-    } else {
-      cachedFeed = null
-      feedStatus = "First use"
-      statusDetail = result.quarantine
-        ? "Corrupt local state was quarantined. No validated edition is cached."
-        : "No validated edition is cached yet."
-    }
-    requestProjection()
-    ensureBriefing()
-    refreshFeed()
-  }
-
-  function syncCachedEdition() {
-    if (!opened || refreshing || readProc.running || cacheSyncProc.running) return
-    startProcess(cacheSyncProc, ["read"])
-  }
-
-  function handleCacheSync(raw) {
-    var result = RadarModel.parseResponse(raw)
-    if (!opened || !result.feed) return
-    var nextGeneratedAt = String(result.feed.generatedAt || "")
-    if (nextGeneratedAt === generatedAt) return
-    userState = result.state || userState
-    cachedFeed = result.feed
-    generatedAt = nextGeneratedAt
-    editionMode = String(result.editionMode || "published")
-    editionTiming = result.timing || editionTiming
-    sourceHealth = RadarModel.sourceHealth(result.feed)
-    feedStatus = sourceHealth.indexOf("Partial") === 0 ? "Source partial" : "Updated"
-    statusDetail = "Adopted a newer validated edition fetched in the background."
-    requestProjection("preserve")
-  }
-
-  function handleRefresh(raw) {
-    var result = RadarModel.parseResponse(raw)
-    refreshing = false
-    editionMode = String(result.editionMode || editionMode)
-    editionTiming = result.timing || editionTiming
-    if (result.feed) {
-      cachedFeed = result.feed
-      generatedAt = String(result.feed.generatedAt || "")
-      sourceHealth = RadarModel.sourceHealth(result.feed)
-      requestProjection("preserve")
-      ensureBriefing()
-    }
-    if (result.status === "local-current") {
-      feedStatus = "Local live edition"
-      statusDetail = result.message || "No newer published edition; the owner-built edition remains selected."
-    } else if (result.status === "stale-publication") {
-      feedStatus = "Publisher stale"
-      statusDetail = result.message || "Publisher lag: the public edition is older than the documented threshold."
-    } else if (result.status === "updated" || result.status === "no-change") {
-      feedStatus = sourceHealth.indexOf("Partial") === 0
-        ? "Source partial"
-        : (result.status === "updated" ? "Updated" : "No newer edition")
-      statusDetail = result.message || "The published edition check completed."
-    } else if (result.status === "invalid-feed") {
-      feedStatus = "Invalid feed"
-      statusDetail = result.message || (result.cachePreserved
-        ? "Radar rejected the candidate and preserved the last-known-good edition."
-        : "Radar rejected the candidate. Retry after the feed is repaired.")
-    } else {
-      feedStatus = result.feed ? "Offline" : "No cache and failed"
-      statusDetail = result.message || (result.feed
-        ? "The update check failed; the last-known-good edition remains readable."
-        : "The update check failed and no validated cache exists. Retry when online.")
-    }
-      if (result.status !== "failed" && result.status !== "offline" && result.status !== "invalid-feed")
-      inspectPluginUpdate()
-  }
-
-  function handleInstalled(raw) {
-    var result = RadarModel.parseResponse(raw)
-    installedPluginIds = result.status === "ok" && Array.isArray(result.pluginIds)
-      ? result.pluginIds : []
-    installedPluginsReady = true
-    ensureBriefing()
-    requestProjection("preserve")
-  }
-
-  function ensureBriefing() {
-    if (!opened || !localStateReady || !cachedFeed || !installedPluginsReady
-        || briefingProc.running || briefingEnsureAttempted || userState.briefing) return
-    briefingEnsureAttempted = true
-    briefingAction = "ensure-briefing"
-    startProcess(briefingProc, ["ensure-briefing", "--installed-json", JSON.stringify(installedPluginIds)])
-  }
-
-  function runBriefingAction(action, eventId) {
-    if (!opened || briefingBusy || refreshing || !cachedFeed) return
-    cancelInitialStoryRead()
-    briefingMessage = ""
-    var argumentsList = [action]
-    if (action === "new-briefing" || action === "ensure-briefing")
-      argumentsList.push("--installed-json", JSON.stringify(installedPluginIds))
-    else if (action === "start-from-today") {
-      if (!displayedFeedDigest) return
-      argumentsList.push("--feed-digest", displayedFeedDigest)
-    } else if (action === "mark-briefing-read" || action === "mark-briefing-group-read") {
-      if (!briefing.id) return
-      argumentsList.push("--briefing-id", String(briefing.id))
-      if (action === "mark-briefing-group-read") argumentsList.push("--event-id", String(eventId))
-    }
-    briefingAction = action
-    startProcess(briefingProc, argumentsList)
-  }
-
-  function handleBriefingAction(raw) {
-    var result = RadarModel.parseResponse(raw)
-    if (!opened) return
-    userState = result.state || userState
-    if (result.status === "ok" || result.status === "onboarding-complete") {
-      briefingMessage = ""
-      if (briefingAction === "new-briefing" || briefingAction === "start-from-today") {
-        selectedIndex = 0
-        searchField.text = ""
-        unreadSessionRetainedIds = ({})
-      }
-      requestProjection(briefingAction === "new-briefing" ? "reset" : "preserve")
-      Qt.callLater(function() {
-        if (root.onboardingVisible) welcomeCard.focusChoice()
-        else {
-          root.briefingControlsMode = false
-          navigationFocus.forceActiveFocus()
-        }
-      })
-    } else {
-      briefingMessage = result.message || "The briefing could not be changed. Please try again."
-      requestProjection("preserve")
-    }
-  }
-
   function openBriefingEvent(event) {
     if (!event || !event.source) return
-    cancelInitialStoryRead()
-    queueStoryRead(event, true)
-    openUrl(String(event.source.url))
+    readerActions.cancelInitialStoryRead()
+    readerActions.queueStoryRead(event, true)
+    readerActions.openUrl(String(event.source.url))
+  }
+
+  function overviewTools() {
+    return [backHomeButton, setupButton, setupNewsButton, relevanceButton]
+      .filter(function(item) { return item.visible && item.enabled })
   }
 
   function focusBriefingControl(direction) {
-    var group = keySurface.narrow ? storyList.headerItem : inspectorBriefingGroup
+    var group = keySurface.narrow ? readerList.list.headerItem : inspectorView.group
     var groupTargets = group && group.visible ? group.controlTargets() : []
-    var targets = briefingNotice.controlTargets().concat(groupTargets)
+    var targets = (overviewVisible ? discoveryView.controlTargets() : briefingNotice.controlTargets().concat(groupTargets)).concat(overviewTools())
     if (!targets.length) {
       briefingControlsMode = false
       navigationFocus.forceActiveFocus()
@@ -847,825 +258,222 @@ Item {
     var next = current < 0 ? (direction < 0 ? targets.length - 1 : 0)
       : (current + direction + targets.length) % targets.length
     if (groupTargets.indexOf(targets[next]) >= 0) {
-      pendingViewportPreservation = false
-      storyViewportRevision++
-      storyScrollAnimation.stop()
-      if (keySurface.narrow) storyList.positionViewAtBeginning()
-      else inspectorScroll.contentY = 0
+      storyViewportController.pendingViewportPreservation = false
+      storyViewportController.storyViewportRevision++
+      storyViewportController.animation.stop()
+      if (keySurface.narrow) readerList.list.positionViewAtBeginning()
+      else inspectorView.contentY = 0
     }
     targets[next].forceActiveFocus()
+    if (overviewVisible && overviewTools().indexOf(targets[next]) < 0) discoveryView.revealControl(targets[next])
   }
 
-  function requestProjection(viewportMode) {
-    if (!opened) return
-    var requestedMode = viewportMode === "preserve" ? "preserve" : "reset"
-    if (requestedMode === "reset") forcedTopAnchorIndex = -1
-    if (projectProc.running) {
-      if (!pendingProjection || requestedMode === "reset")
-        pendingProjectionViewportMode = requestedMode
-      pendingProjection = true
-      return
-    }
-    pendingProjection = false
-    activeProjectionViewportMode = requestedMode
-    startProcess(projectProc, [
-      "project",
-      "--section", currentSection,
-      "--installed-json", JSON.stringify(installedPluginIds),
-      "--query", searchField.text,
-      "--limit", String(Number(sectionLimits[currentSection] || pageSize)),
-      "--retained-read-ids-json", JSON.stringify(Object.keys(unreadSessionRetainedIds).sort())
-    ])
+  function handleProjection(result, viewportMode) {
+    if (detailItem) updateInsightDetail(result.events || [])
+    sectionNavigation.ensureVisibleSection()
+    storyViewportController.applyProjection(result, viewportMode)
+    readerActions.scheduleInitialStoryRead()
   }
 
-  function restoreStoryViewport(revision) {
-    if (revision !== undefined && revision !== storyViewportRevision) return
-    if (!stories.length || selectedIndex < 0) return
-    storyScrollAnimation.stop()
-    if (hasMoreStories && selectedIndex === stories.length - 1)
-      storyList.positionViewAtEnd()
-    else {
-      var anchorIndex = Math.max(
-        0,
-        Math.min(selectedIndex, storyViewportAnchorIndex)
-      )
-      storyViewportAnchorIndex = anchorIndex
-      storyList.positionViewAtIndex(anchorIndex, ListView.Beginning)
-    }
-  }
-
-  function queueViewportPreservation(contentY, anchorIndex, anchorTop, revision) {
-    pendingViewportPreservation = true
-    pendingViewportContentY = contentY
-    pendingViewportAnchorIndex = anchorIndex
-    pendingViewportAnchorTop = forcedTopAnchorIndex === anchorIndex ? 0 : anchorTop
-    pendingViewportRevision = revision
-    pendingViewportAttempts = 24
-    viewportPreservationTimer.start()
-    // Correct the model-replacement offset in this turn so the retained row
-    // never flashes at its provisional delegate position. The timer then
-    // keeps the same anchor stable across subsequent rendered frames.
-    applyPendingViewportPreservation()
-  }
-
-  function applyPendingViewportPreservation() {
-    if (!pendingViewportPreservation) return
-    if (pendingViewportRevision !== storyViewportRevision) {
-      pendingViewportPreservation = false
-      pendingViewportAttempts = 0
-      viewportPreservationTimer.stop()
-      return
-    }
-    if (storyScrollAnimation.running) return
-    var targetContentY = pendingViewportContentY
-    var anchorRow = pendingViewportAnchorIndex >= 0
-      ? storyList.itemAtIndex(pendingViewportAnchorIndex) : null
-    if (pendingViewportAnchorIndex >= 0 && !anchorRow && pendingViewportAttempts > 0) {
-      pendingViewportAttempts--
-      storyList.positionViewAtIndex(pendingViewportAnchorIndex, ListView.Beginning)
-      return
-    }
-    if (anchorRow) targetContentY = anchorRow.y - pendingViewportAnchorTop
-    var maximumContentY = storyList.originY
-      + Math.max(0, storyList.contentHeight - storyList.height)
-    storyList.contentY = Math.max(
-      storyList.originY,
-      Math.min(targetContentY, maximumContentY)
-    )
-    if (anchorRow && pendingViewportAttempts > 0) {
-      pendingViewportAttempts--
-      return
-    }
-    pendingViewportPreservation = false
-    pendingViewportAttempts = 0
-    viewportPreservationTimer.stop()
-  }
-
-  function storyIndexById(eventId) {
-    if (!eventId) return -1
-    for (var index = 0; index < stories.length; index++) {
-      if (stories[index] && String(stories[index].id) === eventId) return index
-    }
-    return -1
-  }
-
-  function syncRenderedStories(previousStories, nextStories, preserveViewport) {
-    var sharedCount = Math.min(previousStories.length, nextStories.length)
-    var stablePrefix = preserveViewport
-    for (var index = 0; stablePrefix && index < sharedCount; index++) {
-      var previousId = previousStories[index] && previousStories[index].id
-        ? String(previousStories[index].id) : ""
-      var nextId = nextStories[index] && nextStories[index].id
-        ? String(nextStories[index].id) : ""
-      if (!previousId || previousId !== nextId) stablePrefix = false
-    }
-    if (!stablePrefix) {
-      renderedStoryModel.clear()
-      for (var replacementIndex = 0; replacementIndex < nextStories.length; replacementIndex++)
-        renderedStoryModel.append({ payload: nextStories[replacementIndex] })
-      return
-    }
-    for (var retainedIndex = 0; retainedIndex < sharedCount; retainedIndex++) {
-      // A read-state projection normally changes one payload. Reassigning
-      // every unchanged map makes ListView relayout rows above the selection
-      // and shifts the visual anchor even though their content is identical.
-      if (JSON.stringify(previousStories[retainedIndex])
-          !== JSON.stringify(nextStories[retainedIndex]))
-        renderedStoryModel.setProperty(retainedIndex, "payload", nextStories[retainedIndex])
-    }
-    if (renderedStoryModel.count > nextStories.length)
-      renderedStoryModel.remove(
-        nextStories.length,
-        renderedStoryModel.count - nextStories.length
-      )
-    for (var appendedIndex = renderedStoryModel.count; appendedIndex < nextStories.length; appendedIndex++)
-      renderedStoryModel.append({ payload: nextStories[appendedIndex] })
-  }
-
-  function handleProjection(raw) {
-    var result = RadarModel.parseResponse(raw)
-    if (result.status === "ok" || result.status === "first-use") {
-      userState = result.state || userState
-      briefing = result.briefing || briefing
-      displayedFeedDigest = String(result.feedDigest || "")
-      displayedFeedEventCount = Number(result.feedEventCount || 0)
-      var preserveViewport = activeProjectionViewportMode === "preserve"
-      var resumeTopAlignment = preserveViewport && storyScrollAnimation.running
-      if (resumeTopAlignment) storyScrollAnimation.stop()
-      var preservedContentY = storyList.contentY
-      var preservedSelectedId = selectedStory && selectedStory.id
-        ? String(selectedStory.id) : ""
-      var preservedAnchorId = storyViewportAnchorIndex >= 0
-          && storyViewportAnchorIndex < stories.length
-          && stories[storyViewportAnchorIndex]
-        ? String(stories[storyViewportAnchorIndex].id) : ""
-      var preservedAnchorRow = storyViewportAnchorIndex >= 0
-        ? storyList.itemAtIndex(storyViewportAnchorIndex) : null
-      var preservedAnchorTop = preservedAnchorRow
-        ? preservedAnchorRow.y - storyList.contentY : 0
-      var preservedAnchor = storyViewportAnchorIndex
-      var previousStories = stories
-      stories = result.events || []
-      syncRenderedStories(previousStories, stories, preserveViewport)
-      counts = result.counts || ({})
-      unreadCounts = result.unreadCounts || ({})
-      totalStories = Number(result.totalEvents || 0)
-      retainedReadStories = Number(result.retainedReadCount || 0)
-      hasMoreStories = result.hasMore === true
-      filterSummary = String(result.filterSummary || "No extra filters")
-      sectionSources = String(result.sectionSources || "")
-      filterOptions = result.filterOptions || []
-      if (result.visibleSections && result.visibleSections.length)
-        ensureVisibleSection()
-      var preservedSelectedIndex = preserveViewport
-        ? storyIndexById(preservedSelectedId) : -1
-      var preservedAnchorIndex = preserveViewport
-        ? storyIndexById(preservedAnchorId) : -1
-      selectedIndex = stories.length
-        ? (preservedSelectedIndex >= 0
-          ? preservedSelectedIndex
-          : Math.min(Math.max(0, selectedIndex), stories.length - 1))
-        : -1
-      storyViewportAnchorIndex = stories.length
-        ? Math.min(
-          Math.max(0, preservedAnchorIndex >= 0 ? preservedAnchorIndex : preservedAnchor),
-          selectedIndex
-        )
-        : -1
-      if (forcedTopAnchorIndex === storyViewportAnchorIndex)
-        preservedAnchorTop = 0
-      if (preserveViewport) {
-        // Replacing a ListView model may reset contentY while delegates settle.
-        // Keep the reader at the exact live visual anchor. If a read-state
-        // projection completed during a keyboard scroll, stop the obsolete
-        // animation target, restore the current on-screen position against
-        // the replacement delegates, then continue toward the new row's top.
-        storyList.contentY = preservedContentY
-        var preservedRevision = storyViewportRevision
-        if (resumeTopAlignment) {
-          var resumeAnchorIndex = storyViewportAnchorIndex
-          Qt.callLater(function() {
-            if (preservedRevision !== root.storyViewportRevision) return
-            var resumeRow = storyList.itemAtIndex(resumeAnchorIndex)
-            if (resumeRow) {
-              var resumeMaximumY = storyList.originY
-                + Math.max(0, storyList.contentHeight - storyList.height)
-              storyList.contentY = Math.max(
-                storyList.originY,
-                Math.min(resumeRow.y - preservedAnchorTop, resumeMaximumY)
-              )
-            }
-            root.animateStoryPosition(
-              resumeAnchorIndex,
-              true,
-              storyList.contentY
-            )
-          })
-        } else {
-          queueViewportPreservation(
-            preservedContentY,
-            storyViewportAnchorIndex,
-            preservedAnchorTop,
-            preservedRevision
-          )
-        }
-      } else {
-        storyViewportRevision++
-        var restoreRevision = storyViewportRevision
-        Qt.callLater(function() { root.restoreStoryViewport(restoreRevision) })
-      }
-      scheduleInitialStoryRead()
-    } else {
-      stories = []
-      renderedStoryModel.clear()
-      totalStories = 0
-      retainedReadStories = 0
-      hasMoreStories = false
-      selectedIndex = -1
-      storyViewportAnchorIndex = -1
-      feedStatus = "Failed"
-      statusDetail = result.message || "The local reading model could not be built."
-    }
-  }
-
-  function refreshFeed() {
-    if (refreshing || !opened) return
-    refreshing = true
-    feedStatus = cachedFeed ? "Checking" : "First use"
-    statusDetail = cachedFeed
-      ? "Checking the published static edition; cached stories remain readable."
-      : "Fetching the first bounded edition."
-    startProcess(refreshProc, ["refresh"])
-  }
-
-  function sectionIndexFor(sectionId) {
-    for (var index = 0; index < sections.length; index++) {
-      if (sections[index].id === sectionId) return index
-    }
-    return -1
-  }
-
-  function ensureVisibleSection() {
-    if (!sections.length) return
-    var current = sectionIndexFor(requestedSection)
-    if (current >= 0) {
-      if (sectionIndex !== current) sectionIndex = current
-      return
-    }
-    var fallback = sectionIndexFor("front-page")
-    if (fallback < 0) fallback = 0
-    selectSection(fallback, true)
-  }
-
-  function selectSection(index, preserveInitialCandidate) {
-    if (index < 0 || index >= sections.length) return
-    if (preserveInitialCandidate !== true) cancelInitialStoryRead()
+  function activateSection(preserveInitialCandidate) {
+    if (preserveInitialCandidate !== true) readerActions.cancelInitialStoryRead()
     navigationFocus.forceActiveFocus()
-    sectionIndex = index
     Qt.callLater(sectionRail.revealSelected)
-    requestedSection = sections[index].id
+    homeMode = true
+    setupMode = true
+    discoveryView.resetRoute()
+    detailItem = null
+    detailParents = []
     inspectorFactsOpen = false
-    selectedIndex = 0
-    storyViewportAnchorIndex = 0
-    unreadSessionRetainedIds = ({})
-    requestProjection()
-  }
-
-  function cycleSection(delta) {
-    var next = (sectionIndex + delta) % sections.length
-    if (next < 0) next += sections.length
-    selectSection(next)
-  }
-
-  function resetSectionLimit(section) {
-    var limits = Object.assign({}, sectionLimits)
-    limits[section] = pageSize
-    sectionLimits = limits
+    storyViewportController.selectedIndex = 0
+    storyViewportController.storyViewportAnchorIndex = 0
+    readerActions.unreadSessionRetainedIds = ({})
+    feedSession.requestProjection()
   }
 
   function loadMore() {
-    if (!hasMoreStories) return
-    cancelInitialStoryRead()
-    storyViewportRevision++
-    storyScrollAnimation.stop()
-    var limits = Object.assign({}, sectionLimits)
-    limits[currentSection] = Math.min(500, Number(limits[currentSection] || pageSize) + pageSize)
-    sectionLimits = limits
-    requestProjection("preserve")
+    if (!feedSession.hasMoreStories) return
+    readerActions.cancelInitialStoryRead()
+    storyViewportController.storyViewportRevision++
+    storyViewportController.animation.stop()
+    sectionNavigation.extendLimit()
+    feedSession.requestProjection("preserve")
   }
 
-  function moveSelection(delta) {
-    if (!stories.length) return
-    if (loadMoreButton.activeFocus) {
-      if (delta < 0) {
-        // The final story remains selected while Load more owns focus. Returning
-        // focus must not reposition or re-read that unchanged selection.
-        navigationFocus.forceActiveFocus()
-      }
+  function showInsight(item) {
+    if (!item) return
+    readerActions.cancelInitialStoryRead()
+    if (detailItem) detailParents = detailParents.concat([detailItem])
+    var full = (feedSession.insightsModel.projectDetails || []).concat(feedSession.setupModel, feedSession.insightsModel.projects || []).filter(function(project) { return project.id === item.id })
+    detailItem = full.length ? full[0] : item
+    Qt.callLater(function() { insightDetail.focusFirst() })
+  }
+
+  function updateInsightDetail(events) {
+    if (detailItem.id === "radar-local-relevance") {
+      detailItem = Object.assign({}, detailItem, { relevanceTargets: relevanceChoices() })
       return
     }
-    if (delta > 0 && selectedIndex === stories.length - 1 && hasMoreStories) {
-      loadMoreButton.forceActiveFocus(Qt.TabFocusReason)
-      storyList.positionViewAtEnd()
-      return
-    }
-    storyViewportRevision++
-    storyScrollAnimation.stop()
-    var viewportRevision = storyViewportRevision
-    var nextIndex = Math.max(0, Math.min(stories.length - 1, selectedIndex + delta))
-    forcedTopAnchorIndex = -1
-    if (delta < 0) {
-      var previousRow = storyList.itemAtIndex(nextIndex)
-      var previousAboveViewport = !previousRow
-        || previousRow.y - storyList.contentY < -0.5
-      if (previousAboveViewport) {
-        // Key repeat can outrun an eased scroll and leave the highlight above
-        // the clip. Move the viewport first so selection is never invisible.
-        storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
-        storyViewportAnchorIndex = nextIndex
-      }
-      selectStory(nextIndex, true)
-      if (previousAboveViewport) {
-        Qt.callLater(function() {
-          if (root.selectedIndex === nextIndex
-              && root.storyViewportRevision === viewportRevision)
-            storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
-        })
-      }
-      return
-    }
-    var nextRowBeforeSelection = storyList.itemAtIndex(nextIndex)
-    if (delta > 0 && !nextRowBeforeSelection) {
-      // The first row revealed by pagination can still be virtualized just
-      // outside the clip. Do not ask an animation to target geometry that Qt
-      // has not created: select the canonical index and place it directly at
-      // the top. Its read-state projection then preserves this real anchor.
-      selectStory(nextIndex, true)
-      storyViewportAnchorIndex = nextIndex
-      forcedTopAnchorIndex = nextIndex
-      storyList.positionViewAtIndex(nextIndex, ListView.Beginning)
-      queueViewportPreservation(
-        storyList.contentY,
-        nextIndex,
-        0,
-        viewportRevision
-      )
-      return
-    }
-    var initialContentY = storyList.contentY
-    var currentRow = delta > 0 ? storyList.itemAtIndex(selectedIndex) : null
-    var fallbackNextTop = currentRow
-      ? currentRow.y + currentRow.height + storyList.spacing : -1
-    selectStory(nextIndex, true)
-    Qt.callLater(function() {
-      if (root.selectedIndex !== nextIndex
-          || root.storyViewportRevision !== viewportRevision) return
-      var anchorAtTop = storyNeedsTopAnchor(nextIndex)
-      if (anchorAtTop) root.storyViewportAnchorIndex = nextIndex
-      animateStoryPosition(nextIndex, anchorAtTop, initialContentY, fallbackNextTop)
+    var matches = (feedSession.insightsModel.projectDetails || []).concat(feedSession.setupModel, feedSession.insightsModel.projects || [], feedSession.insightsModel.collections || [], events)
+      .filter(function(item) { return item.id === root.detailItem.id })
+    if (matches.length) detailItem = matches[0]
+    else detailItem = Object.assign({}, detailItem, {
+      relevanceTargets: (detailItem.relevanceTargets || []).map(function(target) {
+        var status = feedSession.relevanceControls.filter(function(value) { return value.kind === target.kind && value.id === target.id })
+        return status.length ? status[0] : Object.assign({}, target, { followed: false, muted: false })
+      })
     })
   }
 
-  function storyNeedsTopAnchor(index) {
-    var row = storyList.itemAtIndex(index)
-    if (!row) {
-      storyList.positionViewAtIndex(index, ListView.Contain)
-      row = storyList.itemAtIndex(index)
+  function closeInsight() {
+    if (detailParents.length) {
+      detailItem = detailParents[detailParents.length - 1]
+      detailParents = detailParents.slice(0, -1)
+    } else {
+      detailItem = null
+      navigationFocus.forceActiveFocus()
     }
-    if (!row) return true
-    var top = row.y - storyList.contentY
-    return top < -0.5 || top + row.height >= storyList.height - 0.5
   }
 
-  function animateStoryPosition(index, alignAtTop, initialContentY, fallbackTargetY) {
-    storyScrollAnimation.stop()
-    var targetContentY = initialContentY
-    if (alignAtTop) {
-      storyList.positionViewAtIndex(index, ListView.Beginning)
-      targetContentY = storyList.contentY
-      var row = storyList.itemAtIndex(index)
-      if (row) {
-        var maximumContentY = storyList.originY
-          + Math.max(0, storyList.contentHeight - storyList.height)
-        targetContentY = Math.max(
-          storyList.originY,
-          Math.min(row.y, maximumContentY)
-        )
-      } else if (fallbackTargetY !== undefined && fallbackTargetY >= 0) {
-        var fallbackMaximumY = storyList.originY
-          + Math.max(0, storyList.contentHeight - storyList.height)
-        targetContentY = Math.max(
-          storyList.originY,
-          Math.min(fallbackTargetY, fallbackMaximumY)
-        )
-      }
-    }
-    storyList.contentY = initialContentY
-    if (Math.abs(targetContentY - initialContentY) <= 0.5) {
-      storyList.contentY = targetContentY
-      return
-    }
-    storyScrollAnimation.from = initialContentY
-    storyScrollAnimation.to = targetContentY
-    storyScrollAnimation.start()
+  function relevanceChoices() {
+    var projects = (feedSession.insightsModel.projectDetails || []).concat(feedSession.setupModel)
+    return feedSession.relevanceControls.map(function(target) {
+      var project = target.kind === "plugin" ? projects.filter(function(item) { return item.id === target.id }) : []
+      return project.length ? Object.assign({}, target, { label: project[0].name }) : target
+    })
   }
 
-  function selectStory(index, markRead) {
-    if (index < 0 || index >= stories.length) return
-    if (markRead) cancelInitialStoryRead()
-    inspectorFactsOpen = false
-    selectedIndex = index
-    if (markRead) queueStoryRead(stories[index], true)
+  function manageRelevance() {
+    showInsight({ id: "radar-local-relevance", name: "Following & muted",
+      description: "These choices stay on this computer. Clear a choice to return to the normal selection. Your current briefing and saved stories remain available.",
+      relevanceTargets: relevanceChoices() })
   }
 
-  function scheduleInitialStoryRead() {
-    if (!initialStoryReadPending || !opened || !panelWindow.visible || !selectedStory
-        || onboardingVisible || briefingProc.running)
-      return
-    var eventId = String(selectedStory.id || "")
-    if (!eventId) return
-    // Automatic opening projections may replace the selected candidate. Keep
-    // the one-shot armed and restart its dwell until one candidate stays
-    // stable; generation plus event ID exclude later sessions and selections.
-    initialStoryReadEventId = eventId
-    initialStoryReadGeneration = panelOpenGeneration
-    initialStoryReadTimer.restart()
-  }
-
-  function cancelInitialStoryRead() {
-    initialStoryReadTimer.stop()
-    initialStoryReadPending = false
-    initialStoryReadEventId = ""
-    initialStoryReadGeneration = -1
-  }
-
-  function commitInitialStoryRead() {
-    var eventId = initialStoryReadEventId
-    var generation = initialStoryReadGeneration
-    if (!initialStoryReadPending) return
-    if (generation !== panelOpenGeneration || !opened || !panelWindow.visible) {
-      cancelInitialStoryRead()
-      return
-    }
-    if (preferencesOpen || sectionSettingsOpen || onboardingVisible) {
-      cancelInitialStoryRead()
-      return
-    }
-    if (projectProc.running || pendingProjection) {
-      initialStoryReadTimer.restart()
-      return
-    }
-    if (!eventId || !selectedStory || String(selectedStory.id || "") !== eventId) {
-      initialStoryReadEventId = ""
-      initialStoryReadGeneration = -1
-      scheduleInitialStoryRead()
-      return
-    }
-    initialStoryReadPending = false
-    initialStoryReadEventId = ""
-    initialStoryReadGeneration = -1
-    if (selectedStory.isUnread === true)
-      queueStoryRead(selectedStory, true)
-  }
-
-  function queueStoryRead(story, read) {
-    if (!story || !story.id || bulkReadInFlight || onboardingVisible || briefingProc.running) return
-    var retained = Object.assign({}, unreadSessionRetainedIds)
-    if (currentFilter.unreadOnly === true && read === true)
-      retained[String(story.id)] = true
-    else if (read !== true)
-      delete retained[String(story.id)]
-    unreadSessionRetainedIds = retained
-    var changes = Object.assign({}, pendingReadChanges)
-    changes[String(story.id)] = read === true
-    pendingReadChanges = changes
-    flushReadChanges()
-  }
-
-  function flushReadChanges() {
-    if (!helperPath || readChangeInFlight) return
-    var ids = Object.keys(pendingReadChanges).sort()
-    if (!ids.length) return
-    var eventId = ids[0]
-    var read = pendingReadChanges[eventId] === true
-    var remaining = Object.assign({}, pendingReadChanges)
-    delete remaining[eventId]
-    pendingReadChanges = remaining
-    readChangeInFlight = true
-    startProcess(readingProc, ["set-read", "--event-id", eventId, "--read", read ? "true" : "false"])
-  }
-
-  function toggleSelectedRead() {
-    if (!selectedStory || readMutationPending || bulkReadInFlight) return
-    cancelInitialStoryRead()
-    queueStoryRead(selectedStory, selectedStory.isUnread === true)
-  }
-
-  function openSelected() {
-    if (!selectedStory) return
-    cancelInitialStoryRead()
-    queueStoryRead(selectedStory, true)
-    openUrl(String(selectedStory.source.url))
-  }
-
-  function openMarketplacePage() {
-    if (!selectedStory || !selectedStory.marketplaceUrl) return
-    cancelInitialStoryRead()
-    queueStoryRead(selectedStory, true)
-    openUrl(String(selectedStory.marketplaceUrl))
-  }
-
-  function openUrl(url) {
-    startProcess(openSourceProc, ["open-source", "--url", String(url)])
-  }
-
-  function openArticleLink(url) {
-    var href = RadarModel.acceptedHttpsUrl(String(url || ""))
-    if (!href) return
-    openUrl(href)
-  }
-
-  function inspectorBodySegments() {
-    if (!selectedStory) return []
-    if (selectedStory.summarySegments && selectedStory.summarySegments.length)
-      return selectedStory.summarySegments
-    return RadarModel.articleSegments(String(selectedStory.summary || ""))
-  }
-
-  function inspectorBodyText() {
-    if (!selectedStory)
-      return "Story details and the original source appear here."
-    if (!inspectorArticleMode)
-      return String(selectedStory.summary || "")
-    // Pass the live theme accent so RichText anchors follow Omarchy themes
-    // instead of Qt's default bright blue.
-    return RadarModel.articleBodyHtml(inspectorBodySegments(), Color.accent)
-  }
-
-  function toggleSaved() {
-    if (!selectedStory || stateMutationPending) return
-    startProcess(stateProc, ["toggle-saved", "--event-id", String(selectedStory.id)])
-  }
-
-  function setBooleanPreference(name, value) {
-    if (stateMutationPending) return
-    var argument = name === "barVisible" ? "--bar-visible" : "--images-visible"
-    startProcess(stateProc, ["set-preferences", argument, value ? "true" : "false"])
-  }
-
-  function setSectionVisibility(sectionId, visible) {
-    if (stateMutationPending) return
-    if (sectionId !== "core" && sectionId !== "plugins" && sectionId !== "youtube")
-      return
-    var next = {
-      core: sectionVisibility.core !== false,
-      plugins: sectionVisibility.plugins !== false,
-      youtube: sectionVisibility.youtube !== false
-    }
-    next[sectionId] = visible === true
-    startProcess(stateProc, [
-      "set-preferences",
-      "--section-visibility-json",
-      JSON.stringify(next)
-    ])
-  }
-
-  function showPreferences() {
-    if (!localStateReady || stateMutationPending || preferencesProc.running) return
-    cancelInitialStoryRead()
-    startProcess(preferencesProc, ["read"])
+  function openBriefingStory(index) {
+    readerActions.cancelInitialStoryRead()
+    homeMode = false
+    storyViewportController.selectStory(index, true)
+    Qt.callLater(function() { navigationFocus.forceActiveFocus(); storyViewportController.restoreStoryViewport() })
   }
 
   function showSectionSettings() {
-    cancelInitialStoryRead()
+    readerActions.cancelInitialStoryRead()
     sectionSettingsOpen = true
-    Qt.callLater(function() { filterDoneButton.forceActiveFocus() })
+    Qt.callLater(function() { sectionSettings.doneButton.forceActiveFocus() })
   }
 
-  function updateFilter(name, value) {
-    if (stateMutationPending) return
-    cancelInitialStoryRead()
-    var next = {
-      period: currentFilter.period,
-      significance: currentFilter.significance,
-      unreadOnly: currentFilter.unreadOnly,
-      imagesOnly: currentFilter.imagesOnly,
-      types: (currentFilter.types || []).slice()
+  SectionNavigation {
+    id: sectionNavigation
+    session: feedSession
+    onSectionSelected: function(preserveInitialCandidate) { root.activateSection(preserveInitialCandidate) }
+  }
+
+  PanelDiagnostics {
+    id: diagnostics
+    panel: root
+    sectionsModel: sectionNavigation
+    session: feedSession
+    actions: readerActions
+    storyViewport: storyViewportController
+    maintenance: pluginMaintenance
+    windowLifecycle: windowController
+    views: ({ keySurface: keySurface, readerList: readerList, inspectorView: inspectorView,
+      discoveryView: discoveryView, briefingNotice: briefingNotice, sectionRail: sectionRail,
+      panelWindow: panelWindow, masthead: masthead, preferencesDialog: preferencesDialog,
+      sectionSettings: sectionSettings, welcomeCard: welcomeCard, insightDetail: insightDetail })
+  }
+
+  PluginMaintenance {
+    id: pluginMaintenance
+    helperPath: root.helperPath
+    shortcutHelperPath: root.shortcutHelperPath
+    opened: root.opened
+  }
+
+  ReaderActions {
+    id: readerActions
+    session: feedSession
+    helperPath: root.helperPath
+    selectedStory: storyViewportController.selectedStory
+    currentSection: sectionNavigation.currentSection
+    currentFilter: sectionNavigation.currentFilter
+    sectionVisibility: sectionNavigation.sectionVisibility
+    opened: root.opened
+    windowVisible: panelWindow.visible
+    preferencesOpen: root.preferencesOpen
+    sectionSettingsOpen: root.sectionSettingsOpen
+    overviewVisible: root.overviewVisible
+    detailItem: root.detailItem
+    briefingVisible: root.briefingVisible
+    onPreferencesReady: {
+      root.preferencesOpen = true
+      Qt.callLater(function() { preferencesDialog.firstButton.forceActiveFocus() })
     }
-    next[name] = value
-    unreadSessionRetainedIds = ({})
-    resetSectionLimit(currentSection)
-    startProcess(stateProc, [
-      "set-section-filter",
-      "--section", currentSection,
-      "--filter-json", JSON.stringify(next)
-    ])
+    onStateAccepted: sectionNavigation.ensureVisibleSection()
+    onFilterChanging: sectionNavigation.resetSectionLimit(sectionNavigation.currentSection)
   }
 
-  function toggleFilterType(typeId) {
-    var types = (currentFilter.types || []).slice()
-    var at = types.indexOf(typeId)
-    if (at === -1) types.push(typeId)
-    else types.splice(at, 1)
-    types.sort()
-    updateFilter("types", types)
-  }
-
-  function resetFilter() {
-    if (stateMutationPending) return
-    cancelInitialStoryRead()
-    resetSectionLimit(currentSection)
-    unreadSessionRetainedIds = ({})
-    startProcess(stateProc, [
-      "set-section-filter",
-      "--section", currentSection,
-      "--filter-json", JSON.stringify({
-        period: "all",
-        significance: "all",
-        unreadOnly: false,
-        imagesOnly: false,
-        types: []
+  FeedSession {
+    id: feedSession
+    helperPath: root.helperPath
+    cacheBase: root.cacheBase
+    opened: root.opened
+    currentSection: sectionNavigation.currentSection
+    query: masthead.search.text
+    limit: Number(sectionNavigation.sectionLimits[sectionNavigation.currentSection] || sectionNavigation.pageSize)
+    retainedReadIds: Object.keys(readerActions.unreadSessionRetainedIds).sort()
+    stateMutationPending: readerActions.stateMutationPending
+    readMutationPending: readerActions.readMutationPending
+    onProjectionRequested: function(mode) { if (mode === "reset") storyViewportController.forcedTopAnchorIndex = -1 }
+    onProjectionReady: function(result, mode) { root.handleProjection(result, mode) }
+    onProjectionFailed: storyViewportController.clear()
+    onStateAccepted: sectionNavigation.ensureVisibleSection()
+    onInteractionRequested: readerActions.cancelInitialStoryRead()
+    onRefreshChecked: pluginMaintenance.inspectPluginUpdate()
+    onBriefingFinished: function(reset) {
+      if (reset) {
+        storyViewportController.selectedIndex = 0
+        masthead.search.text = ""
+        readerActions.unreadSessionRetainedIds = ({})
+      }
+      Qt.callLater(function() {
+        if (feedSession.onboardingVisible) welcomeCard.focusChoice()
+        else { root.briefingControlsMode = false; navigationFocus.forceActiveFocus() }
       })
-    ])
-  }
-
-  function markCurrentSectionRead() {
-    if (briefingVisible) {
-      runBriefingAction("mark-briefing-read")
-      return
-    }
-    if (!helperPath || refreshing || projectProc.running
-        || stateMutationPending || readMutationPending
-        || Number(unreadCounts[currentSection] || 0) <= 0) return
-    cancelInitialStoryRead()
-    bulkReadInFlight = true
-    startProcess(stateProc, [
-      "mark-section-read",
-      "--section", currentSection,
-      "--installed-json", JSON.stringify(installedPluginIds)
-    ])
-  }
-
-  Process {
-    id: briefingProc
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleBriefingAction(text) }
-  }
-
-  Process {
-    id: readProc
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleRead(text) }
-  }
-
-  Process {
-    id: cacheSyncProc
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleCacheSync(text) }
-  }
-
-  Process {
-    id: refreshProc
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleRefresh(text) }
-    onExited: function(exitCode) {
-      if (root.refreshing && exitCode !== 0) root.refreshing = false
     }
   }
 
-  Process {
-    id: installedProc
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleInstalled(text) }
+  StoryViewport {
+    id: storyViewportController
+    storyList: readerList.list
+    loadMoreButton: readerList.loadMoreButton
+    hasMoreStories: feedSession.hasMoreStories
+    onSelected: function(markRead) {
+      if (markRead) readerActions.cancelInitialStoryRead()
+      root.inspectorFactsOpen = false
+      if (markRead) readerActions.queueStoryRead(storyViewportController.selectedStory, true)
+    }
+    onNavigationRequested: navigationFocus.forceActiveFocus()
   }
 
-  Process {
-    id: preferencesProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var result = RadarModel.parseResponse(text)
-        if (!root.opened || !result.state) return
-        root.userState = result.state
-        root.preferencesOpen = true
-        Qt.callLater(function() { barPreferenceButton.forceActiveFocus() })
-      }
+  WindowLifecycle {
+    id: windowController
+    window: panelWindow
+    helperPath: root.helperPath
+    preferredWidth: Style.space(1120)
+    preferredHeight: Style.space(720)
+    minimumWidth: Style.space(720)
+    minimumHeight: Style.space(480)
+    contentReady: feedSession.localStateReady && feedSession.installedPluginsReady
+      && !feedSession.reading && !feedSession.projecting && !feedSession.pendingProjection
+      && !feedSession.briefingRunning && (!feedSession.cachedFeed || feedSession.onboardingVisible || feedSession.briefing.initialized)
+    onRevealed: {
+      if (feedSession.onboardingVisible) welcomeCard.focusChoice()
+      else navigationFocus.forceActiveFocus()
+      readerActions.scheduleInitialStoryRead()
     }
-  }
-
-  Process {
-    id: projectProc
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.handleProjection(text) }
-    onRunningChanged: function() {
-      if (running) return
-      if (root.pendingProjection) {
-        var viewportMode = root.pendingProjectionViewportMode
-        root.pendingProjection = false
-        root.pendingProjectionViewportMode = "reset"
-        Qt.callLater(function() { root.requestProjection(viewportMode) })
-      }
-    }
-  }
-
-  Process {
-    id: stateProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var result = RadarModel.parseResponse(text)
-        if (result.status === "ok") {
-          root.userState = result.state || root.userState
-          root.ensureVisibleSection()
-          if (result.markedRead !== undefined) {
-            var marked = Number(result.markedRead || 0)
-            root.statusDetail = marked > 0
-              ? "Marked " + marked + " stor" + (marked === 1 ? "y" : "ies") + " read in this section."
-              : "This filtered section has no unread stories."
-          }
-          root.requestProjection()
-        } else {
-          root.feedStatus = "Failed"
-          root.statusDetail = result.message || "Local state could not be changed."
-        }
-      }
-    }
-    onExited: root.bulkReadInFlight = false
-  }
-
-  Process {
-    id: readingProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var result = RadarModel.parseResponse(text)
-        if (result.status === "ok") {
-          root.userState = result.state || root.userState
-          if (root.opened) root.requestProjection("preserve")
-        } else if (result.status === "stale-event") {
-          root.userState = result.state || root.userState
-          if (root.opened) root.requestProjection("preserve")
-        } else if (root.opened) {
-          root.feedStatus = "Failed"
-          root.statusDetail = result.message || "Reading state could not be changed."
-        }
-      }
-    }
-    onExited: function() {
-      root.readChangeInFlight = false
-      Qt.callLater(root.flushReadChanges)
-    }
-  }
-
-  Process { id: openSourceProc; stdout: StdioCollector { waitForEnd: true } }
-
-  Process {
-    id: windowProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var result = RadarModel.parseResponse(text)
-        root.windowIntegrationStatus = result.status === "ok"
-          ? String(result.outcome || "ok")
-          : String(result.message || result.status || "failed")
-      }
-    }
-  }
-
-
-  Process {
-    id: updateProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.handlePluginUpdate(text)
-    }
-    onExited: function(exitCode) {
-      if (exitCode !== 0 && root.pluginUpdateState === "updating") {
-        root.pluginUpdateState = "failed"
-        root.pluginUpdateMessage = "News Radar update failed."
-        root.pluginUpdateCanApply = true
-      }
-    }
-  }
-
-  Process {
-    id: shortcutProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var result = RadarModel.parseResponse(text)
-        if (result.classification === "owned-legacy") {
-          root.shortcutState = "needs-update"
-          root.shortcutMessage = "Your Radar-owned Super+Alt+N shortcut still uses the old close-on-repeat action."
-        } else if (root.shortcutAction === "install" && result.status === "migrated") {
-          root.shortcutState = "updated"
-          root.shortcutMessage = "Super+Alt+N now raises Radar without closing it."
-        } else {
-          root.shortcutState = "current"
-          root.shortcutMessage = ""
-        }
-      }
-    }
-    onExited: function(exitCode) {
-      if (exitCode !== 0 && root.shortcutAction === "install") {
-        root.shortcutState = "failed"
-        root.shortcutMessage = "Shortcut update was refused because the binding is no longer an exact Radar-owned block."
-      }
-    }
+    onCloseReady: root.finishClosing()
+    onCompositorClosed: root.finishClosing()
   }
 
   Timer {
@@ -1673,20 +481,9 @@ Item {
     interval: 160
     repeat: false
     onTriggered: {
-      root.cancelInitialStoryRead()
-      root.unreadSessionRetainedIds = ({})
-      root.requestProjection()
-    }
-  }
-
-  FileView {
-    id: feedWatcher
-    path: root.cacheBase + "/omarchy-news-radar/feed.json"
-    watchChanges: true
-    printErrors: false
-    onFileChanged: {
-      reload()
-      root.syncCachedEdition()
+      readerActions.cancelInitialStoryRead()
+      readerActions.unreadSessionRetainedIds = ({})
+      feedSession.requestProjection()
     }
   }
 
@@ -1701,18 +498,7 @@ Item {
     implicitHeight: screen && screen.height > 0
       ? Math.min(Style.space(720), screen.height - Style.gapsOut * 2)
       : Style.space(720)
-    minimumSize: Qt.size(
-      screen && screen.width > 0
-        ? Math.min(Style.space(720), screen.width - Style.gapsOut * 2)
-        : Style.space(720),
-      screen && screen.height > 0
-        ? Math.min(Style.space(480), screen.height - Style.gapsOut * 2)
-        : Style.space(480)
-    )
-
-    onVisibleChanged: {
-      if (!visible && root.opened && !root.closingFromHost) root.dismiss()
-    }
+    minimumSize: Qt.size(windowController.fittedMinimumWidth, windowController.fittedMinimumHeight)
 
     FocusScope {
       id: keySurface
@@ -1720,7 +506,7 @@ Item {
       focus: true
       Keys.onEscapePressed: root.handleEscape()
       Keys.onPressed: function(event) {
-        if (root.onboardingVisible) {
+        if (feedSession.onboardingVisible) {
           if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
             welcomeCard.cycleChoice()
             event.accepted = true
@@ -1730,9 +516,9 @@ Item {
           }
           return
         }
-        if (root.sectionSettingsOpen || root.preferencesOpen) return
-        if (event.key === Qt.Key_F6 && root.briefingVisible) {
-          root.cancelInitialStoryRead()
+        if (root.sectionSettingsOpen || root.preferencesOpen || root.detailItem) return
+        if (event.key === Qt.Key_F6 && (root.briefingVisible || root.overviewVisible || sectionNavigation.currentSection === "for-you")) {
+          readerActions.cancelInitialStoryRead()
           root.briefingControlsMode = !root.briefingControlsMode
           if (root.briefingControlsMode) root.focusBriefingControl(1)
           else navigationFocus.forceActiveFocus()
@@ -1749,9 +535,26 @@ Item {
           }
           return
         }
+        if (root.overviewVisible) {
+          var overviewKey = (event.text || "").toLowerCase()
+          if (event.key === Qt.Key_Down || overviewKey === "j") {
+            discoveryView.moveSelection(1); event.accepted = true; return
+          }
+          if (event.key === Qt.Key_Up || overviewKey === "k") {
+            discoveryView.moveSelection(-1); event.accepted = true; return
+          }
+          if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || overviewKey === "o") {
+            discoveryView.activateSelected(); event.accepted = true; return
+          }
+          if (event.key === Qt.Key_Home || event.key === Qt.Key_End) {
+            discoveryView.moveSelection(event.key === Qt.Key_Home ? -100000 : 100000)
+            event.accepted = true; return
+          }
+          if (overviewKey === "s" || overviewKey === "u") { event.accepted = true; return }
+        }
         if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
           var backwards = event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier)
-          root.cycleSection(backwards ? -1 : 1)
+          sectionNavigation.cycleSection(backwards ? -1 : 1)
           event.accepted = true
           return
         }
@@ -1759,80 +562,80 @@ Item {
           root.handleEscape(); event.accepted = true; return
         }
         if (event.key === Qt.Key_Down || (event.text || "").toLowerCase() === "j") {
-          root.moveSelection(1); event.accepted = true; return
+          storyViewportController.moveSelection(1); event.accepted = true; return
         }
         if (event.key === Qt.Key_Up || (event.text || "").toLowerCase() === "k") {
-          root.moveSelection(-1); event.accepted = true; return
+          storyViewportController.moveSelection(-1); event.accepted = true; return
         }
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || (event.text || "").toLowerCase() === "o") {
-          root.openSelected(); event.accepted = true; return
+          readerActions.openSelected(); event.accepted = true; return
         }
         if ((event.text || "").toLowerCase() === "s") {
-          root.toggleSaved(); event.accepted = true; return
+          readerActions.toggleSaved(); event.accepted = true; return
         }
         if ((event.text || "").toLowerCase() === "u") {
-          root.toggleSelectedRead(); event.accepted = true; return
+          readerActions.toggleSelectedRead(); event.accepted = true; return
         }
         if ((event.text || "").toLowerCase() === "f") {
-          if (searchField.activeFocus) return
-          root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
+          if (masthead.search.activeFocus) return
+          readerActions.updateFilter("unreadOnly", !sectionNavigation.currentFilter.unreadOnly)
           event.accepted = true; return
         }
         if ((event.text || "").toLowerCase() === "a") {
-          if (searchField.activeFocus) return
-          root.markCurrentSectionRead()
+          if (masthead.search.activeFocus) return
+          readerActions.markCurrentSectionRead()
           event.accepted = true; return
         }
         if ((event.text || "") === "?") {
-          if (searchField.activeFocus) return
+          if (masthead.search.activeFocus) return
           root.keysLegendOpen = !root.keysLegendOpen
           event.accepted = true; return
         }
         if ((event.text || "").toLowerCase() === "r") {
-          root.refreshFeed(); event.accepted = true; return
+          feedSession.refreshFeed(); event.accepted = true; return
         }
         if (event.text === "/") {
-          searchField.forceActiveFocus(); event.accepted = true; return
+          masthead.search.forceActiveFocus(); event.accepted = true; return
         }
         if (event.key === Qt.Key_Home) {
-          if (root.stories.length) {
-            root.storyViewportRevision++
-            storyScrollAnimation.stop()
-            var homeViewportRevision = root.storyViewportRevision
-            var initialContentY = storyList.contentY
-            root.selectStory(0, true)
-            root.storyViewportAnchorIndex = 0
+          if (storyViewportController.stories.length) {
+            storyViewportController.storyViewportRevision++
+            storyViewportController.animation.stop()
+            var homeViewportRevision = storyViewportController.storyViewportRevision
+            var initialContentY = readerList.list.contentY
+            storyViewportController.selectStory(0, true)
+            storyViewportController.storyViewportAnchorIndex = 0
             Qt.callLater(function() {
-              if (root.selectedIndex === 0
-                  && root.storyViewportRevision === homeViewportRevision)
-                root.animateStoryPosition(0, true, initialContentY)
+              if (storyViewportController.selectedIndex === 0
+                  && storyViewportController.storyViewportRevision === homeViewportRevision)
+                storyViewportController.animateStoryPosition(0, true, initialContentY)
             })
-          } else root.selectedIndex = -1
+          } else storyViewportController.selectedIndex = -1
           event.accepted = true; return
         }
         if (event.key === Qt.Key_End) {
-          root.storyViewportRevision++
-          storyScrollAnimation.stop()
-          if (root.stories.length) {
-            root.selectStory(root.stories.length - 1, true)
-            root.storyViewportAnchorIndex = root.selectedIndex
+          storyViewportController.storyViewportRevision++
+          storyViewportController.animation.stop()
+          if (storyViewportController.stories.length) {
+            storyViewportController.selectStory(storyViewportController.stories.length - 1, true)
+            storyViewportController.storyViewportAnchorIndex = storyViewportController.selectedIndex
           }
-          else root.selectedIndex = -1
-          storyList.positionViewAtEnd()
+          else storyViewportController.selectedIndex = -1
+          readerList.list.positionViewAtEnd()
           Qt.callLater(function() {
-            var footer = storyList.footerItem
-            storyList.contentY = Math.max(
-              storyList.originY,
-              footer ? footer.y + footer.height - storyList.height
-                : storyList.contentHeight - storyList.height
+            var footer = readerList.list.footerItem
+            readerList.list.contentY = Math.max(
+              readerList.list.originY,
+              footer ? footer.y + footer.height - readerList.list.height
+                : readerList.list.contentHeight - readerList.list.height
             )
           })
           event.accepted = true
           return
         }
         var numeric = Number(event.text)
-        if (numeric >= 1 && numeric <= root.sections.length) {
-          root.selectSection(numeric - 1); event.accepted = true
+        if (numeric >= 1 && numeric <= sectionNavigation.sections.length) {
+          sectionNavigation.selectSection(numeric - 1); event.accepted = true
         }
       }
 
@@ -1857,268 +660,70 @@ Item {
           anchors.margins: Style.spacing.panelPadding
           spacing: Style.spacing.panelGap
 
-          GridLayout {
+          RadarMasthead {
+            id: masthead
             Layout.fillWidth: true
-            columns: keySurface.narrow ? 1 : 2
-            columnSpacing: Style.spacing.controlGap
-            rowSpacing: Style.spacing.sm
-
-            RowLayout {
-              Layout.fillWidth: true
-              spacing: Style.spacing.controlGap
-
-              Item {
-                Layout.fillWidth: true
-                implicitHeight: titleStack.implicitHeight
-
-                RowLayout {
-                  id: titleStack
-                  anchors.fill: parent
-                  spacing: Style.spacing.md
-
-                  Image {
-                    Layout.preferredWidth: Style.font.displayLarge
-                    Layout.preferredHeight: Style.font.displayLarge
-                    source: root.brandLogoPath
-                    sourceSize.width: Style.font.displayLarge * 2
-                    sourceSize.height: Style.font.displayLarge * 2
-                    fillMode: Image.PreserveAspectFit
-                    smooth: true
-                    mipmap: true
-                    Accessible.ignored: true
-                  }
-
-                  Text {
-                    Layout.fillWidth: true
-                    text: "NEWS RADAR"
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.display
-                    font.bold: true
-                    font.letterSpacing: Style.spaceReal(1)
-                    verticalAlignment: Text.AlignVCenter
-                    Accessible.role: Accessible.Heading
-                    Accessible.name: "Omarchy News Radar"
-                  }
-                }
-
-                MouseArea {
-                  anchors.fill: parent
-                  acceptedButtons: Qt.LeftButton
-                  cursorShape: Qt.SizeAllCursor
-                  onPressed: panelWindow.startSystemMove()
-                  onDoubleClicked: panelWindow.maximized = !panelWindow.maximized
-                }
-              }
-            }
-
-            RowLayout {
-              Layout.fillWidth: keySurface.narrow
-              Layout.alignment: keySurface.narrow ? Qt.AlignLeft : Qt.AlignRight
-              spacing: Style.spacing.controlGap
-
-              RadarButton {
-                id: refreshButton
-                label: root.refreshing ? "Checking…" : "Check for updates"
-                iconText: root.refreshing ? "↻" : ""
-                iconSpinning: root.refreshing
-                tooltipText: "Check the published edition (R)"
-                enabled: !root.refreshing
-                onClicked: root.refreshFeed()
-              }
-
-              RadarButton {
-                label: "Tune"
-                enabled: root.localStateReady && !root.stateMutationPending && !preferencesProc.running
-                onClicked: root.showPreferences()
-              }
-
-              PanelActionButton {
-                id: maximizeButton
-                iconText: panelWindow.maximized ? "❐" : "□"
-                tooltipText: panelWindow.maximized ? "Restore" : "Maximize"
-                foreground: Color.popups.text
-                fontFamily: Style.font.family
-                fontSize: Style.font.title
-                size: Style.spacing.controlHeight
-                bordered: true
-                focusable: true
-                Accessible.role: Accessible.Button
-                Accessible.name: tooltipText
-                Accessible.focusable: true
-                Accessible.onPressAction: clicked()
-                onClicked: {
-                  panelWindow.maximized = !panelWindow.maximized
-                  navigationFocus.forceActiveFocus()
-                }
-              }
-
-              PanelActionButton {
-                id: closeButton
-                iconText: "×"
-                tooltipText: "Close"
-                foreground: Color.popups.text
-                fontFamily: Style.font.family
-                fontSize: Style.font.title
-                size: Style.spacing.controlHeight
-                bordered: true
-                focusable: true
-                Accessible.role: Accessible.Button
-                Accessible.name: tooltipText
-                Accessible.focusable: true
-                Accessible.onPressAction: clicked()
-                onClicked: root.dismiss()
-              }
-            }
+            session: feedSession
+            actions: readerActions
+            maintenance: pluginMaintenance
+            window: panelWindow
+            narrow: keySurface.narrow
+            brandLogoPath: root.brandLogoPath
+            secondaryTextColor: root.secondaryTextColor
+            onCloseRequested: root.dismiss()
+            onNavigationRequested: navigationFocus.forceActiveFocus()
+            onQueryEdited: searchTimer.restart()
           }
 
-          Text {
-            id: noCacheNotice
+          Flow {
             Layout.fillWidth: true
-            visible: !root.cachedFeed && !root.refreshing && text !== ""
-            text: root.statusDetail
-            textFormat: Text.PlainText
-            color: root.secondaryTextColor
-            font.family: Style.font.family
-            font.pixelSize: Style.font.bodySmall
-            elide: Text.ElideRight
-            Accessible.role: Accessible.StaticText
-            Accessible.name: text
-          }
-
-          BorderSurface {
-            id: shortcutNotice
-            Layout.fillWidth: true
-            Layout.preferredHeight: shortcutNoticeRow.implicitHeight + Style.spacing.controlPaddingY * 2
-            visible: root.shortcutState === "needs-update" || root.shortcutState === "updating"
-              || root.shortcutState === "updated" || root.shortcutState === "failed"
-            color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
-            radius: Style.cornerRadius
-            borderSpec: Border.controlSpec(
-              root.shortcutState === "failed" ? "focus" : "normal",
-              Color.popups.text, Color.accent, Color.urgent)
-
-            RowLayout {
-              id: shortcutNoticeRow
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              anchors.leftMargin: Style.spacing.controlPaddingX
-              anchors.rightMargin: Style.spacing.controlPaddingX
-              spacing: Style.spacing.controlGap
-
-              Text {
-                Layout.fillWidth: true
-                text: root.shortcutMessage
-                textFormat: Text.PlainText
-                color: root.shortcutState === "failed" ? Color.urgent : Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.WordWrap
-                Accessible.role: Accessible.StaticText
-                Accessible.name: text
-              }
-
-              RadarButton {
-                id: shortcutMigrationButton
-                visible: root.shortcutState === "needs-update" || root.shortcutState === "failed"
-                label: root.shortcutState === "failed" ? "Retry shortcut update" : "Update shortcut"
-                tooltipText: "Replace only Radar's exact managed toggle binding with summon activation"
-                enabled: !shortcutProc.running
-                onClicked: root.migrateShortcut()
-              }
+            Layout.preferredHeight: visible ? childrenRect.height : 0
+            visible: !feedSession.onboardingVisible && (sectionNavigation.currentSection === "front-page" || sectionNavigation.currentSection === "for-you")
+            spacing: Style.spacing.controlGap
+            RadarButton {
+              visible: sectionNavigation.currentSection === "front-page" && !root.homeVisible
+              id: backHomeButton
+              managesTab: true
+              onTabRequested: function(direction) { root.focusBriefingControl(direction) }
+              label: "← Front Page"
+              onClicked: { readerActions.cancelInitialStoryRead(); root.homeMode = true; navigationFocus.forceActiveFocus() }
             }
-          }
-
-
-          BorderSurface {
-            id: pluginUpdateNotice
-            Layout.fillWidth: true
-            Layout.preferredHeight: pluginUpdateNoticeRow.implicitHeight + Style.spacing.controlPaddingY * 2
-            visible: root.pluginUpdateState === "behind" || root.pluginUpdateState === "updating"
-              || root.pluginUpdateState === "updated" || root.pluginUpdateState === "failed"
-              || root.pluginUpdateState === "blocked"
-            color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
-            radius: Style.cornerRadius
-            borderSpec: Border.controlSpec(
-              root.pluginUpdateState === "failed" ? "focus" : "normal",
-              Color.popups.text, Color.accent, Color.urgent)
-
-            RowLayout {
-              id: pluginUpdateNoticeRow
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              anchors.leftMargin: Style.spacing.controlPaddingX
-              anchors.rightMargin: Style.spacing.controlPaddingX
-              spacing: Style.spacing.controlGap
-
-              Text {
-                Layout.fillWidth: true
-                text: root.pluginUpdateMessage
-                textFormat: Text.PlainText
-                color: root.pluginUpdateState === "failed" ? Color.urgent : Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.WordWrap
-                Accessible.role: Accessible.StaticText
-                Accessible.name: text
-              }
-
-              RadarButton {
-                id: pluginUpdateButton
-                visible: (root.pluginUpdateState === "behind" && root.pluginUpdateCanApply)
-                  || root.pluginUpdateState === "failed"
-                label: root.pluginUpdateState === "failed" ? "Retry update" : "Update plugin"
-                tooltipText: "Fast-forward News Radar with Omarchy's official plugin updater"
-                enabled: !updateProc.running && (root.pluginUpdateCanApply || root.pluginUpdateState === "failed")
-                onClicked: root.applyPluginUpdate()
-              }
+            RadarButton {
+              visible: sectionNavigation.currentSection === "for-you"
+              id: setupButton
+              managesTab: true
+              onTabRequested: function(direction) { root.focusBriefingControl(direction) }
+              label: "My setup"
+              selected: root.setupVisible
+              onClicked: { readerActions.cancelInitialStoryRead(); root.setupMode = true; navigationFocus.forceActiveFocus() }
             }
-          }
-
-          TextField {
-            id: searchField
-            Layout.fillWidth: true
-            placeholderText: "Search news  /"
-            color: Color.popups.text
-            placeholderTextColor: root.secondaryTextColor
-            selectionColor: Style.selectionFill
-            selectedTextColor: Color.popups.text
-            font.family: Style.font.family
-            font.pixelSize: Style.font.body
-            leftPadding: Style.spacing.controlPaddingX
-            rightPadding: Style.spacing.controlPaddingX
-            topPadding: Style.spacing.inputPaddingY
-            bottomPadding: Style.spacing.inputPaddingY
-            Accessible.name: "Search news"
-            onTextChanged: {
-              root.cancelInitialStoryRead()
-              searchTimer.restart()
+            RadarButton {
+              visible: sectionNavigation.currentSection === "for-you"
+              id: setupNewsButton
+              managesTab: true
+              onTabRequested: function(direction) { root.focusBriefingControl(direction) }
+              label: "News for you"
+              selected: !root.setupVisible
+              onClicked: { readerActions.cancelInitialStoryRead(); root.setupMode = false; navigationFocus.forceActiveFocus() }
             }
-            Keys.onPressed: function(event) {
-              if (event.key === Qt.Key_Escape) {
-                navigationFocus.forceActiveFocus()
-                event.accepted = true
-              }
-            }
-            background: BorderSurface {
-              color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
-              radius: Style.cornerRadius
-              borderSpec: Border.controlSpec(searchField.activeFocus ? "focus" : "normal", Color.foreground, Color.accent, Color.urgent)
+            RadarButton {
+              id: relevanceButton
+              managesTab: true
+              onTabRequested: function(direction) { root.focusBriefingControl(direction) }
+              label: "Following & muted"
+              onClicked: root.manageRelevance()
             }
           }
 
           BriefingNotice {
             id: briefingNotice
             Layout.fillWidth: true
-            visible: root.briefingVisible && !root.onboardingVisible
-            briefing: root.briefing
-            busy: root.briefingBusy || root.refreshing || !root.installedPluginsReady
-            message: root.briefingMessage
-            onNewRequested: root.runBriefingAction("new-briefing")
-            onFinishRequested: root.runBriefingAction("mark-briefing-read")
+            visible: root.briefingVisible && !feedSession.onboardingVisible && !root.homeVisible
+            briefing: feedSession.briefing
+            busy: feedSession.briefingBusy || feedSession.refreshing || !feedSession.installedPluginsReady
+            message: feedSession.briefingMessage
+            onNewRequested: feedSession.runBriefingAction("new-briefing")
+            onFinishRequested: feedSession.runBriefingAction("mark-briefing-read")
             onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
           }
 
@@ -2127,190 +732,22 @@ Item {
             Layout.fillHeight: true
             spacing: Style.spacing.panelGap
 
-            Flickable {
+            SectionRail {
               id: sectionRail
-              // SECTIONS stays one stable rail: wide enough for "Front Page"
-              // and "Plugins", never jumping when the active section changes.
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.22 : card.width * 0.16
               Layout.minimumWidth: Style.space(200)
               Layout.maximumWidth: keySurface.narrow ? card.width * 0.30 : Style.space(228)
               Layout.fillHeight: true
               Layout.minimumHeight: 0
-              contentWidth: width
-              contentHeight: Math.max(height, railContents.implicitHeight)
-              clip: true
-              boundsBehavior: Flickable.StopAtBounds
-              flickableDirection: Flickable.VerticalFlick
-              ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-              function revealItem(item) {
-                if (!item || height <= 0) return
-                var top = item.mapToItem(contentItem, 0, 0).y
-                var bottom = top + item.height
-                var next = contentY
-                if (top < next || item.height > height) next = top
-                else if (bottom > next + height) next = bottom - height
-                contentY = Math.max(0, Math.min(next, contentHeight - height))
-              }
-
-              function revealSelected() {
-                revealItem(sectionButtons.itemAt(root.sectionIndex))
-              }
-
-              onHeightChanged: Qt.callLater(revealSelected)
-              onContentHeightChanged: contentY = Math.max(0, Math.min(contentY, contentHeight - height))
-
-              Connections {
-                target: root
-                function onKeysLegendOpenChanged() {
-                  if (root.keysLegendOpen) Qt.callLater(function() { sectionRail.revealItem(keysLegend) })
-                }
-              }
-
-              ColumnLayout {
-                id: railContents
-                width: sectionRail.width
-                height: sectionRail.contentHeight
-                spacing: Style.spacing.sm
-
-                Text {
-                  text: "SECTIONS"
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  font.bold: true
-                }
-
-                Repeater {
-                  id: sectionButtons
-                  model: root.sections
-                  onItemAdded: Qt.callLater(sectionRail.revealSelected)
-                  SectionButton {
-                    id: sectionButton
-                    required property var modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    label: modelData.name
-                    icon: root.sectionIcon(modelData.icon)
-                    tone: modelData.tone
-                    count: Number(root.counts[modelData.id] || 0)
-                    unreadCount: Number(root.unreadCounts[modelData.id] || 0)
-                    selected: root.sectionIndex === index
-                    onClicked: root.selectSection(index)
-                    onActiveFocusChanged: if (activeFocus) sectionRail.revealItem(sectionButton)
-                    onSelectedChanged: if (selected) Qt.callLater(sectionRail.revealSelected)
-                    onYChanged: if (selected) Qt.callLater(sectionRail.revealSelected)
-                    onHeightChanged: if (selected) Qt.callLater(sectionRail.revealSelected)
-                  }
-                }
-
-                Item { Layout.fillHeight: true }
-
-                ColumnLayout {
-                  id: keysLegend
-                  Layout.fillWidth: true
-                  spacing: Style.space(4)
-
-                  FocusScope {
-                    id: keysLegendToggle
-                    Layout.fillWidth: true
-                    implicitHeight: Math.max(Style.space(18), keysToggleLabel.implicitHeight + Style.space(2))
-                    activeFocusOnTab: true
-                    onActiveFocusChanged: if (activeFocus) sectionRail.revealItem(keysLegendToggle)
-                    Accessible.role: Accessible.Button
-                    Accessible.name: keysToggleLabel.text
-                    Accessible.focusable: true
-                    Accessible.onPressAction: root.keysLegendOpen = !root.keysLegendOpen
-
-                    Text {
-                      id: keysToggleLabel
-                      anchors.left: parent.left
-                      anchors.verticalCenter: parent.verticalCenter
-                      text: root.keysLegendOpen ? "Keys ▾" : "Keys · ?"
-                      textFormat: Text.PlainText
-                      color: keysToggleHover.hovered || parent.activeFocus
-                        ? root.secondaryTextColor
-                        : root.quietTextColor
-                      font.family: Style.font.family
-                      font.pixelSize: Style.font.caption
-                      font.bold: false
-                    }
-
-                    HoverHandler { id: keysToggleHover }
-                    PanelToolTip {
-                      visible: keysToggleHover.hovered
-                      text: root.keysLegendOpen
-                        ? "Hide keyboard shortcuts (?)"
-                        : "Show keyboard shortcuts (?)"
-                      fontFamily: Style.font.family
-                    }
-                    MouseArea {
-                      anchors.fill: parent
-                      preventStealing: true
-                      cursorShape: Qt.PointingHandCursor
-                      onClicked: root.keysLegendOpen = !root.keysLegendOpen
-                    }
-                    Keys.onReturnPressed: root.keysLegendOpen = !root.keysLegendOpen
-                    Keys.onEnterPressed: root.keysLegendOpen = !root.keysLegendOpen
-                    Keys.onSpacePressed: root.keysLegendOpen = !root.keysLegendOpen
-                  }
-
-                  Flow {
-                    id: keysLegendBody
-                    visible: root.keysLegendOpen
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: visible ? childrenRect.height : 0
-                    spacing: Style.space(4)
-                    Accessible.role: Accessible.StaticText
-                    Accessible.name: "Keyboard shortcuts"
-
-                    Repeater {
-                      model: [
-                        { keys: "Esc/q", action: "close" },
-                        { keys: "j/k", action: "move" },
-                        { keys: "↵/o", action: "open" },
-                        { keys: "s", action: "save" },
-                        { keys: "u", action: "read" },
-                        { keys: "a", action: "all-read" },
-                        { keys: "F6", action: "briefing controls" },
-                        { keys: "f", action: "unread" },
-                        { keys: "/", action: "search" },
-                        { keys: "r", action: "refresh" },
-                        { keys: "Tab", action: "sections" },
-                        { keys: "1–" + root.sections.length, action: "jump" },
-                        { keys: "Home/End", action: "edges" },
-                        { keys: "?", action: "keys" }
-                      ]
-                      Row {
-                        required property var modelData
-                        required property int index
-                        spacing: Style.space(4)
-
-                        Text {
-                          id: keycapText
-                          anchors.verticalCenter: parent.verticalCenter
-                          text: modelData.keys
-                          textFormat: Text.PlainText
-                          color: root.secondaryTextColor
-                          font.family: Style.font.family
-                          font.pixelSize: Style.font.caption
-                          font.bold: false
-                        }
-
-                        Text {
-                          anchors.verticalCenter: parent.verticalCenter
-                          text: modelData.action + (index < 12 ? " ·" : "")
-                          textFormat: Text.PlainText
-                          color: root.quietTextColor
-                          font.family: Style.font.family
-                          font.pixelSize: Style.font.caption
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+              sections: sectionNavigation.sections
+              counts: feedSession.counts
+              unreadCounts: feedSession.unreadCounts
+              currentIndex: sectionNavigation.sectionIndex
+              keysOpen: root.keysLegendOpen
+              secondaryTextColor: root.secondaryTextColor
+              quietTextColor: root.quietTextColor
+              onSectionRequested: function(index) { sectionNavigation.selectSection(index) }
+              onKeysToggled: root.keysLegendOpen = !root.keysLegendOpen
             }
 
             Rectangle {
@@ -2319,561 +756,97 @@ Item {
               color: Color.popups.border
             }
 
-            Item {
+            DiscoveryView {
+              id: discoveryView
+              visible: root.overviewVisible
+              Layout.fillWidth: true
+              Layout.fillHeight: true
+              Layout.minimumWidth: Style.space(220)
+              setupMode: root.setupVisible
+              searching: masthead.search.text !== ""
+              home: feedSession.homeModel
+              setup: feedSession.setupModel
+              stories: storyViewportController.stories
+              briefing: feedSession.briefing
+              insights: feedSession.insightsModel
+              busy: feedSession.briefingBusy || feedSession.refreshing || !feedSession.installedPluginsReady
+              imagesVisible: feedSession.preferences.imagesVisible !== false
+              message: feedSession.briefingMessage
+              onStoryRequested: function(index) { root.openBriefingStory(index) }
+              onDetailRequested: function(item) { root.showInsight(item) }
+              onBrowseRequested: {
+                if (root.setupVisible) root.setupMode = false
+                else sectionNavigation.selectSection(sectionNavigation.sectionIndexFor("plugins"))
+                navigationFocus.forceActiveFocus()
+              }
+              onNewRequested: feedSession.runBriefingAction("new-briefing")
+              onFinishRequested: feedSession.runBriefingAction("mark-briefing-read")
+              onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
+            }
+
+            ReaderList {
+              id: readerList
+              visible: !root.overviewVisible
               Layout.fillWidth: true
               Layout.fillHeight: true
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.72 : card.width * 0.30
               Layout.minimumWidth: Style.space(220)
-              clip: true
-
-              Rectangle {
-                anchors.fill: parent
-                color: Color.popups.background
-              }
-
-              ColumnLayout {
-                anchors.fill: parent
-                spacing: Style.spacing.md
-
-              ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Style.spacing.sm
-
-                RowLayout {
-                  visible: !keySurface.narrow || !root.briefingVisible
-                  Layout.fillWidth: true
-                  spacing: Style.spacing.controlGap
-
-                  Text {
-                    text: root.sectionIcon(root.currentProfile.icon)
-                    textFormat: Text.PlainText
-                    color: Color.accent
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.iconLarge
-                    Accessible.ignored: true
-                  }
-
-                  Text {
-                    Layout.fillWidth: true
-                    text: root.currentProfile.name.toUpperCase()
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.heading
-                    font.bold: true
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
-                    wrapMode: Text.NoWrap
-                    clip: true
-                    Accessible.role: Accessible.Heading
-                    Accessible.name: text
-                  }
-
-                  RowLayout {
-                    spacing: Style.spacing.controlGap
-                    visible: !keySurface.narrow
-
-                  RadarButton {
-                    id: headerUnreadButton
-                    label: root.currentFilter.unreadOnly ? "Unread only" : "All"
-                    selected: root.currentFilter.unreadOnly
-                    tooltipText: root.currentFilter.unreadOnly
-                      ? "Show all stories in this section (F)"
-                      : "Show unread stories only (F)"
-                    enabled: !root.stateMutationPending
-                    onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
-                  }
-
-                  RadarButton {
-                    id: markAllReadButton
-                    visible: !root.briefingVisible
-                    label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
-                    tooltipText: "Mark every unread story matching this section's Settings as read (A)"
-                    enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
-                      && !root.refreshing && !projectProc.running
-                      && !root.stateMutationPending && !root.readMutationPending
-                    onClicked: root.markCurrentSectionRead()
-                  }
-
-                  RadarButton {
-                    id: settingsButton
-                    label: "⚙ Settings"
-                    selected: root.filterSummary !== "No extra filters"
-                    enabled: !root.stateMutationPending
-                    onClicked: root.showSectionSettings()
-                  }
-                  }
-                }
-
-                RowLayout {
-                  visible: keySurface.narrow
-                  Layout.fillWidth: true
-                  spacing: Style.spacing.controlGap
-
-                  RadarButton {
-                    id: narrowHeaderUnreadButton
-                    label: root.currentFilter.unreadOnly ? "Unread only" : "All"
-                    selected: root.currentFilter.unreadOnly
-                    enabled: !root.stateMutationPending
-                    onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
-                  }
-                  RadarButton {
-                    id: narrowMarkAllReadButton
-                    visible: !root.briefingVisible
-                    label: root.bulkReadInFlight ? "Marking read…" : "Mark all as read"
-                    enabled: Number(root.unreadCounts[root.currentSection] || 0) > 0
-                      && !root.refreshing && !projectProc.running
-                      && !root.stateMutationPending && !root.readMutationPending
-                    onClicked: root.markCurrentSectionRead()
-                  }
-                  RadarButton {
-                    id: narrowSettingsButton
-                    label: "⚙ Settings"
-                    selected: root.filterSummary !== "No extra filters"
-                    enabled: !root.stateMutationPending
-                    onClicked: root.showSectionSettings()
-                  }
-                }
-              }
-
-              Text {
-                Layout.fillWidth: true
-                visible: !keySurface.narrow || !root.briefingVisible
-                  || root.filterSummary !== "No extra filters" || root.retainedReadStories > 0
-                text: root.sectionSummaryText()
-                textFormat: Text.PlainText
-                color: root.secondaryTextColor
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                elide: Text.ElideRight
-                Accessible.role: Accessible.StaticText
-                Accessible.name: text
-              }
-
-              Flow {
-                visible: keySurface.narrow
-                Layout.fillWidth: true
-                Layout.preferredHeight: visible ? childrenRect.height : 0
-                spacing: Style.spacing.controlGap
-
-                RadarButton {
-                  id: narrowReadButton
-                  label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"
-                  selected: !!root.selectedStory && !root.selectedStory.isUnread
-                  enabled: !!root.selectedStory && !root.readMutationPending && !root.bulkReadInFlight
-                  onClicked: root.toggleSelectedRead()
-                }
-                RadarButton {
-                  label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
-                  enabled: !!root.selectedStory
-                  onClicked: root.toggleSaved()
-                }
-                RadarButton {
-                  label: "Plugin page"
-                  enabled: !!root.selectedStory && !!root.selectedStory.marketplaceUrl
-                  onClicked: root.openMarketplacePage()
-                }
-                RadarButton {
-                  label: "Open source"
-                  enabled: !!root.selectedStory
-                  onClicked: root.openSelected()
-                }
-              }
-
-              ListView {
-                id: storyList
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                model: renderedStoryModel
-                spacing: root.readerLayout ? Style.space(4) : Style.spacing.sm
-                // Keep the immediately adjacent screen instantiated. Keyboard
-                // navigation can then animate to real row geometry after
-                // pagination instead of asking ListView to estimate a
-                // virtualized delegate's position.
-                cacheBuffer: height
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-                header: BriefingGroup {
-                  id: narrowBriefingGroup
-                  visible: keySurface.narrow && root.briefingVisible && !!root.selectedStory
-                  width: storyList.width
-                  height: visible ? implicitHeight : 0
-                  maximumHistoryHeight: Math.min(Style.space(160), card.height * 0.25)
-                  story: root.selectedStory
-                  busy: root.briefingBusy || root.refreshing
-                  onReadRequested: function(groupId) { root.runBriefingAction("mark-briefing-group-read", groupId) }
-                  onSourceRequested: function(event) { root.openBriefingEvent(event) }
-                  onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
-                }
-
-                delegate: StoryRow {
-                  required property var payload
-                  required property int index
-                  width: storyList.width
-                  story: payload
-                  selected: index === root.selectedIndex
-                  // Narrow layout hides the reading pane, so treat selection as an
-                  // accordion: collapse every row, expand only the selected one.
-                  quiet: keySurface.narrow
-                    ? index !== root.selectedIndex
-                    : RadarModel.usesQuietCard(root.currentSection, payload)
-                  lead: !keySurface.narrow
-                    && root.currentSection === "front-page"
-                    && index === 0
-                  onActivated: root.selectStory(index, true)
-                }
-
-                Text {
-                  anchors.centerIn: parent
-                  visible: root.stories.length === 0
-                  width: parent.width - Style.spacing.panelPadding * 2
-                  text: root.emptyStateMessage()
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.body
-                  horizontalAlignment: Text.AlignHCenter
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: text
-                }
-              }
-
-              Item {
-                // A finite briefing has no next page; reserve this space only
-                // for the browsable sections that can load more stories.
-                visible: root.stories.length > 0 && !root.briefingVisible
-                Layout.fillWidth: true
-                Layout.preferredHeight: visible ? Style.space(54) : 0
-
-                RadarButton {
-                  id: loadMoreButton
-                  anchors.centerIn: parent
-                  visible: root.hasMoreStories
-                  iconText: "↓"
-                  label: activeFocus
-                    ? "Press Enter to load " + Math.min(root.pageSize, Math.max(0, root.totalStories - root.stories.length)) + " more"
-                    : "Load more (" + Math.max(0, root.totalStories - root.stories.length) + " remaining)"
-                  tooltipText: "Down to focus · Enter to load the next page"
-                  onClicked: {
-                    root.loadMore()
-                    navigationFocus.forceActiveFocus()
-                  }
-                }
-
-                Text {
-                  anchors.centerIn: parent
-                  visible: !root.hasMoreStories
-                  text: "All " + root.totalStories + " stories loaded"
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                }
-              }
-            }
-
+              session: feedSession
+              actions: readerActions
+              viewport: storyViewportController
+              narrow: keySurface.narrow
+              briefingVisible: root.briefingVisible
+              currentProfile: sectionNavigation.currentProfile
+              currentFilter: sectionNavigation.currentFilter
+              currentSection: sectionNavigation.currentSection
+              pageSize: sectionNavigation.pageSize
+              availableHeight: card.height
+              secondaryTextColor: root.secondaryTextColor
+              summaryText: root.sectionSummaryText()
+              emptyMessage: root.emptyStateMessage()
+              recoveryLabel: root.emptyRecoveryLabel()
+              onRecoveryRequested: root.recoverEmptyView()
+              onSettingsRequested: root.showSectionSettings()
+              onLoadMoreRequested: root.loadMore()
+              onContextRequested: root.showInsight(storyViewportController.selectedStory.projectInsight || storyViewportController.selectedStory)
+              onGroupSourceRequested: function(event) { root.openBriefingEvent(event) }
+              onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
+              onNavigationFocusRequested: navigationFocus.forceActiveFocus()
             }
 
             Rectangle {
-              visible: !keySurface.narrow
+              visible: !keySurface.narrow && !root.overviewVisible && !!storyViewportController.selectedStory
               Layout.preferredWidth: Style.spacing.hairline
               Layout.fillHeight: true
               color: Color.popups.border
             }
 
-            Item {
-              visible: !keySurface.narrow
+            StoryInspector {
+              id: inspectorView
+              visible: !keySurface.narrow && !root.overviewVisible && !!storyViewportController.selectedStory
               Layout.fillWidth: true
               Layout.fillHeight: true
               Layout.preferredWidth: keySurface.narrow ? card.width * 0.44 : card.width * 0.54
               Layout.minimumWidth: Style.space(240)
-              clip: true
-
-              Rectangle {
-                anchors.fill: parent
-                color: Color.popups.background
-              }
-
-              Flickable {
-                id: inspectorScroll
-                anchors.fill: parent
-                contentWidth: width
-                contentHeight: inspector.implicitHeight
-                clip: true
-              boundsBehavior: Flickable.StopAtBounds
-              ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-              Column {
-                id: inspector
-                width: parent.width
-                spacing: Style.spacing.panelGap
-
-                BriefingGroup {
-                  id: inspectorBriefingGroup
-                  visible: root.briefingVisible && !!root.selectedStory
-                  width: parent.width
-                  height: visible ? implicitHeight : 0
-                  story: root.selectedStory
-                  busy: root.briefingBusy || root.refreshing
-                  onReadRequested: function(groupId) { root.runBriefingAction("mark-briefing-group-read", groupId) }
-                  onSourceRequested: function(event) { root.openBriefingEvent(event) }
-                  onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
-                }
-
-                BorderSurface {
-                  visible: !root.inspectorArticleMode && !!root.selectedStory && !!root.selectedStory.imageUrl
-                  width: parent.width
-                  height: visible ? Math.round(width * 0.58) : 0
-                  radius: Style.cornerRadius
-                  color: Color.background
-                  borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
-                  clip: true
-
-                  Image {
-                    anchors.fill: parent
-                    source: root.selectedStory && root.selectedStory.imageUrl ? root.selectedStory.imageUrl : ""
-                    asynchronous: true
-                    cache: true
-                    fillMode: Image.PreserveAspectCrop
-                    sourceSize.width: 720
-                    sourceSize.height: 720
-                  }
-                }
-
-                Text {
-                  visible: !root.inspectorArticleMode && !!root.selectedStory && !!root.selectedStory.imageUrl
-                  width: parent.width
-                  text: visible ? "IMAGE  " + root.selectedStory.image.credit : ""
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                }
-
-                Text {
-                  width: parent.width
-                  text: root.selectedStory ? root.selectedStory.title : "Select a story"
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.heading
-                  font.bold: true
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.Heading
-                  Accessible.name: text
-                }
-
-                Text {
-                  id: inspectorMeta
-                  visible: root.inspectorArticleMode && !!root.selectedStory
-                  width: parent.width
-                  text: visible ? root.inspectorMetaLine() : ""
-                  textFormat: Text.PlainText
-                  color: root.secondaryTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.bodySmall
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: text
-                }
-
-                Rectangle {
-                  id: inspectorReadDivider
-                  visible: root.inspectorArticleMode && !!root.selectedStory
-                  width: parent.width
-                  height: Style.spacing.hairline
-                  color: Color.popups.border
-                }
-
-                MetricStrip {
-                  visible: root.inspectorYouTube && root.inspectorHasMetrics
-                  width: parent.width
-                  metrics: visible ? root.selectedStory.metricItems : []
-                  foreground: Color.popups.text
-                }
-
-                Text {
-                  id: inspectorBody
-                  width: parent.width
-                  text: root.inspectorBodyText()
-                  textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText
-                  color: Color.popups.text
-                  linkColor: Color.accent
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.body
-                  lineHeight: 1.28
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: root.inspectorArticleMode
-                    ? RadarModel.articlePlainText(root.inspectorBodySegments())
-                    : text
-                  onLinkActivated: function(link) { root.openArticleLink(link) }
-
-                  HoverHandler {
-                    enabled: inspectorBody.hoveredLink && inspectorBody.hoveredLink.length > 0
-                    cursorShape: Qt.PointingHandCursor
-                  }
-                }
-
-                Flow {
-                  id: inspectorActions
-                  width: parent.width
-                  spacing: Style.spacing.controlGap
-                  RadarButton {
-                    id: readStateButton
-                    label: root.selectedStory && root.selectedStory.isUnread ? "Mark read" : "Mark unread"
-                    selected: !!root.selectedStory && !root.selectedStory.isUnread
-                    enabled: !!root.selectedStory && !root.readMutationPending && !root.bulkReadInFlight
-                    onClicked: root.toggleSelectedRead()
-                  }
-                  RadarButton {
-                    label: root.selectedStory && root.selectedStory.isSaved ? "Unsave" : "Save"
-                    enabled: !!root.selectedStory
-                    onClicked: root.toggleSaved()
-                  }
-                  RadarButton {
-                    id: pluginPageButton
-                    visible: !!root.selectedStory && !!root.selectedStory.marketplaceUrl
-                    label: "Plugin page"
-                    enabled: visible
-                    onClicked: root.openMarketplacePage()
-                  }
-                  RadarButton {
-                    label: "Original source"
-                    enabled: !!root.selectedStory
-                    onClicked: root.openSelected()
-                  }
-                }
-
-                FocusScope {
-                  id: inspectorFactsToggle
-                  visible: !!root.selectedStory
-                  width: parent.width
-                  implicitHeight: Math.max(Style.space(18), inspectorFactsLabel.implicitHeight + Style.space(2))
-                  activeFocusOnTab: true
-                  Accessible.role: Accessible.Button
-                  Accessible.name: inspectorFactsLabel.text
-                  Accessible.focusable: true
-                  Accessible.onPressAction: root.inspectorFactsOpen = !root.inspectorFactsOpen
-
-                  Text {
-                    id: inspectorFactsLabel
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.inspectorFactsOpen ? "Details ▾" : "Details"
-                    textFormat: Text.PlainText
-                    color: inspectorFactsHover.hovered || parent.activeFocus
-                      ? root.secondaryTextColor
-                      : root.quietTextColor
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                  }
-
-                  HoverHandler { id: inspectorFactsHover }
-                  PanelToolTip {
-                    visible: inspectorFactsHover.hovered
-                    text: root.inspectorFactsOpen
-                      ? "Hide type, trust, audit, and source URL"
-                      : "Show type, trust, audit, and source URL"
-                    fontFamily: Style.font.family
-                  }
-                  MouseArea {
-                    anchors.fill: parent
-                    preventStealing: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.inspectorFactsOpen = !root.inspectorFactsOpen
-                  }
-                  Keys.onReturnPressed: root.inspectorFactsOpen = !root.inspectorFactsOpen
-                  Keys.onEnterPressed: root.inspectorFactsOpen = !root.inspectorFactsOpen
-                  Keys.onSpacePressed: root.inspectorFactsOpen = !root.inspectorFactsOpen
-                }
-
-                Rectangle {
-                  id: inspectorFactsDivider
-                  visible: !!root.selectedStory && root.inspectorFactsOpen
-                  width: parent.width
-                  height: Style.spacing.hairline
-                  color: Color.popups.border
-                }
-
-                Text {
-                  visible: root.inspectorFactsOpen && !root.inspectorYouTube && root.inspectorHasMetrics
-                  width: parent.width
-                  text: "METRICS"
-                  textFormat: Text.PlainText
-                  color: root.quietTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                }
-
-                MetricStrip {
-                  visible: root.inspectorFactsOpen && !root.inspectorYouTube && root.inspectorHasMetrics
-                  width: parent.width
-                  metrics: visible ? root.selectedStory.metricItems : []
-                  foreground: root.quietTextColor
-                  compact: true
-                }
-
-                Text {
-                  visible: root.inspectorFactsOpen && !!root.selectedStory && !!root.selectedStory.metricsObservedAt
-                  width: parent.width
-                  text: visible ? "OBSERVED  " + root.selectedStory.metricsObservedAt : ""
-                  textFormat: Text.PlainText
-                  color: root.quietTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: text
-                }
-
-                Text {
-                  visible: root.inspectorFactsOpen && !!root.selectedStory && !!root.selectedStory.metricsCaveat
-                  width: parent.width
-                  text: visible ? root.selectedStory.metricsCaveat : ""
-                  textFormat: Text.PlainText
-                  color: root.quietTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                }
-
-                Text {
-                  id: inspectorMetadata
-                  visible: root.inspectorFactsOpen && !!root.selectedStory
-                  width: parent.width
-                  text: root.selectedStory
-                    ? "TYPE  " + root.selectedStory.type + "\nDATE  " + root.selectedStory.occurredAt
-                      + "\nTRUST  " + root.selectedStory.trust.marketplace
-                      + "\nAUDIT  " + (root.selectedStory.trust.securityAudit ? "authoritative audit declared" : "not claimed")
-                      + "\nCOMPAT  " + root.selectedStory.compatibility.basis
-                    : ""
-                  textFormat: Text.PlainText
-                  color: root.quietTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WordWrap
-                  Accessible.role: Accessible.StaticText
-                  Accessible.name: text
-                }
-
-                Text {
-                  visible: root.inspectorFactsOpen && !!root.selectedStory
-                  width: parent.width
-                  text: root.selectedStory ? root.selectedStory.source.label + "\n" + root.selectedStory.source.url : ""
-                  textFormat: Text.PlainText
-                  color: root.quietTextColor
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.caption
-                  wrapMode: Text.WrapAnywhere
-                }
-
-              }
-            }
+              selectedStory: storyViewportController.selectedStory
+              briefingVisible: root.briefingVisible
+              briefingBusy: feedSession.briefingBusy
+              refreshing: feedSession.refreshing
+              readMutationPending: readerActions.readMutationPending
+              bulkReadInFlight: readerActions.bulkReadInFlight
+              inspectorFactsOpen: root.inspectorFactsOpen
+              secondaryTextColor: root.secondaryTextColor
+              quietTextColor: root.quietTextColor
+              onGroupReadRequested: function(groupId) { feedSession.runBriefingAction("mark-briefing-group-read", groupId) }
+              onGroupSourceRequested: function(event) { root.openBriefingEvent(event) }
+              onNavigationRequested: function(direction) { root.focusBriefingControl(direction) }
+              onReadToggleRequested: readerActions.toggleSelectedRead()
+              onSaveToggleRequested: readerActions.toggleSaved()
+              onMarketplaceRequested: readerActions.openMarketplacePage()
+              onContextRequested: root.showInsight(storyViewportController.selectedStory.projectInsight || storyViewportController.selectedStory)
+              onSourceRequested: readerActions.openSelected()
+              onArticleLinkRequested: function(link) { readerActions.openArticleLink(link) }
+              onFactsToggled: root.inspectorFactsOpen = !root.inspectorFactsOpen
             }
 
           }
@@ -2882,7 +855,29 @@ Item {
 
         Rectangle {
           anchors.fill: parent
-          visible: root.onboardingVisible
+          visible: root.detailItem !== null
+          z: 35
+          color: root.modalScrimColor
+          MouseArea { anchors.fill: parent }
+          InsightDetail {
+            id: insightDetail
+            anchors.fill: parent
+            anchors.margins: Style.spacing.panelPadding
+            visible: root.detailItem !== null
+            item: root.detailItem
+            busy: readerActions.stateMutationPending
+            imagesVisible: feedSession.preferences.imagesVisible !== false
+            hasParent: root.detailParents.length > 0
+            onClosed: root.closeInsight()
+            onSourceRequested: function(url) { readerActions.openUrl(url) }
+            onProjectRequested: function(project) { root.showInsight(project) }
+            onRelevanceRequested: function(kind, targetId, mode) { readerActions.setRelevance(kind, targetId, mode) }
+          }
+        }
+
+        Rectangle {
+          anchors.fill: parent
+          visible: feedSession.onboardingVisible
           z: 40
           color: root.modalScrimColor
           MouseArea { anchors.fill: parent }
@@ -2891,355 +886,46 @@ Item {
             id: welcomeCard
             anchors.centerIn: parent
             width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(660))
-            busy: root.briefingBusy || root.refreshing
-            canStart: root.displayedFeedDigest !== ""
+            busy: feedSession.briefingBusy || feedSession.refreshing
+            canStart: feedSession.displayedFeedDigest !== ""
             maximumHeight: parent.height - Style.spacing.panelPadding * 2
-            storyCount: root.displayedFeedEventCount
-            message: root.briefingMessage
-            onStartTodayRequested: root.runBriefingAction("start-from-today")
-            onBrowseRequested: root.runBriefingAction("complete-onboarding")
+            storyCount: feedSession.displayedFeedEventCount
+            message: feedSession.briefingMessage
+            onStartTodayRequested: feedSession.runBriefingAction("start-from-today")
+            onBrowseRequested: feedSession.runBriefingAction("complete-onboarding")
           }
         }
 
-        Rectangle {
+        PreferencesDialog {
+          id: preferencesDialog
           anchors.fill: parent
           visible: root.preferencesOpen
-          z: 20
-          color: root.modalScrimColor
-          MouseArea { anchors.fill: parent; onClicked: root.preferencesOpen = false }
-
-          BorderSurface {
-            anchors.centerIn: parent
-            width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(620))
-            height: Math.min(parent.height - Style.spacing.panelPadding * 2, Style.space(560))
-            color: Color.popups.background
-            radius: Style.cornerRadius
-            borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
-
-            MouseArea { anchors.fill: parent }
-
-            ColumnLayout {
-              anchors.fill: parent
-              anchors.margins: Style.spacing.panelPadding
-              spacing: Style.spacing.panelGap
-
-              RowLayout {
-                Layout.fillWidth: true
-                Text {
-                  Layout.fillWidth: true
-                  text: "TUNE YOUR RADAR"
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.heading
-                  font.bold: true
-                }
-                RadarButton { label: "Done"; onClicked: root.preferencesOpen = false }
-              }
-
-              Text {
-                Layout.fillWidth: true
-                text: "Display preferences stay on this machine and are never sent to the feed or its sources."
-                textFormat: Text.PlainText
-                color: root.secondaryTextColor
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.WordWrap
-              }
-
-              RowLayout {
-                Layout.fillWidth: true
-                Text {
-                  Layout.fillWidth: true
-                  text: "Top-bar newspaper"
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.body
-                }
-                RadarButton {
-                  id: barPreferenceButton
-                  label: root.preferences.barVisible ? "On" : "Off"
-                  selected: root.preferences.barVisible
-                  onClicked: root.setBooleanPreference("barVisible", !root.preferences.barVisible)
-                }
-              }
-
-              RowLayout {
-                Layout.fillWidth: true
-                Text {
-                  Layout.fillWidth: true
-                  text: "Story images"
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.body
-                }
-                RadarButton {
-                  label: root.preferences.imagesVisible ? "On" : "Off"
-                  selected: root.preferences.imagesVisible
-                  onClicked: root.setBooleanPreference("imagesVisible", !root.preferences.imagesVisible)
-                }
-              }
-
-              Text {
-                Layout.fillWidth: true
-                text: root.preferences.imagesVisible
-                  ? root.availableImageCount > 0
-                    ? root.availableImageCount + " validated marketplace images are available in this edition."
-                    : "No stories in this edition include a validated image."
-                  : "Images are hidden; every story remains available as text."
-                textFormat: Text.PlainText
-                color: root.secondaryTextColor
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                wrapMode: Text.WordWrap
-              }
-
-              Text {
-                text: "SECTIONS"
-                textFormat: Text.PlainText
-                color: Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Text {
-                Layout.fillWidth: true
-                text: "Hide a source rail from this machine only. Front Page, For You, and Saved stay reachable. Hidden rails leave the section list, Tab cycle, and number keys, and they no longer keep the newspaper badge active."
-                textFormat: Text.PlainText
-                color: root.secondaryTextColor
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                wrapMode: Text.WordWrap
-              }
-
-              Repeater {
-                model: [
-                  { id: "core", label: "Core" },
-                  { id: "plugins", label: "Plugins" },
-                  { id: "youtube", label: "YouTube" }
-                ]
-                RowLayout {
-                  required property var modelData
-                  Layout.fillWidth: true
-                  Text {
-                    Layout.fillWidth: true
-                    text: modelData.label
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.body
-                  }
-                  RadarButton {
-                    label: root.sectionIsVisible(modelData.id, root.sectionVisibility) ? "On" : "Off"
-                    selected: root.sectionIsVisible(modelData.id, root.sectionVisibility)
-                    enabled: root.localStateReady && !root.stateMutationPending
-                    onClicked: root.setSectionVisibility(
-                      modelData.id,
-                      !root.sectionIsVisible(modelData.id, root.sectionVisibility)
-                    )
-                  }
-                }
-              }
-
-              Text {
-                Layout.fillWidth: true
-                text: "For You is built automatically from exact enabled plugin IDs detected on this machine."
-                textFormat: Text.PlainText
-                color: root.secondaryTextColor
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                wrapMode: Text.WordWrap
-              }
-            }
-          }
+          preferences: feedSession.preferences
+          sectionVisibility: sectionNavigation.sectionVisibility
+          localStateReady: feedSession.localStateReady
+          stateMutationPending: readerActions.stateMutationPending
+          availableImageCount: feedSession.availableImageCount
+          secondaryTextColor: root.secondaryTextColor
+          scrimColor: root.modalScrimColor
+          onClosed: { root.preferencesOpen = false; navigationFocus.forceActiveFocus() }
+          onBooleanRequested: function(name, value) { readerActions.setBooleanPreference(name, value) }
+          onSectionRequested: function(section, enabled) { readerActions.setSectionVisibility(section, enabled) }
         }
 
-        Rectangle {
+        SectionSettings {
+          id: sectionSettings
           anchors.fill: parent
           visible: root.sectionSettingsOpen
-          z: 21
-          color: root.modalScrimColor
-          MouseArea { anchors.fill: parent; onClicked: root.sectionSettingsOpen = false }
-
-          BorderSurface {
-            anchors.centerIn: parent
-            width: Math.min(parent.width - Style.spacing.panelPadding * 2, Style.space(760))
-            height: Math.min(parent.height - Style.spacing.panelPadding * 2, Style.space(680))
-            color: Color.popups.background
-            radius: Style.cornerRadius
-            borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
-
-            MouseArea { anchors.fill: parent }
-
-            ColumnLayout {
-              anchors.fill: parent
-              anchors.margins: Style.spacing.panelPadding
-              spacing: Style.spacing.panelGap
-
-              RowLayout {
-                Layout.fillWidth: true
-                Text {
-                  Layout.fillWidth: true
-                  text: "⚙ " + root.currentProfile.name.toUpperCase() + " · SECTION SETTINGS"
-                  textFormat: Text.PlainText
-                  color: Color.popups.text
-                  font.family: Style.font.family
-                  font.pixelSize: Style.font.heading
-                  font.bold: true
-                }
-                RadarButton {
-                  id: filterDoneButton
-                  label: "Done"
-                  onClicked: {
-                    root.sectionSettingsOpen = false
-                    navigationFocus.forceActiveFocus()
-                  }
-                }
-              }
-
-              Flickable {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                contentWidth: width
-                contentHeight: sectionSettingsContent.implicitHeight
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-                ColumnLayout {
-                  id: sectionSettingsContent
-                  width: parent.width
-                  spacing: Style.spacing.panelGap
-
-                  Text {
-                    Layout.fillWidth: true
-                    text: "SOURCES · FIXED FOR THIS SECTION\n" + root.sectionSources
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.bodySmall
-                    wrapMode: Text.WordWrap
-                    Accessible.role: Accessible.StaticText
-                    Accessible.name: text
-                  }
-
-                  Text {
-                    text: root.currentSection === "youtube" ? "TIME RANGE" : "TIME WINDOW"
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                  }
-
-                  RowLayout {
-                    spacing: Style.spacing.controlGap
-                    Repeater {
-                      model: [
-                        { id: "all", label: "Any time" },
-                        { id: "24h", label: "24 hours" },
-                        { id: "7d", label: "7 days" },
-                        { id: "30d", label: "30 days" }
-                      ]
-                      RadarButton {
-                        required property var modelData
-                        label: modelData.label
-                        selected: root.currentFilter.period === modelData.id
-                        onClicked: root.updateFilter("period", modelData.id)
-                      }
-                    }
-                  }
-
-                  Text {
-                    text: "SIGNIFICANCE"
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                  }
-
-                  RowLayout {
-                    spacing: Style.spacing.controlGap
-                    Repeater {
-                      model: [
-                        { id: "all", label: "All" },
-                        { id: "notable", label: "Notable + critical" },
-                        { id: "critical", label: "Critical only" }
-                      ]
-                      RadarButton {
-                        required property var modelData
-                        label: modelData.label
-                        selected: root.currentFilter.significance === modelData.id
-                        onClicked: root.updateFilter("significance", modelData.id)
-                      }
-                    }
-                  }
-
-                  RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Style.spacing.controlGap
-                    RadarButton {
-                      id: unreadFilterButton
-                      label: "Unread only"
-                      selected: root.currentFilter.unreadOnly
-                      onClicked: root.updateFilter("unreadOnly", !root.currentFilter.unreadOnly)
-                    }
-                    RadarButton {
-                      id: imagesFilterButton
-                      label: "With images"
-                      selected: root.currentFilter.imagesOnly
-                      onClicked: root.updateFilter("imagesOnly", !root.currentFilter.imagesOnly)
-                    }
-                  }
-
-                  Text {
-                    text: "STORY TYPES"
-                    textFormat: Text.PlainText
-                    color: Color.popups.text
-                    font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
-                    font.bold: true
-                  }
-
-                  Flow {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: childrenRect.height
-                    spacing: Style.spacing.controlGap
-
-                    RadarButton {
-                      label: "All types"
-                      selected: (root.currentFilter.types || []).length === 0
-                      onClicked: root.updateFilter("types", [])
-                    }
-
-                    Repeater {
-                      model: root.filterOptions
-                      RadarButton {
-                        required property var modelData
-                        label: modelData.label
-                        selected: (root.currentFilter.types || []).indexOf(modelData.id) !== -1
-                        onClicked: root.toggleFilterType(modelData.id)
-                      }
-                    }
-                  }
-
-                  Item { Layout.fillHeight: true }
-
-                  RowLayout {
-                    Layout.fillWidth: true
-                    Item { Layout.fillWidth: true }
-                    RadarButton {
-                      id: filterResetButton
-                      label: "Reset section"
-                      onClicked: root.resetFilter()
-                    }
-                  }
-                }
-              }
-            }
-          }
+          currentProfile: sectionNavigation.currentProfile
+          currentFilter: sectionNavigation.currentFilter
+          currentSection: sectionNavigation.currentSection
+          sectionSources: feedSession.sectionSources
+          filterOptions: feedSession.filterOptions
+          scrimColor: root.modalScrimColor
+          onClosed: { root.sectionSettingsOpen = false; navigationFocus.forceActiveFocus() }
+          onFilterRequested: function(name, value) { readerActions.updateFilter(name, value) }
+          onTypeRequested: function(typeId) { readerActions.toggleFilterType(typeId) }
+          onResetRequested: readerActions.resetFilter()
         }
       }
 

@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "change": {
+      "additionalProperties": false,
+      "properties": {
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "text": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "sourceUrl"
+      ],
+      "type": "object"
+    },
+    "collection": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^(?=.{1,80}$)[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "type": "string"
+        },
+        "image": {
+          "$ref": "#/$defs/image"
+        },
+        "projectIds": {
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "maxItems": 20,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "reviewedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "shareUrl": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "pattern": "^https://mtolhuijs\\.nl/news-radar/discover/(?=[a-z0-9-]{1,80}/$)[a-z0-9]+(?:-[a-z0-9]+)*/$",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "sourceLinks": {
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "maxItems": 20,
+          "type": "array"
+        },
+        "summary": {
+          "maxLength": 600,
+          "minLength": 1,
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "summary",
+        "body",
+        "projectIds",
+        "source",
+        "shareUrl",
+        "reviewedAt"
+      ],
+      "type": "object"
+    },
+    "httpsUrl": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "pattern": "^https://",
+      "type": "string"
+    },
+    "id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,159}$",
+      "type": "string"
+    },
+    "image": {
+      "additionalProperties": false,
+      "properties": {
+        "alt": {
+          "maxLength": 180,
+          "minLength": 1,
+          "type": "string"
+        },
+        "credit": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "height": {
+          "maximum": 4096,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "width": {
+          "maximum": 4096,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "alt",
+        "credit",
+        "width",
+        "height",
+        "sourceUrl"
+      ],
+      "type": "object"
+    },
+    "project": {
+      "additionalProperties": false,
+      "properties": {
+        "creatorId": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "image": {
+          "$ref": "#/$defs/image"
+        },
+        "kind": {
+          "enum": [
+            "plugin",
+            "omarchy"
+          ]
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "releases": {
+          "items": {
+            "$ref": "#/$defs/release"
+          },
+          "maxItems": 30,
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "description",
+        "source",
+        "releases"
+      ],
+      "type": "object"
+    },
+    "release": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/change"
+          },
+          "maxItems": 12,
+          "type": "array"
+        },
+        "publishedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "summary": {
+          "maxLength": 8000,
+          "minLength": 0,
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 80,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "publishedAt",
+        "title",
+        "summary",
+        "changes",
+        "sourceUrl"
+      ],
+      "type": "object"
+    },
+    "source": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "url": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      },
+      "required": [
+        "label",
+        "url"
+      ],
+      "type": "object"
+    },
+    "timestamp": {
+      "maxLength": 20,
+      "minLength": 1,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    }
+  },
+  "$id": "https://mtolhuijs.nl/news-radar/schemas/insights-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Independent optional generic project coverage; maximum encoded size 2 MiB. Image origins, source URL safety, timestamps, uniqueness and cross-project references are enforced by validate_insights.",
+  "properties": {
+    "collections": {
+      "items": {
+        "$ref": "#/$defs/collection"
+      },
+      "maxItems": 30,
+      "type": "array"
+    },
+    "projects": {
+      "items": {
+        "$ref": "#/$defs/project"
+      },
+      "maxItems": 100,
+      "type": "array"
+    },
+    "publishedAt": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "schemaVersion": {
+      "const": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "publishedAt",
+    "projects",
+    "collections"
+  ],
+  "title": "Omarchy News Radar public insights v1",
+  "type": "object"
+}
