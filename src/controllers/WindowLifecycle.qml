@@ -259,9 +259,14 @@ Item {
         var result = RadarModel.parseResponse(text)
         var geometry = result.geometry
         if (result.status === "ok" && geometry) {
+          var minimumLowered = geometry.minimumWidth < root.fittedMinimumWidth
+            || geometry.minimumHeight < root.fittedMinimumHeight
           root.fittedMinimumWidth = geometry.minimumWidth
           root.fittedMinimumHeight = geometry.minimumHeight
           root.status = result.outcome
+          // The compositor may have constrained this resize by the previous
+          // minimum. Retry once after lowering it; unchanged minima converge.
+          if (result.outcome === "refitted" && minimumLowered) root.scheduleFit()
         }
         root.scheduleRemember()
       }
