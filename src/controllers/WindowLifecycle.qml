@@ -25,6 +25,12 @@ Item {
   property bool fitPending: false
   property int fitMinimumWidth: 0
   property int fitMinimumHeight: 0
+  readonly property var compositorMonitor: window.screen ? Hyprland.monitorFor(window.screen) : null
+  readonly property string workareaSignature: {
+    var data = compositorMonitor ? compositorMonitor.lastIpcObject : null
+    return data ? JSON.stringify([data.id, data.x, data.y, data.width, data.height,
+      data.scale, data.transform, data.reserved]) : ""
+  }
   property string openingToken: ""
   property string phase: "closed"
   property string status: "idle"
@@ -129,6 +135,11 @@ Item {
     fitDelay.restart()
   }
 
+  function refreshWorkarea() {
+    if (requested && window.visible && !closing) Hyprland.refreshMonitors()
+  }
+
+  onWorkareaSignatureChanged: scheduleFit()
   onMinimumWidthChanged: scheduleFit()
   onMinimumHeightChanged: scheduleFit()
   onContentReadyChanged: revealIfReady()
@@ -147,21 +158,22 @@ Item {
   }
   Connections {
     target: Quickshell
-    function onScreensChanged() { root.scheduleFit() }
+    function onScreensChanged() { root.refreshWorkarea() }
   }
   Connections {
     target: root.window.screen
-    function onGeometryChanged() { root.scheduleFit() }
-    function onPhysicalPixelDensityChanged() { root.scheduleFit() }
+    function onGeometryChanged() { root.refreshWorkarea() }
+    function onPhysicalPixelDensityChanged() { root.refreshWorkarea() }
   }
   Connections {
     target: Hyprland
     function onRawEvent(event) {
       if (!event) return
-      // Layer changes can alter the reserved workarea without changing the
-      // monitor rectangle; the bounded helper reads the actual workarea.
+      // A layer can change the reserved workarea, but most layer activity
+      // changes nothing. Refresh the native monitor cache; only a different
+      // geometry signature above schedules the bounded fitting helper.
       if (["configreloaded", "openlayer", "closelayer", "monitoradded", "monitorremoved"].indexOf(String(event.name)) >= 0)
-        root.scheduleFit()
+        root.refreshWorkarea()
     }
   }
 
