@@ -23,6 +23,17 @@ omarchy_host_test() {
   # shellcheck source=/dev/null
   source "$product_root/tests/lab/pointer.sh"
 
+  # Require a short quiet interval: one completed helper can queue the next
+  # projection, temporarily disabling visible controls between snapshots.
+  # shellcheck disable=SC2329
+  radar_idle() {
+    local attempt
+    for ((attempt = 0; attempt < 5; attempt++)); do
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.windowVisible == true and .helperRunning == false and .briefingBusy == false and .pendingProjection == false'" >/dev/null || return 1
+      sleep 0.25
+    done
+  }
+
   radar_for_you_news() {
     press 2
     wait_for_guest_state "For You opens the setup overview" 10 ssh_session \
@@ -203,6 +214,7 @@ omarchy_host_test() {
   wait_for_guest_state "first Apps launch offers an explicit reading start" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.onboardingVisible == true and .briefing.initialized == true and .helperRunning == false'" || return 1
   capture_console "success-news-radar-00-first-reading-choice"
+  wait_for_guest_state "first-use controls remain ready for input" 20 radar_idle || return 1
   radar_control_geometry browseStoriesGeometry || return 1
   radar_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "Browse existing stories opens the reader without clearing its backlog" 15 ssh_session \
@@ -382,6 +394,7 @@ omarchy_host_test() {
   press meta_l-alt-n
   wait_for_guest_state "cached first use exposes Browse with a finite prepared briefing" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.onboardingVisible == true and .briefing.initialized == true and .briefing.total >= 2 and .briefing.total <= 5 and .helperRunning == false'" || return 1
+  wait_for_guest_state "first-use controls remain ready for input" 20 radar_idle || return 1
   radar_control_geometry browseStoriesGeometry || return 1
   radar_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "Browse preserves every unread decision before the fresh-open regression" 15 ssh_session \
@@ -403,6 +416,7 @@ omarchy_host_test() {
   wait_for_guest_state "fresh Home keeps unseen briefing stories unread" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeVisible == true and .storyCount > 0' && \
      jq -e '(.readOverrides | length) == 0' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  wait_for_guest_state "cached Home remains ready for input" 20 radar_idle || return 1
   press ret
   wait_for_guest_state "entering the visible cached story reads exactly that original" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg id '$initial_selected_id' --argjson stories '$initial_story_count' --argjson before '$initial_unread_count' '.opened == true and .status == \"Offline\" and .storyCount == \$stories and .selectedId == \$id and .selectedIsUnread == false and .unreadCount == (\$before - 1) and .retainedReadStories == 1 and .helperRunning == false and .noCacheNoticeVisible == false' && \
@@ -424,6 +438,7 @@ omarchy_host_test() {
   press meta_l-alt-n
   wait_for_guest_state "valid refresh reports no newer published edition" 20 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"No newer edition\" and .publisherStale == false and .storyCount > 0 and .noCacheNoticeVisible == false'" || return 1
+  wait_for_guest_state "refreshed Home remains ready for input" 20 radar_idle || return 1
   press ret
   wait_for_guest_state "the selected Home story opens its reading pane" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeVisible == false and .storyCount > 0'" || return 1
@@ -746,7 +761,7 @@ omarchy_host_test() {
   press r
   press 3
   wait_for_guest_state "empty valid edition has a visible empty state" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .section == \"core\" and .storyCount == 0 and .emptyStateMessage == \"This section is empty in the current bounded edition.\"'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .section == \"core\" and .storyCount == 0 and .emptyStateMessage == \"There are no stories in this section of the current edition.\"'" || return 1
   capture_console "success-news-radar-07-empty-section"
   ssh_guest "cp /tmp/news-radar-fixtures/dense.json /tmp/news-radar-fixtures/current.json"
   press r

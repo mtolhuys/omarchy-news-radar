@@ -23,6 +23,17 @@ omarchy_host_test() {
   [[ $runtime_identity =~ ^news-radar-[0-9]+\.[0-9]+\.[0-9]+\+identity-2$ ]] || return 1
   start_epoch="$(date +%s)"
 
+  # Require a short quiet interval: one completed helper can queue the next
+  # projection, temporarily disabling visible controls between snapshots.
+  # shellcheck disable=SC2329
+  briefing_idle() {
+    local attempt
+    for ((attempt = 0; attempt < 5; attempt++)); do
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.windowVisible == true and .helperRunning == false and .briefingBusy == false and .pendingProjection == false'" >/dev/null || return 1
+      sleep 0.25
+    done
+  }
+
   briefing_wait() {
     local label="$1" predicate="$2"
     wait_for_guest_state "$label" 20 ssh_session \
@@ -187,6 +198,7 @@ omarchy_host_test() {
   sleep 1
   ssh_session "jq -e '.onboardingComplete == false and (.readOverrides | length) == 0' $scenario_state" || return 1
   briefing_capture 01-welcome-dark || return 1
+  wait_for_guest_state "first-use choices remain ready for input" 20 briefing_idle || return 1
   press ret
   briefing_wait "Browse keeps the backlog and dismisses the welcome choice" \
     '.onboardingVisible == false and .briefing.total <= 5 and .briefingBusy == false and .storyCount > 0' || return 1
@@ -194,6 +206,7 @@ omarchy_host_test() {
   [[ $brief_id =~ ^[0-9a-f]{64}$ ]] || return 1
   saved_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedId'")"
   [[ $saved_id =~ ^evt_[0-9a-f]{24}$ ]] || return 1
+  wait_for_guest_state "Home remains ready for the first story selection" 20 briefing_idle || return 1
   briefing_key enter-reader ret ' .homeVisible == false and .selectedIsUnread == false' || return 1
   press s
   wait_for_guest_state "Save persists the selected original story" 15 ssh_session \
@@ -262,6 +275,7 @@ omarchy_host_test() {
   briefing_open || return 1
   briefing_wait "reopening retains the complete briefing" \
     ".briefing.id == \"$brief_id\" and .briefing.complete == true and .onboardingVisible == false" || return 1
+  wait_for_guest_state "New briefing remains ready for input" 20 briefing_idle || return 1
   briefing_click newBriefingGeometry || return 1
   briefing_wait "New briefing explicitly selects another eligible discovery" \
     ".briefing.id != \"$brief_id\" and .briefing.total > 0 and .briefing.total <= 5 and .briefing.remaining > 0 and .briefingBusy == false" || return 1
@@ -307,6 +321,7 @@ omarchy_host_test() {
   wait_for_guest_state "the enlarged floating window is wholly inside the monitor" 15 briefing_frame_fits || return 1
   wait_for_guest_state "both scaled welcome choices fit inside the actual window" 20 briefing_choices_fit welcome-200 || return 1
   briefing_capture 10-welcome-text-200 || return 1
+  wait_for_guest_state "Start today remains ready for input" 20 briefing_idle || return 1
   briefing_click startTodayGeometry || return 1
   briefing_wait "Start from today at 200 percent leaves an empty completed briefing" \
     '.onboardingVisible == false and .briefing.complete == true and .briefing.total == 0 and .briefingBusy == false' || return 1
