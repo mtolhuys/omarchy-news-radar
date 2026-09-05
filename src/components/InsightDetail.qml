@@ -14,6 +14,8 @@ FocusScope {
   property bool imagesVisible: true
   property bool hasParent: false
   property string pendingFocusKey: ""
+  property string displayedIdentity: ""
+  readonly property real contentY: scroll.contentY
   signal closed()
   signal sourceRequested(string url)
   signal projectRequested(var project)
@@ -41,6 +43,16 @@ FocusScope {
     relevanceRequested(kind, identity, mode)
   }
   onItemChanged: {
+    var identity = item ? String(item.kind || "detail") + ":" + String(item.id || "") : ""
+    if (identity !== displayedIdentity) {
+      displayedIdentity = identity
+      pendingFocusKey = ""
+      scroll.contentY = 0
+      // Reading a different project starts at its heading; preference updates
+      // within the same project retain the reader's scroll and control focus.
+      Qt.callLater(function() { if (root.displayedIdentity === identity) scroll.contentY = 0 })
+      return
+    }
     if (!pendingFocusKey) return
     Qt.callLater(function() {
       var target = root.buttons().filter(function(button) { return button.controlId === root.pendingFocusKey })
@@ -55,11 +67,12 @@ FocusScope {
   }
   function focusFirst() { closeButton.forceActiveFocus() }
   function buttons() {
-    var result = [closeButton, sourceButton, shareButton]
+    var result = [closeButton, sourceButton]
     for (var sourceIndex = 0; sourceIndex < sourceRows.count; sourceIndex++) {
       var source = sourceRows.itemAt(sourceIndex)
       if (source) result.push(source)
     }
+    result.push(shareButton)
     for (var j = 0; j < projectRows.count; j++) {
       var project = projectRows.itemAt(j)
       if (project) result.push(project)

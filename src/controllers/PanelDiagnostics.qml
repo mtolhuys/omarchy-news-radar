@@ -80,6 +80,8 @@ Item {
       insightDetailFocusedControl: views.insightDetail.buttons().filter(function(button) { return button.activeFocus }).map(function(button) { return button.controlId || button.label })[0] || "",
       insightDetailControlIds: views.insightDetail.buttons().map(function(button) { return button.controlId || button.label }),
       overviewContentY: views.discoveryView.contentY,
+      insightDetailContentY: views.insightDetail.contentY,
+      insightReleaseCount: panel.detailItem ? (panel.detailItem.releases || []).length : 0,
       insightDetailId: panel.detailItem ? String(panel.detailItem.id || "") : "",
       homeCards: views.discoveryView.cards().length,
       selectedHomeKind: views.discoveryView.cards()[views.discoveryView.selectedCard] ? views.discoveryView.cards()[views.discoveryView.selectedCard].entryKind : "",

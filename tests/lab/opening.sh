@@ -7,7 +7,7 @@
 
 omarchy_host_test() {
   local product_root lab_root start_epoch runtime_identity
-  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step
+  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -324,6 +324,20 @@ omarchy_host_test() {
     briefing_wait "keyboard reaches a reviewed real collection" '.selectedHomeKind == "collection"' || return 1
     briefing_key real-collection ret '.insightDetailVisible == true and .insightSourceCount >= 2 and .insightReviewedAt != ""' || return 1
     briefing_capture opening-09-real-collection || return 1
+    collection_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailId'")" || return 1
+    project_id="$(jq -r --arg id "$collection_id" '.collections[] | select(.id == $id) | .projectIds[0]' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
+    project_name="$(jq -r --arg id "$project_id" '.projects[] | select(.id == $id) | .name' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
+    [[ $project_id =~ ^[a-zA-Z0-9._-]+$ && -n $project_name ]] || return 1
+    briefing_resize 820 680 || return 1
+    opening_focus_detail "$project_name" || return 1
+    briefing_wait "Tab reveals the collection member below its original sources" '.insightDetailContentY > 0' || return 1
+    briefing_key real-project-detail ret \
+      ".insightDetailId == \"$project_id\" and .insightDetailContentY == 0 and .insightReleaseCount > 0" || return 1
+    briefing_capture opening-09-real-project-notes || return 1
+    briefing_key real-project-scroll pgdn '.insightDetailContentY > 0' || return 1
+    briefing_key real-collection-return esc \
+      ".insightDetailId == \"$collection_id\" and .insightDetailContentY == 0" || return 1
+    briefing_resize 1120 720 || return 1
     press esc
     briefing_key real-setup 2 '.setupVisible == true and .overviewContentY == 0 and .projecting == false' || return 1
     briefing_capture opening-10-real-setup || return 1
