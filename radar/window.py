@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .errors import RadarError
+from .window_rules import clear_rule_script, opening_rule_script
 
 WINDOW_TITLE = "📰 Omarchy News Radar"
 WINDOW_CLASS = "org.quickshell"
@@ -96,25 +97,13 @@ def activate_window(
     return {"protocolVersion": 1, "status": "ok", "outcome": "radar-not-mapped"}
 
 
-# This named rule exists only across first mapping. The compositor owns its
-# expiry too, so killing the shell cannot leave an active placement rule.
-OPENING_RULE = "omarchy_news_radar_opening_rule"
-OPENING_TIMER = "omarchy_news_radar_opening_timer"
-OPENING_TOKEN = "omarchy_news_radar_opening_token"
 OPENING_TOKEN_RE = re.compile(r"[0-9a-f]{32}")
-RULE_TIMEOUT_MS = 8000
 
 
-def _clear_rule_script(token: str | None = None) -> str:
-    cleanup = (
-        f"if {OPENING_TIMER} then {OPENING_TIMER}:set_enabled(false) end; {OPENING_TIMER} = nil; "
-        f"if {OPENING_RULE} then {OPENING_RULE}:set_enabled(false) end; {OPENING_RULE} = nil; "
-        f"{OPENING_TOKEN} = nil"
-    )
-    if token is None:
-        # Only a new preparation can retire a previous Radar-owned rule.
-        return cleanup
-    return f'if {OPENING_TOKEN} == "{token}" then {cleanup} end'
+def _eval(script: str, *, runner: RunCommand) -> None:
+    response = _run(["hyprctl", "eval", script], runner=runner)
+    if response.stdout.strip() != "ok":
+        raise RadarError("Hyprland did not confirm the opening rule operation")
 
 
 def _json_command(command: list[str], *, runner: RunCommand) -> Any:
@@ -160,24 +149,8 @@ def prepare_window(
     # Every interpolated value is either a source constant or a validated
     # integer/connector. No feed text, user expression, shell or generic rule.
     token = secrets.token_hex(16)
-    script = (
-        _clear_rule_script() + "; "
-        f'{OPENING_TOKEN} = "{token}"; '
-        f'{OPENING_RULE} = hl.window_rule({{ name = "omarchy-news-radar-opening", '
-        'match = { class = "^org[.]quickshell$", title = "^📰 Omarchy News Radar$", '
-        'initial_class = "^org[.]quickshell$", initial_title = "^📰 Omarchy News Radar$" }, '
-        f'float = true, no_anim = true, monitor = "{geometry["monitor"]}", '
-        f'size = {{ {geometry["width"]}, {geometry["height"]} }}, '
-        f'move = {{ {geometry["localX"]}, {geometry["localY"]} }}, '
-        f'maximize = {str(geometry["maximized"]).lower()} }}); '
-        f'local owned_rule = {OPENING_RULE}; local owned_token = {OPENING_TOKEN}; '
-        f'{OPENING_TIMER} = hl.timer(function() '
-        f'if {OPENING_TOKEN} == owned_token and {OPENING_RULE} == owned_rule then '
-        f'owned_rule:set_enabled(false); {OPENING_RULE} = nil; {OPENING_TIMER} = nil; {OPENING_TOKEN} = nil end '
-        f'end, {{ timeout = {RULE_TIMEOUT_MS}, type = "oneshot" }})'
-    )
     try:
-        _run(["hyprctl", "eval", script], runner=runner)
+        _eval(opening_rule_script(geometry, token), runner=runner)
     except (RadarError, OSError, subprocess.SubprocessError):
         try:
             finish_window_opening(token=token, runner=runner)
@@ -193,7 +166,7 @@ def finish_window_opening(*, token: str | None = None, runner: RunCommand = subp
         return {"protocolVersion": 1, "status": "ok", "outcome": "opening-rule-not-owned"}
     if not isinstance(token, str) or not OPENING_TOKEN_RE.fullmatch(token):
         raise RadarError("invalid opening ownership token")
-    _run(["hyprctl", "eval", _clear_rule_script(token)], runner=runner)
+    _eval(clear_rule_script(token), runner=runner)
     return {"protocolVersion": 1, "status": "ok", "outcome": "opening-rule-cleared"}
 
 

@@ -100,6 +100,17 @@ class WindowGeometryTests(unittest.TestCase):
         self.assertIn('omarchy_news_radar_opening_rule:set_enabled(false)', runner.commands[-1][-1])
         self.assertNotIn('hl.window_rule', runner.commands[-1][-1])
 
+    def test_zero_exit_eval_failure_never_claims_prepared_or_cleaned(self) -> None:
+        for reply in ("", "warning: unsupported", "error: rule failed"):
+            with self.subTest(reply=reply), tempfile.TemporaryDirectory() as d:
+                runner = Runner([monitor()], reply, "ok")
+                with self.assertRaisesRegex(RadarError, "did not confirm"):
+                    prepare_window(width=1120, height=720, minimum_width=720, minimum_height=480,
+                                   environment={"XDG_STATE_HOME": d}, runner=runner)
+                self.assertEqual(3, len(runner.commands))
+                with self.assertRaisesRegex(RadarError, "did not confirm"):
+                    finish_window_opening(token="a" * 32, runner=Runner(reply))
+
     def test_remember_is_exact_private_and_preserves_normal_geometry_when_maximized(self) -> None:
         record = {"title": "📰 Omarchy News Radar", "initialTitle": "📰 Omarchy News Radar",
                   "class": "org.quickshell", "initialClass": "org.quickshell", "mapped": True,
