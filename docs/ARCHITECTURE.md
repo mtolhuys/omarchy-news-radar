@@ -197,12 +197,16 @@ news-radar-client set-preferences [--bar-visible true|false] [--images-visible t
 news-radar-client prepare-window --width <pixels> --height <pixels> --minimum-width <pixels> --minimum-height <pixels>
 news-radar-client finish-window-opening --token <opening-token>
 news-radar-client activate-window
+news-radar-client window-state
+news-radar-client toggle-window-maximized
 news-radar-client remember-window
 news-radar-client fit-window --minimum-width <pixels> --minimum-height <pixels>
 news-radar-client purge
 ```
 
 Exact flags may be refined during implementation, but each operation remains explicit, typed, non-interactive, bounded, and independently testable. `purge` is never invoked by disablement or ordinary removal; it is a deliberate user-data action.
+
+`window-state` and `toggle-window-maximized` use actual Hyprland internal and client fullscreen modes. Hyprland 0.56.2 advertises maximized state to ordinary mapped Wayland windows to suppress client decorations, so Qt's `maximized` property alone cannot establish compositor geometry. Both helpers require one exact mapped Radar identity and a valid address. Toggle rechecks identity, address, modes and floating state inside one Lua evaluation before an addressed `hl.dsp.window.fullscreen_state` set action, then confirms the result through bounded client queries. It switches normal/maximized modes only, preserves explicit fullscreen and refuses grouped windows. It never focuses, toggles floating, installs a rule, starts a timer, writes reading state or retries an uncertain mutation. Successful responses include `address`, `mapped`, `floating`, `maximized`, `fullscreen`, `fullscreenInternal` and `fullscreenClient`; toggle outcomes are `maximized`, `restored` or `fullscreen-preserved`. Missing, ambiguous, invalid or unconfirmed state fails closed.
 
 Every projection returns the local state, displayed feed-membership digest and matching event count, and briefing status alongside its existing section model. The first-use count and digest come from the same validated feed snapshot, so a stale cached QML model cannot describe a different backlog from the one the action targets. Briefing status distinguishes initialization, total/remaining groups, unread member events, completion, expired members, and whether more eligible unread events can form another briefing. A group row retains its original representative ID as `briefingGroupId` and exposes each available member's original source fields; none of these private facts enters a network request.
 

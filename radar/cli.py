@@ -49,6 +49,7 @@ from .publication_state import (
 )
 from .validation import parse_timestamp, validate_feed
 from .window import activate_window, prepare_window, finish_window_opening, fit_window, remember_window
+from .window_actions import toggle_window_maximized, window_state
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -87,6 +88,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("update-apply")
     commands.add_parser("purge")
     commands.add_parser("activate-window")
+    commands.add_parser("window-state")
+    commands.add_parser("toggle-window-maximized")
     prepare = commands.add_parser("prepare-window")
     for flag in ("width", "height", "minimum-width", "minimum-height"):
         prepare.add_argument("--" + flag, required=True, type=int)
@@ -160,6 +163,10 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = apply_update()
         elif args.command == "activate-window":
             result = activate_window()
+        elif args.command == "window-state":
+            result = window_state()
+        elif args.command == "toggle-window-maximized":
+            result = toggle_window_maximized()
         elif args.command == "prepare-window":
             result = prepare_window(width=args.width, height=args.height, minimum_width=args.minimum_width, minimum_height=args.minimum_height)
         elif args.command == "finish-window-opening":
