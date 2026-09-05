@@ -116,6 +116,17 @@ omarchy_host_test() {
     return 1
   }
 
+  # A cache-file notification can queue another local projection just after
+  # the refresh flag clears. Press Enter only after the rendered choice has
+  # stayed enabled across the complete helper pipeline.
+  opening_choice_idle() {
+    local _sample
+    for _sample in {1..5}; do
+      ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.onboardingVisible == true and .windowVisible == true and .openingPhase == \"visible\" and .helperRunning == false and .briefingBusy == false and .pendingProjection == false'" >/dev/null || return 1
+      sleep 0.25
+    done
+  }
+
   opening_empty_keys() {
     state_before="$(ssh_guest "sha256sum $scenario_state")" || return 1
     press s
@@ -231,7 +242,7 @@ omarchy_host_test() {
       all(.radar[]; .floating == true and .size[0] > 0 and .size[1] > 0) and
       ([.neighbor[] | {at,size}] == $expected[0]))' "$RUN_DIR/opening-motion/samples.json" >/dev/null || return 1
   jq -e '.localStateReady == true and .storyCount > 0 and .onboardingVisible == true' "$RUN_DIR/opening-motion/first-map-state.json" >/dev/null || return 1
-  briefing_wait "first-use choice is stable before activation" '.onboardingVisible == true and .briefingBusy == false and .refreshing == false' || return 1
+  wait_for_guest_state "first-use choice is stable before activation" 20 opening_choice_idle || return 1
   briefing_key browse ret '.homeVisible == true and .onboardingVisible == false and .insightsStatus == "cached" and .homeCards >= 5' || return 1
   sleep 1
   ssh_guest "jq -e '(.readOverrides | length) == 0' $scenario_state" >/dev/null || return 1
@@ -312,7 +323,7 @@ omarchy_host_test() {
     wait_for_guest_state "fresh session is available for real source content" 30 ssh_session "omarchy-shell shell ping" || return 1
     ssh_session "$plugin_dir/bin/news-radar-client refresh && $plugin_dir/bin/news-radar-client insights-refresh" >"$RUN_DIR/opening-real-cache.json" || return 1
     briefing_open || return 1
-    briefing_wait "the real edition reaches a stable first-use choice" '.onboardingVisible == true and .briefingBusy == false and .refreshing == false' || return 1
+    wait_for_guest_state "the real edition reaches a stable first-use choice" 20 opening_choice_idle || return 1
     briefing_key real-browse ret '.homeVisible == true and .onboardingVisible == false and .insightsStatus == "cached" and .homeCards > 5' || return 1
     briefing_capture opening-08-real-home-light || return 1
     ssh_session "omarchy-theme-set matte-black >/dev/null" || return 1
@@ -361,7 +372,7 @@ omarchy_host_test() {
   wait_for_guest_state "session restarts for the isolated empty edition" 30 ssh_session "omarchy-shell shell ping" || return 1
   ssh_session "$plugin_dir/bin/news-radar-client refresh && $plugin_dir/bin/news-radar-client insights-refresh" >"$RUN_DIR/opening-empty-cache.json" || return 1
   briefing_open || return 1
-  briefing_wait "empty edition still offers first-use recovery" '.onboardingVisible == true and .briefingBusy == false and .refreshing == false' || return 1
+  wait_for_guest_state "empty edition still offers first-use recovery" 20 opening_choice_idle || return 1
   briefing_key empty-browse ret '.homeVisible == true and .storyCount == 0 and .onboardingVisible == false and .inspectorVisible == false' || return 1
   briefing_capture opening-11-empty-feed-home || return 1
   briefing_key empty-core 3 '.section == "core" and .storyCount == 0 and .helperRunning == false' || return 1
