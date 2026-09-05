@@ -6,7 +6,7 @@
 # shellcheck disable=SC2329
 
 omarchy_host_test() {
-  local product_root lab_root start_epoch runtime_identity
+  local product_root lab_root start_epoch runtime_identity neighbor_number neighbor_title neighbor_address
   local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name source_label source_focus
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
@@ -183,6 +183,34 @@ omarchy_host_test() {
       ".windowWidth == $width and .windowHeight == $height and .windowVisible == true"
   }
 
+  opening_neighbors_unchanged() {
+    local current
+    current="$(ssh_session "hyprctl -j clients | jq -c '[.[] | select(.title == \"Radar Opening Neighbor\" or .title == \"Radar Opening Neighbor 2\" or .title == \"Radar Opening Neighbor 3\") | {address,title,at,size}] | sort_by(.address)'")" || return 1
+    jq -e --argjson current "$current" '. == $current' "$RUN_DIR/opening-neighbor-before.json" >/dev/null
+  }
+
+  opening_motion_start() {
+    local name="$1"
+    ssh_session "python3 $scenario_root/candidate/tests/lab/sample_opening.py $scenario_root/$name >$scenario_root/$name.log 2>&1 &"
+  }
+
+  opening_motion_finish() {
+    local name="$1"
+    wait_for_guest_state "bounded $name sampling completes" 12 ssh_guest "test -f $scenario_root/$name/done" || return 1
+    mkdir -p "$RUN_DIR/$name"
+    ssh_guest "tar -C $scenario_root/$name -cf - ." | tar -C "$RUN_DIR/$name" -xf - || return 1
+    ssh_session "hyprctl -j monitors" >"$RUN_DIR/$name/monitors.json" || return 1
+    jq -e --slurpfile expected "$RUN_DIR/opening-neighbor-before.json" --slurpfile monitors "$RUN_DIR/$name/monitors.json" '
+      any(.[]; (.radar | length) == 1) and
+      all(.[]; (.radar | length) <= 1 and
+        ([.neighbor[] | {address,title,at,size}] | sort_by(.address)) == $expected[0] and
+        all(.radar[]; . as $window | [$monitors[0][] | select(.id == $window.monitor)][0] as $monitor |
+          .floating == true and .at[0] >= ($monitor.x + $monitor.reserved[0]) and .at[1] >= ($monitor.y + $monitor.reserved[1]) and
+          (.at[0] + .size[0]) <= ($monitor.x + $monitor.width / $monitor.scale - $monitor.reserved[2]) and
+          (.at[1] + .size[1]) <= ($monitor.y + $monitor.height / $monitor.scale - $monitor.reserved[3])))' \
+      "$RUN_DIR/$name/samples.json" >/dev/null
+  }
+
   log "Staging only Radar and isolating the fixture feed and local reader state"
   tar -C "$product_root" --exclude=.git --exclude=dist --exclude='__pycache__' -cf - . | ssh_guest \
     "mkdir -p $scenario_root/candidate && tar -C $scenario_root/candidate -xf -" || return 1
@@ -227,20 +255,20 @@ omarchy_host_test() {
 
   log "Warm validated local fixtures before the first visible map"
   ssh_session "$plugin_dir/bin/news-radar-client refresh && $plugin_dir/bin/news-radar-client insights-refresh" >"$RUN_DIR/opening-cache.json" || return 1
-  ssh_session "setsid uwsm-app -- xdg-terminal-exec --title='Radar Opening Neighbor' -e bash -c 'sleep 240' >/dev/null 2>&1 &" || return 1
-  wait_for_guest_state "a normal tiled neighbor is visible before Radar" 15 ssh_session \
-    "hyprctl -j clients | jq -e 'any(.[]; .title == \"Radar Opening Neighbor\" and .mapped == true)'" || return 1
-  ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"Radar Opening Neighbor\") | {at,size}]'" >"$RUN_DIR/opening-neighbor-before.json" || return 1
-  ssh_session "python3 $scenario_root/candidate/tests/lab/sample_opening.py $scenario_root/motion >$scenario_root/sampler.log 2>&1 &" || return 1
+  for neighbor_number in 1 2 3; do
+    neighbor_title="Radar Opening Neighbor"
+    [[ $neighbor_number == 1 ]] || neighbor_title="$neighbor_title $neighbor_number"
+    ssh_session "setsid uwsm-app -- xdg-terminal-exec --title='$neighbor_title' -e bash -c 'printf \"Normal application $neighbor_number stays open during Radar testing.\\n\"; sleep 900' >/dev/null 2>&1 &" || return 1
+    wait_for_guest_state "ordinary neighbor $neighbor_number is mapped" 15 ssh_session \
+      "hyprctl -j clients | jq -e 'any(.[]; .title == \"$neighbor_title\" and .mapped == true)'" || return 1
+  done
+  ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"Radar Opening Neighbor\" or .title == \"Radar Opening Neighbor 2\" or .title == \"Radar Opening Neighbor 3\") | {address,title,at,size}] | sort_by(.address)'" >"$RUN_DIR/opening-neighbor-before.json" || return 1
+  jq -e 'length == 3' "$RUN_DIR/opening-neighbor-before.json" >/dev/null || return 1
+  ssh_session "hyprctl -j activewindow" >"$RUN_DIR/opening-focus-before.json" || return 1
+  capture_console opening-three-applications-before
+  opening_motion_start opening-motion || return 1
   briefing_open || return 1
-  wait_for_guest_state "the bounded animation sampler completed" 12 ssh_guest "test -f $scenario_root/motion/done" || return 1
-  mkdir -p "$RUN_DIR/opening-motion"
-  ssh_guest "tar -C $scenario_root/motion -cf - ." | tar -C "$RUN_DIR/opening-motion" -xf - || return 1
-  jq -e --slurpfile expected "$RUN_DIR/opening-neighbor-before.json" '
-    any(.[]; (.radar | length) == 1) and
-    all(.[]; (.radar | length) <= 1 and
-      all(.radar[]; .floating == true and .size[0] > 0 and .size[1] > 0) and
-      ([.neighbor[] | {at,size}] == $expected[0]))' "$RUN_DIR/opening-motion/samples.json" >/dev/null || return 1
+  opening_motion_finish opening-motion || return 1
   jq -e '.localStateReady == true and .storyCount > 0 and .onboardingVisible == true' "$RUN_DIR/opening-motion/first-map-state.json" >/dev/null || return 1
   wait_for_guest_state "first-use choice is stable before activation" 20 opening_choice_idle || return 1
   briefing_key browse ret '.homeVisible == true and .onboardingVisible == false and .insightsStatus == "cached" and .homeCards >= 5' || return 1
@@ -255,6 +283,22 @@ omarchy_host_test() {
   briefing_wait "summon retains the same active home control" \
     ".briefingFocusedControl == \"$selected_before\" and .homeVisible == true" || return 1
   press f6
+  ssh_session "$plugin_dir/bin/news-radar-shortcut install" >"$RUN_DIR/opening-shortcut-install.json" || return 1
+  opening_motion_start opening-shortcut-summon || return 1
+  press meta_l-alt-n
+  briefing_wait "shortcut raises the existing normal window" '.windowVisible == true and .helperRunning == false' || return 1
+  opening_motion_finish opening-shortcut-summon || return 1
+  saved_geometry="$(ssh_session "hyprctl -j clients | jq -c '.[] | select(.title == \"📰 Omarchy News Radar\") | {at,size}'")" || return 1
+  briefing_click maximizeGeometry || return 1
+  wait_for_guest_state "Maximize changes the actual compositor mode" 15 ssh_session \
+    "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and .fullscreen == 1)'" || return 1
+  briefing_wait "native maximize state and control settle" ' .maximized == true and .helperRunning == false' || return 1
+  opening_neighbors_unchanged || return 1
+  briefing_capture opening-native-maximized || return 1
+  briefing_click maximizeGeometry || return 1
+  wait_for_guest_state "Restore recovers its normal frame with three apps untouched" 15 ssh_session \
+    "hyprctl -j clients | jq -e --argjson expected '$saved_geometry' '.[] | select(.title == \"📰 Omarchy News Radar\") | .fullscreen == 0 and {at,size} == \$expected'" || return 1
+  opening_neighbors_unchanged || return 1
 
   log "Reader entry is explicit and remembered window placement survives close"
   briefing_key read-first ret '.homeVisible == false and .selectedIsUnread == false and .storyCount > 0' || return 1
@@ -262,8 +306,12 @@ omarchy_host_test() {
   ssh_session "hyprctl dispatch 'hl.dsp.window.move({ window = \"title:📰 Omarchy News Radar\", x = 70, y = 80 })' >/dev/null" || return 1
   saved_geometry="$(ssh_session "hyprctl -j clients | jq -c '.[] | select(.title == \"📰 Omarchy News Radar\") | {at,size}'")" || return 1
   briefing_close || return 1
+  opening_neighbors_unchanged || return 1
   ssh_guest "test -f $scenario_root/xdg-state/omarchy-news-radar/window.json" || return 1
-  briefing_open || return 1
+  opening_motion_start opening-shortcut-reopen || return 1
+  press meta_l-alt-n
+  briefing_wait "shortcut reopens Radar among the same three apps" '.windowVisible == true and .helperRunning == false' || return 1
+  opening_motion_finish opening-shortcut-reopen || return 1
   wait_for_guest_state "reopen restores the same moved and resized frame" 15 ssh_session \
     "hyprctl -j clients | jq -e --argjson expected '$saved_geometry' '.[] | select(.title == \"📰 Omarchy News Radar\") | {at,size} == \$expected'" || return 1
   briefing_capture opening-02-restored-home || return 1
@@ -379,6 +427,11 @@ omarchy_host_test() {
   opening_empty_keys || return 1
   briefing_capture opening-12-empty-feed-source || return 1
   briefing_close || return 1
+  opening_neighbors_unchanged || return 1
+  while read -r neighbor_address; do
+    [[ $neighbor_address =~ ^0x[0-9a-fA-F]{1,16}$ ]] || return 1
+    ssh_session "hyprctl dispatch 'hl.dsp.window.close({ window = \"address:$neighbor_address\" })' >/dev/null" || return 1
+  done < <(jq -r '.[].address' "$RUN_DIR/opening-neighbor-before.json")
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.news-radar --yes" >"$RUN_DIR/opening-remove.log" || return 1
   ssh_session "cp $scenario_root/bindings.before \"\$HOME/.config/hypr/bindings.lua\" && hyprctl reload >/dev/null" || return 1
   ssh_guest "systemctl --user stop news-radar-briefing-fixture.service" || return 1

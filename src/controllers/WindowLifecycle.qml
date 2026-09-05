@@ -31,10 +31,34 @@ Item {
     return data ? JSON.stringify([data.id, data.x, data.y, data.width, data.height,
       data.scale, data.transform, data.reserved]) : ""
   }
+  // Hyprland advertises xdg maximized to suppress decorations even for normal
+  // floating windows. Use the compositor's real state for controls and grips.
+  readonly property var mappedClient: {
+    var matches = Hyprland.toplevels.values.map(function(top) { return top.lastIpcObject })
+      .filter(function(client) { return client && client.mapped === true
+        && client.title === "📰 Omarchy News Radar" && client.initialTitle === "📰 Omarchy News Radar"
+        && client.class === "org.quickshell" && client.initialClass === "org.quickshell" })
+    return matches.length === 1 ? matches[0] : null
+  }
+  readonly property bool maximized: !!mappedClient && Number(mappedClient.fullscreen || 0) === 1
+  readonly property bool fullscreen: !!mappedClient && Number(mappedClient.fullscreen || 0) === 2
+  readonly property bool windowActionRunning: windowAction.running
+  function toggleMaximized() {
+    if (!requested || !window.visible || closing || fullscreen || windowAction.running) return
+    launch(windowAction, ["toggle-window-maximized"])
+  }
   property string openingToken: ""
+  property int openingGeneration: 0
+  property var traceEntries: []
+  function trace(event, detail) {
+    traceEntries = traceEntries.concat([{at: Date.now(), event: event, generation: openingGeneration,
+      phase: phase, visible: window.visible, requested: requested, closing: closing,
+      preparationReady: preparationReady, contentReady: contentReady,
+      token: openingToken, detail: detail || {}}]).slice(-80)
+  }
   property string phase: "closed"
   property string status: "idle"
-  readonly property bool busy: prepare.running || activate.running || cleanup.running || remember.running || fit.running || fitPending
+  readonly property bool busy: prepare.running || activate.running || cleanup.running || remember.running || fit.running || fitPending || windowAction.running
   signal revealed()
   signal closeReady()
   signal compositorClosed()
@@ -47,18 +71,21 @@ Item {
 
   function clearOpeningRule() {
     if (!openingToken) return
+    trace("clear-rule")
     var token = openingToken
     openingToken = ""
     launch(cleanup, ["finish-window-opening", "--token", token])
   }
 
   function begin() {
+    trace("begin")
     if (requested && window.visible) {
       closing = false
       phase = "visible"
       launch(activate, ["activate-window"])
       return
     }
+    openingGeneration++
     clearOpeningRule()
     requested = true
     closing = false
@@ -67,6 +94,7 @@ Item {
     phase = "preparing"
     status = "preparing"
     readyDeadline.restart()
+    trace("prepare-launch")
     launch(prepare, ["prepare-window", "--width", String(preferredWidth),
       "--height", String(preferredHeight), "--minimum-width", String(minimumWidth),
       "--minimum-height", String(minimumHeight)])
@@ -74,11 +102,14 @@ Item {
 
   function revealIfReady() {
     if (!requested || closing || window.visible || !preparationReady || (!contentReady && !recoveryReady)) return
+    trace("reveal-queued")
     Qt.callLater(function() {
+      root.trace("reveal-callback")
       if (!root.requested || root.closing || root.window.visible) return
       readyDeadline.stop()
       root.phase = "mapping"
       root.window.visible = true
+      root.trace("revealed")
       root.launch(activate, ["activate-window"])
       root.revealed()
     })
@@ -86,12 +117,14 @@ Item {
 
 
   function requestClose() {
+    trace("request-close")
     if (closing) return
     closing = true
     readyDeadline.stop()
     geometryDelay.stop()
     fitDelay.stop()
     fit.running = false
+    windowAction.running = false
     fitPending = false
     phase = "closing"
     if (window.visible) {
@@ -101,6 +134,7 @@ Item {
   }
 
   function stop() {
+    trace("stop")
     requested = false
     closing = false
     readyDeadline.stop()
@@ -108,6 +142,7 @@ Item {
     geometryDelay.stop()
     fitDelay.stop()
     fit.running = false
+    windowAction.running = false
     fitPending = false
     prepare.running = false
     activate.running = false
@@ -169,6 +204,7 @@ Item {
     target: Hyprland
     function onRawEvent(event) {
       if (!event) return
+      if (event.name === "fullscreen" && root.requested && root.window.visible && !root.closing) Hyprland.refreshToplevels()
       // A layer can change the reserved workarea, but most layer activity
       // changes nothing. Refresh the native monitor cache; only a different
       // geometry signature above schedules the bounded fitting helper.
@@ -181,6 +217,7 @@ Item {
     id: readyDeadline
     interval: 2500
     onTriggered: {
+      root.trace("ready-deadline", {prepareRunning: prepare.running})
       root.recoveryReady = true
       if (!root.preparationReady) {
         prepare.running = false
@@ -218,8 +255,9 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        if (!root.requested || root.closing) return
         var result = RadarModel.parseResponse(text)
+        root.trace("prepare-output", {result: result, prepareRunning: prepare.running})
+        if (!root.requested || root.closing) return
         root.openingToken = String(result.openingToken || "")
         var fit = result.geometry
         if (result.status === "ok" && fit) {
@@ -229,14 +267,15 @@ Item {
           root.fittedMinimumHeight = fit.minimumHeight
           root.window.implicitWidth = fit.width
           root.window.implicitHeight = fit.height
-          root.window.maximized = fit.maximized === true
           root.status = "prepared"
         } else root.status = result.message || "Opening with default placement"
         root.preparationReady = true
         root.revealIfReady()
       }
     }
-    onExited: function() {
+    stderr: StdioCollector { waitForEnd: true; onStreamFinished: if (text) root.trace("prepare-stderr", {text: text.slice(0, 2048)}) }
+    onExited: function(exitCode) {
+      root.trace("prepare-exited", {exitCode: exitCode})
       if (root.requested && !root.preparationReady) {
         root.preparationReady = true
         root.status = "Opening with default placement"
@@ -251,8 +290,11 @@ Item {
       onStreamFinished: {
         if (!root.requested || root.closing) return
         var result = RadarModel.parseResponse(text)
+        root.trace("activate-output", {result: result})
         root.status = result.status === "ok" ? String(result.outcome || "ready") : String(result.message || "Window focus unavailable")
         root.phase = "visible"
+        Hyprland.refreshToplevels()
+        if (result.outcome === "floated-and-focused") root.scheduleFit()
         root.clearOpeningRule()
         root.scheduleRemember()
       }
@@ -280,6 +322,19 @@ Item {
           // minimum. Retry once after lowering it; unchanged minima converge.
           if (result.outcome === "refitted" && minimumLowered) root.scheduleFit()
         }
+        root.scheduleRemember()
+      }
+    }
+  }
+  Process {
+    id: windowAction
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        if (!root.requested || !root.window.visible || root.closing) return
+        var result = RadarModel.parseResponse(text)
+        if (result.status !== "ok") root.status = result.message || "Window action unavailable"
+        Hyprland.refreshToplevels()
         root.scheduleRemember()
       }
     }

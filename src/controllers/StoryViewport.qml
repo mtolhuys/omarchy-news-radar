@@ -271,6 +271,27 @@ Item {
     selected(markRead)
   }
 
+  function selectedBodyLinkGeometry() {
+    var row = selectedIndex >= 0 ? storyList.itemAtIndex(selectedIndex) : null
+    if (!row || !row.expandedBody) return JSON.stringify({visible: false})
+    var body = row.bodyBounds()
+    var top = row.y - storyList.contentY
+    // Inspect only rendered glyph positions in the clipped viewport. This is
+    // read-only test observability, never a source activation shortcut.
+    var firstY = Math.max(body.top, -top)
+    var lastY = Math.min(body.top + body.height, storyList.height - top)
+    for (var y = firstY; y < lastY; y += 4) {
+      for (var x = body.left; x < body.left + body.width; x += 4) {
+        var link = row.bodyLinkAt(x, y)
+        if (link) {
+          var point = row.mapToItem(null, x, y)
+          return JSON.stringify({visible: true, x: point.x, y: point.y, width: 1, height: 1, url: link})
+        }
+      }
+    }
+    return JSON.stringify({visible: false})
+  }
+
   function storyViewportState() {
     var row = selectedIndex >= 0 ? storyList.itemAtIndex(selectedIndex) : null
     var anchorRow = storyViewportAnchorIndex >= 0
@@ -292,6 +313,7 @@ Item {
     var top = row.y - storyList.contentY
     var bottom = top + row.height
     var headline = row.headlineBounds()
+    var body = row.bodyBounds()
     var anchorTop = anchorRow ? anchorRow.y - storyList.contentY : 0
     var anchorBottom = anchorRow ? anchorTop + anchorRow.height : 0
     return JSON.stringify({
@@ -300,6 +322,13 @@ Item {
       fullyVisible: top >= -0.5 && bottom <= storyList.height + 0.5,
       headlineFullyVisible: top + headline.top >= -0.5
         && top + headline.top + headline.height <= storyList.height + 0.5,
+      bodyText: row.bodyText,
+      bodyVisible: body.visible,
+      bodyHeight: body.height,
+      bodyTop: top + body.top,
+      bodyBottom: top + body.top + body.height,
+      bodyTailVisible: body.visible && top + body.top + body.height > 0
+        && top + body.top + body.height <= storyList.height + 0.5,
       topAligned: Math.abs(top) <= 1,
       top: top,
       bottom: bottom,

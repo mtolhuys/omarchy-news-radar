@@ -84,6 +84,7 @@ Item {
   }
 
   function storyViewportState() { return storyViewportController.storyViewportState() }
+  function selectedBodyLinkGeometry() { return storyViewportController.selectedBodyLinkGeometry() }
 
   function debugState() { return diagnostics.debugState() }
   function itemGeometry(item, visible) { return diagnostics.itemGeometry(item, visible) }
@@ -676,6 +677,10 @@ Item {
             actions: readerActions
             maintenance: pluginMaintenance
             window: panelWindow
+            maximized: windowController.maximized
+            fullscreen: windowController.fullscreen
+            windowActionRunning: windowController.windowActionRunning
+            onMaximizeRequested: windowController.toggleMaximized()
             narrow: keySurface.narrow
             brandLogoPath: root.brandLogoPath
             secondaryTextColor: root.secondaryTextColor
@@ -939,7 +944,7 @@ Item {
       }
 
       MouseArea {
-        visible: !panelWindow.maximized
+        visible: !windowController.maximized && !windowController.fullscreen
         z: 100
         anchors { left: parent.left; right: parent.right; top: parent.top }
         height: Style.space(6)
@@ -947,7 +952,7 @@ Item {
         onPressed: panelWindow.startSystemResize(Qt.TopEdge)
       }
       MouseArea {
-        visible: !panelWindow.maximized
+        visible: !windowController.maximized && !windowController.fullscreen
         z: 100
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: Style.space(6)
@@ -955,7 +960,7 @@ Item {
         onPressed: panelWindow.startSystemResize(Qt.BottomEdge)
       }
       MouseArea {
-        visible: !panelWindow.maximized
+        visible: !windowController.maximized && !windowController.fullscreen
         z: 100
         anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
         width: Style.space(6)
@@ -963,7 +968,7 @@ Item {
         onPressed: panelWindow.startSystemResize(Qt.LeftEdge)
       }
       MouseArea {
-        visible: !panelWindow.maximized
+        visible: !windowController.maximized && !windowController.fullscreen
         z: 100
         anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
         width: Style.space(6)

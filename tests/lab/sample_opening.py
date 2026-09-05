@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 TITLE = "📰 Omarchy News Radar"
-NEIGHBOR = "Radar Opening Neighbor"
+NEIGHBORS = {"Radar Opening Neighbor", "Radar Opening Neighbor 2", "Radar Opening Neighbor 3"}
 
 
 def main() -> None:
@@ -27,7 +27,7 @@ def main() -> None:
                                             text=True, check=True, timeout=1).stdout)
         elapsed = time.monotonic() - started
         radar = [c for c in clients if c.get("title") == TITLE]
-        neighbor = [c for c in clients if c.get("title") == NEIGHBOR]
+        neighbor = [c for c in clients if c.get("title") in NEIGHBORS]
         samples.append({"elapsed": elapsed, "radar": radar, "neighbor": neighbor})
         if radar and not first_map:
             first_map = True

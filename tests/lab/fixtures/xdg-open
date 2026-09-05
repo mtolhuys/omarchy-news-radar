@@ -4,3 +4,4 @@ set -euo pipefail
 [[ $# -eq 1 ]]
 [[ $1 == https://* ]]
 printf '%s\n' "$1" >"${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/lab-opened-url"
+printf '%s\n' "$1" >>"${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-news-radar/lab-opened-url-history"

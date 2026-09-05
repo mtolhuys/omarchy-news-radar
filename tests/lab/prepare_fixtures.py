@@ -143,7 +143,16 @@ def main() -> int:
     long_text["generatedAt"] = "2026-08-31T14:07:00Z"
     long_text["window"]["through"] = "2026-08-31T14:07:00Z"
     long_text["events"][0]["title"] = "長い見出し — " + "Keyboard-first Omarchy panel text " * 4
-    long_text["events"][0]["summary"] = "Unicode remains inert plain text. " + "This deliberately long summary checks wrapping, clipping, and inspector scrolling. " * 4
+    long_text["events"][0]["type"] = "omarchy-news"
+    long_text["events"][0]["entity"] = {"kind": "omarchy", "id": "omarchy", "name": "Omarchy"}
+    long_text["events"][0]["classification"]["section"] = "core"
+    long_text["events"][0]["source"] = {"label": "Original Omarchy notes", "url": "https://github.com/example/compact-article-original"}
+    long_text["events"][0]["summary"] = (
+        "Unicode remains inert plain text.\n\n"
+        + "This deliberately long article checks wrapping, clipping, and complete in-panel reading. " * 5
+        + "\n\nThe final paragraph must remain available in the compact reader: RADAR FULL BODY TAIL. "
+        + "https://github.com/example/compact-body-source"
+    )
     write(output / "long.json", long_text)
 
     dense = copy.deepcopy(feed)

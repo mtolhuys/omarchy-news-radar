@@ -13,7 +13,7 @@ omarchy_host_test() {
   local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before for_you_before
   local initial_bar_unread background_bar_unread runtime_identity_before runtime_identity_after
   local initial_installed_ids initial_projection initial_selected_id initial_story_count initial_unread_count
-  local page_read_state page_selection
+  local page_read_state page_selection article_page article_open_count maximize_before_frame
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -512,15 +512,19 @@ omarchy_host_test() {
     wait_for_guest_state "initial maximized window restores through its rendered control" 10 ssh_session \
       "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.maximized == false'" || return 1
   fi
+  maximize_before_frame="$(ssh_session "hyprctl -j clients | jq -c '.[] | select(.title == \"📰 Omarchy News Radar\") | {at,size}'")" || return 1
   radar_control_geometry maximizeGeometry || return 1
   radar_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered Maximize control uses normal window state" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.maximized == true and .windowVisible == true'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.maximized == true and .windowVisible == true and .helperRunning == false' && hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and .fullscreen == 1)'" || return 1
+  [[ "$(ssh_session "hyprctl -j clients | jq -c '.[] | select(.title == \"📰 Omarchy News Radar\") | {at,size}'")" != "$maximize_before_frame" ]] || return 1
   capture_console "success-news-radar-03-window-maximized"
   radar_control_geometry maximizeGeometry || return 1
   radar_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
   wait_for_guest_state "rendered Restore control returns the normal window" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.maximized == false'" || return 1
+  wait_for_guest_state "Restore restores the exact normal compositor frame" 10 ssh_session \
+    "hyprctl -j clients | jq -e --argjson before '$maximize_before_frame' '.[] | select(.title == \"📰 Omarchy News Radar\") | .fullscreen == 0 and {at,size} == \$before'" || return 1
   wait_for_guest_state "restored window publishes stable compositor geometry" 10 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\" and (.at | length) == 2 and (.size | length) == 2 and (.at[] | type) == \"number\" and (.size[] | type) == \"number\")'" || return 1
 
@@ -906,10 +910,12 @@ omarchy_host_test() {
   press r
   wait_for_guest_state "long-content edition refresh completes" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .storyCount > 0'" || return 1
-  radar_for_you_news || return 1
+  press 3
+  wait_for_guest_state "Core article projection is ready" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"core\" and .projecting == false and .pendingProjection == false and .storyCount > 0'" || return 1
   press home
   wait_for_guest_state "long Unicode story renders as plain text" 15 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .section == \"for-you\" and .selectedIndex == 0 and (.selectedTitle | startswith(\"長い見出し\"))'" || return 1
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.status == \"Updated\" and .section == \"core\" and .selectedIndex == 0 and (.selectedTitle | startswith(\"長い見出し\"))'" || return 1
 
   log "Reviewing light, dark, narrow, 200 percent text, and reduced-motion checkpoints"
   ssh_session "omarchy-theme-set catppuccin-latte >/dev/null"
@@ -923,26 +929,44 @@ omarchy_host_test() {
   press home
   wait_for_guest_state "enlarged text leaves a usable article viewport and visible heading" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.available == true and .viewportHeight >= 200 and .headlineFullyVisible == true'" || return 1
+  wait_for_guest_state "compact reader instantiates the full article beyond its teaser" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.bodyVisible == true and .bodyHeight > 0 and (.bodyText | contains(\"RADAR FULL BODY TAIL\"))'" || return 1
   capture_console "success-news-radar-11-text-200"
   wait_for_guest_state "enlarged reader is idle before page-scroll state checks" 20 radar_idle || return 1
   page_read_state="$(ssh_session "jq -c '{readThrough,readOverrides,saved,briefing}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"")" || return 1
   page_selection="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -c '{selectedId,selectedIsUnread,section}'")" || return 1
-  press pgdn
-  wait_for_guest_state "Page Down scrolls the enlarged article" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.contentY > .rowY'" || return 1
+  for ((article_page = 0; article_page < 8; article_page++)); do
+    press pgdn
+    if ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.bodyTailVisible == true'" >/dev/null; then break; fi
+  done
+  wait_for_guest_state "Page Down reaches the full article tail inside the viewport" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.bodyTailVisible == true and (.bodyText | contains(\"RADAR FULL BODY TAIL\"))'" || return 1
   capture_console "success-news-radar-11-text-200-reading"
   [[ "$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -c '{selectedId,selectedIsUnread,section}'")" == "$page_selection" ]] || return 1
-  press pgup
+  article_open_count="$(ssh_session "wc -l <\"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url-history\"")" || return 1
+  radar_control_geometry selectedBodyLinkGeometry || return 1
+  radar_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left || return 1
+  wait_for_guest_state "rendered compact article link opens exactly its HTTPS source" 10 ssh_session \
+    "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = https://github.com/example/compact-body-source && test \"\$(wc -l <\"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url-history\")\" -eq '$((article_open_count + 1))'" || return 1
+  for ((article_page = 0; article_page < 8; article_page++)); do
+    press pgup
+    if ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.headlineFullyVisible == true and .contentY <= (.rowY + 1)'" >/dev/null; then break; fi
+  done
   wait_for_guest_state "Page Up returns to the same enlarged headline" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.headlineFullyVisible == true and .contentY <= (.rowY + 1)'" || return 1
   [[ "$(ssh_session "jq -c '{readThrough,readOverrides,saved,briefing}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"")" == "$page_read_state" ]] || return 1
   [[ "$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -c '{selectedId,selectedIsUnread,section}'")" == "$page_selection" ]] || return 1
+  press o
+  wait_for_guest_state "compact reader keeps the original-source keyboard route available" 10 ssh_session \
+    "test \"\$(cat \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/lab-opened-url\")\" = https://github.com/example/compact-article-original" || return 1
   press esc
   wait_for_guest_state "enlarged reader closes normally" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
   press meta_l-alt-n
   wait_for_guest_state "opening at 200 percent fits without manual repositioning" 20 radar_frame_fits || return 1
-  radar_for_you_news || return 1
+  press 3
+  wait_for_guest_state "Core article projection is ready" 15 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"core\" and .projecting == false and .pendingProjection == false and .storyCount > 0'" || return 1
   press home
   wait_for_guest_state "reopened enlarged reader exposes its headline" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.available == true and .viewportHeight >= 200 and .headlineFullyVisible == true'" || return 1

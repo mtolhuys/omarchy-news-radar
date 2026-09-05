@@ -11,6 +11,10 @@ ColumnLayout {
   required property var actions
   required property var maintenance
   required property var window
+  property bool maximized: false
+  property bool fullscreen: false
+  property bool windowActionRunning: false
+  signal maximizeRequested()
   property bool narrow: false
   property string brandLogoPath: ""
   property color secondaryTextColor
@@ -77,7 +81,7 @@ ColumnLayout {
           acceptedButtons: Qt.LeftButton
           cursorShape: Qt.SizeAllCursor
           onPressed: root.window.startSystemMove()
-          onDoubleClicked: root.window.maximized = !root.window.maximized
+          onDoubleClicked: if (!root.fullscreen) root.maximizeRequested()
         }
       }
     }
@@ -106,8 +110,9 @@ ColumnLayout {
 
       PanelActionButton {
         id: maximizeButtonControl
-        iconText: root.window.maximized ? "❐" : "□"
-        tooltipText: root.window.maximized ? "Restore" : "Maximize"
+        enabled: !root.windowActionRunning && !root.fullscreen
+        iconText: root.maximized ? "❐" : "□"
+        tooltipText: root.maximized ? "Restore" : "Maximize"
         foreground: Color.popups.text
         fontFamily: Style.font.family
         fontSize: Style.font.title
@@ -119,7 +124,7 @@ ColumnLayout {
         Accessible.focusable: true
         Accessible.onPressAction: clicked()
         onClicked: {
-          root.window.maximized = !root.window.maximized
+          root.maximizeRequested()
           root.navigationRequested()
         }
       }
