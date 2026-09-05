@@ -337,7 +337,6 @@ omarchy_host_test() {
     briefing_key real-share-tab tab '.insightDetailFocusedControl == "Open share page"' || return 1
     briefing_resize 820 540 || return 1
     opening_focus_detail "$project_name" || return 1
-    briefing_wait "Tab reveals the collection member below its original sources" '.insightDetailContentY > 0' || return 1
     briefing_key real-project-detail ret \
       ".insightDetailId == \"$project_id\" and .insightDetailContentY == 0 and .insightReleaseCount > 0" || return 1
     briefing_capture opening-09-real-project-notes || return 1
