@@ -8,7 +8,7 @@ The existing README walkthrough and marketplace preview show the released reader
 
 For local validation, record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, and Plugin Lab ISO/base identity. Before publication, replace provisional evidence with one clean Git commit and the exact candidate tested. Record the tag only after owner-authorized publication.
 
-The manifest, Python package, helper build, and panel identify `0.5.0`. README installation and current-release status identify the separately published `0.4.16`. Repository validation accepts this explicit candidate status only with matching unpublished candidate notes; advancing publication requires updating all of these records together.
+The manifest, Python package, helper build, and panel identify `0.5.0`. README installation and current-release status identify the separately published `0.4.16`. Repository validation accepts this explicit candidate status only with matching unpublished candidate notes; advancing publication requires updating all of these records together. The [local candidate evidence](evidence/0.5.0-local.md) records the tested runtime commit, source gates, generated artifact digest, and final disposable desktop runs.
 
 ## Publishable checklist
 

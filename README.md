@@ -91,7 +91,7 @@ The window uses the normal desktop window model: drag the masthead to move it, r
 
 Marketplace views, hearts, command copies, repository stars, and GitHub release-asset download counts appear as compact colored icons with accessible labels and an observation time. Raw metric endpoint links stay in feed provenance but are intentionally absent from the reader; plugin stories instead link to their human-facing `plugins.omarchy.org` detail page. Marketplace aggregates are anonymous interactions—not installs, downloads, unique people, rankings, votes, or security signals—and metrics never influence Front Page ordering.
 
-Exact enabled plugin IDs are used only for local `For You` matching. They are never sent to the feed host. The nonfunctional manual interests control and its hidden state were removed in `0.1.1`.
+Exact enabled plugin IDs are used only on your device for `For You` matching and briefing selection. They are never sent to the feed host. The nonfunctional manual interests control and its hidden state were removed in `0.1.1`.
 
 Reviewed community links are an optional edition input, not a dedicated reader section. If the project later accepts a source record under `content/community/`, the validated story may appear in Front Page or For You; an empty input never creates an empty navigation destination.
 
