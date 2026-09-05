@@ -296,9 +296,9 @@ def validate_manifest() -> None:
         if value in ui:
             fail(f"panel contains forbidden runtime path: {value}")
     if ui.count("Text.RichText") != 1:
-        fail("panel may use Text.RichText only once, for the article reading pane")
-    if "textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText" not in ui:
-        fail("article body RichText must be constrained to inspectorArticleMode")
+        fail("panel may use Text.RichText only once, in the shared article body")
+    if "textFormat: root.articleMode ? Text.RichText : Text.PlainText" not in ui:
+        fail("article body RichText must be constrained to articleMode")
     if "function openArticleLink(url)" not in ui or "linkColor: Color.accent" not in ui:
         fail("article links must use accent styling and openArticleLink")
     if "RadarModel.articleBodyHtml" not in ui or "RadarModel.acceptedHttpsUrl" not in ui:

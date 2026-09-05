@@ -130,6 +130,7 @@ Item {
         width: storyListControl.width
         story: payload
         selected: index === root.viewport.selectedIndex
+        expandedBody: root.narrow && selected
         // Narrow layout hides the reading pane, so treat selection as an
         // accordion: collapse every row, expand only the selected one.
         quiet: root.narrow
@@ -139,6 +140,7 @@ Item {
           && root.currentSection === "front-page"
           && index === 0
         onActivated: root.viewport.selectStory(index, true)
+        onSourceRequested: function(url) { root.actions.openArticleLink(url) }
       }
 
       ColumnLayout {

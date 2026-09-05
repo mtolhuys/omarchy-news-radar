@@ -10,14 +10,29 @@ FocusScope {
   property bool selected: false
   property bool lead: false
   property bool quiet: false
+  property bool expandedBody: false
+  readonly property string bodyText: storyBody.visible ? storyBody.plainText : ""
   signal activated()
+  signal sourceRequested(string url)
 
   function headlineBounds() {
     var point = headline.mapToItem(root, 0, 0)
     return { top: point.y, height: headline.height }
   }
 
+  function bodyBounds() {
+    var point = storyBody.mapToItem(root, 0, 0)
+    return { visible: storyBody.visible, top: point.y, left: point.x,
+      width: storyBody.width, height: storyBody.height }
+  }
+
+  function bodyLinkAt(x, y) {
+    var point = root.mapToItem(storyBody, x, y)
+    return storyBody.visible ? storyBody.linkAt(point.x, point.y) : ""
+  }
+
   readonly property bool hasImage: !!story && !!story.imageUrl && !quiet
+    && !(expandedBody && RadarModel.isReaderArticle(story))
   // A selected surface must never keep the ambient muted token: some themes
   // intentionally make that token close to their selection fill.  Derive all
   // selected text tiers from the popup foreground so the pair stays legible.
@@ -38,6 +53,8 @@ FocusScope {
   readonly property string cardDate: story
     ? RadarModel.humanDate(String(story.occurredAt || ""))
     : ""
+  readonly property string bodyMeta: cardDate
+    + (story && story.source && story.source.label ? " · " + String(story.source.label) : "")
   implicitHeight: Math.max(
     storyColumn.implicitHeight + cardPad * 2,
     hasImage ? (lead ? Style.space(118) : Style.space(82)) : 0
@@ -107,13 +124,13 @@ FocusScope {
         textFormat: Text.PlainText
         color: root.primaryTextColor
         font.family: Style.font.family
-        font.pixelSize: root.quiet
+        font.pixelSize: root.expandedBody ? Style.font.heading : root.quiet
           ? Style.font.subtitle
           : (root.lead ? Style.font.heading : Style.font.subtitle)
         font.bold: true
         wrapMode: Text.WordWrap
-        maximumLineCount: root.quiet ? 2 : (root.lead ? 3 : 2)
-        elide: Text.ElideRight
+        maximumLineCount: root.expandedBody ? 2147483647 : root.quiet ? 2 : (root.lead ? 3 : 2)
+        elide: root.expandedBody ? Text.ElideNone : Text.ElideRight
       }
 
       Text {
@@ -125,6 +142,26 @@ FocusScope {
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
         elide: Text.ElideRight
+      }
+
+      Text {
+        visible: root.expandedBody
+        width: parent.width
+        text: root.bodyMeta
+        textFormat: Text.PlainText
+        color: root.secondaryTextColor
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+        wrapMode: Text.WordWrap
+        Accessible.role: Accessible.StaticText
+        Accessible.name: text
+      }
+
+      Rectangle {
+        visible: root.expandedBody
+        width: parent.width
+        height: Style.spacing.hairline
+        color: Color.popups.border
       }
 
       Text {
@@ -140,7 +177,7 @@ FocusScope {
       }
 
       Text {
-        visible: !root.quiet
+        visible: !root.quiet && !root.expandedBody
         width: parent.width
         text: root.cardSummary
         textFormat: Text.PlainText
@@ -150,6 +187,14 @@ FocusScope {
         wrapMode: Text.WordWrap
         maximumLineCount: root.lead ? 4 : 2
         elide: Text.ElideRight
+      }
+
+      ArticleBody {
+        id: storyBody
+        visible: root.expandedBody
+        width: parent.width
+        story: visible ? root.story : null
+        onSourceRequested: function(url) { root.sourceRequested(url) }
       }
 
       MetricStrip {
@@ -189,7 +234,8 @@ FocusScope {
   HoverHandler {
     id: hoverHandler
   }
-  TapHandler { onTapped: root.activated() }
+  // The expanded row is already selected; let its body links own their click.
+  TapHandler { enabled: !root.expandedBody; onTapped: root.activated() }
   Keys.onReturnPressed: root.activated()
   Keys.onEnterPressed: root.activated()
 }

@@ -94,7 +94,7 @@ class QmlContractTests(unittest.TestCase):
                    for path in (ROOT / "src").rglob("*.qml")}
         qml = "\n".join(sources.values())
         panel = sources["Panel.qml"]
-        inspector = sources["components/StoryInspector.qml"]
+        body = sources["components/ArticleBody.qml"]
         actions = sources["controllers/ReaderActions.qml"]
         session = sources["controllers/FeedSession.qml"]
         viewport = sources["controllers/StoryViewport.qml"]
@@ -103,9 +103,9 @@ class QmlContractTests(unittest.TestCase):
             self.assertIn(required, panel)
         # The only rich-text surface renders locally escaped article segments.
         self.assertEqual(1, qml.count("Text.RichText"))
-        for required in ("textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText",
+        for required in ("textFormat: root.articleMode ? Text.RichText : Text.PlainText",
                          "RadarModel.articleBodyHtml", "linkColor: Color.accent", "onLinkActivated"):
-            self.assertIn(required, inspector)
+            self.assertIn(required, body)
         self.assertIn("RadarModel.acceptedHttpsUrl", actions)
         for forbidden in ("Qt.openUrlExternally", "shell -c", "bash -c", "Color.muted", "mark-seen"):
             self.assertNotIn(forbidden, qml)
@@ -203,6 +203,24 @@ class QmlContractTests(unittest.TestCase):
             body = body[:body.index("\n  }")]
             self.assertIn("if (!selectedStory", body)
 
+    def test_compact_selection_uses_the_same_untruncated_body_and_link_path_as_inspector(self) -> None:
+        reader = (ROOT / "src/components/ReaderList.qml").read_text(encoding="utf-8")
+        row = (ROOT / "src/components/StoryRow.qml").read_text(encoding="utf-8")
+        inspector = (ROOT / "src/components/StoryInspector.qml").read_text(encoding="utf-8")
+        body = (ROOT / "src/components/ArticleBody.qml").read_text(encoding="utf-8")
+        self.assertIn("expandedBody: root.narrow && selected", reader)
+        self.assertIn("root.actions.openArticleLink(url)", reader)
+        self.assertIn("ArticleBody {", row)
+        self.assertIn("ArticleBody {", inspector)
+        self.assertIn("visible: !root.quiet && !root.expandedBody", row)
+        self.assertIn("root.expandedBody ? Text.ElideNone", row)
+        self.assertNotIn("listSummary", body)
+        self.assertNotIn("maximumLineCount", body)
+        self.assertNotIn("elide:", body)
+        self.assertIn("story.summarySegments", body)
+        self.assertIn('String(story.summary || "")', body)
+        self.assertIn("root.articleLinkRequested(url)", inspector)
+
     def test_every_section_boundary_uses_the_same_canonical_five_ids(self) -> None:
         expected = list(CLIENT_SECTIONS)
         qml = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")
@@ -244,7 +262,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertNotIn("signal hovered", story)
         self.assertNotIn("onHovered:", qml)
         self.assertIn("item[\"listSummary\"] = list_summary", (ROOT / "radar/client_presentation.py").read_text(encoding="utf-8"))
-        self.assertIn("text: root.inspectorBodyText()", (ROOT / "src/components/StoryInspector.qml").read_text(encoding="utf-8"))
+        self.assertIn("ArticleBody {", (ROOT / "src/components/StoryInspector.qml").read_text(encoding="utf-8"))
         self.assertIn('item["summarySegments"] = article_segments', (ROOT / "radar/client_presentation.py").read_text(encoding="utf-8"))
 
         section = (ROOT / "src/components/SectionButton.qml").read_text(encoding="utf-8")

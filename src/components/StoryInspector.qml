@@ -50,23 +50,6 @@ Item {
     return date || source
   }
 
-  function inspectorBodySegments() {
-    if (!selectedStory) return []
-    if (selectedStory.summarySegments && selectedStory.summarySegments.length)
-      return selectedStory.summarySegments
-    return RadarModel.articleSegments(String(selectedStory.summary || ""))
-  }
-
-  function inspectorBodyText() {
-    if (!selectedStory)
-      return "Story details and the original source appear here."
-    if (!inspectorArticleMode)
-      return String(selectedStory.summary || "")
-    // Pass the live theme accent so RichText anchors follow Omarchy themes
-    // instead of Qt's default bright blue.
-    return RadarModel.articleBodyHtml(inspectorBodySegments(), Color.accent)
-  }
-
   Rectangle {
     anchors.fill: parent
     color: Color.popups.background
@@ -171,27 +154,11 @@ Item {
       foreground: Color.popups.text
     }
 
-    Text {
+    ArticleBody {
       id: inspectorBody
       width: parent.width
-      text: root.inspectorBodyText()
-      textFormat: root.inspectorArticleMode ? Text.RichText : Text.PlainText
-      color: Color.popups.text
-      linkColor: Color.accent
-      font.family: Style.font.family
-      font.pixelSize: Style.font.body
-      lineHeight: 1.28
-      wrapMode: Text.WordWrap
-      Accessible.role: Accessible.StaticText
-      Accessible.name: root.inspectorArticleMode
-        ? RadarModel.articlePlainText(root.inspectorBodySegments())
-        : text
-      onLinkActivated: function(link) { root.articleLinkRequested(link) }
-
-      HoverHandler {
-        enabled: inspectorBody.hoveredLink && inspectorBody.hoveredLink.length > 0
-        cursorShape: Qt.PointingHandCursor
-      }
+      story: root.selectedStory
+      onSourceRequested: function(url) { root.articleLinkRequested(url) }
     }
 
     Flow {
