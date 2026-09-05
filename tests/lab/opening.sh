@@ -7,7 +7,7 @@
 
 omarchy_host_test() {
   local product_root lab_root start_epoch runtime_identity
-  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name
+  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name source_label source_focus
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -328,7 +328,14 @@ omarchy_host_test() {
     project_id="$(jq -r --arg id "$collection_id" '.collections[] | select(.id == $id) | .projectIds[0]' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
     project_name="$(jq -r --arg id "$project_id" '.projects[] | select(.id == $id) | .name' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
     [[ $project_id =~ ^[a-zA-Z0-9._-]+$ && -n $project_name ]] || return 1
-    briefing_resize 820 680 || return 1
+    briefing_key real-original-tab tab '.insightDetailFocusedControl == "Open original source"' || return 1
+    while IFS= read -r source_label; do
+      press tab
+      source_focus="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailFocusedControl'")" || return 1
+      [[ $source_focus == "$source_label" ]] || { printf 'Unexpected source tab: %s (wanted %s)\n' "$source_focus" "$source_label"; return 1; }
+    done < <(jq -r --arg id "$collection_id" '.collections[] | select(.id == $id) | . as $collection | .sourceLinks[] | select(.url != $collection.source.url) | .label' "$RADAR_LAB_REAL_INSIGHTS")
+    briefing_key real-share-tab tab '.insightDetailFocusedControl == "Open share page"' || return 1
+    briefing_resize 820 540 || return 1
     opening_focus_detail "$project_name" || return 1
     briefing_wait "Tab reveals the collection member below its original sources" '.insightDetailContentY > 0' || return 1
     briefing_key real-project-detail ret \
