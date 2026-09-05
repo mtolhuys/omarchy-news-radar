@@ -181,9 +181,18 @@ Item {
 
   function browseStoriesGeometry() { return itemGeometry(views.welcomeCard.browseButton, session.onboardingVisible) }
 
+  function overviewItemGeometry(item, visible) {
+    var result = JSON.parse(itemGeometry(item, visible))
+    var viewport = JSON.parse(itemGeometry(views.discoveryView))
+    result.fullyVisible = result.visible && result.x >= viewport.x && result.y >= viewport.y
+      && result.x + result.width <= viewport.x + viewport.width + 1
+      && result.y + result.height <= viewport.y + viewport.height + 1
+    return JSON.stringify(result)
+  }
+
   function newBriefingGeometry() {
     var notice = panel.homeVisible ? views.discoveryView.notice : views.briefingNotice
-    return itemGeometry(notice.newButton, notice.visible)
+    return panel.homeVisible ? overviewItemGeometry(notice.newButton, notice.visible) : itemGeometry(notice.newButton, notice.visible)
   }
 
   function finishBriefingGeometry() {
@@ -193,7 +202,7 @@ Item {
 
   function homeCardGeometry() {
     var cards = views.discoveryView.cards()
-    return itemGeometry(cards[views.discoveryView.selectedCard], panel.overviewVisible && cards.length > 0)
+    return overviewItemGeometry(cards[views.discoveryView.selectedCard], panel.overviewVisible && cards.length > 0)
   }
 
   function groupReadGeometry() {

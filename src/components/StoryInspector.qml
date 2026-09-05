@@ -36,6 +36,11 @@ Item {
   signal factsToggled()
   clip: true
 
+  function scrollPage(direction) {
+    inspectorScroll.contentY = Math.max(0, Math.min(inspectorScroll.contentY + direction * inspectorScroll.height * 0.8,
+      Math.max(0, inspectorScroll.contentHeight - inspectorScroll.height)))
+  }
+
   function inspectorMetaLine() {
     if (!selectedStory) return ""
     var date = RadarModel.humanDate(String(selectedStory.occurredAt || ""))

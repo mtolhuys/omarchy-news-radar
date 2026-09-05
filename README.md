@@ -73,6 +73,7 @@ Your brief survives closing, reopening, and refresh. New arrivals stay available
 - `F6`: enter or leave Home, My setup, or briefing controls. Within that mode, `Tab` / `Shift+Tab` cycles the available cards and actions. In expanded group history, Up/Down and Home/End select an update; Enter opens its original source.
 - `j` / `k` or arrow keys: select a card on Home/My setup or move the selected story in a source reader. Crossing the story viewport bottom smoothly anchors the newly selected row at the top; crossing the top while moving upward keeps the highlight visibly anchored even during key repeat. Normal row-by-row movement continues while the next story remains visible. In sections with more pages, Down from the final loaded story focuses **Load more**; Up returns focus without moving the retained story or viewport; Enter loads the next page.
 - `Home` / `End`: first or last card or story in the current view.
+- `Page Up` / `Page Down`: scroll the current overview or article without changing selection, read state, or saves.
 - `u`: mark the selected story read or unread locally.
 - `/`: focus local search; `Escape` returns to panel navigation.
 - `o` or `Enter`: open the selected overview card; in a source reader, open the selected validated HTTPS source.

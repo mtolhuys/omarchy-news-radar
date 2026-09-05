@@ -73,6 +73,7 @@ All behavior must remain reachable without a pointer:
 | `Tab` / `Shift+Tab` | Cycle to the next / previous primary section |
 | `1`–`N` | Switch between the currently visible primary sections |
 | `Home` / `End` | Select first or last card or story in the current view |
+| `Page Up` / `Page Down` | Scroll the current overview or reading surface without changing selection, read state, or saves |
 
 Shortcuts must not fire while a text field is actively editing, except `Escape` to leave or close in the documented order. Every pointer action must have an equivalent keyboard route and visible focus treatment.
 

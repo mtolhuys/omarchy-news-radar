@@ -104,7 +104,7 @@ omarchy_host_test() {
     window="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''")" || return 1
     printf '%s\n' "$geometry" >"$RUN_DIR/briefing-text-200-$method.json"
     jq -e --argjson window "$window" \
-      '.visible == true and .width > 0 and .height > 0 and .x >= 0 and .y >= 0 and
+      '.visible == true and ((has("fullyVisible") | not) or .fullyVisible == true) and .width > 0 and .height > 0 and .x >= 0 and .y >= 0 and
        (.x + .width) <= ($window.windowWidth + 1) and (.y + .height) <= ($window.windowHeight + 1)' \
       <<<"$geometry" >/dev/null
   }
@@ -337,6 +337,7 @@ omarchy_host_test() {
     '. as \$state | .onboardingComplete == true and .readThrough == \"1970-01-01T00:00:00Z\" and \
      all(\$expected[0].initialIds[]; . as \$id | \$state.readOverrides[\$id] == true) and \
      (.saved | has(\"$saved_id\"))' $scenario_state" || return 1
+  briefing_key text-200-home-page pgdn '.homeVisible == true and .overviewContentY > 0' || return 1
   wait_for_guest_state "normal Front Page keeps New briefing in the 200 percent window" 15 briefing_control_fits newBriefingGeometry || return 1
   briefing_wait "the expanded text produces a scrollable section rail" \
     '.sectionRail.contentHeight > .sectionRail.viewport.height and .sectionRail.viewport.height > 0' || return 1
@@ -350,6 +351,8 @@ omarchy_host_test() {
   briefing_capture 10-text-200-saved-section || return 1
   briefing_key text-200-return-front 1 \
     '.section == "front-page" and .sectionRail.selectedFullyVisible == true and .projecting == false' || return 1
+  briefing_key text-200-return-page pgdn ' .homeVisible == true and .overviewContentY > 0' || return 1
+  briefing_control_fits newBriefingGeometry || return 1
   briefing_capture 10-started-today-text-200 || return 1
 
   # New briefing is disabled when all displayed events are read. Expose the

@@ -72,6 +72,10 @@ Flickable {
     revealControl(choices[selectedCard])
   }
 
+  function scrollPage(direction) {
+    contentY = Math.max(0, Math.min(contentY + direction * height * 0.8, Math.max(0, contentHeight - height)))
+  }
+
   function activateSelected() {
     var choices = cards()
     if (choices.length) choices[Math.max(0, Math.min(selectedCard, choices.length - 1))].activated()

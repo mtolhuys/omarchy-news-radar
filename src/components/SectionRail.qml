@@ -186,6 +186,7 @@ Flickable {
             { keys: "Tab", action: "sections" },
             { keys: "1–" + root.sections.length, action: "jump" },
             { keys: "Home/End", action: "edges" },
+            { keys: "PgUp/Dn", action: "scroll" },
             { keys: "?", action: "keys" }
           ]
           Row {

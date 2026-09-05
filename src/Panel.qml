@@ -517,6 +517,15 @@ Item {
           return
         }
         if (root.sectionSettingsOpen || root.preferencesOpen || root.detailItem) return
+        if ((event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp) && !masthead.search.activeFocus) {
+          readerActions.cancelInitialStoryRead()
+          var direction = event.key === Qt.Key_PageDown ? 1 : -1
+          if (root.overviewVisible) discoveryView.scrollPage(direction)
+          else if (keySurface.narrow) storyViewportController.scrollPage(direction)
+          else if (storyViewportController.selectedStory) inspectorView.scrollPage(direction)
+          event.accepted = true
+          return
+        }
         if (event.key === Qt.Key_F6 && (root.briefingVisible || root.overviewVisible || sectionNavigation.currentSection === "for-you")) {
           readerActions.cancelInitialStoryRead()
           root.briefingControlsMode = !root.briefingControlsMode

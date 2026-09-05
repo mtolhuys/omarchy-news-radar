@@ -396,6 +396,14 @@ Item {
       }
     projectionApplied()
   }
+  function scrollPage(direction) {
+    reset()
+    storyViewportRevision++
+    var minimum = storyList.originY
+    var maximum = minimum + Math.max(0, storyList.contentHeight - storyList.height)
+    storyList.contentY = Math.max(minimum, Math.min(storyList.contentY + direction * storyList.height * 0.8, maximum))
+  }
+
   function reset() {
     storyScrollAnimation.stop()
     viewportPreservationTimer.stop()

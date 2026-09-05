@@ -13,6 +13,7 @@ omarchy_host_test() {
   local shell_rss_open shell_rss_closed projection_seconds core_unread_before plugin_unread_before for_you_before
   local initial_bar_unread background_bar_unread runtime_identity_before runtime_identity_after
   local initial_installed_ids initial_projection initial_selected_id initial_story_count initial_unread_count
+  local page_read_state page_selection
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -917,10 +918,19 @@ omarchy_host_test() {
   wait_for_guest_state "enlarged text leaves a usable article viewport and visible heading" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.available == true and .viewportHeight >= 200 and .headlineFullyVisible == true'" || return 1
   capture_console "success-news-radar-11-text-200"
+  wait_for_guest_state "enlarged reader is idle before page-scroll state checks" 20 radar_idle || return 1
+  page_read_state="$(ssh_session "jq -c '{readThrough,readOverrides,saved,briefing}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"")" || return 1
+  page_selection="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -c '{selectedId,selectedIsUnread,section}'")" || return 1
   press pgdn
   wait_for_guest_state "Page Down scrolls the enlarged article" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.contentY > .rowY'" || return 1
   capture_console "success-news-radar-11-text-200-reading"
+  [[ "$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -c '{selectedId,selectedIsUnread,section}'")" == "$page_selection" ]] || return 1
+  press pgup
+  wait_for_guest_state "Page Up returns to the same enlarged headline" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar storyViewportState '' | jq -e '.headlineFullyVisible == true and .contentY <= (.rowY + 1)'" || return 1
+  [[ "$(ssh_session "jq -c '{readThrough,readOverrides,saved,briefing}' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"")" == "$page_read_state" ]] || return 1
+  [[ "$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -c '{selectedId,selectedIsUnread,section}'")" == "$page_selection" ]] || return 1
   press esc
   wait_for_guest_state "enlarged reader closes normally" 15 ssh_session \
     "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
