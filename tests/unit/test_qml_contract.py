@@ -321,6 +321,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("id: projectGrid", detail)
         self.assertIn("id: relevanceGrid", detail)
         self.assertIn("Layout.columnSpan: relevanceGrid.columns === 2", detail)
+        self.assertIn("function moveSpatial(horizontal, vertical)", detail)
+        self.assertIn("Arrow keys navigate · Enter activates · PgUp/PgDn scroll · Esc goes back", detail)
+        for key in ("Qt.Key_Left", "Qt.Key_Right", "Qt.Key_Down", "Qt.Key_Up", "Qt.Key_Home", "Qt.Key_End"):
+            self.assertIn(key, detail)
         self.assertEqual(1, notice.count("columns: 1"))
         session = (ROOT / "src/controllers/FeedSession.qml").read_text(encoding="utf-8")
         for state in ("First use", "Cached", "Checking", "Updated", "No newer edition", "Publisher stale", "Offline", "Source partial", "Invalid feed", "No cache and failed"):

@@ -96,11 +96,39 @@ FocusScope {
     var active = controls.findIndex(function(button) { return button.activeFocus })
     var next = controls[(active + direction + controls.length) % controls.length]
     next.forceActiveFocus()
-    if (next !== closeButton) {
-      var top = next.mapToItem(body, 0, 0).y
-      if (top < scroll.contentY || next.height > scroll.height) scroll.contentY = top
-      else if (top + next.height > scroll.contentY + scroll.height) scroll.contentY = top + next.height - scroll.height
+    reveal(next)
+  }
+  function reveal(control) {
+    if (!control || control === closeButton) return
+    var top = control.mapToItem(body, 0, 0).y
+    if (top < scroll.contentY || control.height > scroll.height) scroll.contentY = top
+    else if (top + control.height > scroll.contentY + scroll.height) scroll.contentY = top + control.height - scroll.height
+  }
+  function moveSpatial(horizontal, vertical) {
+    var controls = buttons()
+    if (!controls.length) return
+    var active = controls.findIndex(function(control) { return control.activeFocus })
+    if (active < 0) { controls[0].forceActiveFocus(); return }
+    var current = controls[active]
+    var origin = current.mapToItem(root, current.width / 2, current.height / 2)
+    var best = null
+    var bestScore = Number.MAX_VALUE
+    for (var i = 0; i < controls.length; i++) {
+      if (i === active) continue
+      var candidate = controls[i]
+      var point = candidate.mapToItem(root, candidate.width / 2, candidate.height / 2)
+      var dx = point.x - origin.x
+      var dy = point.y - origin.y
+      if ((horizontal < 0 && dx >= 0) || (horizontal > 0 && dx <= 0)
+          || (vertical < 0 && dy >= 0) || (vertical > 0 && dy <= 0)) continue
+      var primary = horizontal !== 0 ? Math.abs(dx) : Math.abs(dy)
+      var secondary = horizontal !== 0 ? Math.abs(dy) : Math.abs(dx)
+      var score = primary + secondary * 3
+      if (score < bestScore) { best = candidate; bestScore = score }
     }
+    if (!best) return
+    best.forceActiveFocus()
+    reveal(best)
   }
   onVisibleChanged: if (visible) Qt.callLater(focusFirst)
   Keys.onEscapePressed: root.closed()
@@ -108,11 +136,31 @@ FocusScope {
     if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
       navigate(event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
       event.accepted = true
-    } else if (event.key === Qt.Key_PageDown || event.key === Qt.Key_Down) {
+    } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+      moveSpatial(event.key === Qt.Key_Left ? -1 : 1, 0)
+      event.accepted = true
+    } else if (event.key === Qt.Key_Down || (event.text || "").toLowerCase() === "j") {
+      moveSpatial(0, 1)
+      event.accepted = true
+    } else if (event.key === Qt.Key_Up || (event.text || "").toLowerCase() === "k") {
+      moveSpatial(0, -1)
+      event.accepted = true
+    } else if (event.key === Qt.Key_Home || event.key === Qt.Key_End) {
+      var controls = buttons()
+      if (controls.length) {
+        var target = controls[event.key === Qt.Key_Home ? 0 : controls.length - 1]
+        target.forceActiveFocus()
+        reveal(target)
+      }
+      event.accepted = true
+    } else if (event.key === Qt.Key_PageDown) {
       scroll.contentY = Math.min(Math.max(0, scroll.contentHeight - scroll.height), scroll.contentY + scroll.height * 0.7)
       event.accepted = true
-    } else if (event.key === Qt.Key_PageUp || event.key === Qt.Key_Up) {
+    } else if (event.key === Qt.Key_PageUp) {
       scroll.contentY = Math.max(0, scroll.contentY - scroll.height * 0.7)
+      event.accepted = true
+    } else if ((event.text || "").toLowerCase() === "q") {
+      root.closed()
       event.accepted = true
     }
   }
@@ -127,12 +175,27 @@ FocusScope {
     anchors.fill: parent
     anchors.margins: Style.spacing.panelPadding
     spacing: Style.spacing.md
-    RadarButton {
-      id: closeButton
-      label: root.hasParent ? "← Back to collection" : "← Back"
-      managesTab: true
-      onTabRequested: function(direction) { root.navigate(direction) }
-      onClicked: root.closed()
+    RowLayout {
+      Layout.fillWidth: true
+      spacing: Style.spacing.md
+      RadarButton {
+        id: closeButton
+        label: root.hasParent ? "← Back to collection" : "← Back"
+        managesTab: true
+        onTabRequested: function(direction) { root.navigate(direction) }
+        onClicked: root.closed()
+      }
+      Text {
+        Layout.fillWidth: true
+        text: "Arrow keys navigate · Enter activates · PgUp/PgDn scroll · Esc goes back"
+        textFormat: Text.PlainText
+        color: Color.popups.text
+        opacity: 0.72
+        horizontalAlignment: Text.AlignRight
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.WordWrap
+      }
     }
     Flickable {
       id: scroll
