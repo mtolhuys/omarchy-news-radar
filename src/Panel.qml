@@ -128,6 +128,12 @@ Item {
       return "Your briefing is complete. Browse the other sections whenever you like."
     if (feedSession.filterSummary !== "No extra filters")
       return "No stories match this section's local settings. Reset its filters or choose another section."
+    if (feedSession.blockingMutes.length > 0) {
+      var hidden = feedSession.mutedEventCount
+      return muteSummary() + " " + (feedSession.blockingMutes.length === 1 ? "is" : "are")
+        + " hiding " + hidden + " " + (hidden === 1 ? "story" : "stories")
+        + " from this section. Review your local choices to bring them back."
+    }
     if (sectionNavigation.currentSection === "saved")
       return "Your saved stories will appear here. Save a story to keep it for later."
     return "There are no stories in this section of the current edition."
@@ -137,13 +143,31 @@ Item {
     if (!feedSession.cachedFeed) return "Check for updates"
     if (masthead.search.text) return "Clear search"
     if (feedSession.filterSummary !== "No extra filters") return "Reset section filters"
+    if (feedSession.blockingMutes.length > 0) return "Review mutes"
     return "Explore Front Page"
   }
   function recoverEmptyView() {
     if (!feedSession.cachedFeed) feedSession.refreshFeed()
     else if (masthead.search.text) masthead.search.text = ""
     else if (feedSession.filterSummary !== "No extra filters") readerActions.resetFilter()
+    else if (feedSession.blockingMutes.length > 0) manageRelevance()
     else sectionNavigation.selectSection(sectionNavigation.sectionIndexFor("front-page"))
+  }
+
+  function muteSummary() {
+    var names = feedSession.blockingMutes.map(function(target) {
+      if (target.kind === "source") return ({
+        marketplace: "Marketplace news",
+        "omarchy-releases": "Omarchy releases",
+        "omarchy-news": "Omarchy News",
+        community: "Community news",
+        youtube: "YouTube"
+      })[target.id] || target.label || target.id
+      return target.label || target.id
+    })
+    if (names.length === 1) return names[0]
+    if (names.length === 2) return names[0] + " and " + names[1]
+    return names.length + " local mutes"
   }
 
   function sectionSummaryText() {
@@ -594,6 +618,9 @@ Item {
           storyViewportController.moveSelection(-1); event.accepted = true; return
         }
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || (event.text || "").toLowerCase() === "o") {
+          if (storyViewportController.stories.length === 0) {
+            root.recoverEmptyView(); event.accepted = true; return
+          }
           readerActions.openSelected(); event.accepted = true; return
         }
         if ((event.text || "").toLowerCase() === "s") {

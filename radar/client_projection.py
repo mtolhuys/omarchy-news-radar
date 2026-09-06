@@ -52,6 +52,7 @@ def _filtered_section_events(
     query: str = "",
     retained_read_ids: list[str] | None = None,
     now: datetime | None = None,
+    respect_mutes: bool = True,
 ) -> list[dict[str, Any]]:
     if section not in CLIENT_SECTIONS:
         raise ValidationError("unknown projection section")
@@ -59,7 +60,11 @@ def _filtered_section_events(
         return _briefing_rows(feed, state, query=query, retained_read_ids=retained_read_ids, now=now)
     section_filter = state["preferences"]["sectionFilters"][section]
     scoped = dict(feed)
-    scoped["events"] = [event for event in feed["events"] if section == "saved" or not is_muted(event, state)]
+    scoped["events"] = [
+        event
+        for event in feed["events"]
+        if section == "saved" or not respect_mutes or not is_muted(event, state)
+    ]
     projection_section = section
     if section == "for-you":
         scoped["events"] = [event for event in scoped["events"]
@@ -196,6 +201,27 @@ def projection_model(
         retained_read_ids=retained_read_ids,
         now=now,
     )
+    blocking_mutes: list[dict[str, Any]] = []
+    muted_event_count = 0
+    if not events and section != "saved":
+        unmuted_events = _filtered_section_events(
+            feed,
+            state,
+            section,
+            installed,
+            query=query,
+            retained_read_ids=retained_read_ids,
+            now=now,
+            respect_mutes=False,
+        )
+        muted_event_count = len(unmuted_events)
+        seen_mutes: set[tuple[str, str]] = set()
+        for event in unmuted_events:
+            for target in event_relevance(event, state):
+                key = (str(target["kind"]), str(target["id"]))
+                if target["muted"] and key not in seen_mutes:
+                    blocking_mutes.append(target)
+                    seen_mutes.add(key)
     total_events = len(events)
     events = events[:limit]
     env = dict(environment or os.environ)
@@ -227,6 +253,8 @@ def projection_model(
             item["id"] in retained_read_ids and not item["isUnread"]
             for item in decorated
         ),
+        blockingMutes=blocking_mutes,
+        mutedEventCount=muted_event_count,
         limit=limit,
         filter=current_filter,
         filterSummary=filter_summary(current_filter),

@@ -11,6 +11,7 @@
 ### Fixed
 - Complete arrow-key navigation across insight details, included-project cards, Tune, and current-section Settings.
 - Add `t` for Tune and `,` for current-section Settings, with matching tooltips and key-guide entries.
+- Explain when local mutes empty a section and offer a keyboard-accessible path to review them.
 - Omit `Published unknown` and repeated release-coverage failure labels when public release history is unavailable.
 
 ## 0.5.0 — 2026-09-06

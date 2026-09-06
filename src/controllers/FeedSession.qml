@@ -35,6 +35,10 @@ Item {
 
   property var relevanceControls: []
 
+  property var blockingMutes: []
+
+  property int mutedEventCount: 0
+
   property bool installedPluginsReady: false
 
   property var briefing: ({ initialized: false, total: 0, remaining: 0, complete: false })
@@ -406,6 +410,8 @@ Item {
       setupModel = result.mySetup || []
       insightsModel = result.insights || insightsModel
       relevanceControls = result.relevanceControls || []
+      blockingMutes = result.blockingMutes || []
+      mutedEventCount = Number(result.mutedEventCount || 0)
       displayedFeedDigest = String(result.feedDigest || "")
       displayedFeedEventCount = Number(result.feedEventCount || 0)
       counts = result.counts || ({})

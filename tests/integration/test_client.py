@@ -19,6 +19,7 @@ from radar.client import (
     refresh_if_due,
     set_event_read_state,
     set_preferences,
+    set_relevance,
     set_section_filter,
     toggle_saved_state,
 )
@@ -479,11 +480,31 @@ class ClientIntegrationTests(unittest.TestCase):
                 now=CLOCK,
                 retained_read_ids_json='["not-an-event"]',
             )
-
         self.assertNotIn("sectionProfiles", updated["state"]["preferences"])
 
         with self.assertRaisesRegex(ValidationError, "limit"):
             projection_model("plugins", "[]", "", self.environment, now=CLOCK, limit=0)
+
+    def test_projection_explains_when_a_mute_empties_a_section(self) -> None:
+        refresh(self.environment, now=CLOCK)
+        visible = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertTrue(visible["events"])
+        self.assertEqual([], visible["blockingMutes"])
+        self.assertEqual(0, visible["mutedEventCount"])
+
+        set_relevance("source", "marketplace", "mute", self.environment)
+        hidden = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertEqual([], hidden["events"])
+        self.assertGreater(hidden["mutedEventCount"], 0)
+        self.assertEqual(
+            [("source", "marketplace")],
+            [(item["kind"], item["id"]) for item in hidden["blockingMutes"]],
+        )
+
+        set_relevance("source", "marketplace", "clear", self.environment)
+        restored = projection_model("plugins", "[]", "", self.environment, now=CLOCK)
+        self.assertTrue(restored["events"])
+        self.assertEqual([], restored["blockingMutes"])
 
     def test_installed_plugin_discovery_fails_closed_on_unexpected_shell_shapes(self) -> None:
         invalid_shapes: list[object] = [
