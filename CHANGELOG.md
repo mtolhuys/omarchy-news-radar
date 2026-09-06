@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-09-06
+
+### Added
+- A persistent, finite Front Page briefing; setup-aware release context; reviewed workflows and project discovery; local project/source/creator follows and mutes; and explicit first-use backlog choices.
+- Shareable story, workflow, and weekly-edition pages backed by the optional insights-v1 companion while the existing events feed remains schema v2.
+
+### Changed
+- Compose Home as balanced newspaper rows with horizontal card navigation, centered detail reading measures, restrained images, and useful full-area empty states.
+- Prepare bounded floating-window geometry before the first visible frame, preserve placement independently from reading state, and retain normal move, resize, maximize, and Alt+Tab behavior.
+- Split feed, reading, migration, publication, lifecycle, session, navigation, and presentation responsibilities into smaller named modules.
+
+### Fixed
+- Remove inactive inspector buttons and dividers when no story exists, keep compact article actions reachable with large text, and refit overflowing windows after text or monitor changes.
+- Preserve rich release notes across optional-source failures, reject misleading code-example extraction and historical repository attribution, and keep detail routes reachable through filters and mutes.
+- Serve production feeds with bounded gzip negotiation, representation-specific strong ETags, bodyless HEAD/304 responses, durable shared URLs, and interruption-safe publication continuity.
+
 ## 0.4.16 — 2026-09-05
 
 ### Fixed

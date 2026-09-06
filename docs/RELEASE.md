@@ -1,14 +1,14 @@
 # Release contract
 
-Version `0.5.0` is a local candidate. The published release remains `0.4.16`; no tag, release, marketplace promotion, Forge deployment, or public candidate install is implied by this checkout. The expanded candidate adds a home overview, a persistent finite briefing, source-backed setup comparisons, reviewed discoveries, local follow/mute controls, corrected first-map placement, bounded gzip delivery and durable public pages. Feed schema remains v2; an optional insights-v1 companion carries the new public facts, and local state moves to v13 with supported v1–v12 data preserved. See [candidate release notes](release-notes/0.5.0.md).
+Version `0.5.0` is the current release. It adds a home overview, a persistent finite briefing, source-backed setup comparisons, reviewed discoveries, local follow/mute controls, corrected first-map placement, bounded gzip delivery and durable public pages. Feed schema remains v2; an optional insights-v1 companion carries the new public facts, and local state moves to v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.0.md).
 
-The existing README walkthrough and marketplace preview show the released reader. They are not visual evidence for the candidate's new briefing and welcome states. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from local validation; marketplace verification is not a security audit.
+The README walkthrough and root marketplace preview use inspected captures from the final disposable runtime. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from release publication; marketplace verification is not a security audit.
 
-## Candidate identity
+## Release identity
 
-For local validation, record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, and Plugin Lab ISO/base identity. Before publication, replace provisional evidence with one clean Git commit and the exact candidate tested. Record the tag only after owner-authorized publication.
+Record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, Plugin Lab ISO/base identity, exact public commit, and release tag.
 
-The manifest, Python package, helper build, and panel identify `0.5.0`. README installation and current-release status identify the separately published `0.4.16`. Repository validation accepts this explicit candidate status only with matching unpublished candidate notes; advancing publication requires updating all of these records together. The [earlier briefing-only evidence](evidence/0.5.0-local.md) remains historical. The [expanded candidate evidence](evidence/0.5.0-expanded-local.md) records current source/server/browser checks and the outstanding final disposable desktop acceptance.
+The manifest, Python package, helper build, panel, README installation section, changelog, and release notes identify `0.5.0`. The [earlier briefing-only evidence](evidence/0.5.0-local.md) remains historical. The [0.5 verification record](evidence/0.5.0-expanded-local.md) records the source, production server, browser, multi-window, and disposable desktop checks.
 
 ## Publishable checklist
 
@@ -77,11 +77,11 @@ These are acceptance requirements; completed checks and remaining limitations be
 - `make test`, `make validate`, `make feed-fixture`, and `make site` pass from a clean clone without unapproved downloads; `make collect-live` separately proves the allowlisted live build.
 - Plugin Lab fresh-install, dedicated briefing, and released-0.1.3 upgrade acceptance pass for the exact candidate with inspected logs and screenshots. The briefing journey covers both welcome choices, per-event versus group read scope, explicit completion, reopen/arrival stability, offline operation, keyboard focus, and maintained light/dark layouts.
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
-- Public clean-clone installation, shortcut setup/removal, update, and plugin removal pass for the exact remotely available candidate. The existing `public-install.sh` remains pinned to published 0.4.16 and state v11; it proves only that released journey. Advance its identity and first-use/state assertions when publication is authorized, then run it against the exact candidate SHA.
+- Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available 0.5 commit through the state-v13 journey.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed/state schemas, screenshots, release notes, and evidence distinguish the local candidate from the published release. Existing released screenshots carry an explicit label; candidate release media is refreshed from inspected candidate VM captures before promotion.
+- README, changelog, manifest, UI version, feed/state schemas, screenshots, release notes, and evidence agree on 0.5. Release media comes from inspected final-runtime VM captures.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
-- No push, tag, release, marketplace submission, domain change, or external announcement occurs without owner authorization. GitHub Pages is not the live publication path.
+- Push, tag, release, marketplace submission, domain change, and external announcement require owner authorization. GitHub Pages is not the live publication path.
 
 ## Removal contract
 
@@ -141,8 +141,8 @@ Deliberate limitations / unverified boundaries:
 -
 ```
 
-## Expanded-candidate release gate
+## 0.5 release gate
 
-The earlier `evidence/0.5.0-local.md` records the briefing-only candidate, not the expanded D058–D060 implementation. Require fresh exact-commit source and disposable runtime evidence before treating this branch as accepted. Home and setup must not read hidden stories; discovery navigation, exact version notes, follow/mute/clear, upgrade preservation, offline companion fallback, keyboard reachability and first-map geometry need matching proof.
+The earlier `evidence/0.5.0-local.md` records the briefing-only candidate. The expanded evidence record must establish exact-commit source and disposable runtime acceptance. Home and setup must not read hidden stories; discovery navigation, exact version notes, follow/mute/clear, upgrade preservation, offline companion fallback, keyboard reachability and first-map geometry need matching proof.
 
-The Laravel application changes are a separate deployment unit. Validate real producer artifacts through its strict staging policy, verify retained links across changing editions and exercise interruption recovery before deployment. Confirm gzip, Vary, ETag, HEAD, 304, content type, cache policy and encoded-byte accounting on application responses. A tested local source change does not establish production nginx/Forge behavior. Deploy the server companion/public-file support before relying on the plugin's new public pages; old clients continue using unchanged events.json. Obtain explicit publication authorization only after this candidate is reviewable.
+The Laravel application is a separate deployment unit. Validate real producer artifacts through its strict staging policy, verify retained links across changing editions and exercise interruption recovery before deployment. Confirm gzip, Vary, ETag, HEAD, 304, content type, cache policy and encoded-byte accounting on production application responses. Old clients continue using unchanged events.json.

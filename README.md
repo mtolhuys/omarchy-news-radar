@@ -1,20 +1,20 @@
-![Omarchy News Radar — press one key and catch up with what changed](assets/readme-banner.svg)
+![Omarchy News Radar 0.5 — your personal front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
-> Press one key. Catch up with what changed across Omarchy.
+> Your personal front page for Omarchy.
 
-Catch up on Omarchy releases, official news, plugin activity and videos in one keyboard-first desktop reader. Find stories about your enabled plugins in **For You**, save useful discoveries and keep reading from your cache when offline. Your reading state and plugin matching stay on your device.
+Catch up on Omarchy releases, official news, plugin activity and videos in one keyboard-first desktop reader. Start with a finite briefing, understand changes that affect your setup, explore reviewed workflows, and discover useful projects. Your reading state, enabled-plugin matching, follows, and mutes stay on your device.
 
 [Install from the marketplace](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) · [Read the web edition](https://mtolhuijs.nl/news-radar/) · [Follow via RSS](https://mtolhuijs.nl/news-radar/feed.xml)
 
 Omarchy News Radar is an independent community project.
 
-![Omarchy News Radar in use — official news, plugin activity, section filters, and dark/light themes](preview.gif)
+![Omarchy News Radar 0.5 in use — Front Page, reviewed workflows, My setup, and project details](preview.gif)
 
-The walkthrough shows the released reader. This checkout also contains the local 0.5.0 candidate described under [Project status](#project-status).
+The walkthrough uses the released 0.5 reader and its real public edition.
 
-## Install the published v0.4.16
+## Install the published v0.5.0
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -62,7 +62,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 
 ## Panel controls
 
-These controls describe the local 0.5.0 candidate. On first use, **Browse current stories** keeps the backlog unread; **Start from today** marks the displayed edition read and keeps those stories available to browse. Both preserve saved stories and local preferences. Existing readers keep their reading state and skip this welcome choice when upgrading.
+On first use, **Browse current stories** keeps the backlog unread; **Start from today** marks the displayed edition read and keeps those stories available to browse. Both preserve saved stories and local preferences. Existing readers keep their reading state and skip this welcome choice when upgrading.
 
 **Front Page** brings together your retained brief, reviewed workflows, documented changes for your setup and a few projects to discover. Opening this overview does not mark a hidden story read. Choose a briefing card to enter its reader. The brief holds up to five story groups, selected from unread source facts and your local filters. It favors critical or reviewed notable news, official Omarchy changes, enabled-plugin activity, and a discovery when available. Updates for the same plugin share a group with each original source accessible under **Show updates**. Routine verification changes do not consume a briefing slot on their own, and popularity metrics never choose the stories.
 
@@ -142,9 +142,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.4.16` is the current release. The [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) provides the published snapshot. Marketplace verification is compatibility evidence, not a security audit.
-
-Version `0.5.0` is a local candidate, not a published release. Home combines a persistent five-group briefing, documented changes for your setup, reviewed workflow ideas and project discoveries. Local follows and mutes tune future news; the window prepares its placement before opening. The companion public edition adds shareable story and workflow pages, with bounded gzip delivery and durable URL retention in the separate feed server. See the [candidate release notes](docs/release-notes/0.5.0.md) and [release checklist](docs/RELEASE.md). Its runtime identity is 0.5.0; public installation above still installs the published version. Candidate publication and exact-candidate release evidence remain separate steps.
+Version `0.5.0` is the current release. Home combines a persistent five-group briefing, documented changes for your setup, reviewed workflow ideas and project discoveries. Local follows and mutes tune future news; the window prepares its placement before opening. The companion public edition adds shareable story and workflow pages, with bounded gzip delivery and durable URL retention in the feed server. See the [release notes](docs/release-notes/0.5.0.md), [verification evidence](docs/evidence/0.5.0-expanded-local.md), and [release contract](docs/RELEASE.md). The marketplace listing can remain on its previous reviewed snapshot while the 0.5 verification request is processed; marketplace verification is compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -198,7 +196,7 @@ make local-latest
 
 The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates eligible marketplace images and atomically imports the edition and matching private source baseline; current images remain on the exact allowlisted marketplace/YouTube origins. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and advance that validated private baseline so an older change cannot be rediscovered as new. **Check for updates** still checks the live feed at `https://mtolhuijs.nl/news-radar/events.json`, refuses to downgrade newer local news, and automatically returns to the published stream as soon as it advances. Internal edition origin and publication diagnostics do not occupy the normal reading surface.
 
-The local import currently brings in news events and eligible image assets, but does not import the collection's `insights.json` companion. Documented setup changes and reviewed workflows use the independently cached or published companion instead. Until the companion is deployed, `make local-latest` alone does not provide the full expanded preview. Use the [isolated expanded-preview instructions](docs/TESTING.md#expanded-preview-with-public-content) to inspect those capabilities with owner-supplied public artifacts.
+The local import brings in news events and eligible image assets, but does not import the collection's `insights.json` companion. Documented setup changes and reviewed workflows use the independently cached public companion instead. Use the [isolated expanded-preview instructions](docs/TESTING.md#expanded-preview-with-public-content) when testing specific owner-supplied artifacts.
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
@@ -227,7 +225,7 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
-## What is new in the expanded 0.5.0 candidate
+## What is new in 0.5.0
 
 - A Home worth returning to: a finite briefing, source-backed setup changes, reviewed workflow ideas and project discovery.
 - My setup shows documented releases relative to locally enabled versions, with precise unknown/incomplete coverage labels.
@@ -236,4 +234,4 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The public release and existing marketplace media still describe 0.4.16. Source and runtime verification for this expanded candidate are separate from the earlier briefing-only evidence. See [candidate notes](docs/release-notes/0.5.0.md) and the [release contract](docs/RELEASE.md).
+The README walkthrough and marketplace preview are captured from the final 0.5 runtime in the disposable Omarchy Plugin Lab. See the [release notes](docs/release-notes/0.5.0.md) and [release contract](docs/RELEASE.md).

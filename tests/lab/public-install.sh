@@ -31,7 +31,7 @@ omarchy_host_test() {
   }
   wait_for_guest_state "public clone is enabled with paired panel and newspaper entry points" 20 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && \
-     jq -e '.version == \"0.4.16\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
+     jq -e '.version == \"0.5.0\" and .kinds == [\"panel\",\"bar-widget\"] and (.entryPoints | keys == [\"barWidget\",\"panel\"])' $plugin_dir/manifest.json" || return 1
 
   log "Proving documented public Apps-menu and shortcut setup"
   ssh_session "$launcher install" >"$RUN_DIR/news-radar-public-launcher-installed.json" || return 1
@@ -47,21 +47,31 @@ omarchy_host_test() {
   press ret
   wait_for_guest_state "public Apps entry opens the installed panel" 20 ssh_session \
     "hyprctl -j clients | jq -e 'any(.[]; .title == \"📰 Omarchy News Radar\")'" || return 1
-  wait_for_guest_state "public panel automatically reads the first story visibly presented by its fresh open" 30 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .selectedIsUnread == false and (.status == \"Updated\" or .status == \"No newer edition\" or .status == \"Cached\")'" || return 1
+  wait_for_guest_state "public panel presents the first-use choice without reading the backlog" 30 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.storyCount > 0 and .onboardingVisible == true and .localStateReady == true and .briefing.initialized == true and .helperRunning == false and (.status == \"Updated\" or .status == \"No newer edition\" or .status == \"Cached\")' && \
+     jq -e '.schemaVersion == 13 and (.readOverrides | length) == 0' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  capture_console "success-news-radar-public-welcome"
+  press ret
+  wait_for_guest_state "Browse current stories opens the public Front Page without reading a hidden story" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeVisible == true and .onboardingVisible == false and .homeCards > 0 and .selectedIsUnread == true' && \
+     jq -e '.schemaVersion == 13 and (.readOverrides | length) == 0' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  capture_console "success-news-radar-public-home"
+  press ret
+  wait_for_guest_state "opening the selected Front Page story reads only that visible story" 20 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeVisible == false and .selectedIsUnread == false and .storyCount > 0'" || return 1
   selected_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedId'")" || return 1
   [[ $selected_id =~ ^evt_[0-9a-f]{24}$ ]] || return 1
-  wait_for_guest_state "public reader persists that automatic read through the ordinary per-story state" 15 ssh_session \
-    "jq -e --arg id '$selected_id' '.schemaVersion == 11 and .readOverrides[\$id] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  wait_for_guest_state "public reader persists that deliberate read through the ordinary per-story state" 15 ssh_session \
+    "jq -e --arg id '$selected_id' '.schemaVersion == 13 and .readOverrides[\$id] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   capture_console "success-news-radar-public-app-launcher"
   press u
-  wait_for_guest_state "public reader can reverse the automatically read story to unread" 15 ssh_session \
+  wait_for_guest_state "public reader can reverse the selected story to unread" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == true' && \
-     jq -e --arg id '$selected_id' '.schemaVersion == 11 and (.readOverrides | has(\$id) | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+     jq -e --arg id '$selected_id' '.schemaVersion == 13 and (.readOverrides | has(\$id) | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press u
   wait_for_guest_state "public reader persists only the selected story as read" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedIsUnread == false' && \
-     jq -e --arg id '$selected_id' '.schemaVersion == 11 and .readOverrides[\$id] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+     jq -e --arg id '$selected_id' '.schemaVersion == 13 and .readOverrides[\$id] == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   capture_console "success-news-radar-public-read-state"
   press esc
   wait_for_guest_state "Apps-launched public panel closes" 15 ssh_session \
@@ -92,5 +102,5 @@ omarchy_host_test() {
     "$RUN_DIR/news-radar-public-journal.log"; then
     return 1
   fi
-  printf 'ok - public URL resolved the exact release commit and passed launcher, shortcut, render, and removal\n'
+  printf 'ok - public URL resolved the exact release commit and passed welcome, Front Page, launcher, shortcut, read-state, render, and removal\n'
 }
