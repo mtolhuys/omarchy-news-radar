@@ -195,6 +195,12 @@ omarchy_host_test() {
   shortcut="$plugin_dir/bin/news-radar-shortcut"
   launcher="$plugin_dir/bin/news-radar-launcher"
 
+  # Give the collection keyboard journey two adjacent project cards while
+  # retaining the production-validated insight fixture everywhere else.
+  ssh_session "jq '.collections[0].projectIds = [.projects[0].id, .projects[1].id]' \
+    $plugin_dir/tests/fixtures/insights-valid.json \
+    >/tmp/news-radar-fixtures/insights-keyboard.json" || return 1
+
   log "Installing the inert source-opening shim and isolated loopback fixture boundary"
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json && \
     systemd-run --user --unit=omarchy-news-radar-fixture --collect --quiet -- \
@@ -202,6 +208,9 @@ omarchy_host_test() {
   wait_for_guest_state "loopback fixture server is ready" 10 ssh_guest \
     "curl -fsS http://127.0.0.1:18765/current.json >/dev/null" || return 1
   ssh_session "mkdir -p \"\$HOME/.local/bin\" \"\$HOME/.local/state/omarchy-news-radar\" && \
+    mkdir -p \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar\" && \
+    cp /tmp/news-radar-fixtures/insights-keyboard.json \
+      \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/insights.json\" && \
     cp $plugin_dir/tests/lab/fixtures/xdg-open \"\$HOME/.local/bin/xdg-open\" && chmod +x \"\$HOME/.local/bin/xdg-open\" && \
     printf '%s\n' \
       'hl.env(\"OMARCHY_NEWS_RADAR_TEST_MODE\", \"1\")' \
@@ -414,6 +423,8 @@ omarchy_host_test() {
   ssh_guest "cp /tmp/news-radar-fixtures/valid.json /tmp/news-radar-fixtures/current.json"
   ssh_session "OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_FEED_URL=http://127.0.0.1:18765/current.json $helper refresh" \
     >"$RUN_DIR/news-radar-seed-cache.json" || return 1
+  ssh_session "cp /tmp/news-radar-fixtures/insights-keyboard.json \
+    \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/insights.json\"" || return 1
   ssh_session "$helper set-section-filter --section front-page --filter-json '{\"period\":\"all\",\"significance\":\"all\",\"unreadOnly\":true,\"imagesOnly\":false,\"types\":[]}'" \
     >"$RUN_DIR/news-radar-initial-unread-filter.json" || return 1
   # The prior no-cache journey deliberately removed user state. Complete the
@@ -699,15 +710,22 @@ omarchy_host_test() {
   radar_for_you_news || return 1
   wait_for_guest_state "For You matches the locally installed exact plugin id" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .storyCount == 2'" || return 1
+  press 1
+  wait_for_guest_state "Front Page overview is ready for collection navigation" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"front-page\" and .homeVisible == true'" || return 1
   press home
   selected_home_kind=""
-  for _ in {1..12}; do
+  for _ in {1..64}; do
     selected_home_kind="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedHomeKind'")" || return 1
     [[ $selected_home_kind == collection ]] && break
     press down
   done
-  [[ $selected_home_kind == collection ]] || return 1
-  press enter
+  if [[ $selected_home_kind != collection ]]; then
+    ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
+      >"$RUN_DIR/news-radar-collection-selection-failure.json" 2>&1 || true
+    return 1
+  fi
+  press ret
   wait_for_guest_state "collection details begin with keyboard focus on Back" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == true and (.insightDetailFocusedControl | startswith(\"← Back\")) and (.insightDetailControlIds | length) >= 4'" || return 1
   collection_detail_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailId'")" || return 1
@@ -721,7 +739,7 @@ omarchy_host_test() {
   press left
   wait_for_guest_state "Left moves between included project cards" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg previous '$collection_last_control' '.insightDetailFocusedControl != \$previous and (.insightDetailFocusedControl | startswith(\"← Back\") | not)'" || return 1
-  press enter
+  press ret
   wait_for_guest_state "Enter opens the keyboard-selected included project" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg collection '$collection_detail_id' '.insightDetailVisible == true and .insightDetailId != \$collection and (.insightDetailFocusedControl | startswith(\"← Back to collection\"))'" || return 1
   press esc
