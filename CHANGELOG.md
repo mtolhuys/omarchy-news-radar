@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.5.1 — 2026-09-06
+
+### Changed
+- Present My setup as a useful local inventory with manifest descriptions, installed versions, aggregate coverage context, and updates first.
+- Replace a dead caught-up **New briefing** action with **Check for new stories**, retaining **New briefing** when eligible unread candidates exist.
+
+### Fixed
+- Complete arrow-key navigation across insight details, included-project cards, Tune, and current-section Settings.
+- Add `t` for Tune and `,` for current-section Settings, with matching tooltips and key-guide entries.
+- Omit `Published unknown` and repeated release-coverage failure labels when public release history is unavailable.
+
 ## 0.5.0 — 2026-09-06
 
 ### Added

@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Ui
+import "KeyboardNavigation.js" as KeyboardNavigation
 
 Rectangle {
   id: root
@@ -20,6 +21,56 @@ Rectangle {
   signal filterRequested(string name, var value)
   signal typeRequested(string typeId)
   signal resetRequested()
+  function buttons() {
+    var result = [filterDoneButton]
+    for (var i = 0; i < periodButtons.count; i++) result.push(periodButtons.itemAt(i))
+    for (var j = 0; j < significanceButtons.count; j++) result.push(significanceButtons.itemAt(j))
+    result = result.concat([unreadFilterButton, imagesFilterButton, allTypesButton])
+    for (var k = 0; k < typeButtons.count; k++) result.push(typeButtons.itemAt(k))
+    result.push(filterResetButton)
+    return result.filter(function(button) { return button && button.visible && button.enabled })
+  }
+  function reveal(control) {
+    if (!control || control === filterDoneButton) return
+    var top = control.mapToItem(sectionSettingsContent, 0, 0).y
+    if (top < settingsScroll.contentY) settingsScroll.contentY = top
+    else if (top + control.height > settingsScroll.contentY + settingsScroll.height)
+      settingsScroll.contentY = top + control.height - settingsScroll.height
+  }
+  function focusEdge(last) {
+    var controls = buttons()
+    if (!controls.length) return
+    var control = controls[last ? controls.length - 1 : 0]
+    control.forceActiveFocus()
+    reveal(control)
+  }
+  function moveSpatial(horizontal, vertical) {
+    var controls = buttons()
+    var best = KeyboardNavigation.spatialTarget(controls, root, horizontal, vertical)
+    if (!best) return
+    best.forceActiveFocus()
+    reveal(best)
+  }
+  Keys.onPressed: function(event) {
+    var key = (event.text || "").toLowerCase()
+    if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+      moveSpatial(event.key === Qt.Key_Left ? -1 : 1, 0); event.accepted = true
+    } else if (event.key === Qt.Key_Down || key === "j") {
+      moveSpatial(0, 1); event.accepted = true
+    } else if (event.key === Qt.Key_Up || key === "k") {
+      moveSpatial(0, -1); event.accepted = true
+    } else if (event.key === Qt.Key_Home || event.key === Qt.Key_End) {
+      focusEdge(event.key === Qt.Key_End); event.accepted = true
+    } else if (event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp) {
+      var direction = event.key === Qt.Key_PageDown ? 1 : -1
+      settingsScroll.contentY = Math.max(0, Math.min(
+        settingsScroll.contentY + direction * settingsScroll.height * 0.7,
+        Math.max(0, settingsScroll.contentHeight - settingsScroll.height)))
+      event.accepted = true
+    } else if (event.key === Qt.Key_Escape || key === "q") {
+      root.closed(); event.accepted = true
+    }
+  }
 
           anchors.fill: parent
 
@@ -63,7 +114,19 @@ Rectangle {
                 }
               }
 
+              Text {
+                Layout.fillWidth: true
+                text: "Arrow keys navigate · Enter applies · Home/End jump · PgUp/PgDn scroll · Esc closes"
+                textFormat: Text.PlainText
+                color: Color.popups.text
+                opacity: 0.72
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
+              }
+
               Flickable {
+                id: settingsScroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 contentWidth: width
@@ -101,6 +164,7 @@ Rectangle {
                   RowLayout {
                     spacing: Style.spacing.controlGap
                     Repeater {
+                      id: periodButtons
                       model: [
                         { id: "all", label: "Any time" },
                         { id: "24h", label: "24 hours" },
@@ -128,6 +192,7 @@ Rectangle {
                   RowLayout {
                     spacing: Style.spacing.controlGap
                     Repeater {
+                      id: significanceButtons
                       model: [
                         { id: "all", label: "All" },
                         { id: "notable", label: "Notable + critical" },
@@ -174,12 +239,14 @@ Rectangle {
                     spacing: Style.spacing.controlGap
 
                     RadarButton {
+                      id: allTypesButton
                       label: "All types"
                       selected: (root.currentFilter.types || []).length === 0
                       onClicked: root.filterRequested("types", [])
                     }
 
                     Repeater {
+                      id: typeButtons
                       model: root.filterOptions
                       RadarButton {
                         required property var modelData

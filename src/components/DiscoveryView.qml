@@ -26,6 +26,7 @@ Flickable {
   signal detailRequested(var item)
   signal browseRequested()
   signal newRequested()
+  signal refreshRequested()
   signal finishRequested()
   signal navigationRequested(int direction)
   contentWidth: width
@@ -154,6 +155,7 @@ Flickable {
       busy: root.busy
       message: root.message
       onNewRequested: root.newRequested()
+      onRefreshRequested: root.refreshRequested()
       onFinishRequested: root.finishRequested()
       onNavigationRequested: function(direction) { root.navigationRequested(direction) }
     }

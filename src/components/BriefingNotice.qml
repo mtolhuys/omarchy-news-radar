@@ -9,7 +9,10 @@ GridLayout {
   property string message: ""
   property alias newButton: nextBriefing
   property alias finishButton: finish
+  readonly property bool canPrepare: !briefing.initialized || briefing.hasNewStories
+    || briefing.expiredEvents > 0
   signal newRequested()
+  signal refreshRequested()
   signal finishRequested()
   signal navigationRequested(int direction)
   columns: 1
@@ -77,12 +80,14 @@ GridLayout {
       id: nextBriefing
       managesTab: true
       onTabRequested: function(direction) { root.navigationRequested(direction) }
-      visible: !root.briefing.initialized || root.briefing.hasNewStories
-        || root.briefing.expiredEvents > 0
-      label: root.briefing.initialized ? "New briefing" : "Prepare briefing"
-      tooltipText: "Choose a new short briefing from unread stories. Skipped stories stay unread."
+      label: root.canPrepare
+        ? (root.briefing.initialized ? "New briefing" : "Prepare briefing")
+        : "Check for new stories"
+      tooltipText: root.canPrepare
+        ? "Choose a new short briefing from unread stories. Skipped stories stay unread."
+        : "Refresh the public edition and look for unread briefing candidates."
       enabled: !root.busy
-      onClicked: root.newRequested()
+      onClicked: root.canPrepare ? root.newRequested() : root.refreshRequested()
     }
   }
 }

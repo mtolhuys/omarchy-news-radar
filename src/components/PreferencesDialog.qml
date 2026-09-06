@@ -2,10 +2,12 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Commons
 import qs.Ui
+import "KeyboardNavigation.js" as KeyboardNavigation
 
 Rectangle {
   id: root
   property alias firstButton: barPreferenceButton
+  property alias doneButton: preferencesDoneButton
   property var preferences: ({})
   property var sectionVisibility: ({})
   property bool localStateReady: false
@@ -17,6 +19,37 @@ Rectangle {
   signal booleanRequested(string name, bool value)
   signal sectionRequested(string section, bool enabled)
   function sectionIsVisible(section, visibility) { return visibility[section] !== false }
+  function buttons() {
+    var result = [preferencesDoneButton, barPreferenceButton, imagePreferenceButton]
+    for (var i = 0; i < sectionPreferenceRows.count; i++) {
+      var row = sectionPreferenceRows.itemAt(i)
+      if (row) result.push(row.button)
+    }
+    return result.filter(function(button) { return button.visible && button.enabled })
+  }
+  function focusEdge(last) {
+    var controls = buttons()
+    if (controls.length) controls[last ? controls.length - 1 : 0].forceActiveFocus()
+  }
+  function moveSpatial(horizontal, vertical) {
+    var controls = buttons()
+    var best = KeyboardNavigation.spatialTarget(controls, root, horizontal, vertical)
+    if (best) best.forceActiveFocus()
+  }
+  Keys.onPressed: function(event) {
+    var key = (event.text || "").toLowerCase()
+    if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+      moveSpatial(event.key === Qt.Key_Left ? -1 : 1, 0); event.accepted = true
+    } else if (event.key === Qt.Key_Down || key === "j") {
+      moveSpatial(0, 1); event.accepted = true
+    } else if (event.key === Qt.Key_Up || key === "k") {
+      moveSpatial(0, -1); event.accepted = true
+    } else if (event.key === Qt.Key_Home || event.key === Qt.Key_End) {
+      focusEdge(event.key === Qt.Key_End); event.accepted = true
+    } else if (event.key === Qt.Key_Escape || key === "q") {
+      root.closed(); event.accepted = true
+    }
+  }
 
           anchors.fill: parent
 
@@ -50,7 +83,17 @@ Rectangle {
                   font.pixelSize: Style.font.heading
                   font.bold: true
                 }
-                RadarButton { label: "Done"; onClicked: root.closed() }
+                RadarButton { id: preferencesDoneButton; label: "Done"; onClicked: root.closed() }
+              }
+
+              Text {
+                Layout.fillWidth: true
+                text: "Arrow keys navigate · Enter toggles · Home/End jump · Esc closes"
+                textFormat: Text.PlainText
+                color: root.secondaryTextColor
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
               }
 
               Text {
@@ -90,6 +133,7 @@ Rectangle {
                   font.pixelSize: Style.font.body
                 }
                 RadarButton {
+                  id: imagePreferenceButton
                   label: root.preferences.imagesVisible ? "On" : "Off"
                   selected: root.preferences.imagesVisible
                   onClicked: root.booleanRequested("imagesVisible", !root.preferences.imagesVisible)
@@ -130,6 +174,7 @@ Rectangle {
               }
 
               Repeater {
+                id: sectionPreferenceRows
                 model: [
                   { id: "core", label: "Core" },
                   { id: "plugins", label: "Plugins" },
@@ -137,6 +182,7 @@ Rectangle {
                 ]
                 RowLayout {
                   required property var modelData
+                  property alias button: sectionPreferenceButton
                   Layout.fillWidth: true
                   Text {
                     Layout.fillWidth: true
@@ -147,6 +193,7 @@ Rectangle {
                     font.pixelSize: Style.font.body
                   }
                   RadarButton {
+                    id: sectionPreferenceButton
                     label: root.sectionIsVisible(modelData.id, root.sectionVisibility) ? "On" : "Off"
                     selected: root.sectionIsVisible(modelData.id, root.sectionVisibility)
                     enabled: root.localStateReady && !root.stateMutationPending

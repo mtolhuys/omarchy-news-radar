@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Ui
 import "../Model.js" as RadarModel
+import "KeyboardNavigation.js" as KeyboardNavigation
 
 // Detail is a source-linked reading surface, never an installer. All comparison
 // labels, release selection and relevance targets arrive from Python.
@@ -106,26 +107,7 @@ FocusScope {
   }
   function moveSpatial(horizontal, vertical) {
     var controls = buttons()
-    if (!controls.length) return
-    var active = controls.findIndex(function(control) { return control.activeFocus })
-    if (active < 0) { controls[0].forceActiveFocus(); return }
-    var current = controls[active]
-    var origin = current.mapToItem(root, current.width / 2, current.height / 2)
-    var best = null
-    var bestScore = Number.MAX_VALUE
-    for (var i = 0; i < controls.length; i++) {
-      if (i === active) continue
-      var candidate = controls[i]
-      var point = candidate.mapToItem(root, candidate.width / 2, candidate.height / 2)
-      var dx = point.x - origin.x
-      var dy = point.y - origin.y
-      if ((horizontal < 0 && dx >= 0) || (horizontal > 0 && dx <= 0)
-          || (vertical < 0 && dy >= 0) || (vertical > 0 && dy <= 0)) continue
-      var primary = horizontal !== 0 ? Math.abs(dx) : Math.abs(dy)
-      var secondary = horizontal !== 0 ? Math.abs(dy) : Math.abs(dx)
-      var score = primary + secondary * 3
-      if (score < bestScore) { best = candidate; bestScore = score }
-    }
+    var best = KeyboardNavigation.spatialTarget(controls, root, horizontal, vertical)
     if (!best) return
     best.forceActiveFocus()
     reveal(best)

@@ -2,6 +2,8 @@
 
 Version `0.5.0` is the current release. It adds a home overview, a persistent finite briefing, source-backed setup comparisons, reviewed discoveries, local follow/mute controls, corrected first-map placement, bounded gzip delivery and durable public pages. Feed schema remains v2; an optional insights-v1 companion carries the new public facts, and local state moves to v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.0.md).
 
+Version `0.5.1` is the current local candidate. It preserves the 0.5 data, identity, lifecycle, and safety contracts while completing keyboard navigation, improving setup fallbacks, and making caught-up briefing refresh explicit. See the [candidate release notes](release-notes/0.5.1.md).
+
 The README walkthrough and root marketplace preview use inspected captures from the final disposable runtime. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from release publication; marketplace verification is not a security audit.
 
 ## Release identity

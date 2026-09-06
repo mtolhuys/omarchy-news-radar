@@ -147,6 +147,8 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 Version `0.5.0` is the current release. Home combines a persistent five-group briefing, documented changes for your setup, reviewed workflow ideas and project discoveries. Local follows and mutes tune future news; the window prepares its placement before opening. The companion public edition adds shareable story and workflow pages, with bounded gzip delivery and durable URL retention in the feed server. See the [release notes](docs/release-notes/0.5.0.md), [verification evidence](docs/evidence/0.5.0-expanded-local.md), and [release contract](docs/RELEASE.md). The marketplace listing can remain on its previous reviewed snapshot while the 0.5 verification request is processed; marketplace verification is compatibility evidence, not a security audit.
 
+Version `0.5.1` is a local candidate, not a published release. It makes My setup useful without public release-note coverage, completes arrow-key navigation across details and settings, adds `t` for Tune and `,` for section Settings, and gives a caught-up briefing an explicit check-for-stories path. See the [candidate release notes](docs/release-notes/0.5.1.md).
+
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
 ## What is included
@@ -228,7 +230,14 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
-## What is new in 0.5.0
+## What is new in 0.5.1
+
+- My setup presents local descriptions and versions instead of repeating missing-coverage warnings.
+- Detail pages, Tune, and section Settings share complete arrow-key navigation and visible key guidance.
+- `t` opens Tune and `,` opens current-section Settings.
+- A caught-up brief offers **Check for new stories** and becomes **New briefing** only when eligible unread news exists.
+
+## What shipped in 0.5.0
 
 - A Home worth returning to: a finite briefing, source-backed setup changes, reviewed workflow ideas and project discovery.
 - My setup shows documented releases relative to locally enabled versions, with precise unknown/incomplete coverage labels.

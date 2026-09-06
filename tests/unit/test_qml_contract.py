@@ -147,6 +147,11 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('{ keys: "t", action: "tune" }', sources["components/SectionRail.qml"])
         self.assertIn('{ keys: ",", action: "section settings" }', sources["components/SectionRail.qml"])
         self.assertEqual(2, sources["components/ReaderToolbar.qml"].count("Open settings for this section (,)"))
+        for dialog in (sources["components/PreferencesDialog.qml"], sources["components/SectionSettings.qml"]):
+            self.assertIn("function moveSpatial(horizontal, vertical)", dialog)
+            self.assertIn("function focusEdge(last)", dialog)
+            self.assertIn("Qt.Key_Home", dialog)
+            self.assertIn("Qt.Key_End", dialog)
         self.assertIn("SOURCES · FIXED FOR THIS SECTION", sources["components/SectionSettings.qml"])
         self.assertIn("preventStealing: true", sources["components/RadarButton.qml"])
         self.assertIn("managesTab", sources["components/RadarButton.qml"])
@@ -332,7 +337,9 @@ class QmlContractTests(unittest.TestCase):
         for key in ("Qt.Key_Left", "Qt.Key_Right", "Qt.Key_Down", "Qt.Key_Up", "Qt.Key_Home", "Qt.Key_End"):
             self.assertIn(key, detail)
         self.assertEqual(1, notice.count("columns: 1"))
-        self.assertIn("visible: !root.briefing.initialized || root.briefing.hasNewStories", notice)
+        self.assertIn("readonly property bool canPrepare:", notice)
+        self.assertIn('"Check for new stories"', notice)
+        self.assertIn("root.canPrepare ? root.newRequested() : root.refreshRequested()", notice)
         self.assertIn("A new briefing will be available when unread stories arrive.", notice)
         session = (ROOT / "src/controllers/FeedSession.qml").read_text(encoding="utf-8")
         for state in ("First use", "Cached", "Checking", "Updated", "No newer edition", "Publisher stale", "Offline", "Source partial", "Invalid feed", "No cache and failed"):

@@ -14,6 +14,7 @@ omarchy_host_test() {
   local initial_bar_unread background_bar_unread runtime_identity_before runtime_identity_after
   local initial_installed_ids initial_projection initial_selected_id initial_story_count initial_unread_count
   local page_read_state page_selection article_page article_open_count maximize_before_frame
+  local selected_home_kind collection_detail_id collection_last_control
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -615,6 +616,27 @@ omarchy_host_test() {
   wait_for_guest_state "Shift+Tab cycles to the previous section" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"front-page\"'" || return 1
 
+  press t
+  wait_for_guest_state "T opens Tune with keyboard focus" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesOpen == true and .preferencesFocusedControl != \"\"'" || return 1
+  press down
+  wait_for_guest_state "Down navigates Tune controls" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesFocusedControl != \"\"'" || return 1
+  press home
+  wait_for_guest_state "Home reaches Tune Done" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.preferencesFocusedControl == \"Done\"'" || return 1
+  press esc
+  press comma
+  wait_for_guest_state "comma opens current-section Settings on Done" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsOpen == true and .sectionSettingsFocusedControl == \"Done\"'" || return 1
+  press down
+  wait_for_guest_state "Down navigates section Settings controls" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsFocusedControl != \"Done\" and .sectionSettingsFocusedControl != \"\"'" || return 1
+  press end
+  wait_for_guest_state "End reaches Reset section" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.sectionSettingsFocusedControl == \"Reset section\"'" || return 1
+  press esc
+
   press 4
   wait_for_guest_state "validated source metrics are rendered for plugin activity" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"plugins\" and (.selectedMetricIds | index(\"marketplace-views\")) != null and (.selectedMetricIds | index(\"marketplace-hearts\")) != null and .selectedMarketplaceUrl == \"https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.disk-lens\"'" || return 1
@@ -677,6 +699,38 @@ omarchy_host_test() {
   radar_for_you_news || return 1
   wait_for_guest_state "For You matches the locally installed exact plugin id" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .storyCount == 2'" || return 1
+  press home
+  selected_home_kind=""
+  for _ in {1..12}; do
+    selected_home_kind="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedHomeKind'")" || return 1
+    [[ $selected_home_kind == collection ]] && break
+    press down
+  done
+  [[ $selected_home_kind == collection ]] || return 1
+  press enter
+  wait_for_guest_state "collection details begin with keyboard focus on Back" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == true and (.insightDetailFocusedControl | startswith(\"← Back\")) and (.insightDetailControlIds | length) >= 4'" || return 1
+  collection_detail_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailId'")" || return 1
+  press down
+  wait_for_guest_state "Down reaches the next collection-detail action" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == true and (.insightDetailFocusedControl | startswith(\"← Back\") | not)'" || return 1
+  press end
+  wait_for_guest_state "End reaches the final included project" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailFocusedControl == .insightDetailControlIds[-1]'" || return 1
+  collection_last_control="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailFocusedControl'")" || return 1
+  press left
+  wait_for_guest_state "Left moves between included project cards" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg previous '$collection_last_control' '.insightDetailFocusedControl != \$previous and (.insightDetailFocusedControl | startswith(\"← Back\") | not)'" || return 1
+  press enter
+  wait_for_guest_state "Enter opens the keyboard-selected included project" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg collection '$collection_detail_id' '.insightDetailVisible == true and .insightDetailId != \$collection and (.insightDetailFocusedControl | startswith(\"← Back to collection\"))'" || return 1
+  press esc
+  wait_for_guest_state "Escape returns to the parent collection" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg collection '$collection_detail_id' '.insightDetailId == \$collection'" || return 1
+  press esc
+  wait_for_guest_state "Escape returns from collection details to Home" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == false and .homeVisible == true'" || return 1
+  capture_console "success-news-radar-05-detail-keyboard"
   wait_for_guest_state "retired interests are absent from UI, CLI, and current local state" 10 ssh_session \
     "! grep -q 'Apply interests\|interestField\|--interests-json' $plugin_dir/src/Panel.qml && \
      ! $helper set-preferences --help 2>&1 | grep -q -- '--interests-json' && \
