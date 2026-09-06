@@ -276,11 +276,13 @@ class InsightsTests(unittest.TestCase):
         directory = Path(self.environment["HOME"]) / ".config/omarchy/plugins" / PLUGIN
         directory.mkdir(parents=True)
         manifest = directory / "manifest.json"
-        manifest.write_text(json.dumps({"id": PLUGIN, "name": "My Disk Lens", "version": "0.3.0", "hook": "never executed"}))
+        manifest.write_text(json.dumps({"id": PLUGIN, "name": "My Disk Lens", "version": "0.3.0",
+                                        "description": "See what is using your disk.", "hook": "never executed"}))
         result = mock.Mock(returncode=0, stdout=json.dumps([{"id": PLUGIN, "name": "Disk Lens", "enabled": True}]))
         with mock.patch("radar.client_setup.subprocess.run", return_value=result) as run:
             facts = installed_plugins(self.environment)
-            self.assertEqual([{"id": PLUGIN, "name": "My Disk Lens", "version": "0.3.0"}], facts["plugins"])
+            self.assertEqual([{"id": PLUGIN, "name": "My Disk Lens", "version": "0.3.0",
+                               "description": "See what is using your disk."}], facts["plugins"])
             self.assertEqual(1, run.call_count)
             target = directory / "other.json"; manifest.rename(target); manifest.symlink_to(target)
             fallback = installed_plugins(self.environment)["plugins"][0]
@@ -292,6 +294,7 @@ class InsightsTests(unittest.TestCase):
     def test_optional_local_names_are_bounded_and_old_facts_remain_valid(self) -> None:
         self.assertEqual([{"id": PLUGIN, "version": "0.3.0"}], parse_installed_facts(self.facts))
         for field in ({"name": "x" * 121}, {"name": "Two\nLines"}, {"name": None},
+                      {"description": "x" * 601}, {"description": "Two\nLines"}, {"description": None},
                       {"firstParty": "true"}, {"path": "/private/plugin"}):
             with self.subTest(field=field), self.assertRaises(ValidationError):
                 parse_installed_facts(json.dumps([{"id": PLUGIN, "version": None, **field}]))
@@ -299,6 +302,12 @@ class InsightsTests(unittest.TestCase):
         result = projection_model("for-you", json.dumps([PLUGIN]), "", self.environment,
                                   now=CLOCK, installed_facts_json=named)
         self.assertEqual("My Disk Lens", result["mySetup"][0]["name"])
+        described = json.dumps([{"id": PLUGIN, "version": "0.3.0", "name": "My Disk Lens",
+                                 "description": "See what is using your disk."}])
+        result = projection_model("for-you", json.dumps([PLUGIN]), "", self.environment,
+                                  now=CLOCK, installed_facts_json=described)
+        self.assertEqual("See what is using your disk.", result["mySetup"][0]["description"])
+        self.assertEqual("Enabled · 0.3.0", result["mySetup"][0]["comparisonLabel"])
         fallback = self.project("for-you")["mySetup"][0]
         expected = next(event["entity"]["name"] for event in self.feed["events"] if event["entity"]["id"] == PLUGIN)
         self.assertEqual(expected, fallback["name"])

@@ -127,6 +127,7 @@ def insight_projection(insights: Mapping[str, Any] | None, state: Mapping[str, A
     relevance = state.get("relevance", default_relevance())
     versions = {item["id"]: item["version"] for item in installed_facts}
     local_names = {item["id"]: item["name"] for item in installed_facts if "name" in item}
+    local_descriptions = {item["id"]: item["description"] for item in installed_facts if "description" in item}
     first_party = {item["id"] for item in installed_facts if item.get("firstParty") is True}
     installed = set(installed_ids) | versions.keys()
     projects = []
@@ -153,13 +154,21 @@ def insight_projection(insights: Mapping[str, Any] | None, state: Mapping[str, A
             my_setup.append(by_id[identity])
         elif identity not in first_party:
             name = local_names.get(identity) or (known_names or {}).get(identity) or identity
+            version = versions.get(identity)
             target = target_status(relevance, "plugin", identity, name)
             my_setup.append({"id": identity, "name": name, "kind": "plugin", "installed": True,
-                             "installedVersion": versions.get(identity), "publishedVersion": None,
-                             "comparisonState": "unknown", "comparisonLabel": "Release coverage unavailable",
-                             "coverageLabel": "No documented release coverage for this project", "coverageAvailable": False,
-                             "description": "", "releases": [], "newerReleases": [], "source": None,
+                             "installedVersion": version, "publishedVersion": None,
+                             "comparisonState": "unknown",
+                             "comparisonLabel": f"Enabled · {version}" if version else "Enabled locally",
+                             "coverageLabel": "Release notes are not published in Radar for this project yet",
+                             "coverageAvailable": False, "releaseCoverageAvailable": False,
+                             "description": local_descriptions.get(identity, ""), "releases": [], "newerReleases": [], "source": None,
                              "imageUrl": "", "followed": target["followed"], "muted": target["muted"], "relevanceTargets": [target]})
+    setup_order = {"behind": 0, "current": 1, "ahead": 1}
+    my_setup.sort(key=lambda item: (
+        setup_order.get(item["comparisonState"], 2 if item.get("description") else 3),
+        item["name"].casefold(), item["id"],
+    ))
     collections = []
     for collection in (insights or {}).get("collections", []):
         members = [by_id[identity] for identity in collection["projectIds"]]

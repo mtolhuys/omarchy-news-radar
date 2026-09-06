@@ -200,6 +200,10 @@ def project_version(project: Mapping[str, Any], installed_version: str | None, *
     labels = {"not-installed": "Not enabled on this desktop", "unknown": "Version comparison unavailable",
               "current": "No newer documented release version", "behind": "Newer documented releases available",
               "ahead": "Installed version is newer than this coverage"}
+    if installed and not releases:
+        labels["unknown"] = f"Enabled · {installed_version}" if installed_version else "Enabled locally"
     return {**project, "installed": installed, "installedVersion": installed_version, "publishedVersion": latest,
             "comparisonState": state, "comparisonLabel": labels[state], "releases": ordered,
-            "newerReleases": newer, "coverageLabel": "Documented releases; coverage may be incomplete"}
+            "newerReleases": newer, "releaseCoverageAvailable": bool(releases),
+            "coverageLabel": ("Documented releases; coverage may be incomplete" if releases
+                              else "Release notes are not published in Radar for this project yet")}

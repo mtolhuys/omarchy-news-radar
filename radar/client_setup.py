@@ -27,7 +27,7 @@ def parse_installed_facts(raw: str) -> list[dict[str, Any]]:
     identities = set()
     for item in values:
         if (not isinstance(item, dict) or not {"id", "version"} <= set(item)
-                or set(item) - {"id", "version", "name", "firstParty"}):
+                or set(item) - {"id", "version", "name", "description", "firstParty"}):
             raise ValidationError("installed fact has an unknown or incomplete shape")
         identity, version = item["id"], item["version"]
         if not isinstance(identity, str) or not ID_RE.fullmatch(identity) or identity in identities:
@@ -37,6 +37,8 @@ def parse_installed_facts(raw: str) -> list[dict[str, Any]]:
                 raise ValidationError("installed version must be exact plain text")
         if "name" in item and normalize_text(item["name"], 120) != item["name"]:
             raise ValidationError("installed name must be bounded plain text")
+        if "description" in item and normalize_text(item["description"], 600) != item["description"]:
+            raise ValidationError("installed description must be bounded plain text")
         if "firstParty" in item and not isinstance(item["firstParty"], bool):
             raise ValidationError("installed first-party status must be a boolean")
         identities.add(identity)
@@ -63,7 +65,7 @@ def _manifest_facts(identity: str, environment: Mapping[str, str]) -> dict[str, 
         manifest = read_json_bounded(path, 128 * 1024)
         if not isinstance(manifest, dict) or manifest.get("id") != identity:
             return {}
-        return {key: value for key, bound in (("version", 80), ("name", 120))
+        return {key: value for key, bound in (("version", 80), ("name", 120), ("description", 600))
                 if (value := _plain_field(manifest.get(key), bound)) is not None}
     except (OSError, RadarError):
         return {}

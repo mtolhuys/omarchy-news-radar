@@ -35,13 +35,26 @@ Flickable {
   ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
   readonly property var groups: setupMode ? [
-    { title: "My setup", hint: "Your enabled plugins, installed versions, and published release notes.", items: setup, kind: "project" }
+    { title: "My setup", hint: setupSummary(), items: setup, kind: "project" }
   ] : [
     { title: "", hint: "", items: stories, kind: "story" },
     { title: "Changes for your setup", hint: "Published releases newer than the version installed here.", items: home.setupUpdates || [], kind: "project" },
     { title: "Worth exploring", hint: "Reviewed collections, with the reasons and original sources.", items: home.featuredCollections || [], kind: "collection" },
     { title: "Discover a project", hint: "A few source-linked projects from the current edition.", items: home.discoveries || [], kind: "project" }
   ]
+
+  function setupSummary() {
+    var updates = 0
+    var covered = 0
+    for (var i = 0; i < setup.length; i++) {
+      if (setup[i].comparisonState === "behind") updates++
+      if (setup[i].releaseCoverageAvailable === true) covered++
+    }
+    var summary = setup.length + (setup.length === 1 ? " enabled plugin" : " enabled plugins")
+    if (updates) summary += " · " + updates + (updates === 1 ? " update available" : " updates available")
+    if (covered) summary += " · " + covered + " with release history"
+    return summary + ". Open one to see what it does and shape its future news."
+  }
 
   function cards() {
     var items = []
@@ -114,7 +127,7 @@ Flickable {
 
     Text {
       Layout.fillWidth: true
-      text: root.setupMode ? "Know what is running." : "Around Omarchy"
+      text: root.setupMode ? "Your Omarchy, at a glance." : "Around Omarchy"
       textFormat: Text.PlainText
       color: Color.popups.text
       font.family: Style.font.family
@@ -125,7 +138,7 @@ Flickable {
     Text {
       Layout.fillWidth: true
       text: root.setupMode
-        ? "Release context for this computer. Follow projects or mute their future news in a project's details."
+        ? "Your enabled plugins and their installed versions. Release history appears when a project publishes it through Radar."
         : "Your short briefing, useful changes, and something new to try."
       textFormat: Text.PlainText
       color: Color.popups.text

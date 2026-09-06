@@ -171,7 +171,8 @@ FocusScope {
         Text {
           Layout.fillWidth: true
           visible: !!root.item && !!root.item.installedVersion
-          text: root.item ? "Installed " + String(root.item.installedVersion || "unknown") + " · Published " + String(root.item.publishedVersion || "unknown") : ""
+          text: root.item ? "Installed " + String(root.item.installedVersion || "unknown")
+            + (root.item.publishedVersion ? " · Latest documented " + String(root.item.publishedVersion) : "") : ""
           textFormat: Text.PlainText
           color: Color.popups.text
           font.family: Style.font.family
@@ -375,7 +376,7 @@ FocusScope {
             id: noReleaseText
             anchors.fill: parent
             anchors.margins: Style.spacing.md
-            text: "No documented release notes are available for this project in the current edition."
+            text: "This project does not publish release notes in Radar yet. Its installed details and future news controls remain available."
             textFormat: Text.PlainText
             color: Color.popups.text
             font.family: Style.font.family
