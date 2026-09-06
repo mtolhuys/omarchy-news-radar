@@ -27,7 +27,8 @@ omarchy_host_test() {
 
   # Require a short quiet interval: one completed helper can queue the next
   # projection, temporarily disabling visible controls between snapshots.
-  # shellcheck disable=SC2329
+  # Older ShellCheck reports SC2317 for these harness callbacks/helpers.
+  # shellcheck disable=SC2317,SC2329
   radar_idle() {
     local attempt snapshot
     for ((attempt = 0; attempt < 5; attempt++)); do
@@ -44,7 +45,8 @@ omarchy_host_test() {
 
   # Called indirectly by the bounded wait helper; record both frame and
   # display data so a failed accessibility fit has concrete geometry evidence.
-  # shellcheck disable=SC2329
+  # Older ShellCheck reports SC2317 for these harness callbacks/helpers.
+  # shellcheck disable=SC2317,SC2329
   radar_frame_fits() {
     local frame monitors
     frame="$(ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"📰 Omarchy News Radar\")]'")" || return 1

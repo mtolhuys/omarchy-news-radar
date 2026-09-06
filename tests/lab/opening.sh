@@ -52,7 +52,8 @@ omarchy_host_test() {
   }
 
   # Called indirectly by the bounded wait helper.
-  # shellcheck disable=SC2329
+  # Older ShellCheck reports SC2317 for these harness callbacks/helpers.
+  # shellcheck disable=SC2317,SC2329
   briefing_choices_fit() {
     local name="$1" window geometry method
     window="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
@@ -69,7 +70,8 @@ omarchy_host_test() {
   }
 
   # Called indirectly by the bounded wait helper.
-  # shellcheck disable=SC2329
+  # Older ShellCheck reports SC2317 for these harness callbacks/helpers.
+  # shellcheck disable=SC2317,SC2329
   briefing_frame_fits() {
     local frame
     frame="$(ssh_session "hyprctl -j clients | jq '[.[] | select(.title == \"📰 Omarchy News Radar\") | {title,at,size}]'")" || return 1
@@ -80,6 +82,8 @@ omarchy_host_test() {
       <<<"$frame" >/dev/null
   }
 
+  # Retained geometry helper; not called by this focused scenario.
+  # shellcheck disable=SC2317
   briefing_control_fits() {
     local method="$1" geometry window
     geometry="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar '$method' ''")" || return 1
@@ -119,6 +123,8 @@ omarchy_host_test() {
   # A cache-file notification can queue another local projection just after
   # the refresh flag clears. Press Enter only after the rendered choice has
   # stayed enabled across the complete helper pipeline.
+  # Called indirectly by wait_for_guest_state.
+  # shellcheck disable=SC2317
   opening_choice_idle() {
     local _sample
     for _sample in {1..5}; do
