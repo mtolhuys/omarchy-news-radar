@@ -245,11 +245,11 @@ omarchy_host_test() {
   briefing_key 01-f6 f6 \
     '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Mark briefing read"' || return 1
   briefing_key 02-tab-new tab \
-    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "New briefing"' || return 1
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Load new briefing"' || return 1
   briefing_key 03-backtab-finish shift-tab \
     '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Mark briefing read"' || return 1
   briefing_key 04-tab-new tab \
-    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "New briefing"' || return 1
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Load new briefing"' || return 1
   briefing_key 05-tab-show tab \
     '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Show 3 updates"' || return 1
   briefing_key 06-expand ret \
@@ -358,7 +358,7 @@ omarchy_host_test() {
   briefing_control_fits newBriefingGeometry || return 1
   briefing_capture 10-started-today-text-200 || return 1
 
-  # New briefing is disabled when all displayed events are read. Expose the
+  # The button offers a refresh when all displayed events are read. Expose the
   # later fixture while text is still enlarged, then activate the real control.
   ssh_guest "cp $scenario_root/fixtures/later.json $scenario_root/fixtures/current.json" || return 1
   press r
@@ -366,7 +366,7 @@ omarchy_host_test() {
     '.briefing.complete == true and .briefing.total == 0 and .briefing.hasNewStories == true and .refreshing == false and .briefingBusy == false' || return 1
   ssh_guest "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000001a7e\") | not)' $scenario_state" || return 1
   briefing_key text-200-new-brief-focus f6 \
-    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "New briefing"' || return 1
+    '.section == "front-page" and .briefingControlsMode == true and .briefingFocusedControl == "Load new briefing"' || return 1
   briefing_control_fits newBriefingGeometry || return 1
   briefing_key text-200-new-brief-activate ret \
     '.briefing.total == 1 and .briefing.remaining == 1 and .selectedId == "evt_000000000000000000001a7e" and .selectedIsUnread == true and .briefingBusy == false' || return 1
