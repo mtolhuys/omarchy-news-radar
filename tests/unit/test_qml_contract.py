@@ -42,15 +42,9 @@ class QmlContractTests(unittest.TestCase):
                 int.from_bytes(marketplace_preview[20:24], "big"),
             ),
         )
-        walkthrough = (ROOT / "preview.gif").read_bytes()
-        self.assertIn(walkthrough[:6], (b"GIF87a", b"GIF89a"))
-        self.assertEqual((960, 573), (
-            int.from_bytes(walkthrough[6:8], "little"),
-            int.from_bytes(walkthrough[8:10], "little"),
-        ))
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("(assets/readme-banner.svg)", readme)
-        self.assertIn("(preview.gif)", readme)
+        self.assertIn("(preview.png)", readme)
         self.assertEqual(
             {"appId": "org.quickshell", "title": "📰 Omarchy News Radar"},
             manifest["windowIdentity"],

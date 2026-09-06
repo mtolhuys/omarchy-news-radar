@@ -247,8 +247,7 @@ def validate_manifest() -> None:
                 fail(f"panel mark lacks reviewed geometry: {panel_mark_path.name}")
     banner_source = ROOT / "assets" / "readme-banner.svg"
     marketplace_preview = ROOT / "preview.png"
-    readme_walkthrough = ROOT / "preview.gif"
-    if not banner_source.is_file() or not marketplace_preview.is_file() or not readme_walkthrough.is_file():
+    if not banner_source.is_file() or not marketplace_preview.is_file():
         fail("README and marketplace preview assets are missing")
     marketplace_preview_bytes = marketplace_preview.read_bytes()
     if marketplace_preview_bytes[:8] != b"\x89PNG\r\n\x1a\n":
@@ -263,22 +262,11 @@ def validate_manifest() -> None:
     for token in ("COMMUNITY PLUGIN", "OMARCHY", "NEWS RADAR", "#9ece6a", "#ffad24"):
         if token not in banner_text:
             fail(f"README banner lacks reviewed brand token: {token}")
-    walkthrough_bytes = readme_walkthrough.read_bytes()
-    if walkthrough_bytes[:6] not in (b"GIF87a", b"GIF89a"):
-        fail("README walkthrough is not a GIF")
-    walkthrough_size = (
-        int.from_bytes(walkthrough_bytes[6:8], "little"),
-        int.from_bytes(walkthrough_bytes[8:10], "little"),
-    )
-    if walkthrough_size != (960, 573):
-        fail("README walkthrough must remain 960x573")
-    if len(walkthrough_bytes) > 6 * 1024 * 1024:
-        fail("README walkthrough exceeds the 6 MiB repository budget")
     readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
     if "(assets/readme-banner.svg)" not in readme_text:
         fail("README does not embed the reviewed brand banner")
-    if "(preview.gif)" not in readme_text:
-        fail("README does not embed the product walkthrough")
+    if "(preview.png)" not in readme_text:
+        fail("README does not embed the current product screenshot")
     qml = entries["panel"].read_text(encoding="utf-8")
     for required_text in ("function open(", "function close(", "property string runtimeBuildIdentity"):
         if required_text not in qml:

@@ -10,9 +10,9 @@ Catch up on Omarchy releases, official news, plugin activity and videos in one k
 
 Omarchy News Radar is an independent community project.
 
-![Omarchy News Radar 0.5 interface walkthrough — recorded before automatic discovery](preview.gif)
+![Omarchy News Radar 0.5.3 — Front Page with live source news](preview.png)
 
-The walkthrough uses the released 0.5 reader and its real public edition.
+The released 0.5.3 plugin, captured with the live public feed on 6 September 2026. Story content and counts change with the feed.
 
 ## Install the published v0.5.3
 
@@ -71,7 +71,7 @@ Your brief survives closing, reopening, and refresh. New arrivals stay available
 - `1`–`N`: jump the currently visible sections (Front Page, For You, Core, Plugins, YouTube, Saved; hidden rails leave the number keys).
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections during normal navigation.
 - `F6`: enter or leave Home, My setup, or briefing controls. Within that mode, `Tab` / `Shift+Tab` cycles the available cards and actions. In expanded group history, Up/Down and Home/End select an update; Enter opens its original source.
-- In project, collection, and context details, the arrow keys or `j` / `k` move between every visible action and included-project card; `Home` / `End` jump to the first or last action, Enter activates it, and `Page Up` / `Page Down` scroll the reading surface.
+- In project, discovery, and context details, the arrow keys or `j` / `k` move between every visible action and included-project card; `Home` / `End` jump to the first or last action, Enter activates it, and `Page Up` / `Page Down` scroll the reading surface.
 - On My setup, End or Down from the final plugin reaches **Read news for your setup**; Up returns to the final plugin and Enter opens the current matching news.
 - `j` / `k` or arrow keys: select a card on Home/My setup or move the selected story in a source reader. Crossing the story viewport bottom smoothly anchors the newly selected row at the top; crossing the top while moving upward keeps the highlight visibly anchored even during key repeat. Normal row-by-row movement continues while the next story remains visible. In sections with more pages, Down from the final loaded story focuses **Load more**; Up returns focus without moving the retained story or viewport; Enter loads the next page.
 - `Home` / `End`: first or final keyboard target in the current view; My setup's final target is **Read news for your setup**.
@@ -232,6 +232,13 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
 
+## What is new in 0.5.3
+
+- **New in the marketplace** and **Latest changes** are selected automatically from validated addition and release events, with source dates and links.
+- Reading does not empty discovery. During quiet periods, the previous usable discovery edition stays visible with its original dates.
+- The personal briefing remains separate: choose **Load new briefing** when you are ready to replace it.
+- The authored workflow collections shown in earlier releases have been removed.
+
 ## What is new in 0.5.1
 
 - My setup presents local descriptions and versions instead of repeating missing-coverage warnings.
@@ -242,11 +249,11 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 
 ## What shipped in 0.5.0
 
-- A Home worth returning to: a finite briefing, source-backed setup changes, recent marketplace additions and project discovery.
+- A finite briefing, source-backed setup changes and project details. The original authored discovery collections were replaced with automatic, source-dated discovery in 0.5.3.
 - My setup shows documented releases relative to locally enabled versions, with precise unknown/incomplete coverage labels.
 - Project, source and creator follow/mute controls work locally and remain clearable. Current briefing membership and saved stories stay intact.
 - The opening sequence prepares placement before mapping the window; geometry is separate from reading state.
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The README walkthrough and marketplace preview are captured from the final 0.5.1 runtime in the disposable Omarchy Plugin Lab. See the [release notes](docs/release-notes/0.5.1.md) and [release contract](docs/RELEASE.md).
+The README and marketplace screenshot shows the 0.5.3 runtime installed from the public repository in the disposable Omarchy Plugin Lab. See the [release notes](docs/release-notes/0.5.3.md) and [release contract](docs/RELEASE.md).
