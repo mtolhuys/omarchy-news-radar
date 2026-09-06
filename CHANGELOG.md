@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.2 — 2026-09-06
+
+### Fixed
+
 - Open For You directly into personal news, with installed-plugin and project/creator matches instead of source-wide duplicates.
 - Show unread counts consistently in the section rail and explain stories hidden by Unread only.
 - Wrap reader controls below the heading and preserve keyboard focus when clearing an older source follow.

@@ -14,7 +14,7 @@ Omarchy News Radar is an independent community project.
 
 The walkthrough uses the released 0.5 reader and its real public edition.
 
-## Install the published v0.5.1
+## Install the published v0.5.2
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -148,7 +148,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.1` is the current release. It makes My setup useful without public release-note coverage, completes arrow-key navigation across details and settings, adds `t` for Tune and `,` for section Settings, gives a caught-up briefing an explicit check-for-stories path, and keeps section totals distinct from unread status. See the [release notes](docs/release-notes/0.5.1.md), [verification evidence](docs/evidence/0.5.1-local.md), and [release contract](docs/RELEASE.md). The marketplace listing can remain on its previous reviewed snapshot while the 0.5.1 verification request is processed; marketplace verification is compatibility evidence, not a security audit.
+Version `0.5.2` is the current release. It fixes personal-news routing, unread section counts, and crowded reader controls. See the [release notes](docs/release-notes/0.5.2.md), [verification evidence](docs/evidence/0.5.2-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -231,7 +231,6 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
-Version `0.5.2` is a local candidate, not a published release. It fixes personal-news navigation, unread badges and crowded reader controls. See the [candidate notes](docs/release-notes/0.5.2.md).
 
 ## What is new in 0.5.1
 

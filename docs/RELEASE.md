@@ -147,6 +147,6 @@ The [0.5.1 evidence](evidence/0.5.1-local.md) establishes the exact runtime sour
 
 The Laravel application is a separate deployment unit. Validate real producer artifacts through its strict staging policy, verify retained links across changing editions and exercise interruption recovery before deployment. Confirm gzip, Vary, ETag, HEAD, 304, content type, cache policy and encoded-byte accounting on production application responses. Old clients continue using unchanged events.json.
 
-## 0.5.2 local candidate
+## 0.5.2 release gate
 
-The personal-news and unread-navigation correction is a local candidate only. Complete source validation and focused disposable-guest acceptance, then let the owner test the installed candidate before any push, tag, release, or marketplace change. The existing verification entry must not be duplicated. See [candidate notes](release-notes/0.5.2.md).
+The owner tested the installed candidate and approved publication. The [0.5.2 evidence](evidence/0.5.2-local.md) records source checks and focused disposable-guest acceptance. Publish the exact clean release commit only after CI, feed health, and its public-clone journey pass. Update the existing verification entry once with that full SHA; do not create another request. Marketplace approval and snapshot promotion remain maintainer-controlled.
