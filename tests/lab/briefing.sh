@@ -410,6 +410,23 @@ omarchy_host_test() {
   briefing_wait "Settings is clickable in the resized reader" '.sectionSettingsOpen == true' || return 1
   briefing_key settings-close esc '.sectionSettingsOpen == false' || return 1
 
+  log "Checking automatic discoveries without companion content"
+  briefing_key discovery-home 1 \
+    '.homeVisible == true and .homeRecentAdditions == 4 and .homeRecentChanges == 2 and .insightsStatus == "missing"' || return 1
+  briefing_key discovery-footer end '.homeFooterSelected == true' || return 1
+  briefing_key discovery-last up '.homeFooterSelected == false and .selectedHomeKind == "activity"' || return 1
+  briefing_capture 14-automatic-discoveries || return 1
+  briefing_key discovery-detail ret \
+    '.insightDetailVisible == true and (.insightDetailId | startswith("activity:")) and (.insightSelectionReason | contains("automatically")) and .insightReviewedAt == ""' || return 1
+  briefing_key discovery-source down '.insightDetailFocusedControl == "Open original source"' || return 1
+  briefing_capture 15-source-backed-discovery || return 1
+  briefing_key discovery-back esc '.homeVisible == true and .insightDetailVisible == false' || return 1
+  ssh_guest "jq '.events = []' $scenario_root/fixtures/later.json > $scenario_root/fixtures/current.next && mv $scenario_root/fixtures/current.next $scenario_root/fixtures/current.json" || return 1
+  briefing_key discovery-quiet-refresh r \
+    '.helperRunning == false and .pendingProjection == false and .homeRetainedDiscoveries == true and .homeRecentAdditions == 4 and .homeRecentChanges == 2' || return 1
+  briefing_key discovery-top home '.homeFooterSelected == false and .selectedHomeCard == 0' || return 1
+  briefing_capture 16-quiet-discovery-edition || return 1
+
   log "Removing the isolated candidate and checking runtime cleanup"
   briefing_close || return 1
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.news-radar --yes" >"$RUN_DIR/briefing-remove.log" || return 1

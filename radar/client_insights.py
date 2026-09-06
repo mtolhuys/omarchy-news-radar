@@ -8,13 +8,14 @@ from typing import Any, Mapping
 from pathlib import Path
 
 from .constants import BUILD_ID, FEED_ORIGIN, INSIGHTS_URL
+from .discovery import automatic_discoveries, discovery_edition
 from .errors import RadarError, ValidationError
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .insights import INSIGHTS_MAX_BYTES, project_version, validate_insights
 from .io import atomic_write_json, read_json_bounded, refuse_symlink
 from .relevance import default_relevance, relevance_controls, target_status, validate_target, KINDS
 from .client_setup import parse_installed_facts
-from .state import _OwnedFileLock, StateLock, cache_root, load_state, save_state
+from .state import _OwnedFileLock, StateLock, cache_root, load_feed, load_state, save_state
 from .validation import format_timestamp, parse_timestamp
 
 
@@ -169,20 +170,10 @@ def insight_projection(insights: Mapping[str, Any] | None, state: Mapping[str, A
         setup_order.get(item["comparisonState"], 2 if item.get("description") else 3),
         item["name"].casefold(), item["id"],
     ))
-    collections = []
-    for collection in (insights or {}).get("collections", []):
-        members = [by_id[identity] for identity in collection["projectIds"]]
-        if any(item["muted"] for item in members):
-            continue
-        collections.append({**collection, "projects": [compact_project(item) for item in members],
-                            "installedCount": sum(item["installed"] for item in members),
-                            "imageUrl": collection.get("image", {}).get("sourceUrl", "") if state["preferences"]["imagesVisible"] else ""})
     needle = " ".join(query.lower().split())
     def matches(item: Mapping[str, Any]) -> bool:
         return not needle or needle in " ".join(str(item.get(key, "")) for key in ("name", "title", "summary", "description", "body")).lower()
     visible = [item for item in projects if not item["muted"] and matches(item)]
-    featured = [item for item in collections if matches(item)]
-    discoveries = [item for item in visible if item["kind"] == "plugin" and not item["installed"]]
     updates = [item for item in visible if item["comparisonState"] == "behind"]
     return {"insights": {"status": "cached" if insights else "missing", "publishedAt": insights["publishedAt"] if insights else "",
                          "coverageAvailable": insights is not None, "installedFactsAvailable": installed_facts_available,
@@ -190,9 +181,9 @@ def insight_projection(insights: Mapping[str, Any] | None, state: Mapping[str, A
                          # saved/current briefing row can remain reachable even
                          # when its project card is outside the visible scope.
                          "projectDetails": projects,
-                         "projects": visible, "collections": [item for item in collections if matches(item)]},
-            "home": {"featuredCollections": featured[:3], "discoveries": discoveries[:8], "setupUpdates": updates[:6],
-                     "featuredCollectionCount": len(featured), "discoveryCount": len(discoveries), "setupUpdateCount": len(updates)},
+                         "projects": visible, "collections": []},
+            "home": {"featuredCollections": [], "discoveries": [], "setupUpdates": updates[:6],
+                     "featuredCollectionCount": 0, "discoveryCount": 0, "setupUpdateCount": len(updates)},
             "mySetup": [item for item in my_setup if matches(item)], "relevanceControls": relevance_controls(state)}
 
 
@@ -203,5 +194,8 @@ def insights_model(installed_facts_json: str = "[]", environment: Mapping[str, s
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
         insights = load_insights(environment, now=now)
-    return {"protocolVersion": 1, "status": "ok", "state": state,
-            **insight_projection(insights, state, [], facts, query=query, installed_facts_available=installed_facts_available)}
+        feed = load_feed(environment, now=now)
+        edition, retained, warning = discovery_edition(feed, environment, now=now)
+    result = insight_projection(insights, state, [], facts, query=query, installed_facts_available=installed_facts_available)
+    result["home"].update(automatic_discoveries(edition, feed, state, result["insights"]["projectDetails"], query=query, retained=retained, warning=warning))
+    return {"protocolVersion": 1, "status": "ok", "state": state, **result}

@@ -26,7 +26,6 @@ RELEASE_REPOSITORIES = {
     "io.github.nejcm.pomodoro": "nejcm/omarchy-pomodoro",
     "bottelet.focus-modes": "Bottelet/omarchy-focus-modes",
 }
-CONTENT_DIRECTORY = Path(__file__).resolve().parents[1] / "content/discoveries"
 
 
 def load_collections(directory: Path) -> list[dict[str, Any]]:
@@ -104,30 +103,30 @@ def _merge_collected_releases(previous: list[dict[str, Any]], collected: list[di
 
 def build_insights(
     snapshot: Mapping[str, Any], *, published_at: datetime,
-    content_directory: Path = CONTENT_DIRECTORY, fetch_releases: bool = False,
+    content_directory: Path | None = None, fetch_releases: bool = False,
     github_token: str | None = None, previous_insights: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Select reviewed projects and recent activity, with honest bounded release coverage.
+    """Select recent event projects with bounded, source-backed release coverage.
 
     Optional upstream failure retains previously validated source facts. An explicit
     successful empty index removes stale coverage; dates always belong to upstream.
     """
-    collections = load_collections(content_directory)
+    collections = load_collections(content_directory) if content_directory is not None else []
     # Fixed-clock historical builds omit discoveries that had not been reviewed yet.
     collections = [item for item in collections if parse_timestamp(item.get("reviewedAt")) <= published_at]
     catalog = snapshot.get("sources", {}).get("marketplace", {}).get("plugins", {})
     available = {identity: entry for identity, entry in catalog.items() if not entry.get("retired")}
     collections = [item for item in collections if all(identity == "omarchy" or identity in available for identity in item.get("projectIds", []))]
     priority = [identity for item in collections for identity in item.get("projectIds", [])]
-    priority += list(RELEASE_REPOSITORIES)
     priority += [event["entity"]["id"] for event in sorted(snapshot.get("events", []), key=lambda event: (event["occurredAt"], event["id"]), reverse=True)]
+    priority += list(RELEASE_REPOSITORIES)
     priority += sorted(available)
     selected: list[str] = []
     for identity in priority:
         if identity in available and identity not in selected and len(selected) < MAX_PROJECTS - 1:
             selected.append(identity)
     projects = [_core_project(snapshot)] + [_plugin_project(identity, available[identity]) for identity in selected]
-    illustrated = {identity for item in collections for identity in item["projectIds"]}
+    illustrated = set(selected[:12])
     for project in projects:
         if project["id"] not in illustrated:
             project.pop("image", None)

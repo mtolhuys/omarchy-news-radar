@@ -27,7 +27,7 @@ Item {
   property var installedPluginFacts: []
   property bool installedFactsAvailable: false
 
-  property var homeModel: ({ featuredCollections: [], discoveries: [], setupUpdates: [] })
+  property var homeModel: ({ recentAdditions: [], recentChanges: [], discoveryStatus: "", setupUpdates: [] })
 
   property var setupModel: []
 

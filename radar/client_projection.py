@@ -14,6 +14,7 @@ from .client_insights import compact_project, insight_projection, load_insights
 from .client_presentation import decorate_events
 from .client_setup import parse_installed_facts
 from .constants import CLIENT_SECTIONS, FEED_URL
+from .discovery import discovery_edition, automatic_discoveries
 from .errors import ValidationError
 from .filters import apply_section_filter, filter_options, filter_summary
 from .freshness import edition_timing
@@ -151,12 +152,17 @@ def projection_model(
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
         feed = load_feed(environment, now=now)
+        discovery_feed, retained_discoveries, discovery_warning = discovery_edition(feed, environment, now=now)
     insights = load_insights(environment, now=now)
     known_names = {}
     for event in (feed or {}).get("events", []):
         known_names.setdefault(event["entity"]["id"], event["entity"]["name"])
     extra = insight_projection(insights, state, installed, installed_facts, query=query,
                                installed_facts_available=installed_facts_available, known_names=known_names)
+    extra["home"].update(automatic_discoveries(
+        discovery_feed, feed, state, extra["insights"]["projectDetails"], query=query,
+        retained=retained_discoveries, warning=discovery_warning,
+    ))
     context = {
         **extra,
         "state": state,

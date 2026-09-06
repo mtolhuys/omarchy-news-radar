@@ -153,15 +153,18 @@ class InsightsPublicationTests(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 build_insights(self.snapshot, published_at=CLOCK, content_directory=path)
 
-    def test_reviewed_production_content_has_sources_and_fits_global_bounds(self):
-        records = load_collections(ROOT / "content/discoveries")
-        self.assertEqual(3, len(records))
-        snapshot = json.loads((ROOT / "state/source-snapshot.json").read_text())
-        insights = build_insights(snapshot, published_at=CLOCK)
-        self.assertLessEqual(len(insights["projects"]), 100)
-        self.assertEqual(3, len(insights["collections"]))
-        old = build_insights(snapshot, published_at=datetime(2026, 9, 4, tzinfo=timezone.utc))
-        self.assertEqual([], old["collections"])
+    def test_production_uses_current_event_projects_without_authored_collections(self):
+        catalog = self.snapshot["sources"]["marketplace"]["plugins"]
+        template = copy.deepcopy(next(iter(catalog.values())))
+        for number in range(110):
+            catalog[f"org.example.project{number}"] = {**template, "name": f"Project {number}"}
+        event = copy.deepcopy(self.feed["events"][0])
+        event["entity"]["id"] = "org.example.project109"
+        self.snapshot["events"] = [event]
+        insights = build_insights(self.snapshot, published_at=CLOCK)
+        self.assertEqual(100, len(insights["projects"]))
+        self.assertEqual("org.example.project109", insights["projects"][1]["id"])
+        self.assertEqual([], insights["collections"])
 
     def test_bad_discovery_image_is_omitted_without_losing_explanations(self):
         insight = copy.deepcopy(self.insights)

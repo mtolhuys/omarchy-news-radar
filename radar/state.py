@@ -536,6 +536,7 @@ def purge(environment: Mapping[str, str] | None = None) -> list[str]:
         feed_path(environment),
         feed_http_path(environment),
         cache_root(environment) / "insights.json",
+        cache_root(environment) / "discovery-edition.json",
         cache_root(environment) / "insights-http.json",
         cache_root(environment) / "insights-check.json",
         state_root(environment) / "window.json",

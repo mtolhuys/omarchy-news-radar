@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — 0.5.3 candidate
+
+- Replace authored discovery articles with dated marketplace additions and version/release events, preserving source text and links.
+- Retain the last usable discovery edition during quiet periods; preserve private read state and briefing membership.
+
 ## Unreleased
 
 ## 0.5.2 — 2026-09-06

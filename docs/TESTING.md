@@ -165,7 +165,7 @@ The same focused scenario captures dark, light, and narrow layouts, then resets 
 
 ## Expanded preview with public content
 
-`opening.sh` exercises Home, setup details, follows/mutes, opening geometry and empty states using isolated guest fixtures. To additionally inspect real release notes and reviewed workflows before deployment, supply the paths to an owner-provided public `events.json` and `insights.json` pair generated for this candidate. Use current, validated public artifacts with reviewed workflow records; private client caches and reading state are not preview inputs. Replace the example paths below with their actual absolute paths:
+`opening.sh` exercises Home, setup details, follows/mutes, opening geometry and empty states using isolated guest fixtures. To additionally inspect real release notes and dated discoveries before deployment, supply the paths to an owner-provided public `events.json` and `insights.json` pair generated for this candidate. Use current, validated public artifacts with current source events; private client caches and reading state are not preview inputs. Replace the example paths below with their actual absolute paths:
 
 ```bash
 cd /absolute/path/to/omarchy/plugin-lab
@@ -218,3 +218,7 @@ Image availability regressions prove that duplicate URLs are fetched once, dimen
 ## Personal-news regression gate
 
 The focused briefing scenario seeds an isolated legacy marketplace follow, verifies that For You opens directly into three matching installed-plugin stories, traverses My setup and its news footer by keyboard, and toggles Plugins between seven total stories and one unread story while asserting the actual rendered rail badge stays one. It also opens Settings by pointer in a resized window. Source tests cover source-follow exclusion, project/creator inclusion, mute precedence, preserved state, and hidden-read feedback including retained visible rows.
+
+## Automatic discovery candidate
+
+`tests/unit/test_discovery.py` covers source-preserving cards, live additions, bounded distinct-project order, late arrivals retaining original dates, quiet/offline retention, current search/mutes/visibility/retirements, version/source-bound release enrichment, corrupt/oversized/symlinked caches, write failure and purge. `tests/lab/briefing.sh` additionally checks automatic activity cards and keyboard details without an insights companion and retains discovery through a quiet feed. Candidate status remains local until owner testing.

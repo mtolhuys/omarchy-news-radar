@@ -149,7 +149,7 @@ Release acceptance includes keyboard-only traversal, visible focus in light and 
 
 ## Expanded home, setup and relevance (0.5.0)
 
-Front Page opens a scrollable home overview. The retained brief is one section alongside setup changes, reviewed workflows and a small project discovery selection. A finished brief remains finished and those other sections remain useful. No hidden reader selection is implicitly read; opening a briefing card deliberately enters the reader. Source-section read behavior remains unchanged.
+Front Page opens a scrollable home overview. The retained brief is one section alongside setup changes, recent marketplace additions and dated version changes. A finished brief remains finished and those other sections remain useful. No hidden reader selection is implicitly read; opening a briefing card deliberately enters the reader. Source-section read behavior remains unchanged.
 
 For You opens directly into personal news on every section activation. My setup remains an explicit secondary tab. A setup card leads with the enabled version, documented version and a precise comparison label. Unknown or incomparable versions say so. Details provide plain-text source notes and original links; they never install or update software. Workflow details explain the idea, its review basis and the related projects. A project can be opened from a workflow and Back returns to that workflow before leaving details.
 
@@ -170,3 +170,7 @@ The public Home presents at most seven selected headlines with short readable te
 ## Unread navigation and filter feedback
 
 The rail heading is SECTIONS · UNREAD and every badge is the section unread count. All/Unread only changes the visible story total, not the unread badge. Other saved filters still scope that section. The toolbar places its heading above wrapping actions so Settings remains visible; the summary explains how many read stories Unread only hides. Reading state is shared across sections and is never reset to make a counter larger.
+
+## Automatic discovery candidate
+
+Discovery headings are **New in the marketplace** and **Latest changes**. Every card shows the event date and a factual selection label. Enter opens original source text with provenance and optional matching notes; all actions retain arrow/Tab navigation. These sections update with the feed even after the finite briefing is finished. They ignore inbox unread/time filters, but respect search, mutes and hidden source sections. Quiet-period retention is explicitly labelled with the original activity date. Opening a discovery detail does not implicitly mark a briefing item read.

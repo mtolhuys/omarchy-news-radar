@@ -114,7 +114,7 @@ The first release succeeds when a clean Omarchy Quattro guest can install the pl
 
 ## Expanded 0.5.0 candidate
 
-The candidate combines a finite briefing with three enduring reasons to open Radar: source-backed explanations, discoveries worth trying, and the context of the reader's own setup. Front Page presents the retained brief alongside reviewed workflows, documented setup updates, and a small project selection. Completing the briefing does not remove those other uses. Opening the home overview does not read its hidden first story.
+The candidate combines a finite briefing with three enduring reasons to open Radar: source-backed explanations, discoveries worth trying, and the context of the reader's own setup. Front Page presents the retained brief alongside recent marketplace additions, dated version changes, and documented setup updates. Completing the briefing does not remove those other uses. Opening the home overview does not read its hidden first story.
 
 My setup compares exact local enabled-plugin manifests with documented public releases. Bounded local names label uncovered projects; explicit shell `firstParty` metadata excludes built-in components unless they have documented project coverage. A successful empty setup is distinct from failed discovery. Unknown or incomparable versions stay explicit, and a catalog observation time never substitutes for a release date. Only strict SemVer precedence or an exact version match supports a comparison. Coverage is bounded and incomplete; this is an explanation surface, not an update manager or compatibility checker. Omarchy itself is the platform, not a plugin discovery; its source notes remain available with an unknown installed version when no reliable version fact exists.
 

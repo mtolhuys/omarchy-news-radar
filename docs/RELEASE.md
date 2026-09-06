@@ -150,3 +150,7 @@ The Laravel application is a separate deployment unit. Validate real producer ar
 ## 0.5.2 release gate
 
 The owner tested the installed candidate and approved publication. The [0.5.2 evidence](evidence/0.5.2-local.md) records source checks and focused disposable-guest acceptance. Publish the exact clean release commit only after CI, feed health, and its public-clone journey pass. Update the existing verification entry once with that full SHA; do not create another request. Marketplace approval and snapshot promotion remain maintainer-controlled.
+
+## Automatic discovery candidate
+
+0.5.3 is a local candidate, not a published release. It replaces authored discovery sections with dated feed activity. Do not push, publish, deploy the producer, or update marketplace verification until the owner has inspected this candidate locally and explicitly approved it. Reuse the existing verification issue when that approval arrives.

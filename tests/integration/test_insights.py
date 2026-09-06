@@ -109,11 +109,13 @@ class InsightsTests(unittest.TestCase):
         save_state(state, self.environment)
         before = self.project()
         self.assertTrue(before["briefing"]["complete"])
-        self.assertEqual(1, len(before["home"]["featuredCollections"]))
+        self.assertTrue(before["home"]["recentChanges"])
         newer = copy.deepcopy(self.feed); newer["events"] = []; newer["generatedAt"] = "2026-08-31T14:01:00Z"; newer["window"]["through"] = newer["generatedAt"]
         save_feed(newer, self.environment, now=CLOCK + timedelta(minutes=1))
         after = self.project()
-        self.assertEqual(before["home"], after["home"])
+        self.assertEqual(before["home"]["recentChanges"], after["home"]["recentChanges"])
+        self.assertEqual(before["home"]["activityDate"], after["home"]["activityDate"])
+        self.assertTrue(after["home"]["retainedDiscoveries"])
         self.assertEqual("behind", after["mySetup"][0]["comparisonState"])
 
     def test_missing_or_corrupt_insights_keep_news_and_explicit_unknown_setup(self) -> None:
@@ -149,14 +151,13 @@ class InsightsTests(unittest.TestCase):
         self.assertEqual(self.insights["projects"][0]["releases"], detail["releases"])
         self.assertEqual("0.3.0", detail["installedVersion"])
 
-    def test_collection_only_search_retains_full_member_details(self) -> None:
+    def test_legacy_authored_collections_are_not_surfaced(self) -> None:
         self.store_insights()
         result = insights_model(self.facts, self.environment, now=CLOCK, query="useful")
-        self.assertEqual([], result["insights"]["projects"])
-        self.assertEqual(1, len(result["home"]["featuredCollections"]))
-        member = result["home"]["featuredCollections"][0]["projects"][0]
-        self.assertNotIn("releases", member)
-        detail = next(item for item in result["insights"]["projectDetails"] if item["id"] == member["id"])
+        self.assertEqual([], result["insights"]["collections"])
+        self.assertEqual([], result["home"]["featuredCollections"])
+        self.assertEqual([], result["home"]["recentAdditions"])
+        detail = next(item for item in result["insights"]["projectDetails"] if item["id"] == PLUGIN)
         self.assertEqual(self.insights["projects"][0]["releases"], detail["releases"])
 
     def test_historical_story_never_inherits_new_repository_notes_or_creator_targets(self) -> None:
@@ -417,8 +418,9 @@ class InsightsTests(unittest.TestCase):
             self.insights["projects"].append({**template, "id": f"org.example.discovery{number}"})
         self.store_insights()
         result = self.project("plugins")
-        self.assertEqual(8, len(result["home"]["discoveries"]))
-        self.assertEqual(16, result["home"]["discoveryCount"])
+        self.assertEqual([], result["home"]["discoveries"])
+        self.assertLessEqual(len(result["home"]["recentAdditions"]), 6)
+        self.assertLessEqual(len(result["home"]["recentChanges"]), 6)
         project = next(item["projectInsight"] for item in result["events"] if item["entity"]["id"] == PLUGIN)
         self.assertNotIn("releases", project)
         self.assertNotIn("newerReleases", project)

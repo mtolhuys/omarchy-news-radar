@@ -121,3 +121,7 @@ The entire local implementation is complete, clean, tested, documented, and prov
 ## 0.5.0 local candidate scope
 
 Implement D055–D060 as one reviewable candidate: finite grouped briefing, state-v13 local follow/mute controls, source-backed setup comparisons, reviewed discoveries, corrected opening geometry, bounded gzip delivery and durable public pages. Keep event schema v2 and validate the separate optional insights-v1 companion. Preserve reading and saved-state contracts while Home remains non-reading until a story is opened. Split orchestration, domain projection, state migration, window lifecycle and presentation into named modules with clear dependency directions. Source tests, publication failure/recovery checks, browser review and disposable real desktop journeys must accompany the release. Contributor intake, remote profiles, automatic installation and generated compatibility advice remain outside scope.
+
+## Automatic discovery candidate
+
+The 0.5.3 local candidate removes authored production discoveries. `discovery.py` selects dated source events and retains the last usable edition. The producer selects recent event projects before optional coverage/backfill; the client needs no companion to show new additions. Delivery is gated on focused source tests, disposable keyboard/visual acceptance and owner testing before any push or deployment.

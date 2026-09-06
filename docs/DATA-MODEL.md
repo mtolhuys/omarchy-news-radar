@@ -269,3 +269,7 @@ Private window geometry is separate from this reading schema. The lifecycle help
 ## Personal-news correction (0.5.2 candidate)
 
 State v13 is unchanged. `relevance.followedSources` remains valid and clearable for backward compatibility, but source-wide follows no longer match personal news or future briefing candidates. Enabled plugin IDs and explicit project/creator follows still match; all mutes retain priority. Existing briefing membership, reading overrides, saves and filters are preserved. Client projection adds `hiddenReadCount`, the number of otherwise matching read stories hidden by Unread only, excluding any retained visible rows. It is presentation data, not persisted state.
+
+## Automatic discovery candidate
+
+The client-only `discovery-edition.json` contains a validated public feed-v2 envelope restricted to plugin additions and plugin/Omarchy release events. It uses the existing feed byte/event bounds and atomic storage; purge removes it. No state schema change is required. `home.recentAdditions` and `home.recentChanges` each contain at most six distinct projects with source event IDs, dates, selection reasons and source links. These cards do not alter briefing membership or unread counts. Insights-v1 remains compatible; new production builds emit an empty collections array.

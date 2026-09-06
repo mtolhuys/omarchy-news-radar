@@ -314,7 +314,7 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             from .insights_builder import build_insights
             published_at = parse_timestamp(args.published_at) if args.published_at else datetime.now(timezone.utc).replace(microsecond=0)
             insights = validate_insights(read_json_bounded(args.insights, INSIGHTS_MAX_BYTES), now=published_at) if args.insights else build_insights(
-                load_snapshot(args.snapshot), published_at=published_at, content_directory=ROOT / "content/discoveries", fetch_releases=False,
+                load_snapshot(args.snapshot), published_at=published_at, fetch_releases=False,
             )
             _print({"status": "ok", **publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights, image_fetcher=_offline_preview_image)})
         elif args.command == "collect":
@@ -337,7 +337,7 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             previous_insights = None
             if args.previous_insights is not None or previous_path.exists():
                 previous_insights = validate_insights(read_json_bounded(previous_path, INSIGHTS_MAX_BYTES), now=published_at)
-            insights = build_insights(snapshot, published_at=published_at, content_directory=ROOT / "content/discoveries",
+            insights = build_insights(snapshot, published_at=published_at,
                                      fetch_releases=True, github_token=os.environ.get("GITHUB_TOKEN"), previous_insights=previous_insights)
             result = publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights)
             save_snapshot(args.snapshot, snapshot)

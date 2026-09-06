@@ -504,3 +504,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** Broad source follows duplicated Plugins inside For You, whose default setup view then hid the advertised news behind another action. Filter-sensitive total badges looked like missed-event counters. Crowded controls obscured both the heading and filter explanation.
 
 **Consequence:** No read-state reset, saved-item loss, filter reset, schema migration or network change is needed. Existing briefings retain membership. My setup and clear-source-follow remain keyboard reachable; clearing a now-hidden follow control moves focus to the same scope's mute action. This replaces earlier source-follow and total-badge behavior.
+
+## D063 — Build discoveries from current source events
+
+**Decision:** Replace authored Front Page collections and handpicked catalog priorities with recent marketplace additions and version/release activity. Preserve upstream text and dates; show selection reasons and original sources. Retain the last usable public discovery edition during quiet or failed refreshes, with explicit dated feedback.
+
+**Why:** Static workflow prose was presented as an automatically updating reason to return. That contradicted the owner's intended product and made quiet periods look misleadingly fresh.
+
+**Consequence:** No generated narratives, dependency, new origin, private-data transmission or state migration. The finite personal briefing remains explicitly replaceable; discovery updates independently and does not mark items read. Legacy insights remain valid, but authored collections are not displayed. This supersedes D058's authored discovery design. Local owner testing is required before publication.

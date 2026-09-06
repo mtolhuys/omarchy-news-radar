@@ -130,3 +130,7 @@ The only new normal client URL is the fixed HTTPS companion `https://mtolhuijs.n
 Plain-text explanations and workflow records remain untrusted display data. The producer's GitHub path set is repository-owned; catalog changes cannot choose another path. All published text and page metadata are contextually escaped, links stay HTTPS, images retain exact origin/shape and bounded raster inspection, and no remote Markdown, code block, HTML or script runs. Source-page titles may enter escaped per-story social metadata but cannot choose canonical, stylesheet or install destinations.
 
 Local relevance adds six bounded validated ID arrays with visible controls and a combined 500-target cap. A mute never silently removes an existing briefing member or a saved item. Temporary pre-map compositor rules match Radar's exact class and title, expire after eight seconds and are removed on normal completion/cancellation; geometry is private local UI state. These rules do not alter persistent Hyprland configuration.
+
+## Automatic discovery candidate
+
+Automatic discovery adds no network origins or requests. The retained edition is bounded by the existing feed limits, validated on read, symlink-protected and written atomically under the state lock. Cache failure cannot suppress valid current content; corrupt snapshots are never rendered. Project/release enrichment requires source identity agreement. Private read state, installed IDs and preferences are not copied into this public-facts cache.

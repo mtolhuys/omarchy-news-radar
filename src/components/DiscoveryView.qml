@@ -41,8 +41,8 @@ Flickable {
   ] : [
     { title: "", hint: "", items: stories, kind: "story" },
     { title: "Changes for your setup", hint: "Published releases newer than the version installed here.", items: home.setupUpdates || [], kind: "project" },
-    { title: "Worth exploring", hint: "Reviewed collections, with the reasons and original sources.", items: home.featuredCollections || [], kind: "collection" },
-    { title: "Discover a project", hint: "A few source-linked projects from the current edition.", items: home.discoveries || [], kind: "project" }
+    { title: "New in the marketplace", hint: "Recent additions, selected automatically from marketplace events.", items: home.recentAdditions || [], kind: "activity" },
+    { title: "Latest changes", hint: "Recent version updates and Omarchy releases, with original sources.", items: home.recentChanges || [], kind: "activity" }
   ]
 
   function setupSummary() {
@@ -173,6 +173,17 @@ Flickable {
       color: Color.popups.text
       font.family: Style.font.family
       font.pixelSize: Style.font.body
+      wrapMode: Text.WordWrap
+    }
+    Text {
+      Layout.fillWidth: true
+      visible: !root.setupMode && text !== ""
+      text: String(root.home.discoveryStatus || "")
+      textFormat: Text.PlainText
+      color: Color.popups.text
+      opacity: 0.72
+      font.family: Style.font.family
+      font.pixelSize: Style.font.caption
       wrapMode: Text.WordWrap
     }
     BriefingNotice {

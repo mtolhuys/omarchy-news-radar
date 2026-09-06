@@ -4,13 +4,15 @@
 
 > Your personal front page for Omarchy.
 
-Catch up on Omarchy releases, official news, plugin activity and videos in one keyboard-first desktop reader. Start with a finite briefing, understand changes that affect your setup, explore reviewed workflows, and discover useful projects. Your reading state, enabled-plugin matching, follows, and mutes stay on your device.
+Catch up on Omarchy releases, official news, plugin activity and videos in one keyboard-first desktop reader. Start with a finite briefing, understand changes that affect your setup, discover recent marketplace additions, and read source-backed version changes. Your reading state, enabled-plugin matching, follows, and mutes stay on your device.
 
 [Install from the marketplace](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) · [Read the web edition](https://mtolhuijs.nl/news-radar/) · [Follow via RSS](https://mtolhuijs.nl/news-radar/feed.xml)
 
 Omarchy News Radar is an independent community project.
 
-![Omarchy News Radar 0.5 in use — Front Page, reviewed workflows, My setup, and project details](preview.gif)
+Version `0.5.3` is a local candidate, not a published release. Automatic discovery changes are awaiting owner testing.
+
+![Omarchy News Radar 0.5 in use — Front Page, dated discoveries, My setup, and project details](preview.gif)
 
 The walkthrough uses the released 0.5 reader and its real public edition.
 
@@ -64,7 +66,7 @@ o.bind("SUPER + SHIFT + R", "Omarchy News Radar", "omarchy-shell shell summon io
 
 On first use, **Browse current stories** keeps the backlog unread; **Start from today** marks the displayed edition read and keeps those stories available to browse. Both preserve saved stories and local preferences. Existing readers keep their reading state and skip this welcome choice when upgrading.
 
-**Front Page** brings together your retained brief, reviewed workflows, documented changes for your setup and a few projects to discover. Opening this overview does not mark a hidden story read. Choose a briefing card to enter its reader. The brief holds up to five story groups, selected from unread source facts and your local filters. It favors critical or reviewed notable news, official Omarchy changes, enabled-plugin activity, and a discovery when available. Updates for the same plugin share a group with each original source accessible under **Show updates**. Routine verification changes do not consume a briefing slot on their own, and popularity metrics never choose the stories.
+**Front Page** brings together your retained brief, recent marketplace additions, dated version changes and documented updates for your setup. Opening this overview does not mark a hidden story read. Choose a briefing card to enter its reader. The brief holds up to five story groups, selected from unread source facts and your local filters. It favors critical or reviewed notable news, official Omarchy changes, enabled-plugin activity, and a discovery when available. Updates for the same plugin share a group with each original source accessible under **Show updates**. Routine verification changes do not consume a briefing slot on their own, and popularity metrics never choose the stories.
 
 Your brief survives closing, reopening, and refresh. New arrivals stay available in the other sections and are offered through **New briefing**; they do not refill the brief while you read. **Mark briefing read** finishes only its included events. **Mark group read** finishes only one group's included events. A finished brief stays finished until you choose another; skipped stories remain unread. If older updates leave the rolling edition, Radar says so instead of claiming they were read.
 
@@ -158,7 +160,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A versioned normalized source snapshot with a rolling 30-day event ledger, bounded 12-item/14-day first marketplace backfill, two-successful-run retirement confirmation, partial-source preservation, deterministic IDs, immutable first-observation timestamps, and restricted curation overlays.
 - Atomic publication of validated `events.json`, RSS, escaped static HTML/CSS, bounded archives, build digest metadata, and direct allowlisted marketplace/YouTube preview URLs; marketplace rasters are structurally validated before publication and are not mirrored onto the feed host.
 - A fixed-origin client helper with cached-first reads, conditional `ETag`/`Last-Modified` refreshes, gzip with independent wire and decompressed size limits, bounded HTTPS, closed redirects, validation before replacement, one-refresh locking, serialized atomic private XDG state, corrupt-state quarantine, saved items, bounded per-story read overrides, and explicit purge.
-- A persistent Front Page brief with up to five source-linked groups, a first-use backlog choice, exact event membership for explicit read actions, and migration from state v1–v12 to v13 while retaining supported reading data and preferences. Feed schema remains v2; an optional insights-v1 companion carries documented releases and reviewed discoveries.
+- A persistent Front Page brief with up to five source-linked groups, a first-use backlog choice, exact event membership for explicit read actions, and migration from state v1–v12 to v13 while retaining supported reading data and preferences. Feed schema remains v2; an optional insights-v1 companion carries documented releases and source-backed project information.
 - A resizable, maximizable theme-native QML window with normal `Alt+Tab`, summon-to-focus activation, contrast-safe text, images, icon metrics, source-derived plugin explanations, human-facing marketplace links, Front Page, automatic installed-plugin relevance, Core, Plugins, and Saved, fixed section identity, per-section filters, finite keyboard/pointer pagination, search, source opening, restrained update progress, responsive layout, and virtualized story rows.
 - An exact opt-in hosted-window identity used by compatible local AltTab and Omadock companions to show Radar's newspaper icon without relabeling unrelated Quickshell windows.
 - A bundled Radar application mark, newspaper-prefixed compositor title, and exact manifest `windowIdentity`. Compatible local AltTab and Omadock candidates resolve it to the newspaper; other switchers that ignore the declaration may still choose Quickshell's generic icon.
@@ -202,7 +204,7 @@ make local-latest
 
 The first run validates, clones, and enables the current committed checkout, installs Radar's managed Apps-menu entry, then collects a real edition from the live allowlisted Omarchy release and marketplace sources. It validates eligible marketplace images and atomically imports the edition and matching private source baseline; current images remain on the exact allowlisted marketplace/YouTube origins. Later runs fast-forward the installed clone, safely update the launcher entry, rescan the plugin, and advance that validated private baseline so an older change cannot be rediscovered as new. **Check for updates** still checks the live feed at `https://mtolhuijs.nl/news-radar/events.json`, refuses to downgrade newer local news, and automatically returns to the published stream as soon as it advances. Internal edition origin and publication diagnostics do not occupy the normal reading surface.
 
-The local import brings in news events and eligible image assets, but does not import the collection's `insights.json` companion. Documented setup changes and reviewed workflows use the independently cached public companion instead. Use the [isolated expanded-preview instructions](docs/TESTING.md#expanded-preview-with-public-content) when testing specific owner-supplied artifacts.
+The local import brings in news events and eligible image assets, but does not import the collection's `insights.json` companion. Documented setup changes use the independently cached public companion. Dated discovery cards are built directly from the validated news feed. Use the [isolated expanded-preview instructions](docs/TESTING.md#expanded-preview-with-public-content) when testing specific owner-supplied artifacts.
 
 “Latest” means this repository's current committed `HEAD` plus a collection performed at command time. The command never runs `git pull`, refuses uncommitted source or installed changes, preserves a deliberately disabled modern installation, leaves `Super+Alt+N` untouched, and refuses to repoint an installation from another checkout or public URL. A one-time migration recognizes only the exact unmodified panel-only preview placement, moves that owned entry through Omarchy's supported lifecycle to the default right-side newspaper, and restores the canonical bar/image defaults. Ambiguous or customized placement is refused rather than overwritten. It is intentionally not a background updater.
 
@@ -242,7 +244,7 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 
 ## What shipped in 0.5.0
 
-- A Home worth returning to: a finite briefing, source-backed setup changes, reviewed workflow ideas and project discovery.
+- A Home worth returning to: a finite briefing, source-backed setup changes, recent marketplace additions and project discovery.
 - My setup shows documented releases relative to locally enabled versions, with precise unknown/incomplete coverage labels.
 - Project, source and creator follow/mute controls work locally and remain clearable. Current briefing membership and saved stories stay intact.
 - The opening sequence prepares placement before mapping the window; geometry is separate from reading state.

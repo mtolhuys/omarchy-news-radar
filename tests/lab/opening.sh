@@ -7,7 +7,7 @@
 
 omarchy_host_test() {
   local product_root lab_root start_epoch runtime_identity neighbor_number neighbor_title neighbor_address
-  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name source_label source_focus geometry_before geometry_after
+  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step geometry_before geometry_after
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -383,7 +383,7 @@ omarchy_host_test() {
   briefing_close || return 1
 
   if [[ -n ${RADAR_LAB_REAL_FEED:-} && -n ${RADAR_LAB_REAL_INSIGHTS:-} ]]; then
-    log "Checking the same candidate with the real public edition and reviewed collections"
+    log "Checking the same candidate with the real public edition and dated discoveries"
     test -f "$RADAR_LAB_REAL_FEED" && test -f "$RADAR_LAB_REAL_INSIGHTS" || return 1
     ssh_guest "cat >$scenario_root/fixtures/current.json" <"$RADAR_LAB_REAL_FEED" || return 1
     ssh_guest "cat >$scenario_root/candidate/tests/fixtures/insights-valid.json" <"$RADAR_LAB_REAL_INSIGHTS" || return 1
@@ -399,44 +399,31 @@ omarchy_host_test() {
     ssh_session "omarchy-theme-set matte-black >/dev/null" || return 1
     briefing_capture opening-09-real-home-dark || return 1
     for _card_step in {1..20}; do
-      if ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedHomeKind == \"collection\"'" >/dev/null; then break; fi
+      if ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.selectedHomeKind == \"activity\"'" >/dev/null; then break; fi
       press down
     done
-    briefing_wait "keyboard reaches a reviewed real collection" '.selectedHomeKind == "collection"' || return 1
+    briefing_wait "keyboard reaches a source-backed discovery" '.selectedHomeKind == "activity"' || return 1
     selected_before="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedHomeCard'")" || return 1
     geometry_before="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar homeCardGeometry ''")" || return 1
-    briefing_key real-card-right right ".selectedHomeCard == $((selected_before + 1)) and .selectedHomeKind == \"collection\"" || return 1
+    briefing_key real-card-right right ".selectedHomeCard == $((selected_before + 1)) and .selectedHomeKind == \"activity\"" || return 1
     geometry_after="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar homeCardGeometry ''")" || return 1
     jq -e --argjson before "$geometry_before" \
       '.x > $before.x and ((.y + .height / 2) - ($before.y + $before.height / 2) | fabs) < 2' \
       <<<"$geometry_after" >/dev/null || return 1
-    briefing_key real-card-left left ".selectedHomeCard == $selected_before and .selectedHomeKind == \"collection\"" || return 1
-    briefing_key real-collection ret \
-      '.insightDetailVisible == true and .insightSourceCount >= 2 and .insightReviewedAt != "" and .insightDetailReadingWidth > 0 and .insightDetailReadingWidth < .windowWidth and .insightDetailRelevanceColumns == 2' || return 1
-    briefing_capture opening-09-real-collection || return 1
-    collection_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailId'")" || return 1
-    project_id="$(jq -r --arg id "$collection_id" '.collections[] | select(.id == $id) | .projectIds[0]' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
-    project_name="$(jq -r --arg id "$project_id" '.projects[] | select(.id == $id) | .name' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
-    [[ $project_id =~ ^[a-zA-Z0-9._-]+$ && -n $project_name ]] || return 1
+    briefing_key real-card-left left ".selectedHomeCard == $selected_before and .selectedHomeKind == \"activity\"" || return 1
+    briefing_key real-discovery ret \
+      '.insightDetailVisible == true and (.insightSelectionReason | contains("automatically")) and .insightReviewedAt == "" and .insightDetailReadingWidth > 0 and .insightDetailReadingWidth < .windowWidth' || return 1
+    briefing_capture opening-09-real-discovery || return 1
     briefing_key real-original-tab tab '.insightDetailFocusedControl == "Open original source"' || return 1
-    while IFS= read -r source_label; do
-      press tab
-      source_focus="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailFocusedControl'")" || return 1
-      [[ $source_focus == "$source_label" ]] || { printf 'Unexpected source tab: %s (wanted %s)\n' "$source_focus" "$source_label"; return 1; }
-    done < <(jq -r --arg id "$collection_id" '.collections[] | select(.id == $id) | . as $collection | .sourceLinks[] | select(.url != $collection.source.url) | .label' "$RADAR_LAB_REAL_INSIGHTS")
     briefing_key real-share-tab tab '.insightDetailFocusedControl == "Open share page"' || return 1
     briefing_resize 820 540 || return 1
-    opening_focus_detail "$project_name" || return 1
-    briefing_key real-project-detail ret \
-      ".insightDetailId == \"$project_id\" and .insightDetailContentY == 0 and .insightDetailReadingWidth < .windowWidth and (.insightDetailHeroWidth == 0 or .insightDetailHeroWidth <= .insightDetailReadingWidth)" || return 1
-    briefing_capture opening-09-real-project-notes || return 1
-    briefing_key real-project-page pgdn \
-      ".insightDetailId == \"$project_id\" and .insightDetailContentY >= 0 and .insightDetailFocusedControl == \"← Back to collection\"" || return 1
-    briefing_key real-collection-return esc \
-      ".insightDetailId == \"$collection_id\" and .insightDetailContentY == 0" || return 1
+    briefing_key real-discovery-page pgdn '.insightDetailVisible == true and .insightDetailContentY >= 0' || return 1
+    briefing_capture opening-09-real-discovery-narrow || return 1
     briefing_resize 1120 720 || return 1
     press esc
-    briefing_key real-setup 2 '.setupVisible == true and .overviewContentY == 0 and .projecting == false' || return 1
+    briefing_key real-personal-news 2 '.section == "for-you" and .setupVisible == false and .projecting == false' || return 1
+    briefing_key real-setup-focus f6 '.briefingFocusedControl == "My setup"' || return 1
+    briefing_key real-setup ret '.setupVisible == true and .overviewContentY == 0' || return 1
     briefing_capture opening-10-real-setup || return 1
     briefing_key real-home 1 '.homeVisible == true and .overviewContentY == 0' || return 1
   else

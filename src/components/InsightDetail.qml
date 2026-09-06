@@ -261,13 +261,24 @@ FocusScope {
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
         }
+        Text {
+          Layout.fillWidth: true
+          visible: !!root.item && !!root.item.selectionReason
+          text: visible ? String(root.item.selectionReason) + " First seen by Radar: " + RadarModel.humanDate(root.item.discoveredAt) + "." : ""
+          textFormat: Text.PlainText
+          color: Color.popups.text
+          opacity: 0.72
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
         Flow {
           Layout.fillWidth: true
           Layout.preferredHeight: childrenRect.height
           spacing: Style.spacing.controlGap
           RadarButton {
             id: sourceButton
-            label: root.item && root.item.kind ? "Open project source" : "Open original source"
+            label: root.item && (root.item.kind === "plugin" || root.item.kind === "omarchy") ? "Open project source" : "Open original source"
             visible: !!root.item && !!root.item.source && !!root.item.source.url
             managesTab: true
             onTabRequested: function(direction) { root.navigate(direction) }

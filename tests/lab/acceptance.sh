@@ -14,7 +14,7 @@ omarchy_host_test() {
   local initial_bar_unread background_bar_unread runtime_identity_before runtime_identity_after
   local initial_installed_ids initial_projection initial_selected_id initial_story_count initial_unread_count
   local page_read_state page_selection article_page article_open_count maximize_before_frame
-  local selected_home_kind collection_detail_id collection_last_control
+  local selected_home_kind
   local viewport_state anchored_index anchored_content_y anchored=false
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
   lab_root="$(cd -- "$product_root/../../omarchy/plugin-lab" && pwd)"
@@ -725,43 +725,29 @@ omarchy_host_test() {
   wait_for_guest_state "For You matches the locally installed exact plugin id" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .storyCount == 2'" || return 1
   press 1
-  wait_for_guest_state "Front Page overview is ready for collection navigation" 10 ssh_session \
+  wait_for_guest_state "Front Page overview is ready for activity navigation" 10 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"front-page\" and .homeVisible == true'" || return 1
   press home
   selected_home_kind=""
   for _ in {1..64}; do
     selected_home_kind="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedHomeKind'")" || return 1
-    [[ $selected_home_kind == collection ]] && break
+    [[ $selected_home_kind == activity ]] && break
     press down
   done
-  if [[ $selected_home_kind != collection ]]; then
+  if [[ $selected_home_kind != activity ]]; then
     ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" \
-      >"$RUN_DIR/news-radar-collection-selection-failure.json" 2>&1 || true
+      >"$RUN_DIR/news-radar-activity-selection-failure.json" 2>&1 || true
     return 1
   fi
   press ret
-  wait_for_guest_state "collection details begin with keyboard focus on Back" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == true and (.insightDetailFocusedControl | startswith(\"← Back\")) and (.insightDetailControlIds | length) >= 4'" || return 1
-  collection_detail_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailId'")" || return 1
+  wait_for_guest_state "source-backed activity details begin with keyboard focus on Back" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == true and (.insightDetailId | startswith(\"activity:\")) and (.insightDetailFocusedControl | startswith(\"← Back\"))'" || return 1
   press down
-  wait_for_guest_state "Down reaches the next collection-detail action" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == true and (.insightDetailFocusedControl | startswith(\"← Back\") | not)'" || return 1
-  press end
-  wait_for_guest_state "End reaches the final included project" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailFocusedControl == .insightDetailControlIds[-1]'" || return 1
-  collection_last_control="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailFocusedControl'")" || return 1
-  press left
-  wait_for_guest_state "Left moves between included project cards" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg previous '$collection_last_control' '.insightDetailFocusedControl != \$previous and (.insightDetailFocusedControl | startswith(\"← Back\") | not)'" || return 1
-  press ret
-  wait_for_guest_state "Enter opens the keyboard-selected included project" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg collection '$collection_detail_id' '.insightDetailVisible == true and .insightDetailId != \$collection and (.insightDetailFocusedControl | startswith(\"← Back to collection\"))'" || return 1
+  wait_for_guest_state "Down reaches the activity source action" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailFocusedControl == \"Open original source\"'" || return 1
   press esc
-  wait_for_guest_state "Escape returns to the parent collection" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e --arg collection '$collection_detail_id' '.insightDetailId == \$collection'" || return 1
-  press esc
-  wait_for_guest_state "Escape returns from collection details to Home" 10 ssh_session \
-    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.insightDetailVisible == false and .homeVisible == true'" || return 1
+  wait_for_guest_state "Escape returns from activity details to Home" 10 ssh_session \
+    "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeVisible == true and .insightDetailVisible == false'" || return 1
   capture_console "success-news-radar-05-detail-keyboard"
   wait_for_guest_state "retired interests are absent from UI, CLI, and current local state" 10 ssh_session \
     "! grep -q 'Apply interests\|interestField\|--interests-json' $plugin_dir/src/Panel.qml && \
