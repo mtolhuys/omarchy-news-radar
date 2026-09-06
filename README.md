@@ -14,7 +14,7 @@ Omarchy News Radar is an independent community project.
 
 The walkthrough uses the released 0.5 reader and its real public edition.
 
-## Install the published v0.5.0
+## Install the published v0.5.1
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -148,9 +148,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.0` is the current release. Home combines a persistent five-group briefing, documented changes for your setup, reviewed workflow ideas and project discoveries. Local follows and mutes tune future news; the window prepares its placement before opening. The companion public edition adds shareable story and workflow pages, with bounded gzip delivery and durable URL retention in the feed server. See the [release notes](docs/release-notes/0.5.0.md), [verification evidence](docs/evidence/0.5.0-expanded-local.md), and [release contract](docs/RELEASE.md). The marketplace listing can remain on its previous reviewed snapshot while the 0.5 verification request is processed; marketplace verification is compatibility evidence, not a security audit.
-
-Version `0.5.1` is a local candidate, not a published release. It makes My setup useful without public release-note coverage, completes arrow-key navigation across details and settings, adds `t` for Tune and `,` for section Settings, and gives a caught-up briefing an explicit check-for-stories path. See the [candidate release notes](docs/release-notes/0.5.1.md).
+Version `0.5.1` is the current release. It makes My setup useful without public release-note coverage, completes arrow-key navigation across details and settings, adds `t` for Tune and `,` for section Settings, gives a caught-up briefing an explicit check-for-stories path, and keeps section totals distinct from unread status. See the [release notes](docs/release-notes/0.5.1.md), [verification evidence](docs/evidence/0.5.1-local.md), and [release contract](docs/RELEASE.md). The marketplace listing can remain on its previous reviewed snapshot while the 0.5.1 verification request is processed; marketplace verification is compatibility evidence, not a security audit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -167,7 +165,7 @@ The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by d
 - A theme-native bar newspaper with an actionable unread count deduplicated across the current persistent section projections, a health dot, default-on placement, zero-gap local hiding, due-checked refresh, and panel-based restoration.
 - A narrowly scoped shortcut helper that installs `Super+Alt+N` only after explicit conflict-free setup. During an update rescan it can automatically migrate only Radar's byte-exact unmodified 0.1.3-owned block; it cannot install a free chord or displace Editor, a personal binding, or another action.
 - An explicit XDG application-launcher helper that exposes Radar in Omarchy's Apps menu, updates only its receipt-backed desktop entry and icon, and preserves modified or unrelated files.
-- Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for local-candidate and exact public-clone acceptance.
+- Offline unit/integration tests, pinned least-privilege workflows, and disposable Plugin Lab journeys for exact release and public-clone acceptance.
 
 ## Review the source
 
@@ -250,4 +248,4 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The README walkthrough and marketplace preview are captured from the final 0.5 runtime in the disposable Omarchy Plugin Lab. See the [release notes](docs/release-notes/0.5.0.md) and [release contract](docs/RELEASE.md).
+The README walkthrough and marketplace preview are captured from the final 0.5.1 runtime in the disposable Omarchy Plugin Lab. See the [release notes](docs/release-notes/0.5.1.md) and [release contract](docs/RELEASE.md).
