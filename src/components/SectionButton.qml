@@ -85,7 +85,7 @@ FocusScope {
 
       Text {
         id: countText
-        text: root.unreadCount > 0 ? "● " + String(root.unreadCount) : String(root.count)
+        text: (root.unreadCount > 0 ? "● " : "") + String(root.count)
         textFormat: Text.PlainText
         color: root.unreadCount > 0
           ? Color.accent
@@ -102,6 +102,12 @@ FocusScope {
   }
 
   HoverHandler { id: hover }
+  PanelToolTip {
+    visible: hover.hovered
+    text: root.count + (root.count === 1 ? " story" : " stories")
+      + " · " + root.unreadCount + " unread"
+    fontFamily: Style.font.family
+  }
   TapHandler { onTapped: root.clicked() }
   Keys.onReturnPressed: root.clicked()
   Keys.onEnterPressed: root.clicked()

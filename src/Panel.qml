@@ -175,8 +175,11 @@ Item {
     if (feedSession.filterSummary !== "No extra filters") parts.push(feedSession.filterSummary)
     if (feedSession.retainedReadStories > 0)
       parts.push(feedSession.retainedReadStories + " just read shown until this view changes")
-    parts.push(feedSession.totalStories + (briefingVisible ? " briefing items" : " stories"))
+    parts.push(feedSession.totalStories + (briefingVisible ? " briefing items"
+      : sectionNavigation.currentSection === "for-you" ? " current matching stories" : " stories"))
     parts.push(Number(feedSession.unreadCounts[sectionNavigation.currentSection] || 0) + (briefingVisible ? " updates unread" : " unread"))
+    if (sectionNavigation.currentSection === "for-you")
+      parts.push(feedSession.setupModel.length + " enabled plugins tracked")
     return parts.join(" · ")
   }
 

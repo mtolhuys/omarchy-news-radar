@@ -285,6 +285,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Style.font.iconLarge", section)
         self.assertIn("id: iconText", section)
         self.assertIn("property int unreadCount", section)
+        self.assertIn('(root.unreadCount > 0 ? "● " : "") + String(root.count)', section)
+        self.assertIn('root.unreadCount + " unread"', section)
         self.assertNotIn("Color.muted", section)
 
         metrics = (ROOT / "src/components/MetricStrip.qml").read_text(encoding="utf-8")
@@ -328,6 +330,9 @@ class QmlContractTests(unittest.TestCase):
         detail = (ROOT / "src/components/InsightDetail.qml").read_text(encoding="utf-8")
         notice = (ROOT / "src/components/BriefingNotice.qml").read_text(encoding="utf-8")
         self.assertIn("function moveSelectionHorizontal(direction)", discovery)
+        self.assertIn("property bool footerSelected", discovery)
+        self.assertIn("browseButton.forceActiveFocus()", discovery)
+        self.assertIn("function hasVisibleGroupBefore(groupIndex)", discovery)
         self.assertIn("Layout.fillHeight: true", discovery)
         self.assertIn("Layout.columnSpan: cardGrid.columns === 2", discovery)
         self.assertIn("Style.space(920)", detail)

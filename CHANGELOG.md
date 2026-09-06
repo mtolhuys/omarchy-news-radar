@@ -8,12 +8,15 @@
 - Present My setup as a useful local inventory with manifest descriptions, installed versions, aggregate coverage context, and updates first.
 - Replace a dead caught-up action with **Check for new stories**, switching to **Load new briefing** when eligible unread candidates exist.
 - Keep completed Front Pages visible and announce available replacements before the user explicitly loads one.
+- Give Front Page groups subtle dividers and label For You as current matching news across the enabled plugins being tracked.
+- Make every section-rail number a total story count; an amber dot consistently indicates that the section also has unread stories, with exact totals in the hover description.
 
 ### Fixed
 - Complete arrow-key navigation across insight details, included-project cards, Tune, and current-section Settings.
 - Add `t` for Tune and `,` for current-section Settings, with matching tooltips and key-guide entries.
 - Explain when local mutes empty a section and offer a keyboard-accessible path to review them.
 - Omit `Published unknown` and repeated release-coverage failure labels when public release history is unavailable.
+- Reach **Read news for your setup** with End or Down from the last setup card, return with Up, and activate it with Enter.
 
 ## 0.5.0 — 2026-09-06
 

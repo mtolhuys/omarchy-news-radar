@@ -66,9 +66,17 @@ omarchy_host_test() {
     press 2
     wait_for_guest_state "For You opens the setup overview" 10 ssh_session \
       "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .setupVisible == true'" || return 1
-    radar_control_geometry setupNewsGeometry || return 1
-    radar_pointer_tap "$viewport_width" "$viewport_height" "$control_x" "$control_y" left
-    wait_for_guest_state "News for you opens the source reading list" 10 ssh_session \
+    press end
+    wait_for_guest_state "End reaches Read news for your setup" 10 ssh_session \
+      "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeFooterSelected == true'" || return 1
+    press up
+    wait_for_guest_state "Up returns from setup news to the last plugin card" 10 ssh_session \
+      "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeFooterSelected == false and .selectedHomeCard == (.homeCards - 1)'" || return 1
+    press down
+    wait_for_guest_state "Down returns to Read news for your setup" 10 ssh_session \
+      "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeFooterSelected == true'" || return 1
+    press ret
+    wait_for_guest_state "Enter opens News for you from the setup footer" 10 ssh_session \
       "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .setupVisible == false and .projecting == false'"
   }
 

@@ -72,8 +72,9 @@ Your brief survives closing, reopening, and refresh. New arrivals stay available
 - `Tab` / `Shift+Tab`: cycle forward or backward through sections during normal navigation.
 - `F6`: enter or leave Home, My setup, or briefing controls. Within that mode, `Tab` / `Shift+Tab` cycles the available cards and actions. In expanded group history, Up/Down and Home/End select an update; Enter opens its original source.
 - In project, collection, and context details, the arrow keys or `j` / `k` move between every visible action and included-project card; `Home` / `End` jump to the first or last action, Enter activates it, and `Page Up` / `Page Down` scroll the reading surface.
+- On My setup, End or Down from the final plugin reaches **Read news for your setup**; Up returns to the final plugin and Enter opens the current matching news.
 - `j` / `k` or arrow keys: select a card on Home/My setup or move the selected story in a source reader. Crossing the story viewport bottom smoothly anchors the newly selected row at the top; crossing the top while moving upward keeps the highlight visibly anchored even during key repeat. Normal row-by-row movement continues while the next story remains visible. In sections with more pages, Down from the final loaded story focuses **Load more**; Up returns focus without moving the retained story or viewport; Enter loads the next page.
-- `Home` / `End`: first or last card or story in the current view.
+- `Home` / `End`: first or final keyboard target in the current view; My setup's final target is **Read news for your setup**.
 - `Page Up` / `Page Down`: scroll the current overview or article without changing selection, read state, or saves.
 - `u`: mark the selected story read or unread locally.
 - `/`: focus local search; `Escape` returns to panel navigation.
@@ -88,6 +89,8 @@ Your brief survives closing, reopening, and refresh. New arrivals stay available
 - `a`: **Mark briefing read** on Front Page. In other sections, **Mark all as read** atomically marks every unread story matching the section's Settings, including unloaded pages. Temporary search does not change either scope.
 - `Load more`: in sections other than Front Page, reveal the next twelve matching stories from the already validated bounded edition by pointer or keyboard.
 - `Unread only`: a story read during the current view remains visibly marked **READ** in its existing position until the section, search, or filters change, preventing the active row from disappearing while its unread count updates.
+
+Section-rail numbers always show the total stories matching that section's saved settings. An amber dot means the section contains unread stories; hovering the count reports the exact total and unread split. **News for you** may be shorter than **My setup** because it contains only current feed events for enabled or explicitly followed plugins, while My setup lists the complete enabled-plugin inventory.
 
 Every story has an explicit local read state: dense rows show `UNREAD` or `READ`, and quiet headlines use an unread mark. Home and My setup do not mark hidden story content read. In a source reader after first use, a fresh panel open marks exactly its first visibly presented selection read; deliberate pointer selection, `j`/`k`, `Home`/`End`, and source activation likewise mark only that story. Selecting a grouped plugin row reads its representative story only; its remaining updates keep their own unread state. The welcome screen and its browse choice do not automatically read a story. Hover, re-summoning an open panel, refreshing, and closing do not mark the rest of the edition. Bulk changes require the explicit brief, group, section, or first-use action. The section rail and top-bar newspaper use the same durable local unread predicate, and **Mark read / Mark unread** in the inspector mirrors the `u` key.
 
@@ -236,6 +239,7 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Detail pages, Tune, and section Settings share complete arrow-key navigation and visible key guidance.
 - `t` opens Tune and `,` opens current-section Settings.
 - A caught-up brief stays visible, offers **Check for new stories**, and becomes **Load new briefing** only when eligible unread news exists.
+- Clear group dividers, consistent total-story rail counts, and an explicit tracked-plugin summary make sparse views explain themselves.
 
 ## What shipped in 0.5.0
 

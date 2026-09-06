@@ -18,8 +18,9 @@ Flickable {
   property string message: ""
   property bool searching: false
   property int selectedCard: 0
+  property bool footerSelected: false
   property alias notice: briefNotice
-  function resetRoute() { selectedCard = 0; contentY = 0 }
+  function resetRoute() { selectedCard = 0; footerSelected = false; contentY = 0 }
   onSetupModeChanged: Qt.callLater(resetRoute)
   onVisibleChanged: if (visible) Qt.callLater(resetRoute)
   signal storyRequested(int index)
@@ -66,6 +67,13 @@ Flickable {
     return items
   }
 
+  function hasVisibleGroupBefore(groupIndex) {
+    for (var i = 0; i < groupIndex; i++) {
+      if (groups[i].items.length > 0) return true
+    }
+    return false
+  }
+
   function controlTargets() {
     var targets = setupMode ? [] : briefNotice.controlTargets()
     return targets.concat(cards(), [browseButton]).filter(function(item) { return item.visible && item.enabled })
@@ -81,12 +89,28 @@ Flickable {
 
   function moveSelection(delta) {
     var choices = cards()
-    if (!choices.length) return
+    if (footerSelected || browseButton.activeFocus) {
+      if (delta < 0 && choices.length) {
+        footerSelected = false
+        selectedCard = delta < -choices.length ? 0 : choices.length - 1
+        root.forceActiveFocus()
+        revealControl(choices[selectedCard])
+      }
+      return
+    }
+    if (!choices.length || delta > choices.length
+        || (delta > 0 && selectedCard >= choices.length - 1)) {
+      footerSelected = true
+      browseButton.forceActiveFocus()
+      revealControl(browseButton)
+      return
+    }
     selectedCard = Math.max(0, Math.min(selectedCard + delta, choices.length - 1))
     revealControl(choices[selectedCard])
   }
 
   function moveSelectionHorizontal(direction) {
+    if (footerSelected || browseButton.activeFocus) return
     var choices = cards()
     if (!choices.length) return
     var currentIndex = Math.max(0, Math.min(selectedCard, choices.length - 1))
@@ -115,6 +139,10 @@ Flickable {
   }
 
   function activateSelected() {
+    if (footerSelected || browseButton.activeFocus) {
+      root.browseRequested()
+      return
+    }
     var choices = cards()
     if (choices.length) choices[Math.max(0, Math.min(selectedCard, choices.length - 1))].activated()
   }
@@ -165,6 +193,7 @@ Flickable {
       ColumnLayout {
         id: section
         required property var modelData
+        required property int index
         Layout.fillWidth: true
         visible: modelData.items.length > 0
         spacing: Style.spacing.sm
@@ -175,6 +204,15 @@ Flickable {
             if (item) result.push(item)
           }
           return result
+        }
+        Rectangle {
+          visible: root.hasVisibleGroupBefore(section.index)
+          Layout.fillWidth: true
+          Layout.topMargin: Style.spacing.sm
+          Layout.bottomMargin: Style.spacing.sm
+          implicitHeight: Style.spacing.hairline
+          color: Color.popups.text
+          opacity: 0.16
         }
         Text {
           Layout.fillWidth: true
@@ -225,8 +263,9 @@ Flickable {
                 ? String(modelData.briefingReasonLabel || "Briefing") + " · " + Number(modelData.briefingEventCount || 1) + (Number(modelData.briefingEventCount || 1) === 1 ? " update" : " updates")
                 : String(modelData.comparisonLabel || (section.modelData.kind === "collection" ? "Reviewed collection" : "Project"))
               imageUrl: root.imagesVisible ? String(modelData.imageUrl || "") : ""
-              selected: root.cardIndex(entry) === root.selectedCard
+              selected: !root.footerSelected && root.cardIndex(entry) === root.selectedCard
               onActivated: {
+                root.footerSelected = false
                 root.selectedCard = root.cardIndex(entry)
                 if (section.modelData.kind === "story") root.storyRequested(index)
                 else root.detailRequested(modelData)
@@ -262,9 +301,17 @@ Flickable {
     RadarButton {
       id: browseButton
       label: root.setupMode ? "Read news for your setup" : "Browse all plugins"
+      selected: root.footerSelected
       managesTab: true
       onTabRequested: function(direction) { root.navigationRequested(direction) }
-      onClicked: root.browseRequested()
+      onActiveFocusChanged: if (activeFocus) {
+        root.footerSelected = true
+        root.revealControl(browseButton)
+      }
+      onClicked: {
+        root.footerSelected = true
+        root.browseRequested()
+      }
     }
   }
 }

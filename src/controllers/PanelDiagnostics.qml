@@ -94,6 +94,7 @@ Item {
       insightReleaseCount: views.insightDetail.releases.length,
       insightDetailId: panel.detailItem ? String(panel.detailItem.id || "") : "",
       homeCards: views.discoveryView.cards().length,
+      homeFooterSelected: views.discoveryView.footerSelected,
       selectedHomeKind: views.discoveryView.cards()[views.discoveryView.selectedCard] ? views.discoveryView.cards()[views.discoveryView.selectedCard].entryKind : "",
       insightSourceCount: panel.detailItem ? (panel.detailItem.sourceLinks || []).length : 0,
       insightReviewedAt: panel.detailItem ? String(panel.detailItem.reviewedAt || "") : "",
