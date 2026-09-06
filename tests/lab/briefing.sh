@@ -371,7 +371,7 @@ omarchy_host_test() {
   briefing_key text-200-new-brief-activate ret \
     '.briefing.total == 1 and .briefing.remaining == 1 and .selectedId == "evt_000000000000000000001a7e" and .selectedIsUnread == true and .briefingBusy == false' || return 1
   ssh_guest "jq -e '.saved | has(\"$saved_id\")' $scenario_state" || return 1
-  briefing_key text-200-late-card down \
+  briefing_key text-200-late-card home \
     '.homeVisible == true and .selectedHomeKind == "story" and .selectedIsUnread == true' || return 1
   ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar homeCardGeometry ''" \
     >"$RUN_DIR/briefing-text-200-home-card.json" || return 1

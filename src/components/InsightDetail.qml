@@ -169,7 +169,7 @@ FocusScope {
       spacing: Style.spacing.md
       RadarButton {
         id: closeButton
-        label: root.hasParent ? "← Back to collection" : "← Back"
+        label: "← Back"
         managesTab: true
         onTabRequested: function(direction) { root.navigate(direction) }
         onClicked: root.closed()

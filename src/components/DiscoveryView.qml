@@ -272,7 +272,7 @@ Flickable {
                 : modelData.summary || modelData.description || modelData.coverageLabel || "")
               eyebrow: section.modelData.kind === "story"
                 ? String(modelData.briefingReasonLabel || "Briefing") + " · " + Number(modelData.briefingEventCount || 1) + (Number(modelData.briefingEventCount || 1) === 1 ? " update" : " updates")
-                : String(modelData.comparisonLabel || (section.modelData.kind === "collection" ? "Reviewed collection" : "Project"))
+                : String(modelData.comparisonLabel || "Project")
               imageUrl: root.imagesVisible ? String(modelData.imageUrl || "") : ""
               selected: !root.footerSelected && root.cardIndex(entry) === root.selectedCard
               onActivated: {
