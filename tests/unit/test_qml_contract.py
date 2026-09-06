@@ -143,6 +143,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('result.classification === "owned-legacy"', sources["controllers/PluginMaintenance.qml"])
         self.assertIn('text: "NEWS RADAR"', sources["components/RadarMasthead.qml"])
         self.assertIn("TUNE YOUR RADAR", sources["components/PreferencesDialog.qml"])
+        self.assertIn("Open Radar settings (T)", sources["components/RadarMasthead.qml"])
+        self.assertIn('{ keys: "t", action: "tune" }', sources["components/SectionRail.qml"])
+        self.assertIn('{ keys: ",", action: "section settings" }', sources["components/SectionRail.qml"])
+        self.assertEqual(2, sources["components/ReaderToolbar.qml"].count("Open settings for this section (,)"))
         self.assertIn("SOURCES · FIXED FOR THIS SECTION", sources["components/SectionSettings.qml"])
         self.assertIn("preventStealing: true", sources["components/RadarButton.qml"])
         self.assertIn("managesTab", sources["components/RadarButton.qml"])
@@ -308,6 +312,8 @@ class QmlContractTests(unittest.TestCase):
             'toLowerCase() === "a"',
             '=== "?"',
             'toLowerCase() === "r"',
+            'toLowerCase() === "t"',
+            'event.text || "") === ","',
         ):
             self.assertIn(key, qml)
         discovery = (ROOT / "src/components/DiscoveryView.qml").read_text(encoding="utf-8")
@@ -326,6 +332,8 @@ class QmlContractTests(unittest.TestCase):
         for key in ("Qt.Key_Left", "Qt.Key_Right", "Qt.Key_Down", "Qt.Key_Up", "Qt.Key_Home", "Qt.Key_End"):
             self.assertIn(key, detail)
         self.assertEqual(1, notice.count("columns: 1"))
+        self.assertIn("visible: !root.briefing.initialized || root.briefing.hasNewStories", notice)
+        self.assertIn("A new briefing will be available when unread stories arrive.", notice)
         session = (ROOT / "src/controllers/FeedSession.qml").read_text(encoding="utf-8")
         for state in ("First use", "Cached", "Checking", "Updated", "No newer edition", "Publisher stale", "Offline", "Source partial", "Invalid feed", "No cache and failed"):
             self.assertIn(state, session)

@@ -80,6 +80,8 @@ Your brief survives closing, reopening, and refresh. New arrivals stay available
 - `o` or `Enter`: open the selected overview card; in a source reader, open the selected validated HTTPS source.
 - `s`: save or unsave the selected story locally.
 - `r`: **Check for updates** once against the published static edition. Cached stories remain readable and the other sections adopt newer news automatically. Front Page keeps its current brief; normal success adds no status banner.
+- `t`: open **Tune** settings.
+- `,`: open **Settings** for the current section.
 - `Escape`: leave details or an open control surface, then close the panel. `q` closes the panel during normal navigation.
 - `Tune`: enable or disable the top-bar newspaper, story images, and the Core, Plugins, and YouTube rails.
 - `⚙ Settings`: inspect the section's fixed sources, then locally refine time, significance, unread/image state, and story types. Names, icons, order, background, and source scope remain canonical.

@@ -45,7 +45,7 @@ GridLayout {
           : "No unread stories were selected. ")
           + (root.briefing.hasNewStories
             ? "More stories are available for a new briefing."
-            : "Explore any section whenever you like.")
+            : "A new briefing will be available when unread stories arrive. Explore any section whenever you like.")
           + (root.briefing.expiredEvents > 0
             ? " " + root.briefing.expiredEvents + " earlier updates have left the live edition."
             : "")
@@ -77,10 +77,11 @@ GridLayout {
       id: nextBriefing
       managesTab: true
       onTabRequested: function(direction) { root.navigationRequested(direction) }
+      visible: !root.briefing.initialized || root.briefing.hasNewStories
+        || root.briefing.expiredEvents > 0
       label: root.briefing.initialized ? "New briefing" : "Prepare briefing"
       tooltipText: "Choose a new short briefing from unread stories. Skipped stories stay unread."
-      enabled: !root.busy && (!root.briefing.initialized || root.briefing.hasNewStories
-        || root.briefing.expiredEvents > 0)
+      enabled: !root.busy
       onClicked: root.newRequested()
     }
   }

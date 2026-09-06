@@ -535,6 +535,18 @@ Item {
           event.accepted = true
           return
         }
+        if ((event.text || "") === ",") {
+          if (masthead.search.activeFocus) return
+          root.showSectionSettings()
+          event.accepted = true
+          return
+        }
+        if ((event.text || "").toLowerCase() === "t") {
+          if (masthead.search.activeFocus) return
+          readerActions.showPreferences()
+          event.accepted = true
+          return
+        }
         if (root.briefingControlsMode) {
           if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
             root.focusBriefingControl(event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1)

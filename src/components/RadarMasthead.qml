@@ -104,6 +104,7 @@ ColumnLayout {
       RadarButton {
         id: tuneButtonControl
         label: "Tune"
+        tooltipText: "Open Radar settings (T)"
         enabled: session.localStateReady && !actions.stateMutationPending && !actions.preferencesRunning
         onClicked: actions.showPreferences()
       }

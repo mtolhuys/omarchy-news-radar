@@ -92,6 +92,7 @@ ColumnLayout {
       RadarButton {
         id: settingsButtonControl
         label: "⚙ Settings"
+        tooltipText: "Open settings for this section (,)"
         selected: session.filterSummary !== "No extra filters"
         enabled: !actions.stateMutationPending
         onClicked: root.settingsRequested()
@@ -123,6 +124,7 @@ ColumnLayout {
       RadarButton {
         id: narrowSettingsButtonControl
         label: "⚙ Settings"
+        tooltipText: "Open settings for this section (,)"
         selected: session.filterSummary !== "No extra filters"
         enabled: !actions.stateMutationPending
         onClicked: root.settingsRequested()

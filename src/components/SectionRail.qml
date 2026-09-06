@@ -183,6 +183,8 @@ Flickable {
             { keys: "f", action: "unread" },
             { keys: "/", action: "search" },
             { keys: "r", action: "refresh" },
+            { keys: "t", action: "tune" },
+            { keys: ",", action: "section settings" },
             { keys: "Tab", action: "sections" },
             { keys: "1–" + root.sections.length, action: "jump" },
             { keys: "Home/End", action: "edges" },
@@ -207,7 +209,7 @@ Flickable {
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: modelData.action + (index < 12 ? " ·" : "")
+              text: modelData.action + (index < 14 ? " ·" : "")
               textFormat: Text.PlainText
               color: root.quietTextColor
               font.family: Style.font.family
