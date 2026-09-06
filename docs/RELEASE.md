@@ -153,4 +153,4 @@ The owner tested the installed candidate and approved publication. The [0.5.2 ev
 
 ## Automatic discovery candidate
 
-0.5.3 is a local candidate, not a published release. It replaces authored discovery sections with dated feed activity. Do not push, publish, deploy the producer, or update marketplace verification until the owner has inspected this candidate locally and explicitly approved it. Reuse the existing verification issue when that approval arrives.
+The owner inspected the installed 0.5.3 candidate and approved publication on 2026-09-06. The [evidence](evidence/0.5.3-local.md) records the exact runtime and retained discovery checks. Publish the release preparation commit, verify its CI and public-clone journey, and fast-forward the producer while preserving its live continuity snapshot. Update the existing marketplace request and owner context in place; do not add an issue or comment. Maintainer approval remains separate.

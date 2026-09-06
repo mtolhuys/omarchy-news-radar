@@ -1,4 +1,4 @@
-![Omarchy News Radar 0.5.1 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
+![Omarchy News Radar 0.5.3 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
@@ -10,13 +10,11 @@ Catch up on Omarchy releases, official news, plugin activity and videos in one k
 
 Omarchy News Radar is an independent community project.
 
-Version `0.5.3` is a local candidate, not a published release. Automatic discovery changes are awaiting owner testing.
-
-![Omarchy News Radar 0.5 in use — Front Page, dated discoveries, My setup, and project details](preview.gif)
+![Omarchy News Radar 0.5 interface walkthrough — recorded before automatic discovery](preview.gif)
 
 The walkthrough uses the released 0.5 reader and its real public edition.
 
-## Install the published v0.5.2
+## Install the published v0.5.3
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -150,7 +148,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.2` is the current release. It fixes personal-news routing, unread section counts, and crowded reader controls. See the [release notes](docs/release-notes/0.5.2.md), [verification evidence](docs/evidence/0.5.2-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
+Version `0.5.3` is the current release. Front Page discovery now updates from dated source events and retains the last usable edition during quiet periods. See the [release notes](docs/release-notes/0.5.3.md), [verification evidence](docs/evidence/0.5.3-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 

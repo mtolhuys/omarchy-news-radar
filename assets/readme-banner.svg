@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-labelledby="title description">
   <title id="title">Omarchy News Radar</title>
-  <desc id="description">Omarchy News Radar 0.5.1: a persistent personal front page with complete keyboard navigation and setup-aware news.</desc>
+  <desc id="description">Omarchy News Radar 0.5.3: a persistent personal front page with complete keyboard navigation and setup-aware news.</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0a0d10"/>
@@ -44,7 +44,7 @@
   <g font-family="ui-monospace, 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace">
     <rect x="370" y="69" width="334" height="30" rx="15" fill="#ffad24" fill-opacity=".1" stroke="#ffad24" stroke-opacity=".42"/>
     <circle cx="389" cy="84" r="4" fill="#ffad24"/>
-    <text x="402" y="90" fill="#ffbd4a" font-size="13" font-weight="700" letter-spacing="1.2">VERSION 0.5.1 · COMMUNITY PLUGIN</text>
+    <text x="402" y="90" fill="#ffbd4a" font-size="13" font-weight="700" letter-spacing="1.2">VERSION 0.5.3 · COMMUNITY PLUGIN</text>
 
     <text x="370" y="151" fill="#9ece6a" font-size="28" font-weight="700" letter-spacing="8">OMARCHY</text>
     <text x="366" y="220" fill="#f1f5f2" font-size="62" font-weight="800" letter-spacing="1">NEWS RADAR</text>
