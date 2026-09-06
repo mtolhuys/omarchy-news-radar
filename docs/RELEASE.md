@@ -10,7 +10,7 @@ The README walkthrough and root marketplace preview use inspected captures from 
 
 Record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, Plugin Lab ISO/base identity, exact public commit, and release tag.
 
-The manifest, Python package, helper build, panel, README installation section, changelog, and release notes identify `0.5.0`. The [earlier briefing-only evidence](evidence/0.5.0-local.md) remains historical. The [0.5 verification record](evidence/0.5.0-expanded-local.md) records the source, production server, browser, multi-window, and disposable desktop checks.
+The manifest, Python package, helper build, panel, changelog, and candidate release notes identify `0.5.1`. The [0.5.1 evidence](evidence/0.5.1-local.md) records its keyboard, persistent-briefing, daily-desktop, multi-window, and disposable-desktop checks. The earlier [briefing-only](evidence/0.5.0-local.md) and [expanded 0.5](evidence/0.5.0-expanded-local.md) records remain historical.
 
 ## Publishable checklist
 
@@ -79,9 +79,9 @@ These are acceptance requirements; completed checks and remaining limitations be
 - `make test`, `make validate`, `make feed-fixture`, and `make site` pass from a clean clone without unapproved downloads; `make collect-live` separately proves the allowlisted live build.
 - Plugin Lab fresh-install, dedicated briefing, and released-0.1.3 upgrade acceptance pass for the exact candidate with inspected logs and screenshots. The briefing journey covers both welcome choices, per-event versus group read scope, explicit completion, reopen/arrival stability, offline operation, keyboard focus, and maintained light/dark layouts.
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
-- Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available 0.5 commit through the state-v13 journey.
+- Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available 0.5.1 commit through the state-v13 journey.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed/state schemas, screenshots, release notes, and evidence agree on 0.5. Release media comes from inspected final-runtime VM captures.
+- README, changelog, manifest, UI version, feed/state schemas, screenshots, release notes, and evidence agree on 0.5.1. Release media comes from inspected final-runtime VM captures.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
 - Push, tag, release, marketplace submission, domain change, and external announcement require owner authorization. GitHub Pages is not the live publication path.
 
@@ -143,8 +143,8 @@ Deliberate limitations / unverified boundaries:
 -
 ```
 
-## 0.5 release gate
+## 0.5.1 release gate
 
-The earlier `evidence/0.5.0-local.md` records the briefing-only candidate. The expanded evidence record must establish exact-commit source and disposable runtime acceptance. Home and setup must not read hidden stories; discovery navigation, exact version notes, follow/mute/clear, upgrade preservation, offline companion fallback, keyboard reachability and first-map geometry need matching proof.
+The [0.5.1 evidence](evidence/0.5.1-local.md) establishes the exact runtime source and complete disposable acceptance before publication. The remaining public-clone, Forge, tag, release, and marketplace gates must bind to the final remote commit in that order.
 
 The Laravel application is a separate deployment unit. Validate real producer artifacts through its strict staging policy, verify retained links across changing editions and exercise interruption recovery before deployment. Confirm gzip, Vary, ETag, HEAD, 304, content type, cache policy and encoded-byte accounting on production application responses. Old clients continue using unchanged events.json.

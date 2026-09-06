@@ -1,4 +1,4 @@
-![Omarchy News Radar 0.5 — your personal front page for Omarchy](assets/readme-banner.svg)
+![Omarchy News Radar 0.5.1 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
@@ -235,7 +235,7 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - My setup presents local descriptions and versions instead of repeating missing-coverage warnings.
 - Detail pages, Tune, and section Settings share complete arrow-key navigation and visible key guidance.
 - `t` opens Tune and `,` opens current-section Settings.
-- A caught-up brief offers **Check for new stories** and becomes **New briefing** only when eligible unread news exists.
+- A caught-up brief stays visible, offers **Check for new stories**, and becomes **Load new briefing** only when eligible unread news exists.
 
 ## What shipped in 0.5.0
 

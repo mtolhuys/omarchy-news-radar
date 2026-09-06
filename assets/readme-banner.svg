@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-labelledby="title description">
   <title id="title">Omarchy News Radar</title>
-  <desc id="description">Omarchy News Radar 0.5: a personal front page with briefings, setup-aware news, reviewed workflows, and project discovery.</desc>
+  <desc id="description">Omarchy News Radar 0.5.1: a persistent personal front page with complete keyboard navigation and setup-aware news.</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0a0d10"/>
@@ -42,23 +42,23 @@
   </g>
 
   <g font-family="ui-monospace, 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace">
-    <rect x="370" y="69" width="318" height="30" rx="15" fill="#ffad24" fill-opacity=".1" stroke="#ffad24" stroke-opacity=".42"/>
+    <rect x="370" y="69" width="334" height="30" rx="15" fill="#ffad24" fill-opacity=".1" stroke="#ffad24" stroke-opacity=".42"/>
     <circle cx="389" cy="84" r="4" fill="#ffad24"/>
-    <text x="402" y="90" fill="#ffbd4a" font-size="13" font-weight="700" letter-spacing="1.2">VERSION 0.5 · COMMUNITY PLUGIN</text>
+    <text x="402" y="90" fill="#ffbd4a" font-size="13" font-weight="700" letter-spacing="1.2">VERSION 0.5.1 · COMMUNITY PLUGIN</text>
 
     <text x="370" y="151" fill="#9ece6a" font-size="28" font-weight="700" letter-spacing="8">OMARCHY</text>
     <text x="366" y="220" fill="#f1f5f2" font-size="62" font-weight="800" letter-spacing="1">NEWS RADAR</text>
     <text x="370" y="263" fill="#aeb8b3" font-size="21">Your personal front page for Omarchy.</text>
 
     <g font-size="13" font-weight="700" letter-spacing="1.1">
-      <rect x="370" y="294" width="118" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
-      <text x="386" y="316" fill="#b6df8a">BRIEFINGS</text>
-      <rect x="500" y="294" width="116" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
-      <text x="518" y="316" fill="#b6df8a">MY SETUP</text>
-      <rect x="628" y="294" width="128" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
-      <text x="644" y="316" fill="#b6df8a">WORKFLOWS</text>
-      <rect x="768" y="294" width="118" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
-      <text x="785" y="316" fill="#b6df8a">DISCOVER</text>
+      <rect x="370" y="294" width="150" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="386" y="316" fill="#b6df8a">STAYS READY</text>
+      <rect x="532" y="294" width="142" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="550" y="316" fill="#b6df8a">ARROW KEYS</text>
+      <rect x="686" y="294" width="116" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="704" y="316" fill="#b6df8a">MY SETUP</text>
+      <rect x="814" y="294" width="72" height="34" rx="7" fill="#9ece6a" fill-opacity=".1" stroke="#9ece6a" stroke-opacity=".38"/>
+      <text x="832" y="316" fill="#b6df8a">TUNE</text>
     </g>
 
     <g transform="translate(930 178)">
@@ -66,14 +66,14 @@
       <rect x="12" y="13" width="180" height="25" rx="4" fill="#292f2c"/>
       <circle cx="25" cy="25" r="4" fill="#ffad24"/>
       <text x="36" y="29" fill="#f1f5f2" font-size="10" font-weight="700">AROUND OMARCHY</text>
-      <text x="13" y="58" fill="#ffbd4a" font-size="8" font-weight="700">YOUR BRIEFING</text>
+      <text x="13" y="58" fill="#ffbd4a" font-size="8" font-weight="700">A NEW BRIEFING IS READY</text>
       <rect x="12" y="67" width="86" height="34" rx="3" fill="#171c1f" stroke="#53605a"/>
       <rect x="106" y="67" width="86" height="34" rx="3" fill="#171c1f" stroke="#53605a"/>
-      <text x="19" y="82" fill="#dfe6e2" font-size="8">What changed</text>
-      <text x="19" y="94" fill="#85918b" font-size="7">for your setup</text>
-      <text x="113" y="82" fill="#dfe6e2" font-size="8">Worth trying</text>
-      <text x="113" y="94" fill="#85918b" font-size="7">reviewed ideas</text>
-      <text x="13" y="120" fill="#ffbd4a" font-size="8" font-weight="700">LOCAL, KEYBOARD-FIRST, SOURCE-LINKED</text>
+      <text x="19" y="82" fill="#dfe6e2" font-size="8">Keep reading</text>
+      <text x="19" y="94" fill="#85918b" font-size="7">this edition</text>
+      <text x="113" y="82" fill="#dfe6e2" font-size="8">Load when ready</text>
+      <text x="113" y="94" fill="#85918b" font-size="7">your choice</text>
+      <text x="13" y="120" fill="#ffbd4a" font-size="8" font-weight="700">ARROW KEYS · LOCAL · SOURCE-LINKED</text>
       <path d="M13 134h178" stroke="#9ece6a" stroke-opacity=".2"/>
     </g>
   </g>
