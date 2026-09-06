@@ -190,6 +190,11 @@ def _briefing_rows(
     by_id = {event["id"]: event for event in feed["events"]}
     section_filter = state["preferences"]["sectionFilters"]["front-page"]
     retained = set(retained_read_ids or ())
+    completed_snapshot = bool(snapshot["groups"]) and all(
+        event_id in by_id and event_is_read(state, by_id[event_id])
+        for group in snapshot["groups"]
+        for event_id in group["eventIds"]
+    )
     needle = " ".join(query.lower().split())
     result: list[dict[str, Any]] = []
     for group in snapshot["groups"]:
@@ -200,7 +205,9 @@ def _briefing_rows(
         )
         if not matching:
             continue
-        if section_filter["unreadOnly"] and all(event_is_read(state, event) for event in matching) and not any(event["id"] in retained for event in matching):
+        if (section_filter["unreadOnly"] and not completed_snapshot
+                and all(event_is_read(state, event) for event in matching)
+                and not any(event["id"] in retained for event in matching)):
             continue
         if needle and not any(
             needle in " ".join([event["title"], event["summary"], event["entity"]["name"], " ".join(event["classification"]["tags"])]).lower()

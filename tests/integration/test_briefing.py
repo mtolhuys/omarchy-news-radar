@@ -120,6 +120,11 @@ class BriefingIntegrationTests(unittest.TestCase):
         completed = self.project()
         self.assertTrue(completed["briefing"]["complete"])
         self.assertTrue(completed["briefing"]["hasNewStories"])
+        self.assertEqual(
+            [event["id"] for event in before["events"]],
+            [event["id"] for event in completed["events"]],
+        )
+        self.assertTrue(all(not event["isUnread"] for event in completed["events"]))
         self.assertTrue(any(not event_is_read(marked["state"], event) for event in newer["events"]))
 
     def test_stale_briefing_action_never_marks_a_new_selection(self) -> None:

@@ -28,9 +28,11 @@ GridLayout {
     spacing: Style.spacing.labelGap
     Text {
       Layout.fillWidth: true
-      text: root.briefing.initialized && root.briefing.complete
-        ? "You’re caught up with this briefing."
-        : "Your briefing"
+      text: root.briefing.initialized && root.briefing.hasNewStories
+        ? "A new briefing is ready."
+        : (root.briefing.initialized && root.briefing.complete
+          ? "You’re caught up with this briefing."
+          : "Your briefing")
       textFormat: Text.PlainText
       color: Color.popups.text
       font.family: Style.font.family
@@ -43,11 +45,16 @@ GridLayout {
     Text {
       Layout.fillWidth: true
       text: root.message || (root.briefing.initialized
-        ? (root.briefing.total > 0
-          ? root.briefing.remaining + " of " + root.briefing.total + " items left. "
+        ? (root.briefing.complete && root.briefing.total > 0
+          ? "This finished edition stays here until you replace it. "
+          : (root.briefing.total > 0
+            ? root.briefing.remaining + " of " + root.briefing.total + " items left. "
           : "No unread stories were selected. ")
+          )
           + (root.briefing.hasNewStories
-            ? "More stories are available for a new briefing."
+            ? root.briefing.availableUnread + " unread "
+              + (root.briefing.availableUnread === 1 ? "story is" : "stories are")
+              + " available for a new briefing."
             : "A new briefing will be available when unread stories arrive. Explore any section whenever you like.")
           + (root.briefing.expiredEvents > 0
             ? " " + root.briefing.expiredEvents + " earlier updates have left the live edition."
@@ -81,7 +88,7 @@ GridLayout {
       managesTab: true
       onTabRequested: function(direction) { root.navigationRequested(direction) }
       label: root.canPrepare
-        ? (root.briefing.initialized ? "New briefing" : "Prepare briefing")
+        ? (root.briefing.initialized ? "Load new briefing" : "Prepare briefing")
         : "Check for new stories"
       tooltipText: root.canPrepare
         ? "Choose a new short briefing from unread stories. Skipped stories stay unread."

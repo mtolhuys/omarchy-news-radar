@@ -342,6 +342,8 @@ class QmlContractTests(unittest.TestCase):
         self.assertEqual(1, notice.count("columns: 1"))
         self.assertIn("readonly property bool canPrepare:", notice)
         self.assertIn('"Check for new stories"', notice)
+        self.assertIn('"Load new briefing"', notice)
+        self.assertIn('"This finished edition stays here until you replace it. "', notice)
         self.assertIn("root.canPrepare ? root.newRequested() : root.refreshRequested()", notice)
         self.assertIn("A new briefing will be available when unread stories arrive.", notice)
         session = (ROOT / "src/controllers/FeedSession.qml").read_text(encoding="utf-8")

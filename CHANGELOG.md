@@ -6,7 +6,8 @@
 
 ### Changed
 - Present My setup as a useful local inventory with manifest descriptions, installed versions, aggregate coverage context, and updates first.
-- Replace a dead caught-up **New briefing** action with **Check for new stories**, retaining **New briefing** when eligible unread candidates exist.
+- Replace a dead caught-up action with **Check for new stories**, switching to **Load new briefing** when eligible unread candidates exist.
+- Keep completed Front Pages visible and announce available replacements before the user explicitly loads one.
 
 ### Fixed
 - Complete arrow-key navigation across insight details, included-project cards, Tune, and current-section Settings.
