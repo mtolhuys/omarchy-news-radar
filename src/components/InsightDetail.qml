@@ -16,6 +16,9 @@ FocusScope {
   property string pendingFocusKey: ""
   property string displayedIdentity: ""
   readonly property real contentY: scroll.contentY
+  readonly property real readingWidth: body.width
+  readonly property real heroWidth: hero.visible ? hero.width : 0
+  readonly property int relevanceColumns: relevanceGrid.columns
   signal closed()
   signal sourceRequested(string url)
   signal projectRequested(var project)
@@ -142,7 +145,8 @@ FocusScope {
       ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
       ColumnLayout {
         id: body
-        width: scroll.width - Style.space(12)
+        width: Math.min(Math.max(0, scroll.width - Style.space(12)), Style.space(920))
+        x: Math.max(0, (scroll.width - width - Style.space(12)) / 2)
         spacing: Style.spacing.md
         Text {
           Layout.fillWidth: true
@@ -175,9 +179,12 @@ FocusScope {
           wrapMode: Text.WordWrap
         }
         Image {
-          Layout.fillWidth: true
+          id: hero
+          Layout.preferredWidth: Math.min(body.width, Style.space(640))
+          Layout.maximumWidth: Style.space(640)
+          Layout.alignment: Qt.AlignHCenter
           visible: root.imagesVisible && source.toString() !== "" && status !== Image.Error
-          Layout.preferredHeight: visible ? Math.min(Style.space(220), width * 0.45) : 0
+          Layout.preferredHeight: visible ? Math.min(Style.space(260), width * 0.5) : 0
           source: root.imagesVisible && root.item ? String(root.item.imageUrl || "") : ""
           fillMode: Image.PreserveAspectFit
           asynchronous: true
@@ -233,15 +240,46 @@ FocusScope {
             onClicked: root.sourceRequested(String(root.item.shareUrl))
           }
         }
-        Repeater {
-          id: projectRows
-          model: root.projects
-          RadarButton {
-            required property var modelData
-            label: modelData.name
-            managesTab: true
-            onTabRequested: function(direction) { root.navigate(direction) }
-            onClicked: root.projectRequested(modelData)
+        Text {
+          Layout.fillWidth: true
+          visible: root.projects.length > 0
+          text: "Included projects"
+          textFormat: Text.PlainText
+          color: Color.popups.text
+          font.family: Style.font.family
+          font.pixelSize: Style.font.heading
+          font.bold: true
+          wrapMode: Text.WordWrap
+        }
+        GridLayout {
+          id: projectGrid
+          Layout.fillWidth: true
+          columns: width >= Style.space(640) ? 2 : 1
+          rowSpacing: Style.spacing.sm
+          columnSpacing: Style.spacing.sm
+          Repeater {
+            id: projectRows
+            model: root.projects
+            InsightCard {
+              required property var modelData
+              required property int index
+              readonly property string label: heading
+              Layout.fillWidth: true
+              Layout.fillHeight: true
+              Layout.columnSpan: projectGrid.columns === 2 && root.projects.length % 2 === 1
+                && index === root.projects.length - 1 ? 2 : 1
+              heading: String(modelData.name || modelData.title || "")
+              detail: String(modelData.summary || modelData.description || modelData.coverageLabel || "")
+              eyebrow: String(modelData.comparisonLabel || "Project")
+              imageUrl: root.imagesVisible ? String(modelData.imageUrl || "") : ""
+              onActivated: root.projectRequested(modelData)
+              Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                  root.navigate(event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier) ? -1 : 1)
+                  event.accepted = true
+                }
+              }
+            }
           }
         }
         Text {
@@ -258,69 +296,92 @@ FocusScope {
         Repeater {
           id: releaseRows
           model: root.releases
-          ColumnLayout {
+          Item {
             required property var modelData
             property alias sourceButton: releaseSourceButton
             Layout.fillWidth: true
-            spacing: Style.spacing.sm
-            Text {
-              Layout.fillWidth: true
-              text: modelData.version + (modelData.title !== modelData.version ? " · " + modelData.title : "")
-              textFormat: Text.PlainText
-              color: Color.accent
-              font.family: Style.font.family
-              font.pixelSize: Style.font.heading
-              wrapMode: Text.WordWrap
+            implicitHeight: releaseBody.implicitHeight + Style.spacing.md * 2
+            BorderSurface {
+              anchors.fill: parent
+              color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
+              borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+              radius: Style.cornerRadius
             }
-            Text {
-              Layout.fillWidth: true
-              text: RadarModel.humanDate(modelData.publishedAt)
-              textFormat: Text.PlainText
-              color: Color.popups.text
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
-            }
-            Text {
-              Layout.fillWidth: true
-              text: modelData.summary
-              textFormat: Text.PlainText
-              color: Color.popups.text
-              font.family: Style.font.family
-              font.pixelSize: Style.font.body
-              wrapMode: Text.WordWrap
-            }
-            Repeater {
-              model: root.additionalChanges(modelData)
+            ColumnLayout {
+              id: releaseBody
+              anchors.fill: parent
+              anchors.margins: Style.spacing.md
+              spacing: Style.spacing.sm
               Text {
-                required property var modelData
                 Layout.fillWidth: true
-                text: "• " + modelData.text
+                text: modelData.version + (modelData.title !== modelData.version ? " · " + modelData.title : "")
+                textFormat: Text.PlainText
+                color: Color.accent
+                font.family: Style.font.family
+                font.pixelSize: Style.font.heading
+                wrapMode: Text.WordWrap
+              }
+              Text {
+                Layout.fillWidth: true
+                text: RadarModel.humanDate(modelData.publishedAt)
+                textFormat: Text.PlainText
+                color: Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+              Text {
+                Layout.fillWidth: true
+                text: modelData.summary
                 textFormat: Text.PlainText
                 color: Color.popups.text
                 font.family: Style.font.family
                 font.pixelSize: Style.font.body
                 wrapMode: Text.WordWrap
               }
+              Repeater {
+                model: root.additionalChanges(modelData)
+                Text {
+                  required property var modelData
+                  Layout.fillWidth: true
+                  text: "• " + modelData.text
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.body
+                  wrapMode: Text.WordWrap
+                }
+              }
+              RadarButton {
+                id: releaseSourceButton
+                label: "Original release notes"
+                managesTab: true
+                onTabRequested: function(direction) { root.navigate(direction) }
+                onClicked: root.sourceRequested(modelData.sourceUrl)
+              }
             }
-            RadarButton {
-              id: releaseSourceButton
-              label: "Original release notes"
-              managesTab: true
-              onTabRequested: function(direction) { root.navigate(direction) }
-              onClicked: root.sourceRequested(modelData.sourceUrl)
-            }
-
           }
         }
-        Text {
+        Item {
           Layout.fillWidth: true
           visible: !!root.item && (root.item.kind === "plugin" || root.item.kind === "omarchy") && root.releases.length === 0
-          text: "No documented release notes are available for this project in the current edition."
-          textFormat: Text.PlainText
-          color: Color.popups.text
-          font.family: Style.font.family
-          font.pixelSize: Style.font.body
-          wrapMode: Text.WordWrap
+          implicitHeight: visible ? noReleaseText.implicitHeight + Style.spacing.md * 2 : 0
+          BorderSurface {
+            anchors.fill: parent
+            color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
+            borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+            radius: Style.cornerRadius
+          }
+          Text {
+            id: noReleaseText
+            anchors.fill: parent
+            anchors.margins: Style.spacing.md
+            text: "No documented release notes are available for this project in the current edition."
+            textFormat: Text.PlainText
+            color: Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+            wrapMode: Text.WordWrap
+          }
         }
         Text {
           Layout.fillWidth: true
@@ -333,54 +394,79 @@ FocusScope {
           font.bold: true
           wrapMode: Text.WordWrap
         }
-        Repeater {
-          id: relevanceRows
-          model: root.targets
-          ColumnLayout {
-            required property var modelData
-            Layout.fillWidth: true
-            function buttons() { return [followButton, muteButton] }
-            Text {
+        GridLayout {
+          id: relevanceGrid
+          Layout.fillWidth: true
+          columns: width >= Style.space(640) ? 2 : 1
+          rowSpacing: Style.spacing.sm
+          columnSpacing: Style.spacing.sm
+          Repeater {
+            id: relevanceRows
+            model: root.targets
+            Item {
+              required property var modelData
+              required property int index
               Layout.fillWidth: true
-              text: root.scopeLabel(modelData)
-              textFormat: Text.PlainText
-              color: Color.popups.text
-              font.family: Style.font.family
-              font.pixelSize: Style.font.body
-              wrapMode: Text.WordWrap
-            }
-            Text {
-              Layout.fillWidth: true
-              text: root.scopeHint(modelData)
-              textFormat: Text.PlainText
-              color: Color.popups.text
-              font.family: Style.font.family
-              font.pixelSize: Style.font.bodySmall
-              wrapMode: Text.WordWrap
-            }
-            Flow {
-              Layout.fillWidth: true
-              Layout.preferredHeight: childrenRect.height
-              spacing: Style.spacing.controlGap
-              RadarButton {
-                id: followButton
-                property string controlId: modelData.kind + ":" + modelData.id + ":follow"
-                label: modelData.followed ? "Following · Clear" : "Follow"
-                selected: modelData.followed === true
-                enabled: !root.busy
-                managesTab: true
-                onTabRequested: function(direction) { root.navigate(direction) }
-                onClicked: root.changeRelevance(modelData.kind, modelData.id, modelData.followed ? "clear" : "follow", controlId)
+              Layout.fillHeight: true
+              Layout.columnSpan: relevanceGrid.columns === 2 && root.targets.length % 2 === 1
+                && index === root.targets.length - 1 ? 2 : 1
+              implicitHeight: relevanceBody.implicitHeight + Style.spacing.md * 2
+              function buttons() { return [followButton, muteButton] }
+              BorderSurface {
+                anchors.fill: parent
+                color: Style.normalFillFor(Color.foreground, Color.accent, Color.urgent)
+                borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Style.spacing.hairline)
+                radius: Style.cornerRadius
               }
-              RadarButton {
-                id: muteButton
-                property string controlId: modelData.kind + ":" + modelData.id + ":mute"
-                label: modelData.muted ? "Muted · Clear" : "Mute future news"
-                selected: modelData.muted === true
-                enabled: !root.busy
-                managesTab: true
-                onTabRequested: function(direction) { root.navigate(direction) }
-                onClicked: root.changeRelevance(modelData.kind, modelData.id, modelData.muted ? "clear" : "mute", controlId)
+              ColumnLayout {
+                id: relevanceBody
+                anchors.fill: parent
+                anchors.margins: Style.spacing.md
+                spacing: Style.spacing.sm
+                Text {
+                  Layout.fillWidth: true
+                  text: root.scopeLabel(modelData)
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.body
+                  font.bold: true
+                  wrapMode: Text.WordWrap
+                }
+                Text {
+                  Layout.fillWidth: true
+                  text: root.scopeHint(modelData)
+                  textFormat: Text.PlainText
+                  color: Color.popups.text
+                  font.family: Style.font.family
+                  font.pixelSize: Style.font.bodySmall
+                  wrapMode: Text.WordWrap
+                }
+                Flow {
+                  Layout.fillWidth: true
+                  Layout.preferredHeight: childrenRect.height
+                  spacing: Style.spacing.controlGap
+                  RadarButton {
+                    id: followButton
+                    property string controlId: modelData.kind + ":" + modelData.id + ":follow"
+                    label: modelData.followed ? "Following · Clear" : "Follow"
+                    selected: modelData.followed === true
+                    enabled: !root.busy
+                    managesTab: true
+                    onTabRequested: function(direction) { root.navigate(direction) }
+                    onClicked: root.changeRelevance(modelData.kind, modelData.id, modelData.followed ? "clear" : "follow", controlId)
+                  }
+                  RadarButton {
+                    id: muteButton
+                    property string controlId: modelData.kind + ":" + modelData.id + ":mute"
+                    label: modelData.muted ? "Muted · Clear" : "Mute future news"
+                    selected: modelData.muted === true
+                    enabled: !root.busy
+                    managesTab: true
+                    onTabRequested: function(direction) { root.navigate(direction) }
+                    onClicked: root.changeRelevance(modelData.kind, modelData.id, modelData.muted ? "clear" : "mute", controlId)
+                  }
+                }
               }
             }
           }

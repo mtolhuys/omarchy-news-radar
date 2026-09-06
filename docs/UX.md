@@ -41,6 +41,8 @@ The reading surface does not carry publication telemetry. A subtle collapsible *
 
 Front Page contains a persistent local briefing of at most five groups alongside its Home discoveries and setup updates. The briefing is selected once after cached news and locally enabled plugin IDs are available. It groups eligible unread occurrences of the same plugin without replacing their original titles, IDs, timestamps, or sources. A plain reason explains each selection. In the briefing reader, narrow layouts use the briefing notice as their heading and counts, avoiding a duplicate section heading and default summary; active filter and retained-read explanations remain visible. See D055 and the curation contract for the deterministic allocation.
 
+Wide Home and My setup views use balanced two-column newspaper rows. Cards in a row share its height, and an unpaired final card spans the full row instead of leaving an empty cell. Briefing actions stay directly beneath their status copy. Project and workflow details use a centered bounded reading measure; workflow members become descriptive project cards, hero images are narrower than that measure, release notes are distinct bordered entries, and follow/mute scopes form balanced cards. Narrow views collapse these grids to one column.
+
 - Reading, refreshing, filtering, search, closing, and reopening preserve the exact snapshot. They do not refill its slots. New briefing explicitly replaces it from currently unread eligible stories; skipped stories remain unread.
 - The notice reports remaining groups and completion for this briefing only. Other sections remain available. An expired member is disclosed and does not imply that it was read; a new briefing can replace the expired snapshot.
 - Show updates exposes every retained original event in a plugin group. Selecting the representative reads only that event; Mark group read and Mark briefing read are separate exact-membership actions.
@@ -60,6 +62,7 @@ Primary navigation and reading actions must remain reachable without a pointer:
 | `q` | Close Radar during normal navigation |
 | `j` / `Down` | Select next overview card or story; crossing the story viewport bottom anchors that complete row at the top |
 | `k` / `Up` | Select previous overview card or story; crossing the story viewport top keeps that row visibly anchored |
+| `Left` / `Right` | Move to the overview card beside the current card when that visual row has one |
 | `Enter` or `o` | Open the selected overview card, or the selected original source in a reader |
 | `s` | Save or unsave selected story locally |
 | `u` | Mark the selected story read or unread locally |

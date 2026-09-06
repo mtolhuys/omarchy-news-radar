@@ -12,7 +12,7 @@ GridLayout {
   signal newRequested()
   signal finishRequested()
   signal navigationRequested(int direction)
-  columns: width < Style.space(700) ? 1 : 2
+  columns: 1
   columnSpacing: Style.spacing.panelGap
   rowSpacing: Style.spacing.sm
 
@@ -60,9 +60,7 @@ GridLayout {
     }
   }
   Flow {
-    Layout.fillWidth: root.columns === 1
-    Layout.preferredWidth: root.columns === 1 ? -1
-      : nextBriefing.implicitWidth + (finish.visible ? finish.implicitWidth + spacing : 0)
+    Layout.fillWidth: true
     Layout.preferredHeight: childrenRect.height
     spacing: Style.spacing.controlGap
     RadarButton {

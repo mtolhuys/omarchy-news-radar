@@ -547,6 +547,10 @@ Item {
         }
         if (root.overviewVisible) {
           var overviewKey = (event.text || "").toLowerCase()
+          if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+            discoveryView.moveSelectionHorizontal(event.key === Qt.Key_Left ? -1 : 1)
+            event.accepted = true; return
+          }
           if (event.key === Qt.Key_Down || overviewKey === "j") {
             discoveryView.moveSelection(1); event.accepted = true; return
           }

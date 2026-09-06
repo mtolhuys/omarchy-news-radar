@@ -488,3 +488,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** A useful shared link must survive the rolling feed. Promoting public data before continuity is recoverable can otherwise lose the baseline that distinguishes a new marketplace listing from an old one. Mutable CSS must also refresh after a release.
 
 **Consequence:** HTML is indexable and bounded to 256 KiB per page; retained HTML is bounded to 20,000 files and 256 MiB with a visible publication failure at the cap. JSON and internal publication state are not indexable; the journal is never public. HEAD/304 responses carry no body, gzip and identity have distinct ETags with Vary, and byte accounting measures the selected body. No personalized URL, tracking identifier, account or new runtime dependency is introduced. Server source tests and publication interruption recovery are separate evidence from a production deployment. Public deployment remains an explicit owner action.
+
+## D061 — Compose Home as rows and bound insight reading width
+
+**Decision:** Wide Home and My setup grids give paired cards the same row height, let an unpaired final card span both columns, and use Left/Right for movement to an adjacent card in the same visual row. Up/Down retains the existing linear reading order. Completed briefing actions remain with their status copy. Project and workflow details use a centered bounded measure, descriptive project cards for workflow members, a restrained hero width, bordered release entries, and a balanced grid of follow/mute scopes; narrow layouts collapse to one column.
+
+**Why:** Unbounded columns and unequal card rows made valid content look unfinished on wide and maximized windows. Linear-only overview navigation also ignored the visible left/right relationship between cards.
+
+**Consequence:** Row-major model and Tab order, source content, relevance behavior, and backend schemas remain unchanged. Empty grid cells no longer create exposed holes, long release notes stay scrollable inside the existing detail surface, and large windows gain intentional margins instead of stretched text.

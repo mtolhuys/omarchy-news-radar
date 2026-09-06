@@ -293,6 +293,8 @@ class QmlContractTests(unittest.TestCase):
             "Qt.Key_Escape",
             "Qt.Key_Down",
             "Qt.Key_Up",
+            "Qt.Key_Left",
+            "Qt.Key_Right",
             "Qt.Key_Return",
             "Qt.Key_Home",
             "Qt.Key_End",
@@ -308,6 +310,18 @@ class QmlContractTests(unittest.TestCase):
             'toLowerCase() === "r"',
         ):
             self.assertIn(key, qml)
+        discovery = (ROOT / "src/components/DiscoveryView.qml").read_text(encoding="utf-8")
+        detail = (ROOT / "src/components/InsightDetail.qml").read_text(encoding="utf-8")
+        notice = (ROOT / "src/components/BriefingNotice.qml").read_text(encoding="utf-8")
+        self.assertIn("function moveSelectionHorizontal(direction)", discovery)
+        self.assertIn("Layout.fillHeight: true", discovery)
+        self.assertIn("Layout.columnSpan: cardGrid.columns === 2", discovery)
+        self.assertIn("Style.space(920)", detail)
+        self.assertIn('text: "Included projects"', detail)
+        self.assertIn("id: projectGrid", detail)
+        self.assertIn("id: relevanceGrid", detail)
+        self.assertIn("Layout.columnSpan: relevanceGrid.columns === 2", detail)
+        self.assertEqual(1, notice.count("columns: 1"))
         session = (ROOT / "src/controllers/FeedSession.qml").read_text(encoding="utf-8")
         for state in ("First use", "Cached", "Checking", "Updated", "No newer edition", "Publisher stale", "Offline", "Source partial", "Invalid feed", "No cache and failed"):
             self.assertIn(state, session)

@@ -72,6 +72,30 @@ Flickable {
     revealControl(choices[selectedCard])
   }
 
+  function moveSelectionHorizontal(direction) {
+    var choices = cards()
+    if (!choices.length) return
+    var currentIndex = Math.max(0, Math.min(selectedCard, choices.length - 1))
+    var current = choices[currentIndex]
+    var currentPoint = current.mapToItem(contentItem, current.width / 2, current.height / 2)
+    var bestIndex = -1
+    var bestDistance = Number.MAX_VALUE
+    for (var i = 0; i < choices.length; i++) {
+      if (i === currentIndex) continue
+      var candidate = choices[i]
+      var point = candidate.mapToItem(contentItem, candidate.width / 2, candidate.height / 2)
+      var horizontal = point.x - currentPoint.x
+      var vertical = Math.abs(point.y - currentPoint.y)
+      if ((direction < 0 && horizontal >= 0) || (direction > 0 && horizontal <= 0)) continue
+      if (vertical > Math.min(current.height, candidate.height) * 0.45) continue
+      var distance = Math.abs(horizontal) + vertical * 4
+      if (distance < bestDistance) { bestDistance = distance; bestIndex = i }
+    }
+    if (bestIndex < 0) return
+    selectedCard = bestIndex
+    revealControl(choices[selectedCard])
+  }
+
   function scrollPage(direction) {
     contentY = Math.max(0, Math.min(contentY + direction * height * 0.8, Math.max(0, contentHeight - height)))
   }
@@ -159,6 +183,7 @@ Flickable {
           wrapMode: Text.WordWrap
         }
         GridLayout {
+          id: cardGrid
           Layout.fillWidth: true
           columns: width >= Style.space(640) ? 2 : 1
           rowSpacing: Style.spacing.sm
@@ -173,7 +198,10 @@ Flickable {
               readonly property string label: heading
               readonly property string entryKind: section.modelData.kind
               Layout.fillWidth: true
-              Layout.alignment: Qt.AlignTop
+              Layout.fillHeight: true
+              Layout.columnSpan: cardGrid.columns === 2
+                && section.modelData.items.length % 2 === 1
+                && index === section.modelData.items.length - 1 ? 2 : 1
               heading: String(modelData.title || modelData.name || "")
               detail: String(section.modelData.kind === "story"
                 ? modelData.listSummary || modelData.summary || ""

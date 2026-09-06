@@ -7,7 +7,7 @@
 
 omarchy_host_test() {
   local product_root lab_root start_epoch runtime_identity neighbor_number neighbor_title neighbor_address
-  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name source_label source_focus
+  local plugin_dir viewport_width viewport_height saved_geometry selected_before state_before _card_step collection_id project_id project_name source_label source_focus geometry_before geometry_after
   local scenario_root=/tmp/news-radar-briefing
   local scenario_state=/tmp/news-radar-briefing/xdg-state/omarchy-news-radar/state.json
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -397,7 +397,16 @@ omarchy_host_test() {
       press down
     done
     briefing_wait "keyboard reaches a reviewed real collection" '.selectedHomeKind == "collection"' || return 1
-    briefing_key real-collection ret '.insightDetailVisible == true and .insightSourceCount >= 2 and .insightReviewedAt != ""' || return 1
+    selected_before="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.selectedHomeCard'")" || return 1
+    geometry_before="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar homeCardGeometry ''")" || return 1
+    briefing_key real-card-right right ".selectedHomeCard == $((selected_before + 1)) and .selectedHomeKind == \"collection\"" || return 1
+    geometry_after="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar homeCardGeometry ''")" || return 1
+    jq -e --argjson before "$geometry_before" \
+      '.x > $before.x and ((.y + .height / 2) - ($before.y + $before.height / 2) | fabs) < 2' \
+      <<<"$geometry_after" >/dev/null || return 1
+    briefing_key real-card-left left ".selectedHomeCard == $selected_before and .selectedHomeKind == \"collection\"" || return 1
+    briefing_key real-collection ret \
+      '.insightDetailVisible == true and .insightSourceCount >= 2 and .insightReviewedAt != "" and .insightDetailReadingWidth > 0 and .insightDetailReadingWidth < .windowWidth and .insightDetailRelevanceColumns == 2' || return 1
     briefing_capture opening-09-real-collection || return 1
     collection_id="$(ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -r '.insightDetailId'")" || return 1
     project_id="$(jq -r --arg id "$collection_id" '.collections[] | select(.id == $id) | .projectIds[0]' "$RADAR_LAB_REAL_INSIGHTS")" || return 1
@@ -413,9 +422,10 @@ omarchy_host_test() {
     briefing_resize 820 540 || return 1
     opening_focus_detail "$project_name" || return 1
     briefing_key real-project-detail ret \
-      ".insightDetailId == \"$project_id\" and .insightDetailContentY == 0 and .insightReleaseCount > 0" || return 1
+      ".insightDetailId == \"$project_id\" and .insightDetailContentY == 0 and .insightDetailReadingWidth < .windowWidth and (.insightDetailHeroWidth == 0 or .insightDetailHeroWidth <= .insightDetailReadingWidth)" || return 1
     briefing_capture opening-09-real-project-notes || return 1
-    briefing_key real-project-scroll pgdn '.insightDetailContentY > 0' || return 1
+    briefing_key real-project-page pgdn \
+      ".insightDetailId == \"$project_id\" and .insightDetailContentY >= 0 and .insightDetailFocusedControl == \"← Back to collection\"" || return 1
     briefing_key real-collection-return esc \
       ".insightDetailId == \"$collection_id\" and .insightDetailContentY == 0" || return 1
     briefing_resize 1120 720 || return 1
