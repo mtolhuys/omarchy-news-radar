@@ -285,7 +285,7 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("Style.font.iconLarge", section)
         self.assertIn("id: iconText", section)
         self.assertIn("property int unreadCount", section)
-        self.assertIn('(root.unreadCount > 0 ? "● " : "") + String(root.count)', section)
+        self.assertIn('text: String(root.unreadCount)', section)
         self.assertIn('root.unreadCount + " unread"', section)
         self.assertNotIn("Color.muted", section)
 

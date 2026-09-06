@@ -90,7 +90,7 @@ Your brief survives closing, reopening, and refresh. New arrivals stay available
 - `Load more`: in sections other than Front Page, reveal the next twelve matching stories from the already validated bounded edition by pointer or keyboard.
 - `Unread only`: a story read during the current view remains visibly marked **READ** in its existing position until the section, search, or filters change, preventing the active row from disappearing while its unread count updates.
 
-Section-rail numbers always show the total stories matching that section's saved settings. An amber dot means the section contains unread stories; hovering the count reports the exact total and unread split. **News for you** may be shorter than **My setup** because it contains only current feed events for enabled or explicitly followed plugins, while My setup lists the complete enabled-plugin inventory.
+Section-rail numbers show **unread stories**, under the heading **SECTIONS · UNREAD**. Switching All / Unread only does not change that badge; the reader reports matching totals and how many read stories are hidden. For You opens directly into personal news for enabled plugins and explicitly followed projects or creators. My setup remains a separate tab for the enabled-plugin inventory.
 
 Every story has an explicit local read state: dense rows show `UNREAD` or `READ`, and quiet headlines use an unread mark. Home and My setup do not mark hidden story content read. In a source reader after first use, a fresh panel open marks exactly its first visibly presented selection read; deliberate pointer selection, `j`/`k`, `Home`/`End`, and source activation likewise mark only that story. Selecting a grouped plugin row reads its representative story only; its remaining updates keep their own unread state. The welcome screen and its browse choice do not automatically read a story. Hover, re-summoning an open panel, refreshing, and closing do not mark the rest of the edition. Bulk changes require the explicit brief, group, section, or first-use action. The section rail and top-bar newspaper use the same durable local unread predicate, and **Mark read / Mark unread** in the inspector mirrors the `u` key.
 
@@ -98,7 +98,7 @@ Opening now prepares Radar as a floating window before it appears, with bounded 
 
 Marketplace views, hearts, command copies, repository stars, and GitHub release-asset download counts appear as compact colored icons with accessible labels and an observation time. Raw metric endpoint links stay in feed provenance but are intentionally absent from the reader; plugin stories instead link to their human-facing `plugins.omarchy.org` detail page. Marketplace aggregates are anonymous interactions—not installs, downloads, unique people, rankings, votes, or security signals—and metrics never influence Front Page ordering.
 
-**My setup**, available in For You, joins enabled-plugin IDs and bounded local manifest versions with documented release notes. It labels unknown versions and incomplete coverage honestly. **Context & follows** opens source-backed details; Follow and Mute future news apply to a project, fixed source or stable creator. **Following & muted** exposes every saved choice and its clear action. These choices affect future briefings and source browsing; the current brief keeps its membership and Saved stays reachable. Enabled IDs, versions, follows, mutes and searches remain on your device. The old nonfunctional manual interests control was removed in `0.1.1`; these controls have actual local behavior.
+**My setup**, available in For You, joins enabled-plugin IDs and bounded local manifest versions with documented release notes. It labels unknown versions and incomplete coverage honestly. **Context & follows** opens source-backed details; Follow applies to a project or stable creator; Mute future news also applies to a fixed source. Older source-wide follows remain clearable but no longer fill For You or new briefings with an entire source. **Following & muted** exposes every saved choice and its clear action. These choices affect future briefings and source browsing; the current brief keeps its membership and Saved stays reachable. Enabled IDs, versions, follows, mutes and searches remain on your device. The old nonfunctional manual interests control was removed in `0.1.1`; these controls have actual local behavior.
 
 Reviewed community links are an optional edition input, not a dedicated reader section. If the project later accepts a source record under `content/community/`, the validated story may appear in Front Page or For You; an empty input never creates an empty navigation destination.
 
@@ -230,6 +230,8 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 ## Independence
 
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
+
+Version `0.5.2` is a local candidate, not a published release. It fixes personal-news navigation, unread badges and crowded reader controls. See the [candidate notes](docs/release-notes/0.5.2.md).
 
 ## What is new in 0.5.1
 

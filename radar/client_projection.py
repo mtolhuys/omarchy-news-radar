@@ -53,12 +53,15 @@ def _filtered_section_events(
     retained_read_ids: list[str] | None = None,
     now: datetime | None = None,
     respect_mutes: bool = True,
+    include_read: bool = False,
 ) -> list[dict[str, Any]]:
     if section not in CLIENT_SECTIONS:
         raise ValidationError("unknown projection section")
     if section == "front-page":
         return _briefing_rows(feed, state, query=query, retained_read_ids=retained_read_ids, now=now)
-    section_filter = state["preferences"]["sectionFilters"][section]
+    section_filter = dict(state["preferences"]["sectionFilters"][section])
+    if include_read:
+        section_filter["unreadOnly"] = False
     scoped = dict(feed)
     scoped["events"] = [
         event
@@ -223,6 +226,12 @@ def projection_model(
                     blocking_mutes.append(target)
                     seen_mutes.add(key)
     total_events = len(events)
+    hidden_read_count = 0
+    if section != "front-page" and current_filter["unreadOnly"]:
+        all_events = _filtered_section_events(
+            feed, state, section, installed, query=query, now=now, include_read=True,
+        )
+        hidden_read_count = max(0, len(all_events) - total_events)
     events = events[:limit]
     env = dict(environment or os.environ)
     image_base = FEED_URL
@@ -248,6 +257,7 @@ def projection_model(
         unreadCounts=unread_counts,
         readThrough=state["readThrough"],
         totalEvents=total_events,
+        hiddenReadCount=hidden_read_count,
         hasMore=total_events > len(decorated),
         retainedReadCount=sum(
             item["id"] in retained_read_ids and not item["isUnread"]

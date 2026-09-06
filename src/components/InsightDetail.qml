@@ -39,7 +39,7 @@ FocusScope {
   function scopeHint(target) {
     if (target.kind === "plugin") return "Follow or mute future news about this project."
     if (target.kind === "creator") return "Applies to every covered project from this creator."
-    return "Applies to all news from this source, including other projects."
+    return "Mute this source across news sections. For You follows individual projects and creators."
   }
 
   function changeRelevance(kind, identity, mode, key) {
@@ -60,7 +60,14 @@ FocusScope {
     if (!pendingFocusKey) return
     Qt.callLater(function() {
       var target = root.buttons().filter(function(button) { return button.controlId === root.pendingFocusKey })
-      if (target.length) { target[0].forceActiveFocus(); root.pendingFocusKey = "" }
+      if (!target.length) {
+        var fallbackKey = root.pendingFocusKey.replace(/:follow$/, ":mute")
+        target = root.buttons().filter(function(button) { return button.controlId === fallbackKey })
+      }
+      var next = target.length ? target[0] : closeButton
+      next.forceActiveFocus()
+      root.reveal(next)
+      root.pendingFocusKey = ""
     })
   }
   function additionalChanges(release) {
@@ -494,8 +501,10 @@ FocusScope {
                   spacing: Style.spacing.controlGap
                   RadarButton {
                     id: followButton
+                    visible: modelData.kind !== "source" || modelData.followed === true
                     property string controlId: modelData.kind + ":" + modelData.id + ":follow"
-                    label: modelData.followed ? "Following · Clear" : "Follow"
+                    label: modelData.kind === "source" ? "Clear source follow"
+                      : modelData.followed ? "Following · Clear" : "Follow"
                     selected: modelData.followed === true
                     enabled: !root.busy
                     managesTab: true

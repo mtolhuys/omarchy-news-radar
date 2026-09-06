@@ -66,8 +66,12 @@ omarchy_host_test() {
 
   radar_for_you_news() {
     press 2
-    wait_for_guest_state "For You opens the setup overview" 10 ssh_session \
-      "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .setupVisible == true'" || return 1
+    wait_for_guest_state "For You opens personal news directly" 10 ssh_session \
+      "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .setupVisible == false'" || return 1
+    press f6
+    press ret
+    wait_for_guest_state "My setup remains keyboard reachable" 10 ssh_session \
+      "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.setupVisible == true'" || return 1
     press end
     wait_for_guest_state "End reaches Read news for your setup" 10 ssh_session \
       "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.homeFooterSelected == true'" || return 1

@@ -11,6 +11,7 @@ FocusScope {
   property string tone: "clear"
   property int count: 0
   property int unreadCount: 0
+  readonly property string badgeText: countText.text
   property bool selected: false
   signal clicked()
 
@@ -85,7 +86,7 @@ FocusScope {
 
       Text {
         id: countText
-        text: (root.unreadCount > 0 ? "● " : "") + String(root.count)
+        text: String(root.unreadCount)
         textFormat: Text.PlainText
         color: root.unreadCount > 0
           ? Color.accent

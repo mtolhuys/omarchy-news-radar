@@ -33,8 +33,13 @@ Flickable {
   function geometry() {
     var viewport = itemGeometry(root)
     var selected = itemGeometry(sectionButtons.itemAt(currentIndex))
+    var badges = {}
+    for (var index = 0; index < sectionButtons.count; index++) {
+      var button = sectionButtons.itemAt(index)
+      if (button) badges[sections[index].id] = Number(button.badgeText)
+    }
     return JSON.stringify({
-      viewport: viewport, contentHeight: contentHeight, contentY: contentY, selected: selected,
+      badges: badges, viewport: viewport, contentHeight: contentHeight, contentY: contentY, selected: selected,
       selectedFullyVisible: selected.visible === true
         && selected.x >= viewport.x - 1 && selected.y >= viewport.y - 1
         && selected.x + selected.width <= viewport.x + viewport.width + 1
@@ -80,7 +85,7 @@ Flickable {
     spacing: Style.spacing.sm
 
     Text {
-      text: "SECTIONS"
+      text: "SECTIONS · UNREAD"
       textFormat: Text.PlainText
       color: root.secondaryTextColor
       font.family: Style.font.family

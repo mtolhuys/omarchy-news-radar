@@ -496,3 +496,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** Unbounded columns and unequal card rows made valid content look unfinished on wide and maximized windows. Linear-only overview navigation also ignored the visible left/right relationship between cards.
 
 **Consequence:** Row-major model and Tab order, source content, relevance behavior, and backend schemas remain unchanged. Empty grid cells no longer create exposed holes, long release notes stay scrollable inside the existing detail surface, and large windows gain intentional margins instead of stretched text.
+
+## D062 — Make personal news and unread navigation unambiguous
+
+**Decision:** For You opens its news reader directly and matches enabled plugins plus explicit project/creator follows. Source-wide legacy follows remain stored and clearable but no longer influence personal matching or new briefing selection. Source mutes still work. Section badges always show unread counts under an explicit UNREAD heading; All/Unread only changes visible totals and adds hidden-read feedback. Reader actions wrap below the heading.
+
+**Why:** Broad source follows duplicated Plugins inside For You, whose default setup view then hid the advertised news behind another action. Filter-sensitive total badges looked like missed-event counters. Crowded controls obscured both the heading and filter explanation.
+
+**Consequence:** No read-state reset, saved-item loss, filter reset, schema migration or network change is needed. Existing briefings retain membership. My setup and clear-source-follow remain keyboard reachable; clearing a now-hidden follow control moves focus to the same scope's mute action. This replaces earlier source-follow and total-badge behavior.

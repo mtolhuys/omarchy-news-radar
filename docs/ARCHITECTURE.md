@@ -290,7 +290,7 @@ Before collection, publish restores continuity state from Laravel storage (or a 
 
 The panel calls the maintained shell IPC and treats the returned plugin IDs as local data. Matching is exact on canonical plugin ID. Do not send installed IDs to the feed host and do not infer installation from repository names or display names.
 
-“For You” includes events whose entity plugin ID exactly matches an enabled local plugin, plus events matching explicit local project/source/creator follows, subject to mutes. The removed free-text manual-interest path remains absent. My setup uses bounded local names and exact versions; an explicit shell `firstParty` flag excludes uncovered built-in components without guessing from ID prefixes. Successful empty discovery and unavailable discovery remain distinct.
+“For You” includes events whose entity plugin ID exactly matches an enabled local plugin, plus events matching explicit local project/creator follows, subject to mutes. The removed free-text manual-interest path remains absent. My setup uses bounded local names and exact versions; an explicit shell `firstParty` flag excludes uncovered built-in components without guessing from ID prefixes. Successful empty discovery and unavailable discovery remain distinct.
 
 ## Optional bar indicator
 

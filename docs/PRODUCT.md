@@ -57,7 +57,7 @@ An owner deliberately running the local checkout may use `make local-latest`. Th
 
 ### Relevance
 
-- “For You” matches events against exact locally enabled plugin IDs or explicit local project/source/creator follows, subject to local mutes.
+- “For You” matches events against exact locally enabled plugin IDs or explicit local project/creator follows, subject to local mutes.
 - Saved items and bounded per-story read overrides remain local.
 - Time, significance, unread, image, and story-type filters are independently stored per section and remain local.
 - Names, icons, order, and source scope are canonical section identity and are not user-editable; only the filters that change which stories are shown persist per section.

@@ -15,7 +15,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.5.1+identity-2"
+  readonly property string runtimeBuildIdentity: "news-radar-0.5.2+identity-2"
   readonly property string helperPath: manifest && manifest.__sourceDir
     ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
   readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
@@ -47,7 +47,7 @@ Item {
     Color.foreground.r, Color.foreground.g, Color.foreground.b,
     popupBgIsLight ? 0.22 : 0.45)
   property bool homeMode: true
-  property bool setupMode: true
+  property bool setupMode: false
   property var detailItem: null
   property var detailParents: []
   readonly property bool homeVisible: sectionNavigation.currentSection === "front-page" && homeMode
@@ -178,6 +178,8 @@ Item {
     parts.push(feedSession.totalStories + (briefingVisible ? " briefing items"
       : sectionNavigation.currentSection === "for-you" ? " current matching stories" : " stories"))
     parts.push(Number(feedSession.unreadCounts[sectionNavigation.currentSection] || 0) + (briefingVisible ? " updates unread" : " unread"))
+    if (feedSession.hiddenReadStories > 0)
+      parts.push(feedSession.hiddenReadStories + " read stories hidden · F to show all")
     if (sectionNavigation.currentSection === "for-you")
       parts.push(feedSession.setupModel.length + " enabled plugins tracked")
     return parts.join(" · ")
@@ -308,7 +310,7 @@ Item {
     navigationFocus.forceActiveFocus()
     Qt.callLater(sectionRail.revealSelected)
     homeMode = true
-    setupMode = true
+    setupMode = false
     discoveryView.resetRoute()
     detailItem = null
     detailParents = []

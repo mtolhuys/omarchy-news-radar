@@ -86,7 +86,10 @@ def is_muted(event: Mapping[str, Any], state: Mapping[str, Any]) -> bool:
 
 
 def is_followed(event: Mapping[str, Any], state: Mapping[str, Any]) -> bool:
-    return any(target["followed"] for target in event_relevance(event, state))
+    # Source-wide follows from older versions remain stored and clearable,
+    # but cannot turn personal news into a duplicate of an entire source rail.
+    return any(target["followed"] and target["kind"] != "source"
+               for target in event_relevance(event, state))
 
 
 def relevance_controls(state: Mapping[str, Any]) -> list[dict[str, Any]]:

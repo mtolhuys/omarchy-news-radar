@@ -237,8 +237,44 @@ class InsightsTests(unittest.TestCase):
         set_relevance("creator", "github:example", "clear", self.environment)
         set_relevance("source", "omarchy-news", "follow", self.environment)
         result = projection_model("for-you", "[]", "", self.environment, now=CLOCK)
-        self.assertTrue(all(item["type"] == "omarchy-news" for item in result["events"]))
+        self.assertEqual([], result["events"])
+        self.assertEqual(["omarchy-news"], result["state"]["relevance"]["followedSources"])
         self.assertEqual(before, result["state"]["readOverrides"])
+
+    def test_legacy_marketplace_follow_does_not_duplicate_plugins_in_personal_news(self) -> None:
+        set_relevance("source", "marketplace", "follow", self.environment)
+        before = load_state(self.environment)[0]
+        empty = projection_model("for-you", "[]", "", self.environment, now=CLOCK)
+        self.assertEqual([], empty["events"])
+        personal = self.project("for-you")
+        self.assertTrue(personal["events"])
+        self.assertTrue(all(event["entity"]["id"] == PLUGIN for event in personal["events"]))
+        self.assertGreater(self.project("plugins")["totalEvents"], personal["totalEvents"])
+        self.assertEqual(before, load_state(self.environment)[0])
+        set_relevance("plugin", "org.example.notes", "follow", self.environment)
+        self.assertTrue(any(event["entity"]["id"] == "org.example.notes"
+                            for event in self.project("for-you")["events"]))
+        set_relevance("source", "marketplace", "mute", self.environment)
+        self.assertEqual([], self.project("for-you")["events"])
+
+    def test_unread_badge_and_hidden_read_feedback_survive_filter_toggle(self) -> None:
+        rows = self.project("plugins")["events"]
+        self.assertGreater(len(rows), 1)
+        set_event_read_state(rows[0]["id"], True, self.environment, now=CLOCK)
+        all_rows = self.project("plugins")
+        self.assertEqual(0, all_rows["hiddenReadCount"])
+        state = load_state(self.environment)[0]
+        state["preferences"]["sectionFilters"]["plugins"]["unreadOnly"] = True
+        save_state(state, self.environment)
+        unread = self.project("plugins")
+        self.assertEqual(all_rows["unreadCounts"], unread["unreadCounts"])
+        self.assertEqual(1, unread["hiddenReadCount"])
+        self.assertEqual(all_rows["totalEvents"] - 1, unread["totalEvents"])
+        retained = projection_model("plugins", json.dumps([PLUGIN]), "", self.environment,
+                                    now=CLOCK, retained_read_ids_json=json.dumps([rows[0]["id"]]))
+        self.assertEqual(0, retained["hiddenReadCount"])
+        self.assertEqual(1, retained["retainedReadCount"])
+        self.assertEqual(all_rows["unreadCounts"], retained["unreadCounts"])
 
     def test_mute_indicator_and_projection_share_same_unread_scope(self) -> None:
         set_relevance("source", "marketplace", "mute", self.environment)

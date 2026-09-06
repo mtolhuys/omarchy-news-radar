@@ -63,9 +63,13 @@ ColumnLayout {
         Accessible.name: text
       }
 
-      RowLayout {
-        spacing: Style.spacing.controlGap
-        visible: !root.narrow
+    }
+
+    Flow {
+      Layout.fillWidth: true
+      Layout.preferredHeight: visible ? childrenRect.height : 0
+      spacing: Style.spacing.controlGap
+      visible: !root.narrow
 
       RadarButton {
         id: headerUnreadButtonControl
@@ -97,11 +101,11 @@ ColumnLayout {
         enabled: !actions.stateMutationPending
         onClicked: root.settingsRequested()
       }
-      }
     }
 
-    RowLayout {
-      visible: root.narrow && !!root.viewport.selectedStory
+    Flow {
+      Layout.preferredHeight: visible ? childrenRect.height : 0
+      visible: root.narrow
       Layout.fillWidth: true
       spacing: Style.spacing.controlGap
 
@@ -141,7 +145,7 @@ ColumnLayout {
     color: root.secondaryTextColor
     font.family: Style.font.family
     font.pixelSize: Style.font.caption
-    elide: Text.ElideRight
+    wrapMode: Text.WordWrap
     Accessible.role: Accessible.StaticText
     Accessible.name: text
   }

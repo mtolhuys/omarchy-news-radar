@@ -88,6 +88,7 @@ Item {
   property int totalStories: 0
 
   property int retainedReadStories: 0
+  property int hiddenReadStories: 0
 
   property bool hasMoreStories: false
 
@@ -418,6 +419,7 @@ Item {
       unreadCounts = result.unreadCounts || ({})
       totalStories = Number(result.totalEvents || 0)
       retainedReadStories = Number(result.retainedReadCount || 0)
+      hiddenReadStories = Number(result.hiddenReadCount || 0)
       hasMoreStories = result.hasMore === true
       filterSummary = String(result.filterSummary || "No extra filters")
       sectionSources = String(result.sectionSources || "")
@@ -427,6 +429,7 @@ Item {
     } else {
       totalStories = 0
       retainedReadStories = 0
+      hiddenReadStories = 0
       hasMoreStories = false
       feedStatus = "Failed"
       statusDetail = result.message || "The local reading model could not be built."

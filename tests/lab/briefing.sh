@@ -387,6 +387,29 @@ omarchy_host_test() {
     '.briefing.total == 1 and .briefing.remaining == 1 and .selectedId == "evt_000000000000000000001a7e" and .selectedIsUnread == true' || return 1
   briefing_capture 11-older-arrival-unread || return 1
 
+  log "Checking personal news, stable unread badges, and visible filter controls"
+  # A legacy broad follow must not duplicate marketplace news in For You.
+  ssh_guest "jq '.relevance.followedSources = [\"marketplace\"]' $scenario_state > $scenario_root/state.next && mv $scenario_root/state.next $scenario_state" || return 1
+  briefing_key personal-news-direct 2 \
+    '.section == "for-you" and .setupVisible == false and .projecting == false and .totalStories == 3 and .sectionRail.badges["for-you"] == 0' || return 1
+  briefing_key personal-setup-focus f6 '.briefingFocusedControl == "My setup"' || return 1
+  briefing_key personal-setup-open ret '.setupVisible == true' || return 1
+  briefing_key personal-setup-footer end '.homeFooterSelected == true' || return 1
+  briefing_key personal-setup-news ret '.setupVisible == false and .totalStories == 3' || return 1
+  briefing_key plugins-all 4 \
+    '.section == "plugins" and .projecting == false and .totalStories == 7 and .unreadCount == 1 and .sectionRail.badges.plugins == 1' || return 1
+  briefing_key plugins-unread f \
+    '.projecting == false and .totalStories == 1 and .hiddenReadStories == 6 and .unreadCount == 1 and .sectionRail.badges.plugins == 1' || return 1
+  briefing_capture 12-plugins-unread || return 1
+  briefing_key plugins-all-again f \
+    '.projecting == false and .totalStories == 7 and .hiddenReadStories == 0 and .sectionRail.badges.plugins == 1' || return 1
+  briefing_resize 1080 760 || return 1
+  briefing_control_fits settingsGeometry || return 1
+  briefing_capture 13-plugin-controls || return 1
+  briefing_click settingsGeometry || return 1
+  briefing_wait "Settings is clickable in the resized reader" '.sectionSettingsOpen == true' || return 1
+  briefing_key settings-close esc '.sectionSettingsOpen == false' || return 1
+
   log "Removing the isolated candidate and checking runtime cleanup"
   briefing_close || return 1
   ssh_session "omarchy-plugin-remove io.github.mtolhuys.news-radar --yes" >"$RUN_DIR/briefing-remove.log" || return 1

@@ -60,6 +60,7 @@ Item {
       projecting: session.projecting,
       filterSummary: session.filterSummary,
       retainedReadStories: session.retainedReadStories,
+      hiddenReadStories: session.hiddenReadStories,
       sectionName: sectionsModel.currentProfile.name,
       sectionRail: JSON.parse(sectionRailGeometry()),
       sectionSources: session.sectionSources,
