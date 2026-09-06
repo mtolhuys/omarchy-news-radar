@@ -421,7 +421,7 @@ omarchy_host_test() {
   briefing_key discovery-source down '.insightDetailFocusedControl == "Open original source"' || return 1
   briefing_capture 15-source-backed-discovery || return 1
   briefing_key discovery-back esc '.homeVisible == true and .insightDetailVisible == false' || return 1
-  ssh_guest "jq '.events = []' $scenario_root/fixtures/later.json > $scenario_root/fixtures/current.next && mv $scenario_root/fixtures/current.next $scenario_root/fixtures/current.json" || return 1
+  ssh_guest "jq '.events = [] | .generatedAt = (now | strftime(\"%Y-%m-%dT%H:%M:%SZ\")) | .publishedAt = .generatedAt | .window.through = .generatedAt' $scenario_root/fixtures/later.json > $scenario_root/fixtures/current.next && mv $scenario_root/fixtures/current.next $scenario_root/fixtures/current.json" || return 1
   briefing_key discovery-quiet-refresh r \
     '.helperRunning == false and .pendingProjection == false and .homeRetainedDiscoveries == true and .homeRecentAdditions == 4 and .homeRecentChanges == 2' || return 1
   briefing_key discovery-top home '.homeFooterSelected == false and .selectedHomeCard == 0' || return 1
