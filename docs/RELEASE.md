@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.5.4` is the current release. It restores complete recent marketplace activity beyond the rolling feed limit, narrows For You locally to enabled plugins and explicit follows, repairs reading actions across the merged projection, and avoids redundant projection work. Feed schema remains v2; insights remain v1; setup news is v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.4.md).
+Version `0.5.5` is the current release. It dismisses Radar when another app takes focus so Hyprland's floating-window stack cannot leave the selected app covered. Feed schema remains v2; insights remain v1; setup news remains v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.5.md).
 
 The README walkthrough and root marketplace preview use inspected captures from the final disposable runtime. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from release publication; marketplace verification is not a security audit.
 
@@ -8,7 +8,7 @@ The README walkthrough and root marketplace preview use inspected captures from 
 
 Record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, Plugin Lab ISO/base identity, exact public commit, and release tag.
 
-The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.4`. The [0.5.4 evidence](evidence/0.5.4-local.md) records its source checks, complete marketplace companion, reading-action regression, daily-desktop approval, performance measurement, and disposable-desktop acceptance. Earlier evidence records remain historical.
+The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.5`. The [0.5.5 evidence](evidence/0.5.5-local.md) records its focus-transfer behavior, daily-desktop approval, full disposable-desktop acceptance, and released-upgrade path. Earlier evidence records remain historical.
 
 ## Publishable checklist
 
@@ -79,7 +79,7 @@ These are acceptance requirements; completed checks and remaining limitations be
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
 - Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available release commit through the state-v13 journey.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.4. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
+- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.5. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
 - Push, tag, release, marketplace submission, domain change, and external announcement require owner authorization. GitHub Pages is not the live publication path.
 
@@ -158,3 +158,7 @@ The owner inspected the installed 0.5.3 candidate and approved publication on 20
 ## 0.5.4 completeness and reading repair gate
 
 The owner tested the installed 0.5.4 candidate and approved publication on 2026-09-07. The [evidence](evidence/0.5.4-local.md) records the exact runtime, complete companion projection, filtered bulk-read regression, performance measurement, and disposable acceptance. Publish one clean final commit, require green CI and an exact public-clone journey, then update the existing marketplace verification issue in place with the full SHA. Do not create a duplicate issue or a progress comment. Marketplace approval and snapshot promotion remain maintainer-controlled.
+
+## 0.5.5 focus-yield gate
+
+The owner tested runtime commit `968cdf5` on the daily desktop and approved publication on 2026-09-07. The [evidence](evidence/0.5.5-local.md) records exact competing-window, Alt+Tab, newspaper, shortcut, reading-state, and released-upgrade assertions. Publish one clean final commit, require green CI and an exact public-clone journey, then edit existing marketplace verification issue #4892 in place with the full SHA. Do not create another issue or progress comment. Marketplace approval and snapshot promotion remain maintainer-controlled.

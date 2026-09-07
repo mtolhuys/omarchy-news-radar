@@ -1,4 +1,4 @@
-![Omarchy News Radar 0.5.4 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
+![Omarchy News Radar 0.5.5 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
@@ -12,9 +12,9 @@ Omarchy News Radar is an independent community project.
 
 ![Omarchy News Radar interface — Front Page with live source news](preview.png)
 
-The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Version 0.5.4 repairs data completeness and reading actions without changing this pictured layout. Story content and counts change with the feed.
+The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Versions 0.5.4 and 0.5.5 repair data completeness, reading actions, and focus behavior without changing this pictured layout. Story content and counts change with the feed.
 
-## Install the published v0.5.4
+## Install the published v0.5.5
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -148,7 +148,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.4` is the current release. It restores complete recent marketplace activity outside the rolling feed limit, keeps For You exact to local relevance, repairs reading actions across that complete set, and reduces redundant projection work. See the [release notes](docs/release-notes/0.5.4.md), [verification evidence](docs/evidence/0.5.4-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
+Version `0.5.5` is the current release. It dismisses Radar when another app takes focus, preventing its floating frame from covering the window the user chose. Reading state, saves, filters, briefing membership, and window geometry survive the normal close lifecycle. See the [release notes](docs/release-notes/0.5.5.md), [verification evidence](docs/evidence/0.5.5-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -232,6 +232,12 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
 
+## What is new in 0.5.5
+
+- Radar dismisses after another app receives focus, so its floating window cannot keep covering the selected application.
+- The newspaper, Apps entry, and `Super+Alt+N` reopen one focused Radar window with durable local reading state and saved geometry intact.
+- Focus is confirmed before dismissal is armed, preventing mapping-time focus events from closing Radar during startup.
+
 ## What is new in 0.5.4
 
 - Plugins keeps the complete source-dated marketplace timeline even when activity exceeds the rolling feed limit.
@@ -263,4 +269,4 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Version 0.5.4 changes data completeness, reading consistency and projection work rather than the pictured layout. See the [release notes](docs/release-notes/0.5.4.md) and [release contract](docs/RELEASE.md).
+The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Versions 0.5.4 and 0.5.5 change data completeness, reading consistency, projection work, and focus behavior rather than the pictured layout. See the [0.5.5 release notes](docs/release-notes/0.5.5.md) and [release contract](docs/RELEASE.md).
