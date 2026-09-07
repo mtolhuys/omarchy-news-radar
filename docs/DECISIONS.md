@@ -512,3 +512,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** Static workflow prose was presented as an automatically updating reason to return. That contradicted the owner's intended product and made quiet periods look misleadingly fresh.
 
 **Consequence:** No generated narratives, dependency, new origin, private-data transmission or state migration. The finite personal briefing remains explicitly replaceable; discovery updates independently and does not mark items read. Legacy insights remain valid, but authored collections are not displayed. This supersedes D058's authored discovery design. Local owner testing is required before publication.
+
+## D064 — Keep setup news outside the global feed capacity
+
+**Decision:** Publish a generic, independently validated `setup-news.json` companion. It rebuilds dated marketplace listings within the 30-day reader window from the complete validated catalog and retains recent plugin release/retirement events. The desktop merges that public activity with `events.json` before applying Plugins, Saved, and exact local For You projections. Duplicate source occurrences collapse in favor of the richer rolling-feed record. Plugin releases and retirements also become protected feed event types, and release-note projects receive reserved insights capacity.
+
+**Why:** A surge of more than 500 marketplace additions can legitimately fill the rolling feed and erase older news for every enabled plugin. Exact For You matching then becomes empty even though relevant, source-dated activity still exists. Broadening the match would recreate the earlier bug where For You duplicated the whole marketplace.
+
+**Consequence:** Every client downloads the same bounded public companion from the same origin; installed IDs, follows, mutes, reads, and queries remain local. Older clients ignore the new file and keep reading the unchanged feed contract. Companion failure preserves the last valid copy and never disables the main edition. `make local-latest` imports a digest-bound copy so the owner can review the exact behavior before publication. Source tests must flood beyond the feed limit and prove that Plugins retains the public timeline while For You contains only enabled or explicitly followed projects.

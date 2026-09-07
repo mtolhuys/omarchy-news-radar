@@ -163,7 +163,8 @@ class InsightsPublicationTests(unittest.TestCase):
         self.snapshot["events"] = [event]
         insights = build_insights(self.snapshot, published_at=CLOCK)
         self.assertEqual(100, len(insights["projects"]))
-        self.assertEqual("org.example.project109", insights["projects"][1]["id"])
+        self.assertIn("org.example.project109", [item["id"] for item in insights["projects"]])
+        self.assertEqual("io.github.mtolhuys.news-radar", insights["projects"][1]["id"])
         self.assertEqual([], insights["collections"])
 
     def test_bad_discovery_image_is_omitted_without_losing_explanations(self):

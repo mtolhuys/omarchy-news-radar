@@ -177,7 +177,7 @@ RADAR_LAB_REAL_INSIGHTS=/absolute/path/to/public-preview/insights.json \
 
 Set both artifact variables to enable the public-content segment. Without them, the scenario uses its deterministic fixtures. It stages the candidate, keeps feed/cache/state changes in the disposable guest, drives rendered controls, retains screenshots and removes its installation afterward; it neither installs the candidate on the daily desktop nor deploys the companion. Record the staged revision and reviewed evidence rather than treating the command alone as a passing result.
 
-`make local-latest` has a narrower import scope: news events, eligible image assets and collection continuity. It does not import `insights.json`; normal desktop insights come from the independently cached or published companion. Use this lab route for the expanded preview while that companion is not deployed.
+`make local-latest` imports news events, eligible image assets, the digest-bound generic setup-news companion, and collection continuity. It does not import `insights.json`; normal desktop insights come from the independently cached or published companion. The setup-news source tests and local preview must prove that a catalog flood beyond 500 records leaves Plugins complete for the current 30-day window and restores only exact enabled or followed projects to For You.
 
 ## Visual review
 

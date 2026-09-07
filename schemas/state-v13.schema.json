@@ -196,7 +196,7 @@
       "additionalProperties": {
         "type": "boolean"
       },
-      "maxProperties": 500,
+      "maxProperties": 6000,
       "propertyNames": {
         "pattern": "^evt_[0-9a-f]{24}$"
       },

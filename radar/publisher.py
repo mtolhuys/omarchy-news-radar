@@ -15,6 +15,7 @@ from .io import canonical_json_bytes
 from .errors import ValidationError
 from .validation import format_timestamp, parse_timestamp, validate_feed
 from .insights import INSIGHTS_MAX_BYTES, validate_insights
+from .setup_news import SETUP_NEWS_MAX_BYTES, validate_setup_news
 from .publication_images import ImageFetcher, _fetch_image, materialize_images, materialize_insight_images
 from .site.common import CSP, SITE_URL, SITE_CSS
 from .site.pages import render_html, render_story, render_collection, render_week, edition_week
@@ -50,6 +51,7 @@ def publish(
     image_fetcher: ImageFetcher = _fetch_image,
     published_at: datetime | None = None,
     insights: Mapping[str, Any] | None = None,
+    setup_news: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     validated = validate_feed(dict(feed), now=parse_timestamp(feed.get("publishedAt", feed["generatedAt"])))
     parent = destination.parent
@@ -68,6 +70,11 @@ def publish(
         events_bytes = canonical_json_bytes(validated)
         rss_bytes = render_rss(validated)
         public_insights = validate_insights(dict(insights), now=publication_clock) if insights is not None else None
+        public_setup_news = (
+            validate_setup_news(dict(setup_news), now=publication_clock)
+            if setup_news is not None
+            else None
+        )
         if public_insights is not None:
             public_insights, insight_image_failures = materialize_insight_images(public_insights, image_fetcher=image_fetcher)
             image_failures.extend(insight_image_failures)
@@ -93,11 +100,23 @@ def publish(
                 target = temporary / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(page)
+        if public_setup_news is not None:
+            setup_news_bytes = canonical_json_bytes(public_setup_news)
+            if len(setup_news_bytes) > SETUP_NEWS_MAX_BYTES:
+                raise ValidationError("setup news publication exceeds its byte bound")
+            (temporary / "setup-news.json").write_bytes(setup_news_bytes)
         month = validated["generatedAt"][:7]
         (temporary / "archive" / f"{month}.json").write_bytes(events_bytes)
         digest = hashlib.sha256(events_bytes).hexdigest()
+        setup_news_digest = (
+            hashlib.sha256(canonical_json_bytes(public_setup_news)).hexdigest()
+            if public_setup_news is not None
+            else None
+        )
         (temporary / "BUILD-INFO.txt").write_text(
-            f"sourceRevision={source_revision}\neventsSha256={digest}\npublishedAt={validated['publishedAt']}\n",
+            f"sourceRevision={source_revision}\neventsSha256={digest}\n"
+            + (f"setupNewsSha256={setup_news_digest}\n" if setup_news_digest else "")
+            + f"publishedAt={validated['publishedAt']}\n",
             encoding="utf-8",
         )
         if destination.exists():
@@ -121,6 +140,7 @@ def publish(
             "publishedAt": validated["publishedAt"],
             "images": sum("image" in event for event in validated["events"]),
             "imageFailures": image_failures,
+            "setupNews": len(public_setup_news["plugins"]) if public_setup_news else 0,
         }
     finally:
         if temporary and temporary.exists() and temporary != Path("."):

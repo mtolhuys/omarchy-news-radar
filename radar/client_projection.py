@@ -13,6 +13,7 @@ from .client_common import _parse_installed_plugin_ids, response
 from .client_insights import compact_project, insight_projection, load_insights
 from .client_presentation import decorate_events
 from .client_setup import parse_installed_facts
+from .client_setup_news import load_setup_news, merge_setup_news
 from .constants import CLIENT_SECTIONS, FEED_URL
 from .discovery import discovery_edition, automatic_discoveries
 from .errors import ValidationError
@@ -106,13 +107,18 @@ def _persistent_section_events(
     every bookmark, including stories from a hidden rail.
     """
 
+    unmuted_feed = {
+        **feed,
+        "events": [event for event in feed["events"] if not is_muted(event, state)],
+    }
     return {
         section: _filtered_section_events(
-            feed,
+            feed if section in {"front-page", "saved"} else unmuted_feed,
             state,
             section,
             installed_plugin_ids,
             now=now,
+            respect_mutes=False,
         )
         for section in visible_client_sections(state["preferences"]["sectionVisibility"])
     }
@@ -154,8 +160,9 @@ def projection_model(
         feed = load_feed(environment, now=now)
         discovery_feed, retained_discoveries, discovery_warning = discovery_edition(feed, environment, now=now)
     insights = load_insights(environment, now=now)
+    reading_feed = merge_setup_news(feed, load_setup_news(environment, now=now)) if feed else feed
     known_names = {}
-    for event in (feed or {}).get("events", []):
+    for event in (reading_feed or {}).get("events", []):
         known_names.setdefault(event["entity"]["id"], event["entity"]["name"])
     extra = insight_projection(insights, state, installed, installed_facts, query=query,
                                installed_facts_available=installed_facts_available, known_names=known_names)
@@ -193,7 +200,7 @@ def projection_model(
             visibleSections=list(visible_client_sections(state["preferences"]["sectionVisibility"])),
             **context,
         )
-    section_events = _persistent_section_events(feed, state, installed, now=now)
+    section_events = _persistent_section_events(reading_feed, state, installed, now=now)
     # Hidden rails report zero instead of disappearing, so the response shape
     # stays stable for every client build.
     counts = {name: len(section_events.get(name, ())) for name in names}
@@ -201,20 +208,23 @@ def projection_model(
         name: len(_unread_event_ids(state, section_events.get(name, [])))
         for name in names
     }
-    events = _filtered_section_events(
-        feed,
-        state,
-        section,
-        installed,
-        query=query,
-        retained_read_ids=retained_read_ids,
-        now=now,
-    )
+    if not query and not retained_read_ids:
+        events = list(section_events.get(section, ()))
+    else:
+        events = _filtered_section_events(
+            reading_feed,
+            state,
+            section,
+            installed,
+            query=query,
+            retained_read_ids=retained_read_ids,
+            now=now,
+        )
     blocking_mutes: list[dict[str, Any]] = []
     muted_event_count = 0
     if not events and section != "saved":
         unmuted_events = _filtered_section_events(
-            feed,
+            reading_feed,
             state,
             section,
             installed,
@@ -235,7 +245,7 @@ def projection_model(
     hidden_read_count = 0
     if section != "front-page" and current_filter["unreadOnly"]:
         all_events = _filtered_section_events(
-            feed, state, section, installed, query=query, now=now, include_read=True,
+            reading_feed, state, section, installed, query=query, now=now, include_read=True,
         )
         hidden_read_count = max(0, len(all_events) - total_events)
     events = events[:limit]
@@ -303,8 +313,9 @@ def indicator_model(
             visibleSections=list(visible_client_sections(preferences["sectionVisibility"])),
         )
     installed = _parse_installed_plugin_ids(installed_json)
+    reading_feed = merge_setup_news(feed, load_setup_news(environment, now=clock))
     section_events = _persistent_section_events(
-        feed,
+        reading_feed,
         state,
         installed,
         now=clock,

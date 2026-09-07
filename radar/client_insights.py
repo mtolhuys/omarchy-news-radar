@@ -56,7 +56,7 @@ def refresh_insights(environment: Mapping[str, str] | None = None, *, now: datet
                     raise ValidationError("invalid insights check")
                 age = (clock - parse_timestamp(check["checkedAt"])).total_seconds()
                 if 0 <= age < 300:
-                    return {"protocolVersion": 1, "status": status, "insights": cached, "attempted": False}
+                    return {"protocolVersion": 1, "status": status, "insights": cached, "attempted": False, "changed": False}
             except (OSError, RadarError):
                 pass
             atomic_write_json(base / "insights-check.json", {"checkedAt": format_timestamp(clock)})
@@ -64,7 +64,7 @@ def refresh_insights(environment: Mapping[str, str] | None = None, *, now: datet
             if env.get("OMARCHY_NEWS_RADAR_TEST_MODE") == "1":
                 path = env.get("OMARCHY_NEWS_RADAR_TEST_INSIGHTS")
                 if not path:
-                    return {"protocolVersion": 1, "status": status, "insights": cached, "attempted": False}
+                    return {"protocolVersion": 1, "status": status, "insights": cached, "attempted": False, "changed": False}
                 raw = read_json_bounded(Path(path), INSIGHTS_MAX_BYTES)
                 headers = {}
                 response_code = 200
@@ -79,7 +79,8 @@ def refresh_insights(environment: Mapping[str, str] | None = None, *, now: datet
                 raw = cached if response_code == 304 else decode_json(data, label="insights")
             candidate = validate_insights(raw, now=clock)
             if cached and candidate["publishedAt"] < cached["publishedAt"]:
-                return {"protocolVersion": 1, "status": "cached", "insights": cached, "attempted": True}
+                return {"protocolVersion": 1, "status": "cached", "insights": cached, "attempted": True, "changed": False}
+            changed = candidate != cached
             with StateLock(env):
                 atomic_write_json(base / "insights.json", candidate)
                 lowered = {key.lower(): value for key, value in headers.items()}
@@ -92,9 +93,9 @@ def refresh_insights(environment: Mapping[str, str] | None = None, *, now: datet
                 if not safe:
                     metadata = {"url": INSIGHTS_URL, "etag": None, "lastModified": None}
                 atomic_write_json(base / "insights-http.json", metadata)
-            return {"protocolVersion": 1, "status": "cached", "insights": candidate, "attempted": True}
+            return {"protocolVersion": 1, "status": "cached", "insights": candidate, "attempted": True, "changed": changed}
     except (OSError, RadarError) as exc:
-        return {"protocolVersion": 1, "status": status, "insights": cached, "attempted": True,
+        return {"protocolVersion": 1, "status": status, "insights": cached, "attempted": True, "changed": False,
                 "message": "Additional project coverage is unavailable; existing news remains readable.", "reason": str(exc)}
 
 

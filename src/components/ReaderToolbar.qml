@@ -67,7 +67,6 @@ ColumnLayout {
 
     Flow {
       Layout.fillWidth: true
-      Layout.preferredHeight: visible ? childrenRect.height : 0
       spacing: Style.spacing.controlGap
       visible: !root.narrow
 
@@ -104,7 +103,6 @@ ColumnLayout {
     }
 
     Flow {
-      Layout.preferredHeight: visible ? childrenRect.height : 0
       visible: root.narrow
       Layout.fillWidth: true
       spacing: Style.spacing.controlGap

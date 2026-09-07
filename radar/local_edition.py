@@ -24,10 +24,12 @@ from .io import (
 )
 from .state import cache_root, save_feed
 from .validation import validate_feed
+from .setup_news import SETUP_NEWS_MAX_BYTES, validate_setup_news
 
 LOCAL_EDITION_SCHEMA_VERSION = 1
 BUILD_INFO_PATTERN = re.compile(
     r"\AsourceRevision=([0-9a-f]{40})\neventsSha256=([0-9a-f]{64})\n"
+    r"(?:setupNewsSha256=([0-9a-f]{64})\n)?"
     r"(?:publishedAt=([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)\n)?\Z"
 )
 CONTENT_TYPES = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
@@ -37,7 +39,7 @@ def marker_path(environment: Mapping[str, str] | None = None) -> Path:
     return cache_root(environment) / "local-edition.json"
 
 
-def _read_build_info(edition: Path) -> tuple[str, str, str | None]:
+def _read_build_info(edition: Path) -> tuple[str, str, str | None, str | None]:
     try:
         text = read_bytes_bounded(edition / "BUILD-INFO.txt", 512).decode("ascii")
     except UnicodeDecodeError as exc:
@@ -45,7 +47,7 @@ def _read_build_info(edition: Path) -> tuple[str, str, str | None]:
     match = BUILD_INFO_PATTERN.fullmatch(text)
     if match is None:
         raise ValidationError("local edition build information is invalid")
-    return match.group(1), match.group(2), match.group(3)
+    return match.group(1), match.group(2), match.group(3), match.group(4)
 
 
 def _validate_edition_root(edition: Path) -> Path:
@@ -74,12 +76,25 @@ def import_local_edition(
     raw = read_json_bounded(root / "events.json", FEED_MAX_BYTES)
     feed = validate_feed(raw, now=clock, public_only=True)
     canonical = canonical_json_bytes(feed)
-    revision, declared_digest, declared_publication = _read_build_info(root)
+    revision, declared_digest, declared_setup_news_digest, declared_publication = _read_build_info(root)
     actual_digest = hashlib.sha256(canonical).hexdigest()
     if declared_digest != actual_digest:
         raise ValidationError("local edition feed digest does not match its build information")
     if declared_publication is not None and declared_publication != feed.get("publishedAt"):
         raise ValidationError("local edition publication time does not match its build information")
+
+    setup_news = None
+    setup_news_path = root / "setup-news.json"
+    if setup_news_path.exists():
+        if declared_setup_news_digest is None:
+            raise ValidationError("local edition setup news is not bound to its build information")
+        setup_news = validate_setup_news(
+            read_json_bounded(setup_news_path, SETUP_NEWS_MAX_BYTES), now=clock
+        )
+        if hashlib.sha256(canonical_json_bytes(setup_news)).hexdigest() != declared_setup_news_digest:
+            raise ValidationError("local edition setup news digest does not match its build information")
+    elif declared_setup_news_digest is not None:
+        raise ValidationError("local edition setup news is missing")
 
     private_cache = cache_root(environment)
     ensure_private_directory(private_cache)
@@ -122,6 +137,8 @@ def import_local_edition(
     # cannot match, so readers either see the previous complete edition or the
     # new complete edition, never a half-imported local mode.
     atomic_write_json(marker_path(environment), marker)
+    if setup_news is not None:
+        atomic_write_json(private_cache / "setup-news.json", setup_news)
     save_feed(feed, environment, now=clock)
     return {
         "feed": feed,
@@ -130,6 +147,7 @@ def import_local_edition(
         "generatedAt": feed["generatedAt"],
         "sourceRevision": revision,
         "eventsSha256": actual_digest,
+        "setupNews": len(setup_news["plugins"]) if setup_news else 0,
     }
 
 

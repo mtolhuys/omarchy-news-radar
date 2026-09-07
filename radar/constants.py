@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
-BUILD_ID = "news-radar-0.5.3"
+BUILD_ID = "news-radar-0.5.4"
 FEED_SCHEMA_VERSION = 2
 STATE_SCHEMA_VERSION = 13
 HELPER_PROTOCOL_VERSION = 1
 
 FEED_URL = "https://mtolhuijs.nl/news-radar/events.json"
 INSIGHTS_URL = "https://mtolhuijs.nl/news-radar/insights.json"
+SETUP_NEWS_URL = "https://mtolhuijs.nl/news-radar/setup-news.json"
 FEED_ORIGIN = "https://mtolhuijs.nl"
 MARKETPLACE_IMAGE_ORIGIN = "https://plugins.omarchy.org"
 YOUTUBE_IMAGE_ORIGIN = "https://i.ytimg.com"
@@ -18,7 +19,10 @@ CATALOG_MAX_BYTES = 8 * 1024 * 1024
 GITHUB_MAX_BYTES = 4 * 1024 * 1024
 ENGAGEMENT_MAX_BYTES = 2 * 1024 * 1024
 MAX_EVENTS = 500
-MAX_READ_OVERRIDES = MAX_EVENTS
+# The reading universe includes the rolling feed plus the bounded setup-news
+# companion. A fresh user must be able to mark the complete Plugins section
+# read atomically even when every companion record is still unread.
+MAX_READ_OVERRIDES = 6_000
 MAX_BRIEFING_GROUPS = 5
 BRIEFING_REASONS = ("critical", "notable", "core", "installed", "followed", "discovery")
 # Published ledger retention: keep at most MAX_EVENTS, prefer the last
@@ -30,13 +34,15 @@ PROTECTED_EVENT_TYPES = frozenset(
         "omarchy-released",
         "omarchy-news",
         "youtube-video",
+        "plugin-released",
+        "plugin-retired",
     }
 )
 # Higher score is dropped first when the ledger is over budget.
 EVENT_TRIM_PRIORITY = {
     "plugin-verification-changed": 100,
-    "plugin-retired": 80,
-    "plugin-released": 60,
+    "plugin-retired": 20,
+    "plugin-released": 10,
     "plugin-added": 40,
     "community-link": 20,
 }

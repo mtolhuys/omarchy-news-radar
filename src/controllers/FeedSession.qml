@@ -150,6 +150,7 @@ Item {
     startProcess(readProc, ["read"])
     startProcess(installedProc, ["installed"])
     startProcess(insightsProc, ["insights-refresh"])
+    startProcess(setupNewsProc, ["setup-news-refresh"])
   }
   function stop() {
     readProc.running = false
@@ -159,6 +160,7 @@ Item {
     installedProc.running = false
     briefingProc.running = false
     insightsProc.running = false
+    setupNewsProc.running = false
     refreshing = false
   }
   function handleRead(raw) {
@@ -180,7 +182,7 @@ Item {
         ? "Corrupt local state was quarantined. No validated edition is cached."
         : "No validated edition is cached yet."
     }
-    requestProjection()
+    if (installedPluginsReady) requestProjection()
     ensureBriefing()
     refreshFeed()
   }
@@ -252,7 +254,7 @@ Item {
     installedFactsAvailable = result.status === "ok" && result.factsAvailable === true
     installedPluginsReady = true
     ensureBriefing()
-    requestProjection("preserve")
+    if (localStateReady) requestProjection("preserve")
   }
 
   function ensureBriefing() {
@@ -298,7 +300,7 @@ Item {
   }
 
   function requestProjection(viewportMode) {
-    if (!opened) return
+    if (!opened || !localStateReady || !installedPluginsReady) return
     var requestedMode = viewportMode === "preserve" ? "preserve" : "reset"
     projectionRequested(requestedMode)
 
@@ -331,6 +333,7 @@ Item {
       : "Fetching the first bounded edition."
     startProcess(refreshProc, ["refresh"])
     if (!insightsProc.running) startProcess(insightsProc, ["insights-refresh"])
+    if (!setupNewsProc.running) startProcess(setupNewsProc, ["setup-news-refresh"])
   }
 
   function countEditionImages(feed) {
@@ -387,7 +390,21 @@ Item {
     id: insightsProc
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: if (root.opened) root.requestProjection("preserve")
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        if (root.opened && result.changed === true) root.requestProjection("preserve")
+      }
+    }
+  }
+
+  Process {
+    id: setupNewsProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = RadarModel.parseResponse(text)
+        if (root.opened && result.changed === true) root.requestProjection("preserve")
+      }
     }
   }
 

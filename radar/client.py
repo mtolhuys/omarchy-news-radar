@@ -22,6 +22,7 @@ from .client_reading import (toggle_saved_state, set_event_read_state, mark_sect
                              set_preferences, set_section_filter)
 from .client_insights import insights_model, refresh_insights, set_relevance
 from .client_setup import installed_plugins
+from .client_setup_news import refresh_setup_news
 from .errors import RadarError, StorageError
 from .state import StateLock, purge
 from .validation import validate_https_url

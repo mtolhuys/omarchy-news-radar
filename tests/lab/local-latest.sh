@@ -21,26 +21,32 @@ omarchy_host_test() {
   ssh_guest "cp '$source_dir/manifest.json' /tmp/news-radar-current-manifest.json && \
     python3 '$source_dir/tests/lab/prepare_fixtures.py' '$source_dir/tests/fixtures/feed-valid.json' /tmp/news-radar-local-fixtures && \
     mkdir -p '$edition_dir/assets' && cp /tmp/news-radar-local-fixtures/valid.json '$edition_dir/events.json' && \
+    cp '$source_dir/tests/fixtures/setup-news-valid.json' '$edition_dir/setup-news.json' && \
     cp -a /tmp/news-radar-local-fixtures/assets/images '$edition_dir/assets/images' && \
     digest=\$(sha256sum '$edition_dir/events.json' | cut -d' ' -f1) && \
-    printf 'sourceRevision=%s\neventsSha256=%s\n' '$first_commit' \"\$digest\" >'$edition_dir/BUILD-INFO.txt'"
+    setup_digest=\$(PYTHONPATH='$source_dir' python3 -c 'import hashlib,json,sys; from radar.io import canonical_json_bytes; from radar.setup_news import validate_setup_news; value=json.load(open(sys.argv[1], encoding=\"utf-8\")); print(hashlib.sha256(canonical_json_bytes(validate_setup_news(value))).hexdigest())' '$edition_dir/setup-news.json') && \
+    printf 'sourceRevision=%s\neventsSha256=%s\nsetupNewsSha256=%s\n' '$first_commit' \"\$digest\" \"\$setup_digest\" >'$edition_dir/BUILD-INFO.txt'"
 
   log "Installing the exact clean checkout and a validated pictured edition through make local-latest"
   ssh_session "cd '$source_dir' && OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_EDITION='$edition_dir' make local-latest" \
     >"$RUN_DIR/news-radar-local-latest-install.log" || return 1
   helper="$plugin_dir/bin/news-radar-client"
   launcher="$plugin_dir/bin/news-radar-launcher"
-  wait_for_guest_state "local-latest installs the exact source, Apps entry, default-on bar, real-mode cache, and local image" 20 ssh_session \
-    "test \"\$(git -C $plugin_dir rev-parse HEAD)\" = '$first_commit' && \
-     test \"\$(realpath -e -- \"\$(git -C $plugin_dir remote get-url origin)\")\" = '$source_dir' && \
-     omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && \
-     $launcher status | jq -e '.state == \"installed\" and .installed == true' && \
-     grep -Fx 'Exec=omarchy-shell shell summon io.github.mtolhuys.news-radar' \"\${XDG_DATA_HOME:-\$HOME/.local/share}/applications/io.github.mtolhuys.news-radar.desktop\" && \
-     test -f \"\${XDG_DATA_HOME:-\$HOME/.local/share}/icons/hicolor/scalable/apps/io.github.mtolhuys.news-radar.svg\" && \
-     (jq -e '.preferences.barVisible == true and .preferences.imagesVisible == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" 2>/dev/null || \
-      test ! -e \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\") && \
-     jq -e '.sourceRevision == \"$first_commit\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/local-edition.json\" && \
-     $helper project --section front-page --installed-json '[]' --query '' | jq -e 'any(.events[]; (.imageUrl // \"\") | startswith(\"file://\"))'" || return 1
+  wait_for_guest_state "local-latest installs the exact clean source revision" 20 ssh_session \
+    "test \"\$(git -C $plugin_dir rev-parse HEAD)\" = '$first_commit' && test \"\$(realpath -e -- \"\$(git -C $plugin_dir remote get-url origin)\")\" = '$source_dir'" || return 1
+  wait_for_guest_state "local-latest enables the plugin and launcher" 10 ssh_session \
+    "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && $launcher status | jq -e '.state == \"installed\" and .installed == true'" || return 1
+  wait_for_guest_state "local-latest installs the Apps entry and icon" 10 ssh_session \
+    "grep -Fx 'Exec=omarchy-shell shell summon io.github.mtolhuys.news-radar' \"\${XDG_DATA_HOME:-\$HOME/.local/share}/applications/io.github.mtolhuys.news-radar.desktop\" && test -f \"\${XDG_DATA_HOME:-\$HOME/.local/share}/icons/hicolor/scalable/apps/io.github.mtolhuys.news-radar.svg\"" || return 1
+  wait_for_guest_state "local-latest preserves the default-on presentation" 10 ssh_session \
+    "jq -e '.preferences.barVisible == true and .preferences.imagesVisible == true' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\" 2>/dev/null || test ! -e \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+  wait_for_guest_state "local-latest binds the imported edition to the source revision" 10 ssh_session \
+    "jq -e '.sourceRevision == \"$first_commit\"' \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/local-edition.json\"" || return 1
+  wait_for_guest_state "local-latest resolves a validated local story image" 10 ssh_session \
+    "$helper project --section plugins --installed-json '[]' --query '' | jq -e 'any(.events[]; (.imageUrl // \"\") | startswith(\"file://\"))'" || return 1
+  wait_for_guest_state "setup-news import restores an exact For You match absent from the rolling feed" 10 ssh_session \
+    "test -f \"\${XDG_CACHE_HOME:-\$HOME/.cache}/omarchy-news-radar/setup-news.json\" && \
+     $helper project --section for-you --installed-json '[\"org.example.companion\"]' --query '' | jq -e 'any(.events[]; .entity.id == \"org.example.companion\" and .title == \"Companion Setup Tool joined the marketplace\")'" || return 1
   ssh_session "omarchy-shell shell debugBarGeometry" >"$RUN_DIR/news-radar-local-latest-bar.json" || return 1
   jq -e 'any(.[]; .id == "io.github.mtolhuys.news-radar" and .section == "right" and .visible == true and .width > 0)' \
     "$RUN_DIR/news-radar-local-latest-bar.json" >/dev/null || return 1
@@ -53,7 +59,8 @@ omarchy_host_test() {
   second_commit="$(ssh_guest "git -C '$source_dir' rev-parse HEAD")" || return 1
   [[ $first_commit != "$second_commit" ]] || return 1
   ssh_guest "digest=\$(sha256sum '$edition_dir/events.json' | cut -d' ' -f1) && \
-    printf 'sourceRevision=%s\neventsSha256=%s\n' '$second_commit' \"\$digest\" >'$edition_dir/BUILD-INFO.txt'"
+    setup_digest=\$(PYTHONPATH='$source_dir' python3 -c 'import hashlib,json,sys; from radar.io import canonical_json_bytes; from radar.setup_news import validate_setup_news; value=json.load(open(sys.argv[1], encoding=\"utf-8\")); print(hashlib.sha256(canonical_json_bytes(validate_setup_news(value))).hexdigest())' '$edition_dir/setup-news.json') && \
+    printf 'sourceRevision=%s\neventsSha256=%s\nsetupNewsSha256=%s\n' '$second_commit' \"\$digest\" \"\$setup_digest\" >'$edition_dir/BUILD-INFO.txt'"
   ssh_session "cd '$source_dir' && OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_EDITION='$edition_dir' make local-latest" \
     >"$RUN_DIR/news-radar-local-latest-update.log" || return 1
   installed_commit="$(ssh_session "git -C $plugin_dir rev-parse HEAD")" || return 1
@@ -92,7 +99,8 @@ omarchy_host_test() {
     git -C '$source_dir' -c user.name=PluginLab -c user.email=lab@invalid commit -qm restore-pictured-newspaper"
   migration_commit="$(ssh_guest "git -C '$source_dir' rev-parse HEAD")" || return 1
   ssh_guest "digest=\$(sha256sum '$edition_dir/events.json' | cut -d' ' -f1) && \
-    printf 'sourceRevision=%s\neventsSha256=%s\n' '$migration_commit' \"\$digest\" >'$edition_dir/BUILD-INFO.txt'"
+    setup_digest=\$(PYTHONPATH='$source_dir' python3 -c 'import hashlib,json,sys; from radar.io import canonical_json_bytes; from radar.setup_news import validate_setup_news; value=json.load(open(sys.argv[1], encoding=\"utf-8\")); print(hashlib.sha256(canonical_json_bytes(validate_setup_news(value))).hexdigest())' '$edition_dir/setup-news.json') && \
+    printf 'sourceRevision=%s\neventsSha256=%s\nsetupNewsSha256=%s\n' '$migration_commit' \"\$digest\" \"\$setup_digest\" >'$edition_dir/BUILD-INFO.txt'"
   ssh_session "cd '$source_dir' && OMARCHY_NEWS_RADAR_TEST_MODE=1 OMARCHY_NEWS_RADAR_TEST_EDITION='$edition_dir' make local-latest" \
     >"$RUN_DIR/news-radar-local-latest-migration.log" || return 1
   grep -Fq 'Migrated the panel-only preview' "$RUN_DIR/news-radar-local-latest-migration.log" || return 1
@@ -108,5 +116,5 @@ omarchy_host_test() {
   wait_for_guest_state "migrated local-latest installation removes cleanly" 15 ssh_session \
     "test ! -e $plugin_dir && test ! -e \"\${XDG_DATA_HOME:-\$HOME/.local/share}/applications/io.github.mtolhuys.news-radar.desktop\" && omarchy-plugin-list --json | jq -e 'all(.[]; .id != \"io.github.mtolhuys.news-radar\")'" || return 1
   capture_console "success-news-radar-local-latest-removed"
-  printf 'ok - make local-latest passed Apps entry, real pictured import, install, update, idempotence, refusal, legacy migration, defaults, and removal assertions\n'
+  printf 'ok - make local-latest passed Apps entry, pictured feed and setup-news import, exact For You matching, install, update, idempotence, refusal, legacy migration, defaults, and removal assertions\n'
 }

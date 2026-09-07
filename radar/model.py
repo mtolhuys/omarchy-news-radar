@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Iterable, Mapping
-from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -133,7 +132,10 @@ def project_section(
     saved_ids: Iterable[str] = (),
     query: str = "",
 ) -> list[dict[str, Any]]:
-    events = [deepcopy(event) for event in feed.get("events", [])]
+    # Feeds have already crossed the strict validation boundary and projection
+    # only selects/reorders their events. Copying every nested event for every
+    # rail count made one UI interaction clone the full marketplace repeatedly.
+    events = list(feed.get("events", []))
     installed = set(installed_plugin_ids)
     saved = set(saved_ids)
     if section in {"core", "plugins", "youtube"}:

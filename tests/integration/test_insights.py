@@ -9,13 +9,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
-from radar.client import ensure_briefing, indicator_model, projection_model, set_event_read_state, toggle_saved_state
+from radar.client import (ensure_briefing, indicator_model, mark_section_read_state,
+                          projection_model, set_event_read_state, toggle_saved_state)
 from radar.client_insights import insights_model, load_insights, refresh_insights, set_relevance
 from radar.client_setup import installed_plugins, parse_installed_facts
 from radar.constants import INSIGHTS_URL, STATE_SCHEMA_VERSION
 from radar.errors import FetchError, ValidationError
 from radar.insights import compare_versions, matching_release, project_version, validate_insights
 from radar.io import atomic_write_json
+from radar.setup_news import build_setup_news
 from radar.relevance import default_relevance
 from radar.state import cache_root, default_state, load_state, save_feed, save_state, user_state_path
 
@@ -39,6 +41,54 @@ class InsightsTests(unittest.TestCase):
 
     def store_insights(self) -> None:
         atomic_write_json(cache_root(self.environment) / "insights.json", self.insights)
+
+    def test_for_you_recovers_setup_news_evicted_from_the_rolling_feed(self) -> None:
+        plugin = {
+            "name": "Omarchy Disk Lens",
+            "description": "See what is using your disk.",
+            "version": "0.3.0",
+            "repository": "https://github.com/mtolhuys/omarchy-disk-lens",
+            "sourceUrl": "https://github.com/mtolhuys/omarchy-disk-lens",
+            "category": "System",
+            "tags": ["system"],
+            "addedAt": "2026-08-25T12:00:00Z",
+            "listingDated": True,
+            "verification": "verified",
+            "retired": False,
+            "absenceCount": 0,
+        }
+        companion = build_setup_news(
+            {
+                "schemaVersion": 2,
+                "events": [],
+                "sources": {"marketplace": {"plugins": {PLUGIN: plugin}}},
+            },
+            published_at=CLOCK,
+        )
+        atomic_write_json(cache_root(self.environment) / "setup-news.json", companion)
+        listing_id = companion["plugins"][0]["id"]
+        self.assertEqual(PLUGIN, listing_id)
+        self.assertFalse(any(item["type"] == "plugin-added" and item["entity"]["id"] == PLUGIN
+                             for item in self.feed["events"]))
+        personal = self.project("for-you")
+        recovered = next(item for item in personal["events"]
+                         if item["type"] == "plugin-added" and item["entity"]["id"] == PLUGIN)
+        self.assertTrue(any(item["type"] == "plugin-added" and item["entity"]["id"] == PLUGIN
+                            for item in self.project("plugins")["events"]))
+
+        saved = toggle_saved_state(recovered["id"], self.environment, now=CLOCK)
+        self.assertTrue(saved["saved"])
+        read = set_event_read_state(recovered["id"], True, self.environment, now=CLOCK)
+        self.assertTrue(read["read"])
+        set_event_read_state(recovered["id"], False, self.environment, now=CLOCK)
+        marked = mark_section_read_state(
+            "for-you", json.dumps([PLUGIN]), self.environment, now=CLOCK
+        )
+        self.assertGreaterEqual(marked["markedRead"], 1)
+        after = self.project("for-you")
+        self.assertEqual(0, after["unreadCounts"]["for-you"])
+        self.assertTrue(any(item["id"] == recovered["id"] and item["isSaved"]
+                            for item in after["events"]))
 
     def project(self, section: str = "front-page") -> dict:
         return projection_model(section, json.dumps([PLUGIN]), "", self.environment, now=CLOCK, installed_facts_json=self.facts)

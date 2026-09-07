@@ -30,7 +30,7 @@ Omarchy shell
 
 The static feed is the integration contract. The website and Omarchy plugin are independent clients of the same validated events. Live collect → build → serve is owned by Forge Laravel on the maintainer host; the plugin remains a read-only HTTPS client with no application server, database, account service, background daemon, or bidirectional client API of its own. The visible bar widget owns one due-checked refresh timer inside the existing shell process. GitHub Pages is no longer the publication path (optional legacy only).
 
-The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed and build digest, then atomically imports the feed. Current marketplace and YouTube images remain direct URLs on their exact allowlisted origins; validated legacy content-addressed paths from older editions remain supported. Only after that complete import succeeds does it advance the private source baseline. **Check for updates** still fetches the fixed live feed at `https://mtolhuijs.nl/news-radar/events.json`: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
+The local-development route reuses the collector and publisher directly. `make local-latest` selects the newer of the tracked transition seed and its private validated `local-source-snapshot.json`, builds into a temporary directory, revalidates the public feed and build digests, then atomically imports the feed and generic setup-news companion. Current marketplace and YouTube images remain direct URLs on their exact allowlisted origins; validated legacy content-addressed paths from older editions remain supported. Only after that complete import succeeds does it advance the private source baseline. **Check for updates** still fetches the fixed live feed at `https://mtolhuijs.nl/news-radar/events.json`: it preserves an equal/newer owner-built edition and atomically adopts a newer published edition. This route is explicit and owner-run; it is not a second feed protocol or resident publisher.
 
 ## Target repository layout
 
@@ -223,6 +223,7 @@ Follow XDG ownership:
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed.json` | Last-known-good validated feed |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/feed-http.json` | Private bounded `ETag`/`Last-Modified` validators bound to the fixed feed URL; disposable and purge-owned |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/insights.json` | Independent last-known-good optional source coverage |
+| `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/setup-news.json` | Generic recent marketplace activity used by local setup projections |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/insights-http.json` | Validators bound to the fixed companion URL |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/insights-check.json` | Independent companion check cadence |
 | `${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-news-radar/update-check.json` | Private bounded timestamp/outcome for background check cadence; not publication freshness |
@@ -270,6 +271,7 @@ Forge Laravel `news-radar:publish` (every five minutes, without overlapping) col
 dist/  (then served under /news-radar/)
 ├── index.html
 ├── events.json
+├── setup-news.json
 ├── feed.xml
 ├── assets/
 │   └── site.css
@@ -280,7 +282,7 @@ Live feed URL: `https://mtolhuijs.nl/news-radar/events.json`. GitHub Actions `te
 
 The site contains no runtime framework, cookies, analytics, user input, service worker, external font, or client-side content fetch required for the initial page. Publisher output must escape every remote string for its destination context and use a strict Content Security Policy compatible with a static site.
 
-The public edition offers a fixed marketplace installation link, a link to the repository's desktop walkthrough, and RSS/JSON subscriptions. The expanded candidate also generates generic story, discovery and weekly pages, an independent `insights.json`, and escaped social SVGs under `assets/share/`. Page metadata uses fixed canonical destinations and context-escaped source text. A keyboard skip link targets the focusable news landmark. None of these artifacts contains a personal feed or local setup data.
+The public edition offers a fixed marketplace installation link, a link to the repository's desktop walkthrough, and RSS/JSON subscriptions. It also generates generic story, discovery and weekly pages, independent `insights.json` and `setup-news.json` companions, and escaped social SVGs under `assets/share/`. Page metadata uses fixed canonical destinations and context-escaped source text. A keyboard skip link targets the focusable news landmark. None of these artifacts contains a personal feed or local setup data.
 
 The live feed contains a bounded rolling window. Monthly archives may retain older public events without increasing the plugin payload. Saved local items retain the fields needed to remain useful after an event leaves the live window.
 
@@ -290,7 +292,7 @@ Before collection, publish restores continuity state from Laravel storage (or a 
 
 The panel calls the maintained shell IPC and treats the returned plugin IDs as local data. Matching is exact on canonical plugin ID. Do not send installed IDs to the feed host and do not infer installation from repository names or display names.
 
-“For You” includes events whose entity plugin ID exactly matches an enabled local plugin, plus events matching explicit local project/creator follows, subject to mutes. The removed free-text manual-interest path remains absent. My setup uses bounded local names and exact versions; an explicit shell `firstParty` flag excludes uncovered built-in components without guessing from ID prefixes. Successful empty discovery and unavailable discovery remain distinct.
+“For You” includes rolling-feed and setup-news events whose entity plugin ID exactly matches an enabled local plugin, plus events matching explicit local project/creator follows, subject to mutes. Plugins uses the same merged public activity, so a global 500-event surge cannot silently swap or empty the two sections. The removed free-text manual-interest path remains absent. My setup uses bounded local names and exact versions; an explicit shell `firstParty` flag excludes uncovered built-in components without guessing from ID prefixes. Successful empty discovery and unavailable discovery remain distinct.
 
 ## Optional bar indicator
 

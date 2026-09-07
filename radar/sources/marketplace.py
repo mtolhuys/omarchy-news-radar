@@ -214,6 +214,32 @@ def _base_event(
     return event
 
 
+def listing_event(
+    plugin_id: str,
+    plugin: Mapping[str, Any],
+    *,
+    discovered_at: datetime,
+    occurred_at: str,
+    validated_input: bool = False,
+) -> dict[str, Any]:
+    """Materialize one catalog-dated listing with the canonical event identity."""
+
+    event = _base_event(
+        plugin_id,
+        plugin,
+        event_type="plugin-added",
+        occurrence_key=f"listing:{occurred_at}",
+        occurred_at=occurred_at,
+        discovered_at=discovered_at,
+        title=f"{plugin['name']} joined the marketplace",
+        summary=plugin["description"],
+    )
+    # setup-news has already validated every field and its public URL policy.
+    # Avoid applying the same expensive event validator to thousands of rows a
+    # second time on every keyboard interaction.
+    return event if validated_input else validate_event(event)
+
+
 def enrich_plugin_descriptions(
     events: Iterable[Mapping[str, Any]], marketplace: Mapping[str, Any] | None
 ) -> list[dict[str, Any]]:

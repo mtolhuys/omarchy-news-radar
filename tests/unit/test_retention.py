@@ -143,6 +143,31 @@ class RetentionTests(unittest.TestCase):
         self.assertIn(youtube["id"], ids)
         self.assertIn(release["id"], ids)
 
+    def test_marketplace_addition_flood_cannot_evict_plugin_releases(self) -> None:
+        releases = [
+            _event(
+                event_id=_eid(f"{(3000 + index):024x}"),
+                event_type="plugin-released",
+                occurred=CLOCK - timedelta(days=2, minutes=index),
+                title=f"Release {index}",
+            )
+            for index in range(3)
+        ]
+        additions = [
+            _event(
+                event_id=_eid(f"{(4000 + index):024x}"),
+                event_type="plugin-added",
+                occurred=CLOCK - timedelta(minutes=index),
+                title=f"Addition {index}",
+            )
+            for index in range(30)
+        ]
+        kept = retain_events(releases + additions, now=CLOCK, max_events=10)
+        self.assertEqual(
+            {item["id"] for item in releases},
+            {item["id"] for item in kept if item["type"] == "plugin-released"},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

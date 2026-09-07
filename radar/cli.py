@@ -15,6 +15,7 @@ from .client import (
     complete_onboarding,
     insights_model,
     refresh_insights,
+    refresh_setup_news,
     set_relevance,
     ensure_briefing,
     installed_plugins,
@@ -100,6 +101,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     fit.add_argument("--minimum-width", required=True, type=int)
     fit.add_argument("--minimum-height", required=True, type=int)
     commands.add_parser("insights-refresh")
+    commands.add_parser("setup-news-refresh")
     insights = commands.add_parser("insights-project")
     insights.add_argument("--installed-facts-json", default="[]")
     insights.add_argument("--installed-facts-status", choices=("available", "unavailable"), default="available")
@@ -177,6 +179,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = fit_window(minimum_width=args.minimum_width, minimum_height=args.minimum_height)
         elif args.command == "insights-refresh":
             result = refresh_insights()
+        elif args.command == "setup-news-refresh":
+            result = refresh_setup_news()
         elif args.command == "insights-project":
             result = insights_model(args.installed_facts_json, query=args.query,
                                     installed_facts_available=args.installed_facts_status == "available")
@@ -312,11 +316,13 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             feed = validate_feed(value, now=parse_timestamp(value["generatedAt"]))
             revision = os.environ.get("SOURCE_REVISION", "working-tree")
             from .insights_builder import build_insights
+            from .setup_news import build_setup_news
             published_at = parse_timestamp(args.published_at) if args.published_at else datetime.now(timezone.utc).replace(microsecond=0)
             insights = validate_insights(read_json_bounded(args.insights, INSIGHTS_MAX_BYTES), now=published_at) if args.insights else build_insights(
                 load_snapshot(args.snapshot), published_at=published_at, fetch_releases=False,
             )
-            _print({"status": "ok", **publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights, image_fetcher=_offline_preview_image)})
+            setup_news = build_setup_news(load_snapshot(args.snapshot), published_at=published_at)
+            _print({"status": "ok", **publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights, setup_news=setup_news, image_fetcher=_offline_preview_image)})
         elif args.command == "collect":
             previous = load_snapshot(args.snapshot)
             clock = datetime.now(timezone.utc).replace(microsecond=0)
@@ -332,6 +338,7 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             )
             revision = os.environ.get("GITHUB_SHA", os.environ.get("SOURCE_REVISION", "working-tree"))
             from .insights_builder import build_insights
+            from .setup_news import build_setup_news
             published_at = datetime.now(timezone.utc).replace(microsecond=0)
             previous_path = args.previous_insights or args.output / "insights.json"
             previous_insights = None
@@ -339,7 +346,8 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
                 previous_insights = validate_insights(read_json_bounded(previous_path, INSIGHTS_MAX_BYTES), now=published_at)
             insights = build_insights(snapshot, published_at=published_at,
                                      fetch_releases=True, github_token=os.environ.get("GITHUB_TOKEN"), previous_insights=previous_insights)
-            result = publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights)
+            setup_news = build_setup_news(snapshot, published_at=published_at)
+            result = publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights, setup_news=setup_news)
             save_snapshot(args.snapshot, snapshot)
             _print({"status": "ok", "events": len(feed["events"]), **result})
         elif args.command == "validate-feed":

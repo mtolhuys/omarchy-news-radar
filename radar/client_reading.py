@@ -8,6 +8,7 @@ from typing import Any, Mapping
 from .client_briefing import _filtered_briefing_members
 from .client_common import _parse_installed_plugin_ids, response
 from .client_projection import _filtered_section_events
+from .client_setup_news import load_reading_feed
 from .constants import CLIENT_SECTIONS
 from .errors import ValidationError
 from .sections import visible_client_sections
@@ -17,7 +18,7 @@ from .state import (StateLock, event_is_read, load_feed, load_state, save_state,
 from .validation import EVENT_ID_RE
 
 def toggle_saved_state(event_id: str, environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
-    feed = load_feed(environment, now=now)
+    feed = load_reading_feed(environment, now=now)
     if feed is None:
         raise ValidationError("cannot save an event without a valid cached feed")
     event = next((item for item in feed["events"] if item["id"] == event_id), None)
@@ -41,7 +42,7 @@ def set_event_read_state(
 
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
-        feed = load_feed(environment, now=now)
+        feed = load_reading_feed(environment, now=now)
         if feed is None:
             raise ValidationError("cannot change reading state without a valid cached feed")
         events_by_id = {item["id"]: item for item in feed["events"]}
@@ -76,7 +77,7 @@ def mark_section_read_state(
         raise ValidationError("unknown projection section")
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
-        feed = load_feed(environment, now=now)
+        feed = load_reading_feed(environment, now=now)
         if feed is None:
             raise ValidationError("cannot change reading state without a valid cached feed")
         current_event_ids = {item["id"] for item in feed["events"]}
@@ -88,7 +89,9 @@ def mark_section_read_state(
             now=now,
         )
         if section == "front-page":
-            section_events = _filtered_briefing_members(feed, state, now=now)
+            # Briefings intentionally remain based on the bounded rolling feed.
+            briefing_feed = load_feed(environment, now=now)
+            section_events = _filtered_briefing_members(briefing_feed, state, now=now)
         unread_events = [
             event for event in section_events if not event_is_read(state, event)
         ]

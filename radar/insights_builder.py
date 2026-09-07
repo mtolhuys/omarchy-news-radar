@@ -118,8 +118,8 @@ def build_insights(
     available = {identity: entry for identity, entry in catalog.items() if not entry.get("retired")}
     collections = [item for item in collections if all(identity == "omarchy" or identity in available for identity in item.get("projectIds", []))]
     priority = [identity for item in collections for identity in item.get("projectIds", [])]
-    priority += [event["entity"]["id"] for event in sorted(snapshot.get("events", []), key=lambda event: (event["occurredAt"], event["id"]), reverse=True)]
     priority += list(RELEASE_REPOSITORIES)
+    priority += [event["entity"]["id"] for event in sorted(snapshot.get("events", []), key=lambda event: (event["occurredAt"], event["id"]), reverse=True)]
     priority += sorted(available)
     selected: list[str] = []
     for identity in priority:

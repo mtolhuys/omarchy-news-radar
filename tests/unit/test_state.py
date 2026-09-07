@@ -560,7 +560,7 @@ class StateTests(unittest.TestCase):
 
         too_many_read_overrides = default_state()
         too_many_read_overrides["readOverrides"] = {
-            f"evt_{index:024x}": True for index in range(501)
+            f"evt_{index:024x}": True for index in range(6001)
         }
         cases.append(too_many_read_overrides)
 

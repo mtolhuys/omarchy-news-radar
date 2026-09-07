@@ -1,0 +1,22 @@
+{
+  "events": [],
+  "plugins": [
+    {
+      "addedAt": "2026-08-31T09:00:00Z",
+      "description": "A companion-only listing that proves exact local setup matching survives rolling-feed pressure.",
+      "id": "org.example.companion",
+      "listingDated": true,
+      "name": "Companion Setup Tool",
+      "repository": "https://github.com/example/companion",
+      "retired": false,
+      "sourceUrl": "https://github.com/example/companion",
+      "tags": [
+        "system"
+      ],
+      "verification": "verified",
+      "version": "1.0.0"
+    }
+  ],
+  "publishedAt": "2026-09-01T12:00:00Z",
+  "schemaVersion": 1
+}

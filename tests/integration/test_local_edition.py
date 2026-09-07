@@ -14,7 +14,8 @@ from radar.local_edition import import_local_edition, marker_path
 from radar.io import atomic_write_json
 from radar.model import canonical_events
 from radar.publisher import publish
-from radar.state import feed_path, purge
+from radar.setup_news import build_setup_news
+from radar.state import cache_root, feed_path, purge
 from radar.sources.youtube import youtube_events
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,6 +77,47 @@ class LocalEditionIntegrationTests(unittest.TestCase):
         fetch.assert_called_once()
         self.assertEqual("local-current", current["status"])
         self.assertEqual("local", current["editionMode"])
+
+    def test_import_caches_digest_bound_setup_news_for_private_projection(self) -> None:
+        plugin = {
+            "name": "Installed Example",
+            "description": "A source-backed listing outside the rolling feed.",
+            "version": "1.0.0",
+            "repository": "https://github.com/example/installed",
+            "sourceUrl": "https://github.com/example/installed",
+            "category": "System",
+            "tags": ["system"],
+            "addedAt": "2026-08-25T12:00:00Z",
+            "listingDated": True,
+            "verification": "verified",
+            "retired": False,
+            "absenceCount": 0,
+        }
+        setup_news = build_setup_news(
+            {
+                "schemaVersion": 2,
+                "events": [],
+                "sources": {"marketplace": {"plugins": {"org.example.installed": plugin}}},
+            },
+            published_at=NOW,
+        )
+        publish(
+            self.published_feed,
+            self.edition,
+            source_revision="a" * 40,
+            setup_news=setup_news,
+            published_at=NOW,
+        )
+        result = import_local_edition(self.edition, self.environment, now=NOW)
+        self.assertEqual(1, result["setupNews"])
+        self.assertTrue((cache_root(self.environment) / "setup-news.json").is_file())
+        projected = projection_model(
+            "for-you", '["org.example.installed"]', "", self.environment, now=NOW
+        )
+        self.assertEqual(
+            ["org.example.installed"],
+            [item["entity"]["id"] for item in projected["events"]],
+        )
 
     def test_newer_published_feed_replaces_local_development_cache(self) -> None:
         import_local_edition(self.edition, self.environment, now=NOW)
