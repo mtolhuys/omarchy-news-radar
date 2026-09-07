@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.5.4 — 2026-09-07
+
+### Fixed
+
+- Keep recent marketplace additions available beyond the 500-story rolling feed, while narrowing For You locally to enabled plugins and explicit follows.
+- Make per-story Save/read actions and filtered **Mark all as read** operate on that complete validated story set.
+- Reduce projection work and avoid redundant startup projections after unchanged companion refreshes.
+
 ## 0.5.3 — 2026-09-06
 
 - Replace authored discovery articles with dated marketplace additions and version/release events, preserving source text and links.

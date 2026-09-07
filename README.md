@@ -1,4 +1,4 @@
-![Omarchy News Radar 0.5.3 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
+![Omarchy News Radar 0.5.4 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
@@ -10,11 +10,11 @@ Catch up on Omarchy releases, official news, plugin activity and videos in one k
 
 Omarchy News Radar is an independent community project.
 
-![Omarchy News Radar 0.5.3 — Front Page with live source news](preview.png)
+![Omarchy News Radar interface — Front Page with live source news](preview.png)
 
-The released 0.5.3 plugin, captured with the live public feed on 6 September 2026. Story content and counts change with the feed.
+The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Version 0.5.4 repairs data completeness and reading actions without changing this pictured layout. Story content and counts change with the feed.
 
-## Install the published v0.5.3
+## Install the published v0.5.4
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -148,9 +148,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.4` is a local candidate, not a published release. It restores source-backed recent marketplace activity outside the global feed limit so Plugins stays complete and For You remains exact to enabled plugins and explicit follows. It has not been pushed or submitted for marketplace verification.
-
-Version `0.5.3` is the current release. Front Page discovery now updates from dated source events and retains the last usable edition during quiet periods. See the [release notes](docs/release-notes/0.5.3.md), [verification evidence](docs/evidence/0.5.3-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
+Version `0.5.4` is the current release. It restores complete recent marketplace activity outside the rolling feed limit, keeps For You exact to local relevance, repairs reading actions across that complete set, and reduces redundant projection work. See the [release notes](docs/release-notes/0.5.4.md), [verification evidence](docs/evidence/0.5.4-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -234,6 +232,13 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
 
+## What is new in 0.5.4
+
+- Plugins keeps the complete source-dated marketplace timeline even when activity exceeds the rolling feed limit.
+- For You uses the same validated facts but selects only enabled plugins and explicit project or creator follows on the device.
+- Save, read/unread and filtered **Mark all as read** work consistently for every visible story.
+- Startup avoids redundant projections, and repeated section projection does less work.
+
 ## What is new in 0.5.3
 
 - **New in the marketplace** and **Latest changes** are selected automatically from validated addition and release events, with source dates and links.
@@ -258,4 +263,4 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The README and marketplace screenshot shows the 0.5.3 runtime installed from the public repository in the disposable Omarchy Plugin Lab. See the [release notes](docs/release-notes/0.5.3.md) and [release contract](docs/RELEASE.md).
+The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Version 0.5.4 changes data completeness, reading consistency and projection work rather than the pictured layout. See the [release notes](docs/release-notes/0.5.4.md) and [release contract](docs/RELEASE.md).

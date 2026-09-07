@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.5.1` is the current release. It preserves the 0.5 data, identity, lifecycle, and safety contracts while completing keyboard navigation, improving setup fallbacks, and making caught-up briefing refresh explicit. Feed schema remains v2; insights remain v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.1.md).
+Version `0.5.4` is the current release. It restores complete recent marketplace activity beyond the rolling feed limit, narrows For You locally to enabled plugins and explicit follows, repairs reading actions across the merged projection, and avoids redundant projection work. Feed schema remains v2; insights remain v1; setup news is v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.4.md).
 
 The README walkthrough and root marketplace preview use inspected captures from the final disposable runtime. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from release publication; marketplace verification is not a security audit.
 
@@ -8,7 +8,7 @@ The README walkthrough and root marketplace preview use inspected captures from 
 
 Record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, Plugin Lab ISO/base identity, exact public commit, and release tag.
 
-The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.1`. The [0.5.1 evidence](evidence/0.5.1-local.md) records its keyboard, persistent-briefing, daily-desktop, multi-window, and disposable-desktop checks. The earlier [briefing-only](evidence/0.5.0-local.md) and [expanded 0.5](evidence/0.5.0-expanded-local.md) records remain historical.
+The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.4`. The [0.5.4 evidence](evidence/0.5.4-local.md) records its source checks, complete marketplace companion, reading-action regression, daily-desktop approval, performance measurement, and disposable-desktop acceptance. Earlier evidence records remain historical.
 
 ## Publishable checklist
 
@@ -77,9 +77,9 @@ These are acceptance requirements; completed checks and remaining limitations be
 - `make test`, `make validate`, `make feed-fixture`, and `make site` pass from a clean clone without unapproved downloads; `make collect-live` separately proves the allowlisted live build.
 - Plugin Lab fresh-install, dedicated briefing, and released-0.1.3 upgrade acceptance pass for the exact candidate with inspected logs and screenshots. The briefing journey covers both welcome choices, per-event versus group read scope, explicit completion, reopen/arrival stability, offline operation, keyboard focus, and maintained light/dark layouts.
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
-- Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available 0.5.1 commit through the state-v13 journey.
+- Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available release commit through the state-v13 journey.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed/state schemas, screenshots, release notes, and evidence agree on 0.5.1. Release media comes from inspected final-runtime VM captures.
+- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.4. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
 - Push, tag, release, marketplace submission, domain change, and external announcement require owner authorization. GitHub Pages is not the live publication path.
 
@@ -154,3 +154,7 @@ The owner tested the installed candidate and approved publication. The [0.5.2 ev
 ## Automatic discovery candidate
 
 The owner inspected the installed 0.5.3 candidate and approved publication on 2026-09-06. The [evidence](evidence/0.5.3-local.md) records the exact runtime and retained discovery checks. Publish the release preparation commit, verify its CI and public-clone journey, and fast-forward the producer while preserving its live continuity snapshot. Update the existing marketplace request and owner context in place; do not add an issue or comment. Maintainer approval remains separate.
+
+## 0.5.4 completeness and reading repair gate
+
+The owner tested the installed 0.5.4 candidate and approved publication on 2026-09-07. The [evidence](evidence/0.5.4-local.md) records the exact runtime, complete companion projection, filtered bulk-read regression, performance measurement, and disposable acceptance. Publish one clean final commit, require green CI and an exact public-clone journey, then update the existing marketplace verification issue in place with the full SHA. Do not create a duplicate issue or a progress comment. Marketplace approval and snapshot promotion remain maintainer-controlled.
