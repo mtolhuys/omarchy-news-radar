@@ -520,3 +520,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** A surge of more than 500 marketplace additions can legitimately fill the rolling feed and erase older news for every enabled plugin. Exact For You matching then becomes empty even though relevant, source-dated activity still exists. Broadening the match would recreate the earlier bug where For You duplicated the whole marketplace.
 
 **Consequence:** Every client downloads the same bounded public companion from the same origin; installed IDs, follows, mutes, reads, and queries remain local. Older clients ignore the new file and keep reading the unchanged feed contract. Companion failure preserves the last valid copy and never disables the main edition. `make local-latest` imports a digest-bound copy so the owner can review the exact behavior before publication. Source tests must flood beyond the feed limit and prove that Plugins retains the public timeline while For You contains only enabled or explicitly followed projects.
+
+## D065 — Yield the floating reader when another app takes focus
+
+**Decision:** After Radar has received compositor focus, an exact Hyprland active-window transition to another client dismisses it through the existing close lifecycle. Mapping-time focus changes are ignored until Radar's own exact class and title confirm focus. A later newspaper, shortcut, or Apps invocation opens Radar again with its durable local reading state.
+
+**Why:** Hyprland always stacks floating windows above tiled windows and explicitly cannot lower a floating window behind a tiled one. Merely transferring keyboard focus therefore leaves Radar's large frame covering the app or browser the user selected.
+
+**Consequence:** Radar remains a normal movable, resizable and maximizable XDG toplevel while active, but it no longer persists as a background Alt+Tab target after the user switches away. Focus transfer uses the same bounded process teardown as Escape and preserves read state, saves, briefing membership, filters and window geometry. Disposable-guest acceptance must launch a real competing app, prove Radar disappears, and prove both the bar and shortcut reopen exactly one focused instance.

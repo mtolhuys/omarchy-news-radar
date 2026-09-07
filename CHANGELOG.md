@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Dismiss Radar when another window takes focus, so Hyprland's floating-window stack cannot leave it covering the app or source the user chose.
+
 ## 0.5.4 — 2026-09-07
 
 ### Fixed

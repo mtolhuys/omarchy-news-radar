@@ -573,11 +573,12 @@ omarchy_host_test() {
   fi
 
   ssh_session "setsid uwsm-app -- xdg-terminal-exec --title='Radar Alt Tab Fixture' -e bash -c 'sleep 120' >/dev/null 2>&1 &" || return 1
-  wait_for_guest_state "another ordinary window can take focus" 15 ssh_session \
-    "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"'" || return 1
+  wait_for_guest_state "choosing another ordinary window dismisses Radar instead of covering it" 15 ssh_session \
+    "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"' && \
+     hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
   radar_bar_coordinates || return 1
   radar_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
-  wait_for_guest_state "one real newspaper click raises obscured Radar and keeps one instance" 15 ssh_session \
+  wait_for_guest_state "one real newspaper click reopens Radar and keeps one instance" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"' && \
      hyprctl -j clients | jq -e '[.[] | select(.title == \"📰 Omarchy News Radar\")] | length == 1' && \
      omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .helperRunning == false'" || {
@@ -588,10 +589,11 @@ omarchy_host_test() {
     }
   capture_console "success-news-radar-03-background-bar-activation"
   ssh_session "hyprctl dispatch 'hl.dsp.focus({ window = \"title:Radar Alt Tab Fixture\" })' >/dev/null"
-  wait_for_guest_state "terminal obscures Radar again" 10 ssh_session \
-    "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"'" || return 1
+  wait_for_guest_state "terminal focus dismisses Radar again" 10 ssh_session \
+    "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"' && \
+     hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
   press meta_l-alt-n
-  wait_for_guest_state "one compositor shortcut raises obscured Radar without toggling it closed" 15 ssh_session \
+  wait_for_guest_state "one compositor shortcut reopens Radar without toggling it closed" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"' && \
      hyprctl -j clients | jq -e '[.[] | select(.title == \"📰 Omarchy News Radar\")] | length == 1' && \
      omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .helperRunning == false'" || return 1
@@ -616,9 +618,12 @@ omarchy_host_test() {
   wait_for_guest_state "one shortcut reopens and focuses Radar after window-manager close" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"' && \
      hyprctl -j clients | jq -e '[.[] | select(.title == \"📰 Omarchy News Radar\")] | length == 1'" || return 1
-  ssh_session "hyprctl dispatch 'hl.dsp.focus({ window = \"title:Radar Alt Tab Fixture\" })' >/dev/null"
   press alt-tab
-  wait_for_guest_state "Alt+Tab returns focus to the Radar toplevel" 10 ssh_session \
+  wait_for_guest_state "Alt+Tab away dismisses Radar so the selected app is unobscured" 10 ssh_session \
+    "hyprctl -j activewindow | jq -e '.title == \"Radar Alt Tab Fixture\"' && \
+     hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
+  press meta_l-alt-n
+  wait_for_guest_state "the shortcut reopens Radar after yielding through Alt+Tab" 15 ssh_session \
     "hyprctl -j activewindow | jq -e '.title == \"📰 Omarchy News Radar\"'" || return 1
 
   log "Capturing the Matte Black release preview below the desktop bar"
@@ -805,11 +810,16 @@ omarchy_host_test() {
   capture_console "success-news-radar-03-open-panel-background-update"
   press esc
   wait_for_guest_state "normal close does not bulk-mark unseen stories" 15 ssh_session \
-    "jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+    "hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")' && \
+     jq -e '.readThrough == \"1970-01-01T00:00:00Z\" and (.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
   press meta_l-alt-n
   wait_for_guest_state "the next panel session presents its first default-section story as read without follow-up input" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.opened == true and .status == \"No newer edition\" and .searchFocused == false and .section == \"front-page\" and .selectedIsUnread == false' && \
-     jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || return 1
+     jq -e '(.readOverrides | has(\"evt_000000000000000000000abc\") | not)' \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" || {
+    ssh_session "omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''; jq . \"\${XDG_STATE_HOME:-\$HOME/.local/state}/omarchy-news-radar/state.json\"" \
+      >"$RUN_DIR/news-radar-next-session-read-failure.log" 2>&1 || true
+    return 1
+  }
   radar_for_you_news || return 1
   wait_for_guest_state "explicit section navigation keeps the previously unseen arrival unread" 15 ssh_session \
     "omarchy-shell shell call io.github.mtolhuys.news-radar debugState '' | jq -e '.section == \"for-you\" and .selectedTitle == \"An event that arrived during the open session\" and .selectedIsUnread == true' && \

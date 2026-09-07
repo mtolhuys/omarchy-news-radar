@@ -36,6 +36,12 @@ omarchy_host_test() {
       "hyprctl -j activewindow | jq -e '.title == \"Radar Activation Fixture\"'"
   }
 
+  dismiss_candidate_radar() {
+    ssh_session "hyprctl dispatch 'hl.dsp.focus({ window = \"title:Radar Activation Fixture\" })' >/dev/null"
+    wait_for_guest_state "$1" 10 ssh_session \
+      "hyprctl -j activewindow | jq -e '.title == \"Radar Activation Fixture\"' && hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'"
+  }
+
   stage_revision v0.1.3
   ssh_guest "git -C /tmp/news-radar-upgrade-origin init -q && git -C /tmp/news-radar-upgrade-origin add . && git -C /tmp/news-radar-upgrade-origin -c user.name=PluginLab -c user.email=lab@invalid commit -qm v0.1.3"
   ssh_session "omarchy-plugin-add /tmp/news-radar-upgrade-origin --enable --yes" >"$RUN_DIR/news-radar-v013-install.log" || return 1
@@ -84,15 +90,15 @@ omarchy_host_test() {
 
   press meta_l-alt-n
   wait_radar "update-migrated shortcut opens Radar" || return 1
-  obscure_radar || return 1
+  dismiss_candidate_radar "candidate yields when another app takes focus" || return 1
   press meta_l-alt-n
-  wait_radar "update-migrated shortcut raises obscured Radar without closing" || return 1
+  wait_radar "update-migrated shortcut reopens yielded Radar" || return 1
 
-  obscure_radar || return 1
+  dismiss_candidate_radar "candidate yields before newspaper activation" || return 1
   bar_x="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.x + (.width / 2) | floor)'")"
   bar_y="$(ssh_session "omarchy-shell shell debugBarGeometry | jq -r '.[] | select(.id == \"io.github.mtolhuys.news-radar\" and .visible == true) | (.y + (.height / 2) | floor)'")"
   radar_pointer_tap "$viewport_width" "$viewport_height" "$bar_x" "$bar_y" left
-  wait_radar "candidate bar summon raises obscured Radar" || {
+  wait_radar "candidate bar summon reopens yielded Radar" || {
     ssh_session "hyprctl -j activewindow; hyprctl -j clients; omarchy-shell shell call io.github.mtolhuys.news-radar debugState ''" >"$RUN_DIR/news-radar-candidate-bar-failure.log" 2>&1 || true
     return 1
   }
@@ -101,5 +107,5 @@ omarchy_host_test() {
 
   capture_console "success-news-radar-activation-upgrade"
   ssh_session "$shortcut remove" >"$RUN_DIR/news-radar-candidate-shortcut-removed.json" || return 1
-  printf 'ok - the plugin update alone migrated exact legacy ownership; shortcut and bar each raise one obscured Radar window\n'
+  printf 'ok - the plugin update alone migrated exact legacy ownership; candidate yields focus and shortcut/bar each reopen one Radar window\n'
 }

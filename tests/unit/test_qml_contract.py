@@ -193,6 +193,10 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('["prepare-window"', lifecycle)
         self.assertIn('["finish-window-opening", "--token", token]', lifecycle)
         self.assertIn('["remember-window"]', lifecycle)
+        self.assertIn('event.name === "activewindow"', lifecycle)
+        self.assertIn("property bool focusConfirmed: false", lifecycle)
+        self.assertIn('root.trace("yield-focus"', lifecycle)
+        self.assertIn("root.requestClose()", lifecycle)
 
     def test_empty_readers_hide_inspection_and_offer_one_recovery_action(self) -> None:
         panel = (ROOT / "src/Panel.qml").read_text(encoding="utf-8")

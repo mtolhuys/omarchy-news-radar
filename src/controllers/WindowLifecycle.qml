@@ -19,6 +19,11 @@ Item {
   property int fittedMinimumWidth: minimumWidth
   property int fittedMinimumHeight: minimumHeight
   property bool requested: false
+  // Hyprland always stacks floating windows above tiled windows. Once Radar
+  // has actually received focus, yielding focus must therefore dismiss its
+  // large frame as well; otherwise the newly chosen app is active but remains
+  // visually covered. A pre-focus event during mapping cannot close it.
+  property bool focusConfirmed: false
   property bool preparationReady: false
   property bool recoveryReady: false
   property bool closing: false
@@ -88,6 +93,7 @@ Item {
     }
     openingGeneration++
     clearOpeningRule()
+    focusConfirmed = false
     requested = true
     closing = false
     preparationReady = false
@@ -120,6 +126,7 @@ Item {
   function requestClose() {
     trace("request-close")
     if (closing) return
+    focusConfirmed = false
     closing = true
     readyDeadline.stop()
     geometryDelay.stop()
@@ -137,6 +144,7 @@ Item {
   function stop() {
     trace("stop")
     requested = false
+    focusConfirmed = false
     closing = false
     readyDeadline.stop()
     closeDeadline.stop()
@@ -205,6 +213,20 @@ Item {
     target: Hyprland
     function onRawEvent(event) {
       if (!event) return
+      if (event.name === "activewindow") {
+        var identity = String(event.data || "")
+        var separator = identity.indexOf(",")
+        var activeClass = separator >= 0 ? identity.slice(0, separator).trim() : ""
+        var activeTitle = separator >= 0 ? identity.slice(separator + 1).trim() : ""
+        var radarFocused = activeClass === "org.quickshell" && activeTitle === "📰 Omarchy News Radar"
+        if (radarFocused) {
+          if (root.requested && root.window.visible && !root.closing) root.focusConfirmed = true
+        } else if (root.focusConfirmed && root.requested && root.window.visible
+                   && root.phase === "visible" && !root.closing) {
+          root.trace("yield-focus", {activeClass: activeClass, activeTitle: activeTitle})
+          root.requestClose()
+        }
+      }
       if (event.name === "fullscreen" && root.requested && root.window.visible && !root.closing) Hyprland.refreshToplevels()
       // A layer can change the reserved workarea, but most layer activity
       // changes nothing. Refresh the native monitor cache; only a different
