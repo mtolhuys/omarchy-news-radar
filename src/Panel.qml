@@ -16,12 +16,17 @@ Item {
   property var pluginRegistry: null
 
   readonly property string runtimeBuildIdentity: "news-radar-0.5.5+identity-2"
-  readonly property string helperPath: manifest && manifest.__sourceDir
-    ? String(manifest.__sourceDir) + "/bin/news-radar-client" : ""
-  readonly property string shortcutHelperPath: manifest && manifest.__sourceDir
-    ? String(manifest.__sourceDir) + "/bin/news-radar-shortcut" : ""
-  readonly property string brandLogoPath: manifest && manifest.__sourceDir
-    ? String(manifest.__sourceDir) + "/assets/omarchy-logo.svg" : ""
+  readonly property string pluginDir: {
+    // Third-party manifests do not expose the host's private source directory
+    // (Omarchy 4.0.3 sanitizes it); this file lives one level under the plugin
+    // root (src/), so resolve the root from here.
+    var url = String(Qt.resolvedUrl("../"))
+    if (url.indexOf("file://") !== 0) return ""
+    try { return decodeURIComponent(url.substring(7)).replace(/\/$/, "") } catch (e) { return "" }
+  }
+  readonly property string helperPath: root.pluginDir ? root.pluginDir + "/bin/news-radar-client" : ""
+  readonly property string shortcutHelperPath: root.pluginDir ? root.pluginDir + "/bin/news-radar-shortcut" : ""
+  readonly property string brandLogoPath: root.pluginDir ? root.pluginDir + "/assets/omarchy-logo.svg" : ""
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME")
     || (Quickshell.env("HOME") + "/.cache")
   readonly property string pluginId: manifest && manifest.id

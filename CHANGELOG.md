@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Restore Omarchy 4.0.3 compatibility by resolving the panel and bar widget's bundled helpers and logo from their own file locations instead of private host metadata that third-party plugins no longer receive.
+
 ## 0.5.5 — 2026-09-07
 
 ### Fixed

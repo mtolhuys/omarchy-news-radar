@@ -273,8 +273,20 @@ def validate_manifest() -> None:
             fail(f"panel entry point lacks {required_text}")
     if f'news-radar-{version}+identity-2' not in qml:
         fail("panel runtime identity does not match the manifest version")
-    if 'String(manifest.__sourceDir) + "/assets/omarchy-logo.svg"' not in qml:
-        fail("panel title does not load the bundled Omarchy logo")
+    bar_qml = entries["barWidget"].read_text(encoding="utf-8")
+    for label, source in (("panel", qml), ("bar widget", bar_qml)):
+        for required_path in (
+            'Qt.resolvedUrl("../")',
+            'decodeURIComponent(url.substring(7))',
+            'root.pluginDir + "/bin/news-radar-client"',
+            'root.pluginDir + "/bin/news-radar-shortcut"',
+        ):
+            if required_path not in source:
+                fail(f"{label} does not resolve bundled helpers from its own file location")
+        if "__sourceDir" in source or "bar.barWidgetRegistry" in source:
+            fail(f"{label} depends on private host path metadata")
+    if 'root.pluginDir + "/assets/omarchy-logo.svg"' not in qml:
+        fail("panel title does not load the bundled Omarchy logo from its own file location")
     ui_sources = {path: path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.qml")}
     ui = "\n".join(ui_sources.values())
     if 'text: "NEWS RADAR"' not in ui or 'text: "OMARCHY NEWS RADAR"' in qml:

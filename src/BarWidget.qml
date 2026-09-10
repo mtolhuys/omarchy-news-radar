@@ -9,12 +9,15 @@ BarWidget {
   id: root
   moduleName: "io.github.mtolhuys.news-radar"
 
-  readonly property var widgetMetadata: bar && bar.barWidgetRegistry
-    ? bar.barWidgetRegistry.metadataFor(moduleName) : null
-  readonly property string helperPath: widgetMetadata && widgetMetadata.sourceDir
-    ? String(widgetMetadata.sourceDir) + "/bin/news-radar-client" : ""
-  readonly property string shortcutHelperPath: widgetMetadata && widgetMetadata.sourceDir
-    ? String(widgetMetadata.sourceDir) + "/bin/news-radar-shortcut" : ""
+  readonly property string pluginDir: {
+    // Third-party widgets receive a capability-scoped bar facade without the
+    // host registry. Resolve bundled helpers from this entry point instead.
+    var url = String(Qt.resolvedUrl("../"))
+    if (url.indexOf("file://") !== 0) return ""
+    try { return decodeURIComponent(url.substring(7)).replace(/\/$/, "") } catch (e) { return "" }
+  }
+  readonly property string helperPath: root.pluginDir ? root.pluginDir + "/bin/news-radar-client" : ""
+  readonly property string shortcutHelperPath: root.pluginDir ? root.pluginDir + "/bin/news-radar-shortcut" : ""
   readonly property string stateBase: Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")
   readonly property int refreshMinimumAgeSeconds: 5 * 60
