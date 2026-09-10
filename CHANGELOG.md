@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- Omarchy 4.0.3 compatibility: resolve the plugin root from the plugin's own
+  file location instead of the host's private `__sourceDir` manifest field,
+  which third-party manifests no longer carry. The client and shortcut helpers
+  and the brand logo resolve again.
+
 ## 0.5.5 — 2026-09-07
 
 ### Fixed
