@@ -15,7 +15,7 @@ Item {
   property var manifest: null
   property var pluginRegistry: null
 
-  readonly property string runtimeBuildIdentity: "news-radar-0.5.5+identity-2"
+  readonly property string runtimeBuildIdentity: "news-radar-0.5.6+identity-2"
   readonly property string pluginDir: {
     // Third-party manifests do not expose the host's private source directory
     // (Omarchy 4.0.3 sanitizes it); this file lives one level under the plugin
