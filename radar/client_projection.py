@@ -21,7 +21,7 @@ from .filters import apply_section_filter, filter_options, filter_summary
 from .freshness import edition_timing
 from .insights import matching_release
 from .local_edition import local_edition_metadata
-from .model import project_section
+from .model import include_persisted_saves, project_section
 from .provenance import project_matches_event_source, release_matches_event_source
 from .relevance import event_relevance, is_followed, is_muted
 from .sections import SECTION_SOURCE_SUMMARIES, visible_client_sections
@@ -77,14 +77,19 @@ def _filtered_section_events(
                             or is_followed(event, state)]
         # Saved's projector is an identity filter without a source boundary.
         projection_section = "saved"
+    projected = project_section(
+        scoped,
+        projection_section,
+        installed_plugin_ids=installed_plugin_ids,
+        saved_ids={event["id"] for event in scoped["events"]} if section == "for-you" else set(state["saved"]),
+        query=query,
+    )
+    # Saved bookmarks are local durable state. If the publisher dropped an event
+    # from the rolling feed, restore a degraded row from the persisted record.
+    if section == "saved":
+        projected = include_persisted_saves(projected, state["saved"])
     return apply_section_filter(
-        project_section(
-            scoped,
-            projection_section,
-            installed_plugin_ids=installed_plugin_ids,
-            saved_ids={event["id"] for event in scoped["events"]} if section == "for-you" else set(state["saved"]),
-            query=query,
-        ),
+        projected,
         section_filter,
         read_through=state["readThrough"],
         read_overrides=state["readOverrides"],
