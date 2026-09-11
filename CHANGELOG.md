@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.7 — 2026-09-11
+
+### Fixed
+
+- Keep Saved bookmarks when the publisher stops carrying those stories in the live feed, restoring a degraded local copy from `state.json` instead of silently dropping them (#15).
+
 ## 0.5.6 — 2026-09-10
 
 ### Fixed

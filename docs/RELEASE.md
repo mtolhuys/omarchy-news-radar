@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.5.6` is the current release. It restores bundled helper and asset resolution for third-party panels and bar widgets after Omarchy 4.0.3 stopped exposing private plugin path metadata. Feed schema remains v2; insights remain v1; setup news remains v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.6.md).
+Version `0.5.7` is the current release. It keeps Saved bookmarks when the rolling feed drops those events, while retaining the Omarchy 4.0.3 helper-path fix from 0.5.6. Feed schema remains v2; insights remain v1; setup news remains v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.7.md).
 
 The README walkthrough and root marketplace preview use inspected captures from the final disposable runtime. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from release publication; marketplace verification is not a security audit.
 
@@ -8,7 +8,7 @@ The README walkthrough and root marketplace preview use inspected captures from 
 
 Record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, Plugin Lab ISO/base identity, exact public commit, and release tag.
 
-The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.6`. The [0.5.6 evidence](evidence/0.5.6-local.md) records exact Omarchy 4.0.3 validation and focused disposable-desktop behavior. The 0.5.5 evidence remains the broad focus-transfer, daily-desktop, full disposable-desktop, and released-upgrade baseline.
+The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.7`. The [0.5.7 evidence](evidence/0.5.7-local.md) records the Saved durability regression coverage. The 0.5.6 evidence remains the Omarchy 4.0.3 helper-path baseline; the 0.5.5 evidence remains the broad focus-transfer and disposable-desktop baseline.
 
 ## Publishable checklist
 
@@ -79,7 +79,7 @@ These are acceptance requirements; completed checks and remaining limitations be
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
 - Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available release commit through the state-v13 journey.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.6. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
+- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.7. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
 - Push, tag, release, marketplace submission, domain change, and external announcement require owner authorization. GitHub Pages is not the live publication path.
 
@@ -166,3 +166,8 @@ The owner tested runtime commit `968cdf5` on the daily desktop and approved publ
 ## 0.5.6 Omarchy 4.0.3 compatibility gate
 
 The owner reviewed the regression and approved a patch release on 2026-09-10. The [evidence](evidence/0.5.6-local.md) records source checks, exact Omarchy 4.0.3 QML validation, and the focused disposable-guest helper-path journey. Publish one clean final commit, require green CI and an exact public-clone journey, then update marketplace verification issue #6193 in place with the full release SHA. Marketplace approval and snapshot promotion remain maintainer-controlled.
+
+
+## 0.5.7 Saved durability gate
+
+The owner directed merge and marketplace validation for issue #15 on 2026-09-11. The [evidence](evidence/0.5.7-local.md) records unit coverage and CI for restoring feed-absent bookmarks from persisted saves. Publish one clean release-preparation commit, require green GitHub CI, publish tag `v0.5.7`, then open marketplace verification for the exact release SHA. Marketplace approval and snapshot promotion remain maintainer-controlled.

@@ -1,4 +1,4 @@
-![Omarchy News Radar 0.5.6 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
+![Omarchy News Radar 0.5.7 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
@@ -12,9 +12,9 @@ Omarchy News Radar is an independent community project.
 
 ![Omarchy News Radar interface — Front Page with live source news](preview.png)
 
-The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Versions 0.5.4 through 0.5.6 repair data completeness, reading actions, focus behavior, and Omarchy 4.0.3 compatibility without changing this pictured layout. Story content and counts change with the feed.
+The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Versions 0.5.4 through 0.5.7 repair data completeness, Saved durability, reading actions, focus behavior, and Omarchy 4.0.3 compatibility without changing this pictured layout. Story content and counts change with the feed.
 
-## Install the published v0.5.6
+## Install the published v0.5.7
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -148,7 +148,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.6` is the current release. It restores the panel, bundled helpers, logo, and newspaper on Omarchy 4.0.3 while retaining 0.5.5's focus-yield behavior. Reading state, saves, filters, briefing membership, and window geometry remain unchanged. See the [release notes](docs/release-notes/0.5.6.md), [verification evidence](docs/evidence/0.5.6-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
+Version `0.5.7` is the current release. It keeps Saved bookmarks when the live feed stops carrying those stories, while retaining 0.5.6's Omarchy 4.0.3 helper-path fix and 0.5.5's focus-yield behavior. Reading state, filters, briefing membership, and window geometry remain unchanged. See the [release notes](docs/release-notes/0.5.7.md), [verification evidence](docs/evidence/0.5.7-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -232,6 +232,10 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
 
+## What is new in 0.5.7
+
+- Saved bookmarks remain available after the publisher drops those stories from the rolling feed, restored from the local save record with the original source link.
+
 ## What is new in 0.5.6
 
 - The panel and newspaper resolve their bundled helpers and assets from their own QML files instead of private host metadata removed in Omarchy 4.0.3.
@@ -275,4 +279,4 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Versions 0.5.4 through 0.5.6 change data completeness, reading consistency, projection work, focus behavior, and Omarchy 4.0.3 compatibility rather than the pictured layout. See the [0.5.6 release notes](docs/release-notes/0.5.6.md) and [release contract](docs/RELEASE.md).
+The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Versions 0.5.4 through 0.5.7 change data completeness, Saved durability, reading consistency, projection work, focus behavior, and Omarchy 4.0.3 compatibility rather than the pictured layout. See the [0.5.7 release notes](docs/release-notes/0.5.7.md) and [release contract](docs/RELEASE.md).
