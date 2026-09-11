@@ -124,6 +124,85 @@ def make_feed(
     return validate_feed(value, now=through)
 
 
+
+_TYPE_SECTION = {
+    "omarchy-released": "core",
+    "omarchy-news": "core",
+    "plugin-added": "plugins",
+    "plugin-released": "plugins",
+    "plugin-retired": "plugins",
+    "plugin-verification-changed": "plugins",
+    "community-link": "community",
+    "youtube-video": "youtube",
+}
+
+_TYPE_ENTITY_KIND = {
+    "omarchy-released": "omarchy",
+    "omarchy-news": "omarchy",
+    "plugin-added": "plugin",
+    "plugin-released": "plugin",
+    "plugin-retired": "plugin",
+    "plugin-verification-changed": "plugin",
+    "community-link": "community",
+    "youtube-video": "youtube",
+}
+
+
+def event_from_saved_record(event_id: str, record: Mapping[str, Any]) -> dict[str, Any]:
+    """Build a degraded feed event from a persisted save when the publisher dropped it.
+
+    Saved bookmarks must remain reachable after feed retention removes the live
+    row. Only fields stored in state.json are authoritative; everything else is
+    a neutral placeholder so presentation and filters still work.
+    """
+    event_type = str(record["type"])
+    section = _TYPE_SECTION.get(event_type, "plugins")
+    kind = _TYPE_ENTITY_KIND.get(event_type, "plugin")
+    occurred_at = str(record["occurredAt"])
+    title = str(record["title"])
+    source_url = str(record["sourceUrl"])
+    return {
+        "id": event_id,
+        "type": event_type,
+        "occurredAt": occurred_at,
+        "discoveredAt": occurred_at,
+        "title": title,
+        "summary": (
+            "Restored from your local saved copy. The publisher is no longer "
+            "carrying this story in the current feed."
+        ),
+        "source": {"label": "Local saved copy", "url": source_url},
+        "entity": {"kind": kind, "id": "local.saved", "name": title[:120]},
+        "classification": {
+            "section": section,
+            "significance": "routine",
+            "curated": False,
+            "tags": [],
+        },
+        "trust": {"marketplace": "unknown", "securityAudit": False},
+        "compatibility": {"channels": [], "basis": "unknown"},
+        "isArchivedSave": True,
+    }
+
+
+def include_persisted_saves(
+    live_events: list[dict[str, Any]], saved: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Keep every persisted bookmark, synthesizing rows the live feed dropped."""
+    by_id = {event["id"]: dict(event) for event in live_events}
+    for event_id, record in saved.items():
+        if event_id in by_id:
+            continue
+        by_id[event_id] = event_from_saved_record(str(event_id), record)
+
+    def sort_key(event: Mapping[str, Any]) -> tuple[str, str]:
+        record = saved.get(event["id"], {})
+        stamp = str(record.get("savedAt") or event.get("occurredAt") or "")
+        return (stamp, str(event["id"]))
+
+    return sorted(by_id.values(), key=sort_key, reverse=True)
+
+
 def project_section(
     feed: Mapping[str, Any],
     section: str,
