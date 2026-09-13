@@ -2,7 +2,7 @@
 
 # Omarchy News Radar
 
-[![Built for Omarchy](https://raw.githubusercontent.com/tcballard/omarchy-badges/85f859029e236e784e7b05ada6dbe73506d07a91/badges/v1/built-for-omarchy.svg)](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar)
+[![Built for Omarchy: Plugin](https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg)](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar)
 
 > Your personal front page for Omarchy.
 
