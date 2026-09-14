@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from radar.constants import MAX_EVENTS
+from radar.errors import ValidationError
 from radar.model import canonical_events, retain_events
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -167,6 +168,52 @@ class RetentionTests(unittest.TestCase):
             {item["id"] for item in releases},
             {item["id"] for item in kept if item["type"] == "plugin-released"},
         )
+
+    def test_required_additions_displace_protected_release_history(self) -> None:
+        releases = [
+            _event(
+                event_id=_eid(f"{(5000 + index):024x}"),
+                event_type="plugin-released",
+                occurred=CLOCK - timedelta(minutes=index),
+                title=f"Release {index}",
+            )
+            for index in range(10)
+        ]
+        additions = [
+            _event(
+                event_id=_eid(f"{(6000 + index):024x}"),
+                event_type="plugin-added",
+                occurred=CLOCK - timedelta(days=1, minutes=index),
+                title=f"Addition {index}",
+            )
+            for index in range(2)
+        ]
+        required = {event["id"] for event in additions}
+
+        kept = retain_events(
+            releases + additions,
+            now=CLOCK,
+            max_events=10,
+            required_event_ids=required,
+        )
+
+        self.assertEqual(required, {event["id"] for event in kept} & required)
+        self.assertEqual(8, sum(event["type"] == "plugin-released" for event in kept))
+
+    def test_required_event_contract_fails_before_silent_loss(self) -> None:
+        addition = _event(
+            event_id=_eid("f" * 24),
+            event_type="plugin-added",
+            occurred=CLOCK - timedelta(days=31),
+            title="Expired addition",
+        )
+        with self.assertRaisesRegex(ValidationError, "retention window"):
+            retain_events(
+                [addition],
+                now=CLOCK,
+                max_events=10,
+                required_event_ids={addition["id"]},
+            )
 
 
 if __name__ == "__main__":

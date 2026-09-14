@@ -36,6 +36,7 @@ Version 2 has this conceptual shape (version 1 remains documented historically i
 - UTF-8 JSON only.
 - Maximum downloaded feed size: 2 MiB.
 - Maximum live events: 500.
+- Marketplace additions created by the current successful source transition reserve slots inside that same 500-event bound before protected release history is retained; the reservation is not persisted as feed metadata or a permanent event priority.
 - `generatedAt` may not be materially in the future relative to the client clock; tolerate a documented small skew.
 - `generatedAt` is the completed source-collection time. `publishedAt` is the later artifact-build time, may not predate collection, and may not be materially in the future. Legacy schema-v1 editions without `publishedAt` explicitly infer publication from `generatedAt`.
 - Events are sorted descending by `occurredAt`, then stable descending discovery order, then ascending ID.

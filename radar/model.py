@@ -51,6 +51,7 @@ def retain_events(
     now: datetime,
     max_events: int = MAX_EVENTS,
     retention_days: int = RETENTION_DAYS,
+    required_event_ids: Iterable[str] = (),
 ) -> list[dict[str, Any]]:
     """Bound the published ledger by age, then by type priority.
 
@@ -60,6 +61,10 @@ def retain_events(
     recent events, dropping ``plugin-verification-changed`` first.
     """
 
+    required_ids = frozenset(required_event_ids)
+    if len(required_ids) > max_events:
+        raise ValidationError("required events exceed event bound")
+
     through = now.astimezone(timezone.utc)
     cutoff = through - timedelta(days=retention_days)
     recent = [
@@ -68,32 +73,47 @@ def retain_events(
         if parse_timestamp(event["occurredAt"]) >= cutoff
     ]
     ordered = sorted(recent, key=event_sort_key)
+    available_ids = {event["id"] for event in ordered}
+    missing_required = required_ids - available_ids
+    if missing_required:
+        raise ValidationError("required events are absent from the retention window")
     if len(ordered) <= max_events:
         return ordered
 
+    required = [event for event in ordered if event["id"] in required_ids]
     protected = [
         event
         for event in ordered
-        if str(event["type"]) in PROTECTED_EVENT_TYPES
+        if event["id"] not in required_ids
+        and str(event["type"]) in PROTECTED_EVENT_TYPES
     ]
-    if len(protected) >= max_events:
-        return protected[:max_events]
+    protected_slots = max_events - len(required)
+    if len(protected) >= protected_slots:
+        return sorted(required + protected[:protected_slots], key=event_sort_key)
 
-    protected_ids = {event["id"] for event in protected}
-    remainder = [event for event in ordered if event["id"] not in protected_ids]
+    reserved_ids = required_ids | {event["id"] for event in protected}
+    remainder = [event for event in ordered if event["id"] not in reserved_ids]
     # Keep preferred first: lower trim priority, then newer (event_sort_key).
     remainder.sort(key=lambda event: (_trim_priority(event),) + event_sort_key(event))
-    slots = max_events - len(protected)
-    kept = protected + remainder[:slots]
+    slots = max_events - len(required) - len(protected)
+    kept = required + protected + remainder[:slots]
     return sorted(kept, key=event_sort_key)
 
 
 def canonical_events(
-    events: Iterable[Mapping[str, Any]], *, now: datetime | None = None
+    events: Iterable[Mapping[str, Any]],
+    *,
+    now: datetime | None = None,
+    required_event_ids: Iterable[str] = (),
 ) -> list[dict[str, Any]]:
     clock = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     validated = [validate_event(dict(event)) for event in events]
-    ordered = retain_events(validated, now=clock, max_events=MAX_EVENTS)
+    ordered = retain_events(
+        validated,
+        now=clock,
+        max_events=MAX_EVENTS,
+        required_event_ids=required_event_ids,
+    )
     if len({event["id"] for event in ordered}) != len(ordered):
         raise ValidationError("event IDs collide")
     return ordered

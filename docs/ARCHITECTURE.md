@@ -263,6 +263,8 @@ Event identity also protects occurrence history. If a lagging source state redis
 
 Each Forge publish retains the restored snapshot separately through collection, then runs `audit-marketplace-additions` against the successor. The gate requires nondecreasing catalog generation time and a `plugin-added` event for every newly appearing canonical plugin ID before the public tree is swapped into place.
 
+Successor construction marks the exact `plugin-added` event IDs produced by the current marketplace diff as mandatory for that transition. Those events reserve capacity before protected release history and lower-priority rows are selected, so an already-full ledger cannot make the independent audit freeze publication. Missing, expired, or over-bound mandatory events fail explicitly before artifacts are staged; the audit remains a separate defense against implementation or transaction mistakes.
+
 ## Static publication
 
 Forge Laravel `news-radar:publish` (every five minutes, without overlapping) collects and builds an immutable edition tree containing at least:

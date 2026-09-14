@@ -53,6 +53,8 @@ Scheduled collection always diffs against the validated snapshot from the latest
 
 After collection, publication compares the restored and successor snapshots. Every catalog ID that appears for the first time must have a validated `plugin-added` event in the successor ledger, and marketplace generation time may not move backwards. A missing addition fails the build before Forge publishes the artifact.
 
+The collector reserves successor capacity for the exact addition-event IDs created by that marketplace diff before it retains protected release history. This transition-scoped reservation does not make historical additions permanently protected, change their source dates, or weaken the 500-event bound. It prevents an otherwise valid addition from being trimmed merely because older protected release rows already fill the ledger; an impossible missing, expired, or over-bound required set fails at construction rather than surfacing later as an unexplained audit failure.
+
 ### Preview pass-through
 
 An event created by a supported marketplace diff may carry its catalog preview thumbnail. Publication fetches only `https://plugins.omarchy.org/assets/img/plugins/...` through the closed redirect policy, caps each response at 1.5 MiB, requires matching PNG/JPEG/WebP Content-Type and magic, validates static image structure and declared dimensions up to 4,096 per side/12 million pixels, and rejects SVG and animation. A successful image remains a direct `image.sourceUrl` on that exact origin/path family; the feed host does not retain or serve the raster. A fetch or validation failure removes only the optional image.

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Reserve feed capacity for every marketplace addition observed in the current publication transition, preventing protected release history from starving required addition stories and freezing the Forge publisher.
+
 ## 0.5.7 — 2026-09-11
 
 ### Fixed

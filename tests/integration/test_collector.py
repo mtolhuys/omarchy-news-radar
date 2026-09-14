@@ -21,6 +21,7 @@ from radar.constants import MAX_EVENTS
 from radar.errors import ValidationError
 from radar.io import canonical_json_bytes
 from radar.model import event_sort_key
+from radar.publication_state import audit_marketplace_additions
 from radar.sources.marketplace import CATALOG_URL
 from radar.sources.marketplace_engagement import ENGAGEMENT_URL
 from radar.sources.omarchy_news import RSS_URL
@@ -138,6 +139,44 @@ class CollectorIntegrationTests(unittest.TestCase):
             )
 
         self.assertNotIn(expired["id"], {event["id"] for event in successor["events"]})
+
+    def test_new_marketplace_addition_survives_a_saturated_release_ledger(self) -> None:
+        previous = load_snapshot(ROOT / "tests/fixtures/source-snapshot-baseline.json")
+        releases = []
+        for index in range(MAX_EVENTS):
+            event = snapshot_event(
+                index=10_000 + index,
+                occurred_at=CLOCK - timedelta(days=2, seconds=index),
+            )
+            event["type"] = "plugin-released"
+            releases.append(event)
+        previous["events"] = sorted(releases, key=event_sort_key)
+
+        _, successor = collect_from_fixtures(
+            self.inputs("next"),
+            previous_snapshot=previous,
+            now=CLOCK,
+            bootstrap_marketplace=False,
+            failed_sources={"omarchy-releases": "timeout", "community": "timeout"},
+        )
+
+        additions = [
+            event
+            for event in successor["events"]
+            if event["type"] == "plugin-added"
+            and event["entity"]["id"] == "org.example.notes"
+        ]
+        self.assertEqual(1, len(additions))
+        self.assertEqual(MAX_EVENTS, len(successor["events"]))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prior_path = root / "previous.json"
+            successor_path = root / "successor.json"
+            prior_path.write_bytes(canonical_json_bytes(previous))
+            successor_path.write_bytes(canonical_json_bytes(successor))
+            audit = audit_marketplace_additions(prior_path, successor_path)
+        self.assertEqual(1, audit["newPlugins"])
+        self.assertEqual(1, audit["representedNewPlugins"])
 
     def test_fixed_clock_collection_is_independent_of_the_host_date(self) -> None:
         retained = snapshot_event(index=1, occurred_at=CLOCK - timedelta(days=1))

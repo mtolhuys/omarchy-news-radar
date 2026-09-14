@@ -123,6 +123,7 @@ def collect_from_fixtures(
     releases: dict[str, dict[str, Any]] | None = None
     marketplace: dict[str, Any] | None = None
     engagement: dict[str, dict[str, int]] | None = None
+    required_event_ids: set[str] = set()
 
     if "omarchy-releases" in failed:
         health.append({"id": "omarchy-releases", "status": "failed", "checkedAt": checked_at, "sourceUrl": PUBLIC_URL, "reason": failed["omarchy-releases"]})
@@ -201,6 +202,11 @@ def collect_from_fixtures(
             bootstrap_window_from=clock - timedelta(days=14),
         )
         events.extend(marketplace_events)
+        required_event_ids.update(
+            event["id"]
+            for event in marketplace_events
+            if event.get("type") == "plugin-added"
+        )
         next_sources["marketplace"] = marketplace_snapshot
         health.append({"id": "marketplace", "status": "current", "checkedAt": checked_at, "sourceUrl": CATALOG_URL})
 
@@ -331,6 +337,7 @@ def collect_from_fixtures(
             releases=releases,
         ),
         now=clock,
+        required_event_ids=required_event_ids,
     )
     overlays = load_curation(inputs.curation)
     curated_events, lead = apply_curation(base_events, overlays)
