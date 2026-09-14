@@ -22,6 +22,7 @@ from radar.errors import ValidationError
 from radar.io import canonical_json_bytes
 from radar.model import event_sort_key
 from radar.publication_state import audit_marketplace_additions
+from radar.setup_news import build_setup_news, setup_news_events
 from radar.sources.marketplace import CATALOG_URL
 from radar.sources.marketplace_engagement import ENGAGEMENT_URL
 from radar.sources.omarchy_news import RSS_URL
@@ -140,7 +141,7 @@ class CollectorIntegrationTests(unittest.TestCase):
 
         self.assertNotIn(expired["id"], {event["id"] for event in successor["events"]})
 
-    def test_new_marketplace_addition_survives_a_saturated_release_ledger(self) -> None:
+    def test_new_marketplace_addition_survives_saturation_and_the_next_cycle(self) -> None:
         previous = load_snapshot(ROOT / "tests/fixtures/source-snapshot-baseline.json")
         releases = []
         for index in range(MAX_EVENTS):
@@ -177,6 +178,25 @@ class CollectorIntegrationTests(unittest.TestCase):
             audit = audit_marketplace_additions(prior_path, successor_path)
         self.assertEqual(1, audit["newPlugins"])
         self.assertEqual(1, audit["representedNewPlugins"])
+
+        _, next_successor = collect_from_fixtures(
+            self.inputs("next"),
+            previous_snapshot=successor,
+            now=CLOCK + timedelta(minutes=5),
+            bootstrap_marketplace=False,
+            failed_sources={"omarchy-releases": "timeout", "community": "timeout"},
+        )
+        reading_events = {
+            event["entity"]["id"]: event
+            for event in setup_news_events(
+                build_setup_news(
+                    next_successor,
+                    published_at=CLOCK + timedelta(minutes=5),
+                )
+            )
+            if event["type"] == "plugin-added"
+        }
+        self.assertIn("org.example.notes", reading_events)
 
     def test_fixed_clock_collection_is_independent_of_the_host_date(self) -> None:
         retained = snapshot_event(index=1, occurred_at=CLOCK - timedelta(days=1))
