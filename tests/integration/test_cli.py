@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -166,6 +166,46 @@ class ClientCliIntegrationTests(unittest.TestCase):
             fetch.assert_not_called()
         for filename in ("events.json", "insights.json", "index.html", "discover/inspect-disk-space/index.html"):
             self.assertEqual((first / filename).read_bytes(), (second / filename).read_bytes())
+
+    def test_last_good_republish_is_networkless_explicit_and_keeps_continuity(self) -> None:
+        base = Path(self.temporary.name)
+        snapshot = base / "source-snapshot.json"
+        snapshot.write_bytes(
+            (ROOT / "tests/fixtures/source-snapshot-baseline.json").read_bytes()
+        )
+        before = snapshot.read_bytes()
+        destination = base / "degraded"
+        clock = CLOCK + timedelta(minutes=5)
+
+        with mock.patch("radar.cli.datetime") as current_datetime:
+            current_datetime.now.return_value = clock
+            with mock.patch(
+                "radar.publication_images.fetch_bytes",
+                side_effect=AssertionError("degraded publication attempted network"),
+            ) as fetch:
+                with redirect_stdout(io.StringIO()) as output:
+                    code = repository_main(
+                        [
+                            "republish-last-good",
+                            "--snapshot",
+                            str(snapshot),
+                            "--output",
+                            str(destination),
+                        ]
+                    )
+
+        self.assertEqual(0, code)
+        self.assertEqual("degraded", json.loads(output.getvalue())["status"])
+        feed = json.loads((destination / "events.json").read_text(encoding="utf-8"))
+        self.assertEqual(clock.strftime("%Y-%m-%dT%H:%M:%SZ"), feed["publishedAt"])
+        self.assertTrue(feed["sources"])
+        self.assertEqual({"failed"}, {source["status"] for source in feed["sources"]})
+        self.assertEqual(
+            {"validation-failed"},
+            {source["reason"] for source in feed["sources"]},
+        )
+        self.assertEqual(before, snapshot.read_bytes())
+        fetch.assert_not_called()
 
 
 if __name__ == "__main__":

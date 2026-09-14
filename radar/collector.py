@@ -50,6 +50,15 @@ from .validation import format_timestamp, parse_timestamp, validate_event
 
 SNAPSHOT_SCHEMA = 2
 
+DEGRADED_SOURCE_URLS = {
+    "community": "https://github.com/mtolhuys/omarchy-news-radar/tree/main/content/community",
+    "marketplace": CATALOG_URL,
+    "marketplace-engagement": ENGAGEMENT_URL,
+    "omarchy-news": NEWS_PUBLIC_URL,
+    "omarchy-releases": PUBLIC_URL,
+    "youtube": YOUTUBE_PUBLIC_URL,
+}
+
 
 @dataclass(frozen=True)
 class FixtureInputs:
@@ -96,6 +105,31 @@ def load_snapshot(path: Path) -> dict[str, Any]:
     if not path.exists():
         return empty_snapshot()
     return validate_snapshot(read_json_bounded(path, 16 * 1024 * 1024))
+
+
+def build_degraded_feed(
+    previous_snapshot: Mapping[str, Any], *, now: datetime
+) -> dict[str, Any]:
+    """Reissue retained facts with explicit failed health and no source reads."""
+
+    clock = now.astimezone(timezone.utc).replace(microsecond=0)
+    previous = validate_snapshot(dict(previous_snapshot))
+    checked_at = format_timestamp(clock)
+    return make_feed(
+        generated_at=clock,
+        window_from=clock - timedelta(days=90),
+        sources=[
+            {
+                "id": source_id,
+                "status": "failed",
+                "checkedAt": checked_at,
+                "sourceUrl": source_url,
+                "reason": "validation-failed",
+            }
+            for source_id, source_url in sorted(DEGRADED_SOURCE_URLS.items())
+        ],
+        events=previous["events"],
+    )
 
 
 def collect_from_fixtures(

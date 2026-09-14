@@ -35,7 +35,14 @@ from .client import (
     set_section_filter,
     start_from_today,
 )
-from .collector import FixtureInputs, collect_from_fixtures, collect_production, load_snapshot, save_snapshot
+from .collector import (
+    FixtureInputs,
+    build_degraded_feed,
+    collect_from_fixtures,
+    collect_production,
+    load_snapshot,
+    save_snapshot,
+)
 from .errors import FetchError, RadarError
 from .plugin_update import apply_update, inspect_update
 from .io import atomic_write_json, read_json_bounded
@@ -306,6 +313,10 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
     collect.add_argument("--output", type=Path, default=ROOT / "dist")
     collect.add_argument("--bootstrap-marketplace", action="store_true")
     collect.add_argument("--previous-insights", type=Path)
+    republish = commands.add_parser("republish-last-good")
+    republish.add_argument("--snapshot", type=Path, required=True)
+    republish.add_argument("--output", type=Path, required=True)
+    republish.add_argument("--previous-insights", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.command == "feed-fixture":
@@ -350,6 +361,32 @@ def repository_main(argv: Sequence[str] | None = None) -> int:
             result = publish(feed, args.output, source_revision=revision, published_at=published_at, insights=insights, setup_news=setup_news)
             save_snapshot(args.snapshot, snapshot)
             _print({"status": "ok", "events": len(feed["events"]), **result})
+        elif args.command == "republish-last-good":
+            snapshot = load_snapshot(args.snapshot)
+            published_at = datetime.now(timezone.utc).replace(microsecond=0)
+            feed = build_degraded_feed(snapshot, now=published_at)
+            previous_insights = None
+            if args.previous_insights is not None:
+                try:
+                    previous_insights = validate_insights(
+                        read_json_bounded(args.previous_insights, INSIGHTS_MAX_BYTES),
+                        now=published_at,
+                    )
+                except (RadarError, OSError, json.JSONDecodeError):
+                    previous_insights = None
+            from .setup_news import build_setup_news
+            result = publish(
+                feed,
+                args.output,
+                source_revision=os.environ.get(
+                    "GITHUB_SHA", os.environ.get("SOURCE_REVISION", "working-tree")
+                ),
+                published_at=published_at,
+                insights=previous_insights,
+                setup_news=build_setup_news(snapshot, published_at=published_at),
+                image_fetcher=_offline_preview_image,
+            )
+            _print({"status": "degraded", "events": len(feed["events"]), **result})
         elif args.command == "validate-feed":
             value = json.loads(args.path.read_text(encoding="utf-8"))
             validate_feed(value, now=parse_timestamp(value["generatedAt"]), public_only=True)

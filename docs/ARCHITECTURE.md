@@ -265,6 +265,8 @@ Each Forge publish retains the restored snapshot separately through collection, 
 
 Successor construction marks the exact `plugin-added` event IDs produced by the current marketplace diff as mandatory for that transition. Those events reserve capacity before protected release history and lower-priority rows are selected, so an already-full ledger cannot make the independent audit freeze publication. Missing, expired, or over-bound mandatory events fail explicitly before artifacts are staged; the audit remains a separate defense against implementation or transaction mistakes.
 
+If normal collection or that independent audit still fails, Forge may invoke the separate `republish-last-good` route. It performs no source or image network reads, does not advance the continuity snapshot, rebuilds bounded public artifacts from the last validated snapshot, and marks every source failed at the new attempt time. The next scheduled run always retries normal collection. This degraded path preserves honest source health while preventing one bad candidate from freezing publication freshness.
+
 ## Static publication
 
 Forge Laravel `news-radar:publish` (every five minutes, without overlapping) collects and builds an immutable edition tree containing at least:

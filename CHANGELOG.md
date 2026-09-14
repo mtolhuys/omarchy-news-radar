@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added a networkless last-known-good publication route that emits a freshly timestamped, explicitly failed-source edition without advancing continuity when the normal collector or its audit cannot produce a safe successor.
+
 ### Fixed
 
 - Reserve feed capacity for every marketplace addition observed in the current publication transition, preventing protected release history from starving required addition stories and freezing the Forge publisher.
