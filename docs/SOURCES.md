@@ -32,6 +32,8 @@ https://raw.githubusercontent.com/omacom/omarchy-plugin-marketplace/main/site/ca
 
 The catalog is currently a versioned object containing `generatedAt`, `stateSchemaVersion`, `plugins`, and warnings. Treat this shape as dated research, revalidate it before implementation, and isolate all upstream-specific parsing inside the marketplace adapter.
 
+The encoded and decoded catalog are each capped at 16 MiB. This source-specific bound covers the declared maximum of 5,000 plugin records at the observed schema size while remaining independent of the 2 MiB public feed and generic GitHub response bounds.
+
 The adapter flattens catalog entries by canonical plugin ID and normalizes name, a safely truncated description, version, repository, category, tags, listing times, release URL when public, verification fields, and optional preview-thumbnail metadata.
 
 When the catalog supplies a non-negative `stars` count, Radar may attach it to an existing plugin event as **repository stars**, observed at collection time and linked to the repository. Stars create no event and affect no ordering or significance.

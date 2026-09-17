@@ -67,6 +67,7 @@ The source-test environment must allow a temporary loopback HTTP listener. Sandb
 - Generated-file drift fails validation.
 - Marketplace preview origin/path, byte/content-type agreement, PNG/JPEG/WebP structure, static-only, size/dimension/pixel bounds, direct `sourceUrl` pass-through without hosted raster output, SVG rejection, graceful omission, and rejection of every non-allowlisted image URL; YouTube thumbnails are accepted only in their fixed allowlisted shape.
 - Restored-to-successor marketplace coverage: nondecreasing catalog generation time and one validated addition story for every canonical plugin ID absent from the prior successful snapshot.
+- Catalog growth coverage: a valid catalog larger than the former 8 MiB ceiling remains accepted below the shared 16 MiB source bound; transport and fixture ingestion use that same constant.
 - Saturated-ledger coverage: current-transition marketplace additions displace enough protected release history to remain in the 500-event successor, the independent publication audit passes that exact candidate instead of freezing Forge, and the next cycle still exposes each addition through the complete setup-news companion.
 - Degraded-publication coverage: a fixed clock reissues the validated last-known-good snapshot without any network call, marks every source explicitly failed, leaves continuity byte-identical, and produces a complete bounded edition for the server to promote.
 

@@ -11,7 +11,7 @@ from typing import Any, Mapping, Sequence
 from .curation import apply_curation, load_curation
 from .errors import ValidationError
 from .errors import FetchError
-from .constants import ENGAGEMENT_MAX_BYTES, GITHUB_MAX_BYTES, MAX_EVENTS
+from .constants import CATALOG_MAX_BYTES, ENGAGEMENT_MAX_BYTES, GITHUB_MAX_BYTES, MAX_EVENTS
 from .http import FetchPolicy, decode_json, fetch_bytes
 from .io import atomic_write_json, canonical_json_bytes, read_json_bounded
 from .metrics import enrich_event_metrics
@@ -225,7 +225,7 @@ def collect_from_fixtures(
     if "marketplace" in failed:
         health.append({"id": "marketplace", "status": "failed", "checkedAt": checked_at, "sourceUrl": CATALOG_URL, "reason": failed["marketplace"]})
     else:
-        marketplace_payload = read_json_bounded(inputs.marketplace, 8 * 1024 * 1024)
+        marketplace_payload = read_json_bounded(inputs.marketplace, CATALOG_MAX_BYTES)
         marketplace = parse_marketplace(marketplace_payload)
         old_marketplace = previous_sources.get("marketplace") if isinstance(previous_sources.get("marketplace"), dict) else None
         marketplace_events, marketplace_snapshot = diff_marketplace(
@@ -441,7 +441,7 @@ def collect_production(
         catalog_bytes, _, _ = fetch_bytes(
             CATALOG_URL,
             policy=FetchPolicy(
-                8 * 1024 * 1024,
+                CATALOG_MAX_BYTES,
                 30.0,
                 frozenset({"https://raw.githubusercontent.com"}),
             ),

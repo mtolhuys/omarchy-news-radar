@@ -17,7 +17,7 @@ from radar.collector import (
     load_snapshot,
     validate_snapshot,
 )
-from radar.constants import MAX_EVENTS
+from radar.constants import CATALOG_MAX_BYTES, MAX_EVENTS
 from radar.errors import ValidationError
 from radar.io import canonical_json_bytes
 from radar.model import event_sort_key
@@ -320,6 +320,37 @@ class CollectorIntegrationTests(unittest.TestCase):
             {"community-link", "omarchy-news"},
             {event["type"] for event in feed["events"]},
         )
+
+    def test_marketplace_catalog_bound_covers_the_declared_plugin_capacity(self) -> None:
+        catalog = json.loads(
+            (ROOT / "tests/fixtures/catalog-baseline.json").read_text(encoding="utf-8")
+        )
+        catalog["ignoredPadding"] = "x" * (8 * 1024 * 1024)
+        encoded = canonical_json_bytes(catalog)
+        self.assertGreater(len(encoded), 8 * 1024 * 1024)
+        self.assertLess(len(encoded), CATALOG_MAX_BYTES)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            marketplace = Path(temporary) / "catalog.json"
+            marketplace.write_bytes(encoded)
+            feed, snapshot = collect_from_fixtures(
+                FixtureInputs(
+                    ROOT / "tests/fixtures/releases-baseline.json",
+                    marketplace,
+                    ROOT / "tests/fixtures/community",
+                    ROOT / "content/curation",
+                    ROOT / "tests/fixtures/engagement-baseline.json",
+                ),
+                previous_snapshot=None,
+                now=CLOCK,
+                bootstrap_marketplace=True,
+            )
+
+        marketplace_health = next(
+            source for source in feed["sources"] if source["id"] == "marketplace"
+        )
+        self.assertEqual("current", marketplace_health["status"])
+        self.assertIn("marketplace", snapshot["sources"])
 
 
 if __name__ == "__main__":

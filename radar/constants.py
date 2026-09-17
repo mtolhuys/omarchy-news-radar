@@ -15,7 +15,10 @@ FEED_ORIGIN = "https://mtolhuijs.nl"
 MARKETPLACE_IMAGE_ORIGIN = "https://plugins.omarchy.org"
 YOUTUBE_IMAGE_ORIGIN = "https://i.ytimg.com"
 FEED_MAX_BYTES = 2 * 1024 * 1024
-CATALOG_MAX_BYTES = 8 * 1024 * 1024
+# The catalog permits at most 5,000 plugins. At the observed schema's current
+# size this remains below 13 MiB; keep explicit headroom without sharing the
+# much smaller public-feed or generic GitHub response bounds.
+CATALOG_MAX_BYTES = 16 * 1024 * 1024
 GITHUB_MAX_BYTES = 4 * 1024 * 1024
 ENGAGEMENT_MAX_BYTES = 2 * 1024 * 1024
 MAX_EVENTS = 500

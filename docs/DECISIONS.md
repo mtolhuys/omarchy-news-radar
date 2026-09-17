@@ -544,3 +544,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** Fail-closed candidate validation must prevent corrupt or incomplete source state from becoming authoritative, but it must not freeze the publication clock and every unrelated public surface for hours. Reissuing trusted facts with explicit failed health is both safer and more honest than accepting a bad successor or pretending old source checks are current.
 
 **Consequence:** A collector regression, invalid reviewed input, or audit rejection degrades one edition instead of stopping the public transaction. Readers retain bounded validated facts and see failed source health; operators still receive the reported primary exception. The fallback can fail only when validated continuity or local publication infrastructure is unavailable, which belongs to the server recovery boundary rather than a source-data decision.
+
+## D068 — Size the marketplace transport bound to its declared record capacity
+
+**Decision:** Use one shared 16 MiB bound for both network retrieval and fixture ingestion of the official marketplace catalog. Keep the parser's existing 5,000-plugin limit and every per-field normalization bound unchanged.
+
+**Why:** The valid production catalog reached 8,602,692 bytes at 3,443 plugins and crossed the original 8 MiB transport ceiling. The collector correctly failed soft, but marketplace news then remained on its last-known-good baseline even though the source itself was healthy. At the observed schema size, the declared 5,000-plugin maximum remains below 13 MiB; 16 MiB provides bounded capacity headroom.
+
+**Consequence:** Ordinary catalog growth no longer disables marketplace updates, while encoded and decoded bytes, plugin count, fields, origins, redirects and timeouts remain bounded. A regression fixture larger than 8 MiB must pass below the new ceiling, and payloads above 16 MiB still fail explicitly as `too-large` without advancing marketplace continuity.
