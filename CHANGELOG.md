@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-- Added a networkless last-known-good publication route that emits a freshly timestamped, explicitly failed-source edition without advancing continuity when the normal collector or its audit cannot produce a safe successor.
+## 0.5.8 — 2026-09-17
+
+### Changed
+
+- Treat the strictly validated manifest version as the plugin release boundary, so same-version Forge collector, documentation, and server commits never produce desktop update prompts or commit-race failures.
+
+### Added
+
+- Add a networkless last-known-good publication route that emits a freshly timestamped, explicitly failed-source edition without advancing continuity when the normal collector or its audit cannot produce a safe successor.
 
 ### Fixed
 

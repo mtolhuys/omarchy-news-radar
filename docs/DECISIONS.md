@@ -552,3 +552,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** The valid production catalog reached 8,602,692 bytes at 3,443 plugins and crossed the original 8 MiB transport ceiling. The collector correctly failed soft, but marketplace news then remained on its last-known-good baseline even though the source itself was healthy. At the observed schema size, the declared 5,000-plugin maximum remains below 13 MiB; 16 MiB provides bounded capacity headroom.
 
 **Consequence:** Ordinary catalog growth no longer disables marketplace updates, while encoded and decoded bytes, plugin count, fields, origins, redirects and timeouts remain bounded. A regression fixture larger than 8 MiB must pass below the new ceiling, and payloads above 16 MiB still fail explicitly as `too-large` without advancing marketplace continuity.
+
+## D069 — Make the manifest version the only client release boundary
+
+**Decision:** Compare the strict bounded `manifest.json` versions committed at installed `HEAD` and fetched `FETCH_HEAD`. Offer an update only when the fetched `major.minor.patch` tuple is greater. Resolve cleanliness, fast-forwardability and the official updater only for that real newer release. After apply, require the installed version to reach or exceed the offered version instead of requiring one exact commit SHA.
+
+**Why:** The repository also contains the Forge collector, publication code, tests and documentation. Commit-based detection therefore turned an urgent server-only production fix into a needless desktop update, and exact-SHA completion could falsely fail if another same-version server commit landed between inspection and apply. Separating branches would add permanent merge and deployment drift while still leaving release meaning implicit.
+
+**Consequence:** Server, collector and documentation changes can ship on the ordinary branch without notifying desktops as long as the manifest version is unchanged. A manifest bump is now an explicit client-release act and remains subject to the complete release contract. Bounded identity/version parsing, clean fast-forward requirements for a real update, and delegation to Omarchy's official updater remain fail closed. Temporary-repository tests cover same-version commits, dirt, divergence and the apply race.

@@ -84,6 +84,15 @@ omarchy_host_test() {
   wait_for_guest_state "candidate replaces plugin source" 20 ssh_session \
     "omarchy-plugin-list --json | jq -e 'any(.[]; .id == \"io.github.mtolhuys.news-radar\" and .enabled == true)' && jq -e '.version == \"$candidate_version\"' $plugin_dir/manifest.json && grep -Fq 'shell summon io.github.mtolhuys.news-radar' $plugin_dir/src/BarWidget.qml" || return 1
 
+  # A later Forge/documentation commit with the same manifest version must not
+  # become a desktop update, even when the installed checkout is dirty.
+  ssh_guest "printf 'server-only\\n' > /tmp/news-radar-upgrade-origin/server-only.txt && git -C /tmp/news-radar-upgrade-origin add server-only.txt && git -C /tmp/news-radar-upgrade-origin -c user.name=PluginLab -c user.email=lab@invalid commit -qm server-only"
+  ssh_session "printf 'personal\\n' > $plugin_dir/.local-dirty && $plugin_dir/bin/news-radar-client update-status" >"$RUN_DIR/news-radar-same-version-update-status.json" || return 1
+  jq -e --arg version "$candidate_version" \
+    '.status == "ok" and .state == "current" and .updateAvailable == false and .canApply == false and .installedVersion == $version and .availableVersion == $version and .installedCommit != .availableCommit' \
+    "$RUN_DIR/news-radar-same-version-update-status.json" >/dev/null || return 1
+  ssh_session "rm -- $plugin_dir/.local-dirty" || return 1
+
   wait_for_guest_state "the update alone migrates the exact owned legacy action" 20 ssh_session \
     "$shortcut status | jq -e '.classification == \"owned\"' && grep -Fq 'shell summon io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && ! grep -Fq 'shell toggle io.github.mtolhuys.news-radar' \"\$HOME/.config/hypr/bindings.lua\" && compgen -G \"\$HOME/.config/hypr/bindings.lua.news-radar-backup-*\" >/dev/null && test -z \"\$(hyprctl configerrors)\" && hyprctl -j clients | jq -e 'all(.[]; .title != \"📰 Omarchy News Radar\")'" || return 1
   ssh_session "$shortcut status" >"$RUN_DIR/news-radar-candidate-updated-shortcut-status.json" || return 1

@@ -1,14 +1,16 @@
-"""Detect and apply Omarchy News Radar plugin updates via the official updater.
+"""Detect released Omarchy News Radar updates via the official updater.
 
-Radar never implements its own fetch/merge path. Status mirrors the same
-checks `omarchy-plugin-update` uses (clean git checkout, fetch origin HEAD,
-compare HEAD to FETCH_HEAD, fast-forwardability). Apply always shells out to
-`omarchy-plugin-update <PLUGIN_ID> --yes`, which validates and rescans.
+Repository commits are not releases: the same tree also contains the Forge
+collector and documentation. Availability is therefore based on the bounded,
+strict versions in the installed and fetched manifests. Apply always shells
+out to `omarchy-plugin-update <PLUGIN_ID> --yes`, which validates and rescans.
 """
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -17,9 +19,13 @@ from typing import Any, Mapping
 from .constants import PLUGIN_ID
 from .errors import RadarError
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 UPDATER_NAME = "omarchy-plugin-update"
 DEFAULT_PLUGINS_DIR = Path(".config/omarchy/plugins")
+MANIFEST_MAX_BYTES = 64 * 1024
+VERSION_RE = re.compile(
+    r"^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$"
+)
 
 
 def _plugins_dir(environment: Mapping[str, str] | None = None) -> Path:
@@ -72,6 +78,38 @@ def _can_fast_forward(plugin_dir: Path, current: str, remote: str) -> bool:
     return merge_base.stdout.strip() == current
 
 
+def _manifest_version(plugin_dir: Path, ref: str) -> tuple[str, tuple[int, int, int]]:
+    """Read one committed, bounded plugin identity without checking it out."""
+
+    object_name = f"{ref}:manifest.json"
+    size = _run_git(plugin_dir, "cat-file", "-s", object_name, check=False)
+    if size.returncode != 0:
+        raise RadarError("manifest.json is missing")
+    try:
+        byte_count = int(size.stdout.strip())
+    except ValueError as exc:
+        raise RadarError("manifest.json has an invalid Git object size") from exc
+    if not 1 <= byte_count <= MANIFEST_MAX_BYTES:
+        raise RadarError("manifest.json exceeds its byte bound")
+    try:
+        shown = _run_git(plugin_dir, "show", object_name, check=False)
+    except UnicodeDecodeError as exc:
+        raise RadarError("manifest.json is not valid UTF-8") from exc
+    if shown.returncode != 0 or len(shown.stdout.encode("utf-8")) > MANIFEST_MAX_BYTES:
+        raise RadarError("manifest.json cannot be read safely")
+    try:
+        manifest = json.loads(shown.stdout)
+    except json.JSONDecodeError as exc:
+        raise RadarError("manifest.json is not valid JSON") from exc
+    if not isinstance(manifest, dict) or manifest.get("id") != PLUGIN_ID:
+        raise RadarError("manifest.json has the wrong plugin identity")
+    version = manifest.get("version")
+    match = VERSION_RE.fullmatch(version) if isinstance(version, str) else None
+    if match is None:
+        raise RadarError("manifest.json has an invalid release version")
+    return version, tuple(int(part) for part in match.groups())
+
+
 def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
     """Return a protocol payload describing whether an update is available."""
 
@@ -86,6 +124,8 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         "message": "",
         "installedCommit": "",
         "availableCommit": "",
+        "installedVersion": "",
+        "availableVersion": "",
         "updater": UPDATER_NAME,
     }
 
@@ -101,24 +141,19 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         return payload
 
     try:
-        _resolve_updater()
-    except RadarError as exc:
-        payload["state"] = "blocked"
-        payload["message"] = str(exc)
-        return payload
-
-    try:
         installed = _rev_parse(plugin_dir, "HEAD")
     except subprocess.CalledProcessError:
         payload["state"] = "blocked"
         payload["message"] = "Installed plugin checkout has no readable HEAD."
         return payload
     payload["installedCommit"] = installed
-
-    if _dirty(plugin_dir):
+    try:
+        installed_version, installed_key = _manifest_version(plugin_dir, installed)
+    except RadarError as exc:
         payload["state"] = "blocked"
-        payload["message"] = "Installed plugin has local changes; update is blocked until it is clean."
+        payload["message"] = f"Installed plugin {exc}."
         return payload
+    payload["installedVersion"] = installed_version
 
     fetch = _run_git(plugin_dir, "fetch", "--quiet", "origin", "HEAD", check=False)
     if fetch.returncode != 0:
@@ -134,27 +169,45 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         payload["message"] = "Update check could not resolve the remote tip."
         return payload
     payload["availableCommit"] = available
+    try:
+        available_version, available_key = _manifest_version(plugin_dir, available)
+    except RadarError as exc:
+        payload["state"] = "check-failed"
+        payload["message"] = f"Fetched plugin {exc}."
+        return payload
+    payload["availableVersion"] = available_version
 
-    # A local release candidate can already contain every public commit. That
-    # is current with upstream, not an update that failed to fast-forward.
-    if available == installed or _can_fast_forward(plugin_dir, available, installed):
+    # Collector, documentation and other server-owned commits are deliberately
+    # invisible to clients until the manifest declares a newer release.
+    if available_key <= installed_key:
         payload["state"] = "current"
         payload["message"] = ""
         return payload
 
+    payload["updateAvailable"] = True
+    try:
+        _resolve_updater()
+    except RadarError as exc:
+        payload["state"] = "blocked"
+        payload["message"] = str(exc)
+        return payload
+
+    if _dirty(plugin_dir):
+        payload["state"] = "blocked"
+        payload["message"] = "Installed plugin has local changes; update is blocked until it is clean."
+        return payload
+
     if not _can_fast_forward(plugin_dir, installed, available):
         payload["state"] = "blocked"
-        payload["updateAvailable"] = True
         payload["message"] = (
-            "Upstream changes are available, but this checkout has local history. "
+            f"News Radar {available_version} is available, but this checkout has local history. "
             "Automatic update is unavailable."
         )
         return payload
 
     payload["state"] = "behind"
-    payload["updateAvailable"] = True
     payload["canApply"] = True
-    payload["message"] = "A newer News Radar is available."
+    payload["message"] = f"News Radar {available_version} is available."
     return payload
 
 
@@ -174,12 +227,17 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
             or "No applyable News Radar update is available.",
             "installedCommit": status.get("installedCommit") or "",
             "availableCommit": status.get("availableCommit") or "",
+            "installedVersion": status.get("installedVersion") or "",
+            "availableVersion": status.get("availableVersion") or "",
             "updater": UPDATER_NAME,
         }
 
     updater = _resolve_updater()
     before = str(status.get("installedCommit") or "")
     expected = str(status.get("availableCommit") or "")
+    before_version = str(status.get("installedVersion") or "")
+    expected_version = str(status.get("availableVersion") or "")
+    expected_key = tuple(int(part) for part in expected_version.split("."))
     completed = subprocess.run(
         [updater, PLUGIN_ID, "--yes"],
         capture_output=True,
@@ -206,21 +264,33 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
             "message": detail or "Official plugin update failed.",
             "installedCommit": after or before,
             "availableCommit": expected,
+            "installedVersion": before_version,
+            "availableVersion": expected_version,
             "updater": UPDATER_NAME,
         }
 
-    if after and expected and after != expected:
-        # Updater reported success but tip did not move as expected — still surface truth.
+    after_version = ""
+    after_key: tuple[int, int, int] | None = None
+    if after:
+        try:
+            after_version, after_key = _manifest_version(plugin_dir, after)
+        except RadarError:
+            pass
+    if after_key is None or after_key < expected_key:
+        # A server-only commit may land between inspection and apply. Reaching
+        # the expected release version is the invariant, not one transient SHA.
         return {
             "protocolVersion": PROTOCOL_VERSION,
             "status": "failed",
             "state": "failed",
             "pluginId": PLUGIN_ID,
-            "updateAvailable": after != expected,
-            "canApply": after != expected,
+            "updateAvailable": True,
+            "canApply": True,
             "message": detail or "Updater finished without reaching the expected commit.",
             "installedCommit": after,
             "availableCommit": expected,
+            "installedVersion": after_version,
+            "availableVersion": expected_version,
             "updater": UPDATER_NAME,
         }
 
@@ -234,6 +304,8 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
         "message": "News Radar updated. The panel will reload with the new version.",
         "installedCommit": after or expected,
         "availableCommit": expected,
+        "installedVersion": after_version or expected_version,
+        "availableVersion": expected_version,
         "updater": UPDATER_NAME,
         "detail": detail,
     }

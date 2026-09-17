@@ -145,7 +145,10 @@ def validate_manifest() -> None:
     if manifest["schemaVersion"] != 1 or manifest["id"] != "io.github.mtolhuys.news-radar":
         fail("manifest identity is invalid")
     version = manifest.get("version")
-    if not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+    if not isinstance(version, str) or not re.fullmatch(
+        r"(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})",
+        version,
+    ):
         fail("manifest version is invalid")
     package_version = re.search(
         r'^__version__ = "([^"]+)"$',
