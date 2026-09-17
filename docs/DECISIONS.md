@@ -560,3 +560,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** The repository also contains the Forge collector, publication code, tests and documentation. Commit-based detection therefore turned an urgent server-only production fix into a needless desktop update, and exact-SHA completion could falsely fail if another same-version server commit landed between inspection and apply. Separating branches would add permanent merge and deployment drift while still leaving release meaning implicit.
 
 **Consequence:** Server, collector and documentation changes can ship on the ordinary branch without notifying desktops as long as the manifest version is unchanged. A manifest bump is now an explicit client-release act and remains subject to the complete release contract. Bounded identity/version parsing, clean fast-forward requirements for a real update, and delegation to Omarchy's official updater remain fail closed. Temporary-repository tests cover same-version commits, dirt, divergence and the apply race.
+
+## D070 — Keep one helper protocol contract across Python and QML
+
+**Decision:** Every Python helper response, including plugin update status and apply, uses `HELPER_PROTOCOL_VERSION`. The QML parser must accept that exact value, and CI checks both sides together. Adding fields without changing envelope semantics does not change the protocol version.
+
+**Why:** Version 0.5.8 declared a second updater-local protocol version even though its response remained compatible with the existing helper envelope. QML correctly rejected the mismatch, making update status unusable for every installation that received that release.
+
+**Consequence:** A helper cannot independently invent or bump its protocol version. Any genuinely incompatible protocol change must update the shared constant, every producer, every consumer, compatibility behavior, and cross-language tests in one release.

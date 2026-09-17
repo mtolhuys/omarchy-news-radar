@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.5.9 — 2026-09-17
+
+### Fixed
+
+- Restore update-helper compatibility with the QML client after 0.5.8 emitted an unsupported protocol version.
+- Make every update response use the shared helper protocol constant and add a cross-language CI contract test so Python and QML cannot drift unnoticed again.
+
 ## 0.5.8 — 2026-09-17
 
 ### Changed

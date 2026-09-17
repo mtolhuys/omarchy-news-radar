@@ -5,7 +5,7 @@ import re
 import unittest
 from pathlib import Path
 
-from radar.constants import CLIENT_SECTIONS
+from radar.constants import CLIENT_SECTIONS, HELPER_PROTOCOL_VERSION
 from radar.filters import SECTION_EVENT_TYPES
 from radar.sections import SECTION_SOURCE_SUMMARIES
 from scripts.validate_repo import property_signal_collisions
@@ -14,6 +14,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class QmlContractTests(unittest.TestCase):
+    def test_qml_and_python_share_the_helper_protocol_contract(self) -> None:
+        model = (ROOT / "src/Model.js").read_text(encoding="utf-8")
+        updater = (ROOT / "radar/plugin_update.py").read_text(encoding="utf-8")
+        self.assertEqual(1, HELPER_PROTOCOL_VERSION)
+        self.assertIn(
+            f"parsed.protocolVersion !== {HELPER_PROTOCOL_VERSION}",
+            model,
+        )
+        self.assertIn(
+            'from .constants import HELPER_PROTOCOL_VERSION, PLUGIN_ID',
+            updater,
+        )
+        self.assertNotRegex(updater, r"(?m)^PROTOCOL_VERSION\s*=")
+
     def test_manifest_pairs_panel_with_optional_collapsible_bar_widget(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(["panel", "bar-widget"], manifest["kinds"])

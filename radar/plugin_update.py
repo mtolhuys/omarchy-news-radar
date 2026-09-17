@@ -16,10 +16,9 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
-from .constants import PLUGIN_ID
+from .constants import HELPER_PROTOCOL_VERSION, PLUGIN_ID
 from .errors import RadarError
 
-PROTOCOL_VERSION = 2
 UPDATER_NAME = "omarchy-plugin-update"
 DEFAULT_PLUGINS_DIR = Path(".config/omarchy/plugins")
 MANIFEST_MAX_BYTES = 64 * 1024
@@ -115,7 +114,7 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
 
     plugin_dir = plugin_install_dir(environment)
     payload: dict[str, Any] = {
-        "protocolVersion": PROTOCOL_VERSION,
+        "protocolVersion": HELPER_PROTOCOL_VERSION,
         "status": "ok",
         "pluginId": PLUGIN_ID,
         "state": "unavailable",
@@ -217,7 +216,7 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
     status = inspect_update(environment)
     if not status.get("canApply"):
         return {
-            "protocolVersion": PROTOCOL_VERSION,
+            "protocolVersion": HELPER_PROTOCOL_VERSION,
             "status": "failed" if status.get("state") in {"blocked", "check-failed", "unavailable"} else "ok",
             "state": status.get("state") or "unavailable",
             "pluginId": PLUGIN_ID,
@@ -255,7 +254,7 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
 
     if completed.returncode != 0:
         return {
-            "protocolVersion": PROTOCOL_VERSION,
+            "protocolVersion": HELPER_PROTOCOL_VERSION,
             "status": "failed",
             "state": "failed",
             "pluginId": PLUGIN_ID,
@@ -280,7 +279,7 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
         # A server-only commit may land between inspection and apply. Reaching
         # the expected release version is the invariant, not one transient SHA.
         return {
-            "protocolVersion": PROTOCOL_VERSION,
+            "protocolVersion": HELPER_PROTOCOL_VERSION,
             "status": "failed",
             "state": "failed",
             "pluginId": PLUGIN_ID,
@@ -295,7 +294,7 @@ def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]
         }
 
     return {
-        "protocolVersion": PROTOCOL_VERSION,
+        "protocolVersion": HELPER_PROTOCOL_VERSION,
         "status": "ok",
         "state": "updated",
         "pluginId": PLUGIN_ID,

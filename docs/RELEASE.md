@@ -1,6 +1,6 @@
 # Release contract
 
-Version `0.5.8` is the current release. It makes the strict manifest version the only client-update boundary, so same-version Forge collector, documentation, and server commits remain silent on desktops. Feed schema remains v2; insights remain v1; setup news remains v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.8.md).
+Version `0.5.9` is the current release. It restores update-helper protocol compatibility and makes the shared helper protocol constant the only Python source for every updater response. The strict manifest version remains the only client-update boundary, so same-version Forge collector, documentation, and server commits remain silent on desktops. Feed schema remains v2; insights remain v1; setup news remains v1; private state remains v13 with supported v1–v12 data preserved. See the [release notes](release-notes/0.5.9.md).
 
 The README walkthrough and root marketplace preview use inspected captures from the final disposable runtime. The maintainer-controlled marketplace snapshot and exact-commit compatibility evidence remain separate from release publication; marketplace verification is not a security audit.
 
@@ -8,7 +8,7 @@ The README walkthrough and root marketplace preview use inspected captures from 
 
 Record the working-tree status, manifest version, panel build identity, Python helper version, feed and state schemas, generated artifact SHA-256, selected Omarchy source revision, Plugin Lab ISO/base identity, exact public commit, and release tag.
 
-The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.8`. The [0.5.8 evidence](evidence/0.5.8-local.md) records release-aware update regression and disposable-lab coverage. The 0.5.7 evidence remains the Saved durability baseline; the 0.5.6 evidence remains the Omarchy 4.0.3 helper-path baseline; the 0.5.5 evidence remains the broad focus-transfer and disposable-desktop baseline.
+The manifest, Python package, helper build, panel, changelog, and release notes identify `0.5.9`. The [0.5.9 evidence](evidence/0.5.9-local.md) records the protocol-regression repair and exact update-response contract. The 0.5.8 evidence remains the release-aware updater baseline; the 0.5.7 evidence remains the Saved durability baseline; the 0.5.6 evidence remains the Omarchy 4.0.3 helper-path baseline.
 
 ## Publishable checklist
 
@@ -81,7 +81,7 @@ These are acceptance requirements; completed checks and remaining limitations be
 - The networked Plugin Lab preview journey renders the fixed public edition in the exact Matte Black marketing frame; the README crop matches its recorded window geometry.
 - Public clean-clone installation, first-use Front Page, shortcut setup/removal, read state, and plugin removal pass for the exact remotely available release commit through the state-v13 journey.
 - Workflow actions are pinned and permissions are least privilege.
-- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.8. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
+- README, changelog, manifest, UI version, feed/state schemas, release notes, and evidence agree on 0.5.9. Screenshot provenance is explicit where the unchanged interface is shown from an inspected 0.5.3 runtime.
 - Repository contains no secrets, private state, real bindings, caches, VM disks, lab output, generated deployment tree, or machine-local paths.
 - Push, tag, release, marketplace submission, domain change, and external announcement require owner authorization. GitHub Pages is not the live publication path.
 
@@ -169,6 +169,10 @@ The owner tested runtime commit `968cdf5` on the daily desktop and approved publ
 
 The owner reviewed the regression and approved a patch release on 2026-09-10. The [evidence](evidence/0.5.6-local.md) records source checks, exact Omarchy 4.0.3 QML validation, and the focused disposable-guest helper-path journey. Publish one clean final commit, require green CI and an exact public-clone journey, then update marketplace verification issue #6193 in place with the full release SHA. Marketplace approval and snapshot promotion remain maintainer-controlled.
 
+
+## 0.5.9 helper-protocol recovery gate
+
+The 0.5.8 updater accidentally emitted protocol version 2 while the QML parser accepts the repository-wide helper protocol version 1. The [evidence](evidence/0.5.9-local.md) must record the cross-language contract test, every updater result path using the shared constant, a real temporary-checkout 0.5.8-to-0.5.9 update, complete source validation, official marketplace baseline, green GitHub CI, and Forge publication before this repair is declared complete. A helper protocol bump is forbidden unless the producer and every consumer change atomically with compatibility coverage.
 
 ## 0.5.8 release-aware update gate
 

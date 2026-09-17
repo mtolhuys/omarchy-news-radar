@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from radar.constants import PLUGIN_ID
+from radar.constants import HELPER_PROTOCOL_VERSION, PLUGIN_ID
 from radar.plugin_update import apply_update, inspect_update
 
 
@@ -92,6 +92,7 @@ class PluginUpdateTests(unittest.TestCase):
         with mock.patch("radar.plugin_update.shutil.which", return_value="/usr/bin/omarchy-plugin-update"):
             status = inspect_update(self.env)
         self.assertEqual("current", status["state"])
+        self.assertEqual(HELPER_PROTOCOL_VERSION, status["protocolVersion"])
         self.assertFalse(status["updateAvailable"])
         self.assertEqual(self.base, status["installedCommit"])
 
@@ -216,6 +217,7 @@ class PluginUpdateTests(unittest.TestCase):
 
         self.assertEqual([["/usr/bin/omarchy-plugin-update", PLUGIN_ID, "--yes"]], calls)
         self.assertEqual("updated", result["state"])
+        self.assertEqual(HELPER_PROTOCOL_VERSION, result["protocolVersion"])
         self.assertEqual(tip, result["installedCommit"])
         self.assertEqual("0.0.2", result["installedVersion"])
 
