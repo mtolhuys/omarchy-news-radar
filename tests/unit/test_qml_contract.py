@@ -87,8 +87,12 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("property bool componentReady: false", widget)
         self.assertIn("property bool shortcutMigrationAttempted: false", widget)
         self.assertIn("property bool indicatorUpdatePending: false", widget)
-        self.assertIn('runHelper(installedProc, ["installed"])', widget)
-        self.assertIn('"indicator", "--installed-json", JSON.stringify(pluginIds)', widget)
+        self.assertIn('runHelper(indicatorProc, ["indicator-current"])', widget)
+        self.assertNotIn("id: installedProc", widget)
+        self.assertNotIn("interval: 30000", widget)
+        self.assertIn('path: root.cacheBase + "/omarchy-news-radar/setup-news.json"', widget)
+        self.assertIn('path: root.configBase + "/omarchy/shell.json"', widget)
+        self.assertIn("Component.onDestruction: stopOwnedProcesses()", widget)
         self.assertIn("onExited: function() { root.startIndicatorUpdate() }", widget)
         self.assertNotIn("installedPluginsReady", widget)
 
@@ -138,6 +142,12 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn('startProcess(preferencesProc, ["read"])', actions)
         self.assertIn("session.localStateReady || stateMutationPending || preferencesProc.running", actions)
         self.assertIn("onPreferencesReady:", panel)
+        self.assertIn("storyViewportController.clear()", panel)
+        self.assertIn("feedSession.releaseModels()", panel)
+        self.assertIn("detailParents.concat([detailItem]).slice(-16)", panel)
+        self.assertIn("function releaseModels()", session)
+        release_models = session[session.index("function releaseModels()"):session.index("function handleRead(")]
+        self.assertNotIn("retainedReadIds =", release_models)
         # Model payloads and the live viewport anchor remain stable across read writes.
         for invariant in ("preservedSelectedId", "preservedAnchorId", "preservedAnchorTop",
                           "pendingViewportRevision !== storyViewportRevision", "pendingViewportAttempts = 24",

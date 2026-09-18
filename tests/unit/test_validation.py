@@ -8,7 +8,14 @@ from pathlib import Path
 
 from radar.errors import ValidationError
 from radar.model import event_id, front_page, project_section
-from radar.validation import normalize_text, validate_feed, validate_https_url
+from radar.validation import (
+    _https_url_verdict,
+    _parse_canonical_timestamp,
+    normalize_text,
+    parse_timestamp,
+    validate_feed,
+    validate_https_url,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 NOW = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
@@ -123,6 +130,16 @@ class ValidationTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValidationError):
                 validate_https_url(value)
         self.assertEqual("https://github.com/example/project", validate_https_url("https://github.com/example/project"))
+
+    def test_hot_validation_caches_are_bounded_and_keep_strict_failures(self) -> None:
+        self.assertEqual(8192, _parse_canonical_timestamp.cache_parameters()["maxsize"])
+        self.assertEqual(8192, _https_url_verdict.cache_parameters()["maxsize"])
+        self.assertEqual(
+            datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc),
+            parse_timestamp("2026-08-31T14:00:00Z"),
+        )
+        with self.assertRaises(ValidationError):
+            parse_timestamp("2026-02-30T14:00:00Z")
 
     def test_public_feed_accepts_allowlisted_marketplace_image_urls_and_legacy_paths(self) -> None:
         internal = copy.deepcopy(self.feed)

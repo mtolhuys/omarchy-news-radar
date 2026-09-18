@@ -237,6 +237,11 @@ Item {
     preferencesOpen = false
     sectionSettingsOpen = false
     stopOwnedProcesses()
+    detailItem = null
+    detailParents = []
+    discoveryView.resetRoute()
+    storyViewportController.clear()
+    feedSession.releaseModels()
     windowController.stop()
     closingFromHost = false
   }
@@ -338,7 +343,7 @@ Item {
   function showInsight(item) {
     if (!item) return
     readerActions.cancelInitialStoryRead()
-    if (detailItem) detailParents = detailParents.concat([detailItem])
+    if (detailItem) detailParents = detailParents.concat([detailItem]).slice(-16)
     var full = (feedSession.insightsModel.projectDetails || []).concat(feedSession.setupModel, feedSession.insightsModel.projects || []).filter(function(project) { return project.id === item.id })
     detailItem = full.length ? full[0] : item
     Qt.callLater(function() { insightDetail.focusFirst() })

@@ -80,6 +80,24 @@ class ClientCliIntegrationTests(unittest.TestCase):
         self.assertEqual("failed", payload["status"])
         self.assertEqual("installed plugin IDs are invalid JSON", payload["message"])
 
+    def test_current_indicator_resolves_installed_context_in_one_helper(self) -> None:
+        with mock.patch(
+            "radar.client_projection.installed_plugins",
+            return_value={"status": "ok", "pluginIds": ["io.github.mtolhuys.disk-lens"]},
+        ):
+            status, payload = self.run_client("indicator-current")
+
+        self.assertEqual(0, status)
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual(
+            indicator_model(
+                self.environment,
+                now=CLOCK,
+                installed_json='["io.github.mtolhuys.disk-lens"]',
+            )["unread"],
+            payload["unread"],
+        )
+
     def test_explicit_briefing_and_onboarding_commands_share_one_snapshot(self) -> None:
         code, prepared = self.run_client("ensure-briefing", "--installed-json", '["io.github.mtolhuys.disk-lens"]')
         self.assertEqual(0, code)

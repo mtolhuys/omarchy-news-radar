@@ -12,7 +12,7 @@ from .client_briefing import _briefing_rows, _briefing_status
 from .client_common import _parse_installed_plugin_ids, response
 from .client_insights import compact_project, insight_projection, load_insights
 from .client_presentation import decorate_events
-from .client_setup import parse_installed_facts
+from .client_setup import installed_plugins, parse_installed_facts
 from .client_setup_news import load_setup_news, merge_setup_news
 from .constants import CLIENT_SECTIONS, FEED_URL
 from .discovery import discovery_edition, automatic_discoveries
@@ -343,4 +343,20 @@ def indicator_model(
         timing=timing,
         lastUpdateCheck=update_check,
         visibleSections=list(visible_client_sections(preferences["sectionVisibility"])),
+    )
+
+
+def current_indicator_model(
+    environment: Mapping[str, str] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Resolve local plugin context and the badge in one short-lived helper."""
+
+    installed = installed_plugins(environment)
+    plugin_ids = installed["pluginIds"] if installed.get("status") == "ok" else []
+    return indicator_model(
+        environment,
+        now=now,
+        installed_json=json.dumps(plugin_ids, separators=(",", ":")),
     )

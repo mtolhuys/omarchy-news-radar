@@ -163,6 +163,28 @@ Item {
     setupNewsProc.running = false
     refreshing = false
   }
+  function releaseModels() {
+    cachedFeed = null
+    installedPluginIds = []
+    installedPluginFacts = []
+    installedFactsAvailable = false
+    homeModel = ({ recentAdditions: [], recentChanges: [], discoveryStatus: "", setupUpdates: [] })
+    setupModel = []
+    insightsModel = ({ status: "missing", projects: [], collections: [], projectDetails: [] })
+    relevanceControls = []
+    blockingMutes = []
+    counts = ({})
+    unreadCounts = ({})
+    filterOptions = []
+    displayedFeedDigest = ""
+    displayedFeedEventCount = 0
+    totalStories = 0
+    retainedReadStories = 0
+    hiddenReadStories = 0
+    hasMoreStories = false
+    localStateReady = false
+    installedPluginsReady = false
+  }
   function handleRead(raw) {
     var result = RadarModel.parseResponse(raw)
     userState = result.state || userState

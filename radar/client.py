@@ -16,7 +16,7 @@ from .client_feed import (CLIENT_USER_AGENT, FeedFetch, read_model, refresh, ref
 from .client_briefing import (complete_onboarding, ensure_briefing, start_from_today,
                               mark_briefing_read, _briefing_candidates, _briefing_status,
                               _briefing_rows, _filtered_briefing_members)
-from .client_projection import (indicator_model, projection_model, _filtered_section_events,
+from .client_projection import (current_indicator_model, indicator_model, projection_model, _filtered_section_events,
                                 _persistent_section_events, _unread_event_ids)
 from .client_reading import (toggle_saved_state, set_event_read_state, mark_section_read_state,
                              set_preferences, set_section_filter)

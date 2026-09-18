@@ -6,6 +6,7 @@ import ipaddress
 import re
 import unicodedata
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from typing import Any, Iterable, Mapping
 from urllib.parse import urlsplit
 
@@ -120,13 +121,35 @@ def normalize_text(value: Any, maximum: int, *, minimum: int = 1) -> str:
     return normalized
 
 
+@lru_cache(maxsize=8192)
+def _parse_canonical_timestamp(value: str) -> datetime:
+    """Parse one already shape-checked timestamp through a bounded hot cache."""
+
+    try:
+        # Constructing the fixed UTC shape directly avoids strptime's locale
+        # machinery. Feed validation repeatedly sees the same timestamps while
+        # joining the bounded public companions, so the cache removes that
+        # duplicate work without retaining an unbounded history.
+        return datetime(
+            int(value[0:4]),
+            int(value[5:7]),
+            int(value[8:10]),
+            int(value[11:13]),
+            int(value[14:16]),
+            int(value[17:19]),
+            tzinfo=timezone.utc,
+        )
+    except ValueError as exc:
+        raise ValidationError("timestamp is not real") from exc
+
+
 def parse_timestamp(value: Any, name: str = "timestamp") -> datetime:
     require_string(value, name, 20, 20)
     if not TIMESTAMP_RE.fullmatch(value):
         raise ValidationError(f"{name} must be canonical UTC RFC 3339")
     try:
-        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-    except ValueError as exc:
+        parsed = _parse_canonical_timestamp(value)
+    except ValidationError as exc:
         raise ValidationError(f"{name} is not a real timestamp") from exc
     return parsed
 
@@ -137,27 +160,47 @@ def format_timestamp(value: datetime) -> str:
     return value.astimezone(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def validate_https_url(value: Any, name: str = "URL") -> str:
-    url = require_string(value, name, 1, 2048)
+@lru_cache(maxsize=8192)
+def _https_url_verdict(url: str) -> str | None:
+    """Return the stable failure kind for one bounded URL, or None when valid."""
+
     if CONTROL_RE.search(url):
-        raise ValidationError(f"{name} contains control characters")
+        return "control"
     try:
         parsed = urlsplit(url)
         port = parsed.port
-    except ValueError as exc:
-        raise ValidationError(f"{name} is malformed") from exc
+    except ValueError:
+        return "malformed"
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise ValidationError(f"{name} must be a credential-free HTTPS URL")
+        return "credentials"
     if port not in (None, 443):
-        raise ValidationError(f"{name} uses an unsupported port")
+        return "port"
     hostname = parsed.hostname.rstrip(".").lower()
     if hostname == "localhost" or "." not in hostname:
-        raise ValidationError(f"{name} must use a public hostname")
+        return "public-host"
     try:
         address = ipaddress.ip_address(hostname.strip("[]"))
     except ValueError:
         address = None
     if address is not None and not address.is_global:
+        return "private-host"
+    return None
+
+
+def validate_https_url(value: Any, name: str = "URL") -> str:
+    url = require_string(value, name, 1, 2048)
+    verdict = _https_url_verdict(url)
+    if verdict == "control":
+        raise ValidationError(f"{name} contains control characters")
+    if verdict == "malformed":
+        raise ValidationError(f"{name} is malformed")
+    if verdict == "credentials":
+        raise ValidationError(f"{name} must be a credential-free HTTPS URL")
+    if verdict == "port":
+        raise ValidationError(f"{name} uses an unsupported port")
+    if verdict == "public-host":
+        raise ValidationError(f"{name} must use a public hostname")
+    if verdict == "private-host":
         raise ValidationError(f"{name} must not use a private host literal")
     return url
 

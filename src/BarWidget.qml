@@ -20,6 +20,7 @@ BarWidget {
   readonly property string shortcutHelperPath: root.pluginDir ? root.pluginDir + "/bin/news-radar-shortcut" : ""
   readonly property string stateBase: Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")
   readonly property string cacheBase: Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")
+  readonly property string configBase: Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
   readonly property int refreshMinimumAgeSeconds: 5 * 60
   // First due-check after enablement or helper discovery. Named so the
   // one-shot timer is never confused with a 1.8-second polling interval.
@@ -57,15 +58,9 @@ BarWidget {
 
   function startIndicatorUpdate() {
     if (!helperPath || !indicatorUpdatePending
-        || installedProc.running || indicatorProc.running) return
+        || indicatorProc.running) return
     indicatorUpdatePending = false
-    runHelper(installedProc, ["installed"])
-  }
-
-  function requestIndicator(pluginIds) {
-    runHelper(indicatorProc, [
-      "indicator", "--installed-json", JSON.stringify(pluginIds)
-    ])
+    runHelper(indicatorProc, ["indicator-current"])
   }
 
   function refreshIfDue() {
@@ -112,6 +107,15 @@ BarWidget {
     shortcutMigrationProc.running = true
   }
 
+  function stopOwnedProcesses() {
+    refreshTimer.stop()
+    indicatorProc.running = false
+    preferenceProc.running = false
+    refreshProc.running = false
+    shortcutMigrationProc.running = false
+    indicatorUpdatePending = false
+  }
+
   onHelperPathChanged: {
     if (!helperPath) return
     updateIndicator()
@@ -133,19 +137,6 @@ BarWidget {
       refreshTimer.interval = initialRefreshDelayMs
       refreshTimer.restart()
     } else refreshTimer.stop()
-  }
-
-  Process {
-    id: installedProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var result = RadarModel.parseResponse(text)
-        var pluginIds = result.status === "ok" && Array.isArray(result.pluginIds)
-          ? result.pluginIds : []
-        root.requestIndicator(pluginIds)
-      }
-    }
   }
 
   Process {
@@ -211,13 +202,35 @@ BarWidget {
   }
 
   FileView {
+    id: setupNewsWatcher
+    path: root.cacheBase + "/omarchy-news-radar/setup-news.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: {
+      reload()
+      if (root.barVisible) root.updateIndicator()
+    }
+  }
+
+  FileView {
+    id: pluginConfigWatcher
+    path: root.configBase + "/omarchy/shell.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: {
+      reload()
+      if (root.barVisible) root.updateIndicator()
+    }
+  }
+
+  FileView {
     id: feedWatcher
     path: root.cacheBase + "/omarchy-news-radar/feed.json"
     watchChanges: true
     printErrors: false
     onFileChanged: {
       reload()
-      root.updateIndicator()
+      if (root.barVisible) root.updateIndicator()
     }
   }
 
@@ -228,12 +241,7 @@ BarWidget {
     onTriggered: root.refreshIfDue()
   }
 
-  Timer {
-    interval: 30000
-    repeat: true
-    running: true
-    onTriggered: root.updateIndicator()
-  }
+  Component.onDestruction: stopOwnedProcesses()
 
   BarIconButton {
     id: button

@@ -159,6 +159,7 @@ Item {
     clearOpeningRule()
     phase = "closed"
     window.visible = false
+    traceEntries = []
   }
 
   function scheduleRemember() {

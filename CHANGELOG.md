@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Replace the newspaper's independent 30-second full-model poll with coalesced state/feed/setup/plugin-config watches and the existing five-minute due-check fallback.
+- Resolve installed-plugin context and the unread indicator in one helper, accelerate repeated strict timestamp/URL validation with bounded caches, and release large reader models when the panel closes.
+
 ## 0.5.10 — 2026-09-18
 
 ### Fixed

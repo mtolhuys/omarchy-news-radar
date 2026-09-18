@@ -13,6 +13,7 @@ from typing import Any, Sequence
 
 from .client import (
     complete_onboarding,
+    current_indicator_model,
     insights_model,
     refresh_insights,
     refresh_setup_news,
@@ -91,6 +92,7 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     due.add_argument("--minimum-age", required=True, type=int)
     indicator = commands.add_parser("indicator")
     indicator.add_argument("--installed-json", default="[]")
+    commands.add_parser("indicator-current")
     commands.add_parser("installed")
     commands.add_parser("update-status")
     commands.add_parser("update-apply")
@@ -164,6 +166,8 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = refresh_if_due(args.minimum_age)
         elif args.command == "indicator":
             result = indicator_model(installed_json=args.installed_json)
+        elif args.command == "indicator-current":
+            result = current_indicator_model()
         elif args.command == "installed":
             result = installed_plugins()
         elif args.command == "update-status":

@@ -197,8 +197,10 @@ The acceptance matrix includes maintained light and dark themes, 1366×768-equiv
 - Saved state is at most 250 items. A feed-absent saved record remains projectable and accepts read, unread, Saved batch-read, and unsave actions; an unknown feed-absent ID remains rejected, and unsave removes the archived item's unreachable read override.
 - At most one refresh helper runs per entry-point instance, with a cross-instance atomic lock.
 - Cached rendering does not wait for a network response.
-- Closing the panel leaves no panel-owned process or timer; hiding the bar stops its refresh timer while retaining only the bounded local status check needed to observe re-enable.
+- Closing the panel leaves no panel-owned process or timer; hiding the bar stops its refresh timer while retaining only the state-file watch needed to observe re-enable.
 - The UI uses a bounded or virtualized visible model rather than instantiating every story card simultaneously.
+- Panel close releases the feed, companion, rendered-story, detail-stack and trace models; an open panel retains at most sixteen nested detail parents. The bar has no independent polling loop: state, feed, setup-news and shell-plugin configuration changes are watched, coalesced, and the existing at-most-five-minute due check is the fallback.
+- Canonical timestamp and HTTPS verdict memoization use explicit 8,192-entry LRU limits; maximum-size companion tests and real-cache benchmarks must cover both badge and reader projections without weakening validation.
 
 Measure panel-open latency, parser time, idle resource use, dense-model navigation, and close teardown in a recorded VM context before publishing numeric performance claims. Do not turn an unmeasured target into README fact.
 

@@ -284,7 +284,7 @@
 
 ## D036 — Discover unread editions without opening the panel (cadence superseded by D054)
 
-**Decision:** The visible newspaper records the last real network-check attempt independently from feed age. A success schedules the next check after 15 minutes; a failure retries after five minutes. A watched atomic feed replacement immediately reloads the shared unread/health indicator, with a 30-second local-only fallback for missed filesystem events. The hidden newspaper performs no network checks.
+**Decision:** The visible newspaper records the last real network-check attempt independently from feed age. A success schedules the next check after 15 minutes; a failure retries after five minutes. A watched atomic feed replacement immediately reloads the shared unread/health indicator. The original 30-second local-only fallback is superseded by D072's exact file watches and existing due-check fallback. The hidden newspaper performs no network checks.
 
 **Why:** Using the feed's `generatedAt` as a polling clock conflated publisher time with client activity. Starting the shell just before a 30-minute boundary could then wait another full repeating interval, approaching an hour before discovery. Watching only reading state also meant a newly adopted feed could leave the visible badge stale until its fallback poll. Opening the panel appeared to fix both because it forces an immediate check and projection.
 
@@ -576,3 +576,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** Version 0.5.7 kept expired bookmarks visible but the mutation handlers still required current-feed membership. The visible row therefore exposed controls that could never succeed, leaving the user unable to clear the bookmark or its unread count.
 
 **Consequence:** Saved durability includes control as well as visibility. An archived bookmark stays fully manageable without weakening the cache boundary, and unsaving it also removes its now-unreachable explicit read override.
+
+## D072 — Make idle indicator work event-driven and release closed reader models
+
+**Decision:** Replace the newspaper's independent 30-second model poll with watches on the exact local state, feed, setup-news and shell-plugin configuration files. The existing visible-only due-check remains the at-most-five-minute fallback and refresh trigger. Resolve enabled plugins and the indicator in one helper invocation, coalesce concurrent change signals, release every large panel model on close, and use bounded 8,192-entry LRU caches for repeated canonical timestamp and HTTPS verdict validation.
+
+**Why:** With 500 feed stories and 2,908 current marketplace companion records, the old fallback parsed and projected the complete reading universe every 30 seconds even when nothing changed, while enabled-plugin discovery required a second Python helper. The same validated timestamps and URLs were parsed repeatedly inside each short-lived request, and a hidden panel could retain feed and companion graphs until its host object was destroyed. This was bounded rather than a proven leak, but it created needless CPU, process and retained-memory pressure that grew with the public companion.
+
+**Consequence:** Relevant local replacements still update the badge immediately, enabled-plugin changes are no longer lifetime-stale, and a visible newspaper still checks publication health within the existing five-minute contract. Hidden newspapers perform no recurring work. Closing the panel keeps durable XDG state but drops its feed, companion, story, detail and diagnostic object graphs. Validation, feed/state schemas, origins and privacy boundaries remain unchanged; caches are process-local and explicitly bounded.
