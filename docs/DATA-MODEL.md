@@ -223,7 +223,7 @@ Stars, views, hearts, copy counts, release-asset downloads, repository update ti
 }
 ```
 
-Saved records intentionally duplicate a small bounded subset so a bookmark survives the rolling feed window. Cap saved items at 250 with explicit UI before refusing another; never silently discard a saved item.
+Saved records intentionally duplicate a small bounded subset so a bookmark survives the rolling feed window. That record remains an authoritative local action target after feed retention: its reconstructed event accepts read/unread, filtered Saved batch-read, and unsave transitions. Removing an archived bookmark removes its unreachable explicit read override. Feed-absent IDs without a validated saved record remain rejected. Cap saved items at 250 with explicit UI before refusing another; never silently discard a saved item.
 
 `readThrough` is a migration baseline, not a session cursor. An event is read when its boolean `readOverrides[eventId]` exists and is true, unread when that override exists and is false, and otherwise read only when `occurredAt <= readThrough`. New installations use the Unix epoch baseline, so every current event starts unread. The panel never advances the baseline; its one initial visibly presented story per fresh open and deliberate per-story actions create or remove the smallest necessary override. The explicit filtered-section batch action applies that same rule to a validated list of at most 500 event IDs in one locked atomic write, including unloaded matches while ignoring temporary search. Corrupt state is quarantined and replaced by defaults without modifying feed cache.
 

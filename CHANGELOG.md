@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.5.10 — 2026-09-18
+
+### Fixed
+
+- Let locally restored Saved stories be marked read or unread, included in **Mark all as read**, and removed with **Unsave** after the publisher drops them from the rolling feed.
+- Keep unknown feed-absent story IDs fail-closed and remove the unreachable read override when an archived bookmark is unsaved.
+
 ## 0.5.9 — 2026-09-17
 
 ### Fixed

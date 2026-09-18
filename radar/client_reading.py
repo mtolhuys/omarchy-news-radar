@@ -11,22 +11,61 @@ from .client_projection import _filtered_section_events
 from .client_setup_news import load_reading_feed
 from .constants import CLIENT_SECTIONS
 from .errors import ValidationError
+from .model import event_from_saved_record
 from .sections import visible_client_sections
 from .state import (StateLock, event_is_read, load_feed, load_state, save_state,
                     set_event_read, set_events_read, toggle_saved, update_preferences,
                     update_section_filter)
 from .validation import EVENT_ID_RE
 
+
+def _actionable_events(
+    feed: Mapping[str, Any] | None,
+    state: Mapping[str, Any],
+) -> dict[str, dict[str, Any]]:
+    """Return strict events that local reading/bookmark actions may mutate.
+
+    Feed retention can remove a story while its bounded saved record remains.
+    Saved projection already restores that story for reading; actions must use
+    the same trusted local record instead of treating the visible row as stale.
+    The presentation-only marker is removed before state validation.
+    """
+
+    events = {
+        str(item["id"]): dict(item)
+        for item in (feed or {}).get("events", [])
+    }
+    for event_id, record in state["saved"].items():
+        if event_id in events:
+            continue
+        restored = event_from_saved_record(event_id, record)
+        restored.pop("isArchivedSave", None)
+        events[event_id] = restored
+    return events
+
+
 def toggle_saved_state(event_id: str, environment: Mapping[str, str] | None = None, *, now: datetime | None = None) -> dict[str, Any]:
-    feed = load_reading_feed(environment, now=now)
-    if feed is None:
-        raise ValidationError("cannot save an event without a valid cached feed")
-    event = next((item for item in feed["events"] if item["id"] == event_id), None)
-    if event is None:
-        raise ValidationError("event is not present in the validated cache")
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
+        feed = load_reading_feed(environment, now=now)
+        live_event_ids = {item["id"] for item in (feed or {}).get("events", [])}
+        event = _actionable_events(feed, state).get(event_id)
+        if event is None:
+            if feed is None:
+                raise ValidationError("cannot save an event without a valid cached feed")
+            raise ValidationError("event is not present in the validated cache or saved items")
         updated, saved = toggle_saved(state, event, now=now)
+        if not saved and event_id not in live_event_ids:
+            # Once an archived bookmark is removed it has no remaining reader
+            # surface. Drop only its now-unreachable explicit read override.
+            updated = {
+                **updated,
+                "readOverrides": {
+                    key: value
+                    for key, value in updated["readOverrides"].items()
+                    if key != event_id
+                },
+            }
         save_state(updated, environment)
     return response("ok", saved=saved, state=updated)
 
@@ -43,9 +82,9 @@ def set_event_read_state(
     with StateLock(environment):
         state, _ = load_state(environment, serialized=False)
         feed = load_reading_feed(environment, now=now)
-        if feed is None:
+        events_by_id = _actionable_events(feed, state)
+        if feed is None and event_id not in events_by_id:
             raise ValidationError("cannot change reading state without a valid cached feed")
-        events_by_id = {item["id"]: item for item in feed["events"]}
         event = events_by_id.get(event_id)
         if event is None:
             return response(
@@ -80,7 +119,8 @@ def mark_section_read_state(
         feed = load_reading_feed(environment, now=now)
         if feed is None:
             raise ValidationError("cannot change reading state without a valid cached feed")
-        current_event_ids = {item["id"] for item in feed["events"]}
+        actionable_events = _actionable_events(feed, state)
+        current_event_ids = set(actionable_events)
         section_events = _filtered_section_events(
             feed,
             state,
@@ -93,7 +133,9 @@ def mark_section_read_state(
             briefing_feed = load_feed(environment, now=now)
             section_events = _filtered_briefing_members(briefing_feed, state, now=now)
         unread_events = [
-            event for event in section_events if not event_is_read(state, event)
+            actionable_events[event["id"]]
+            for event in section_events
+            if not event_is_read(state, event)
         ]
         updated = set_events_read(
             state,

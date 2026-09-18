@@ -568,3 +568,11 @@ Live font and monitor changes also trigger a debounced fit of the exact existing
 **Why:** Version 0.5.8 declared a second updater-local protocol version even though its response remained compatible with the existing helper envelope. QML correctly rejected the mismatch, making update status unusable for every installation that received that release.
 
 **Consequence:** A helper cannot independently invent or bump its protocol version. Any genuinely incompatible protocol change must update the shared constant, every producer, every consumer, compatibility behavior, and cross-language tests in one release.
+
+## D071 — Treat retained Saved records as local action targets
+
+**Decision:** When a saved event leaves the rolling feed, reconstruct one strict event from its validated bounded save record for both presentation and local mutations. Read, unread, Saved batch-read, and unsave accept that reconstructed event; arbitrary feed-absent IDs remain rejected.
+
+**Why:** Version 0.5.7 kept expired bookmarks visible but the mutation handlers still required current-feed membership. The visible row therefore exposed controls that could never succeed, leaving the user unable to clear the bookmark or its unread count.
+
+**Consequence:** Saved durability includes control as well as visibility. An archived bookmark stays fully manageable without weakening the cache boundary, and unsaving it also removes its now-unreachable explicit read override.

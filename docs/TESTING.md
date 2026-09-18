@@ -194,7 +194,7 @@ The acceptance matrix includes maintained light and dark themes, 1366×768-equiv
 
 - Live feed is at most 2 MiB in both transferred and decoded form and contains at most 500 events.
 - A local briefing has at most five groups and 500 unique member IDs; projecting or reading it cannot expand those bounds or fetch another page.
-- Saved state is at most 250 items.
+- Saved state is at most 250 items. A feed-absent saved record remains projectable and accepts read, unread, Saved batch-read, and unsave actions; an unknown feed-absent ID remains rejected, and unsave removes the archived item's unreachable read override.
 - At most one refresh helper runs per entry-point instance, with a cross-instance atomic lock.
 - Cached rendering does not wait for a network response.
 - Closing the panel leaves no panel-owned process or timer; hiding the bar stops its refresh timer while retaining only the bounded local status check needed to observe re-enable.

@@ -1,4 +1,4 @@
-![Omarchy News Radar 0.5.9 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
+![Omarchy News Radar 0.5.10 — a persistent, keyboard-first front page for Omarchy](assets/readme-banner.svg)
 
 # Omarchy News Radar
 
@@ -14,9 +14,9 @@ Omarchy News Radar is an independent community project.
 
 ![Omarchy News Radar interface — Front Page with live source news](preview.png)
 
-The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Versions 0.5.4 through 0.5.9 repair data completeness, Saved durability, reading actions, focus behavior, release-aware update checks, helper-protocol compatibility, and Omarchy 4.0.3 compatibility without changing this pictured layout. Story content and counts change with the feed.
+The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Versions 0.5.4 through 0.5.10 repair data completeness, Saved durability and actions, reading behavior, focus behavior, release-aware update checks, helper-protocol compatibility, and Omarchy 4.0.3 compatibility without changing this pictured layout. Story content and counts change with the feed.
 
-## Install the published v0.5.9
+## Install the published v0.5.10
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -150,7 +150,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.9` is the current release. It restores update-helper compatibility after the 0.5.8 protocol regression and binds update responses to the same helper protocol used by the rest of the client. Plugin updates remain release-aware, so Forge collector and documentation changes cannot create desktop update prompts. Reading state, filters, briefing membership, and window geometry remain unchanged. See the [release notes](docs/release-notes/0.5.9.md), [verification evidence](docs/evidence/0.5.9-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
+Version `0.5.10` is the current release. Locally restored Saved stories can now be marked read or unread, batch-read, and unsaved after the publisher drops them from the rolling feed. Plugin updates remain release-aware and use the shared helper protocol. Filters, briefing membership, and window geometry remain unchanged. See the [release notes](docs/release-notes/0.5.10.md), [verification evidence](docs/evidence/0.5.10-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
@@ -234,6 +234,12 @@ Start with [`AGENTS.md`](AGENTS.md). The binding product, architecture, data, so
 Omarchy News Radar is not an official Omarchy project and does not imply endorsement, marketplace verification as a security audit, or guaranteed compatibility. Every story links its original source so readers can verify the underlying claim.
 
 
+## What is new in 0.5.10
+
+- Feed-absent Saved stories now accept **Mark read**, **Mark unread**, **Mark all as read**, and **Unsave**.
+- Saved actions rebuild the same strict local event used by the reader; arbitrary missing story IDs remain rejected.
+- Unsaving an archived story also removes its now-unreachable explicit read override.
+
 ## What is new in 0.5.9
 
 - Update status and apply responses again use helper protocol v1, which the QML interface accepts.
@@ -293,4 +299,4 @@ Omarchy News Radar is not an official Omarchy project and does not imply endorse
 - Generic `insights.json`, shareable story/workflow pages and weekly editions extend the public reader while `events.json` stays schema v2 for older clients.
 - Local state migrates to schema v13; v1–v12 supported reading state, saves and preferences are preserved.
 
-The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Versions 0.5.4 through 0.5.9 change data completeness, Saved durability, reading consistency, projection work, focus behavior, release-aware update checks, helper-protocol compatibility, and Omarchy 4.0.3 compatibility rather than the pictured layout. See the [0.5.9 release notes](docs/release-notes/0.5.9.md) and [release contract](docs/RELEASE.md).
+The README screenshot shows the unchanged interface from the inspected 0.5.3 runtime. Versions 0.5.4 through 0.5.10 change data completeness, Saved durability and actions, reading consistency, projection work, focus behavior, release-aware update checks, helper-protocol compatibility, and Omarchy 4.0.3 compatibility rather than the pictured layout. See the [0.5.10 release notes](docs/release-notes/0.5.10.md) and [release contract](docs/RELEASE.md).

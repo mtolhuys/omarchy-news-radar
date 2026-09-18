@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import io
 import json
 import os
@@ -13,6 +14,7 @@ from unittest import mock
 from radar.cli import client_main, repository_main
 from radar.client import indicator_model, refresh
 from radar.io import atomic_write_json
+from radar.state import save_feed
 
 ROOT = Path(__file__).resolve().parents[2]
 CLOCK = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
@@ -106,6 +108,42 @@ class ClientCliIntegrationTests(unittest.TestCase):
         code, failed = self.run_client("mark-briefing-read", "--briefing-id", "invalid")
         self.assertEqual(2, code)
         self.assertEqual("failed", failed["status"])
+
+    def test_saved_cli_actions_keep_working_after_feed_retention(self) -> None:
+        feed = json.loads((ROOT / "tests/fixtures/feed-valid.json").read_text(encoding="utf-8"))
+        dropped = feed["events"][1]
+        code, saved = self.run_client("toggle-saved", "--event-id", dropped["id"])
+        self.assertEqual(0, code)
+        self.assertTrue(saved["saved"])
+
+        retained = copy.deepcopy(feed)
+        retained["events"] = [item for item in retained["events"] if item["id"] != dropped["id"]]
+        save_feed(retained, self.environment, now=CLOCK)
+        code, projected = self.run_client("project", "--section", "saved")
+        self.assertEqual(0, code)
+        self.assertTrue(projected["events"][0]["isArchivedSave"])
+
+        code, read = self.run_client(
+            "set-read", "--event-id", dropped["id"], "--read", "true"
+        )
+        self.assertEqual(0, code)
+        self.assertTrue(read["read"])
+        code, unread = self.run_client(
+            "set-read", "--event-id", dropped["id"], "--read", "false"
+        )
+        self.assertEqual(0, code)
+        self.assertFalse(unread["read"])
+        code, batch = self.run_client(
+            "mark-section-read", "--section", "saved", "--installed-json", "[]"
+        )
+        self.assertEqual(0, code)
+        self.assertEqual(1, batch["markedRead"])
+
+        code, removed = self.run_client("toggle-saved", "--event-id", dropped["id"])
+        self.assertEqual(0, code)
+        self.assertFalse(removed["saved"])
+        self.assertNotIn(dropped["id"], removed["state"]["saved"])
+        self.assertNotIn(dropped["id"], removed["state"]["readOverrides"])
 
     def test_insight_and_relevance_commands_keep_personalization_in_local_projection(self) -> None:
         self.environment["OMARCHY_NEWS_RADAR_TEST_INSIGHTS"] = str(ROOT / "tests/fixtures/insights-valid.json")
