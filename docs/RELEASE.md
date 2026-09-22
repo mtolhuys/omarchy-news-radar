@@ -170,6 +170,10 @@ The owner tested runtime commit `968cdf5` on the daily desktop and approved publ
 The owner reviewed the regression and approved a patch release on 2026-09-10. The [evidence](evidence/0.5.6-local.md) records source checks, exact Omarchy 4.0.3 QML validation, and the focused disposable-guest helper-path journey. Publish one clean final commit, require green CI and an exact public-clone journey, then update marketplace verification issue #6193 in place with the full release SHA. Marketplace approval and snapshot promotion remain maintainer-controlled.
 
 
+## 0.5.11 Core reading-durability gate
+
+Dismissed Omarchy News stories reappeared as unread whenever the rolling ledger evicted and rematerialized them. The [evidence](evidence/0.5.11-local.md) must prove the complete cycle in a disposable guest: dismiss a Core story in the rendered reader, adopt an edition that no longer carries it, perform an unrelated read, confirm the override survives in `state.json`, adopt a later edition carrying the identical deterministic ID, and confirm the story projects as read. Source validation, the mutation check against the previous pruning behaviour, the official marketplace baseline, green GitHub CI, and Forge publication of the Core retention floor must match the exact release commit before this repair is declared complete.
+
 ## 0.5.10 Saved action recovery gate
 
 The [evidence](evidence/0.5.10-local.md) must prove the complete expired-bookmark transition: save a live event, remove it from the validated feed, project the restored local row, mark it read and unread, batch-read Saved, unsave it, and verify both the bookmark and unreachable read override disappear. The same suite must prove an arbitrary feed-absent ID remains rejected. Source validation, the official marketplace baseline, green GitHub CI, and the available disposable-lab evidence must match the exact release commit.

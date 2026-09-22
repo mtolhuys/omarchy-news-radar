@@ -150,7 +150,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.11` is a local candidate, not a published release. It stops dismissed Core news stories reappearing as unread after the rolling edition evicts and rematerializes them, and reserves a Core retention floor so marketplace release volume cannot squeeze official news out of the ledger. See the [release notes](docs/release-notes/0.5.11.md) and [D073](docs/DECISIONS.md).
+Version `0.5.11` is a local candidate, not a published release. It stops dismissed Core news stories reappearing as unread after the rolling edition evicts and rematerializes them, and reserves a Core retention floor so marketplace release volume cannot squeeze official news out of the ledger. See the [release notes](docs/release-notes/0.5.11.md), [verification evidence](docs/evidence/0.5.11-local.md), and [D073](docs/DECISIONS.md).
 
 Version `0.5.10` is the current release. Locally restored Saved stories can now be marked read or unread, batch-read, and unsaved after the publisher drops them from the rolling feed. Plugin updates remain release-aware and use the shared helper protocol. Filters, briefing membership, and window geometry remain unchanged. See the [release notes](docs/release-notes/0.5.10.md), [verification evidence](docs/evidence/0.5.10-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
