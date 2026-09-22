@@ -16,7 +16,7 @@ Omarchy News Radar is an independent community project.
 
 The current interface, captured from the inspected 0.5.3 runtime with the live public feed on 6 September 2026. Versions 0.5.4 through 0.5.10 repair data completeness, Saved durability and actions, reading behavior, focus behavior, release-aware update checks, helper-protocol compatibility, and Omarchy 4.0.3 compatibility without changing this pictured layout. Story content and counts change with the feed.
 
-## Install the published v0.5.10
+## Install the published v0.5.11
 
 Open the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.mtolhuys.news-radar) for its reviewed snapshot and installation instructions. To install the current public version directly from the repository's default branch:
 
@@ -150,9 +150,7 @@ If the plugin is removed before its shortcut, the marked block is a harmless unr
 
 ## Project status
 
-Version `0.5.11` is a local candidate, not a published release. It stops dismissed Core news stories reappearing as unread after the rolling edition evicts and rematerializes them, and reserves a Core retention floor so marketplace release volume cannot squeeze official news out of the ledger. See the [release notes](docs/release-notes/0.5.11.md), [verification evidence](docs/evidence/0.5.11-local.md), and [D073](docs/DECISIONS.md).
-
-Version `0.5.10` is the current release. Locally restored Saved stories can now be marked read or unread, batch-read, and unsaved after the publisher drops them from the rolling feed. Plugin updates remain release-aware and use the shared helper protocol. Filters, briefing membership, and window geometry remain unchanged. See the [release notes](docs/release-notes/0.5.10.md), [verification evidence](docs/evidence/0.5.10-local.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
+Version `0.5.11` is the current release. Dismissed Omarchy News stories no longer reappear as unread after the rolling edition evicts and rematerializes them, and a Core retention floor keeps recent official news in the edition regardless of marketplace release volume. Reading state, saved items, filters, briefing membership, and window geometry are unchanged, and no local state migration runs. See the [release notes](docs/release-notes/0.5.11.md), [verification evidence](docs/evidence/0.5.11-local.md), [D073](docs/DECISIONS.md), and [release contract](docs/RELEASE.md). Marketplace promotion remains subject to maintainer review of the exact release commit.
 
 The main plugin declares `panel` and `bar-widget`. Its newspaper is visible by default, shows unread/source status, and is optional: right-click hides it with zero remaining bar geometry, while Tune in the panel restores it. Version 1 still has no daemon, desktop notification, telemetry, account, analytics, AI summary, or plugin-management action.
 
