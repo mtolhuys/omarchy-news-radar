@@ -107,6 +107,83 @@ class ClientIntegrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "unknown projection section"):
             projection_model("community", "[]", "", self.environment, now=CLOCK)
 
+    def test_a_dismissed_core_story_stays_read_across_eviction_and_return(self) -> None:
+        """The reported defect: Core news reappearing unread after dismissal (D073).
+
+        The 500-event ledger evicts official news when marketplace release
+        volume crowds it out, and `diff_news` rematerializes the same
+        deterministic ID on the next successful collect. Reading state must
+        survive that round trip.
+        """
+
+        refresh(self.environment, now=CLOCK)
+        news = next(
+            event
+            for event in self.feed["events"]
+            if event["classification"]["section"] == "core"
+        )
+        plugin_story = next(
+            event for event in self.feed["events"] if event["type"] == "plugin-released"
+        )
+
+        set_event_read_state(news["id"], True, self.environment, now=CLOCK)
+        state_path = Path(self.environment["XDG_STATE_HOME"]) / "omarchy-news-radar/state.json"
+        stored = json.loads(state_path.read_text(encoding="utf-8"))
+        self.assertIs(True, stored["readOverrides"][news["id"]])
+
+        # The next edition evicts that story; the reader goes on reading.
+        evicted = copy.deepcopy(self.feed)
+        evicted["events"] = [
+            event for event in evicted["events"] if event["id"] != news["id"]
+        ]
+        evicted["generatedAt"] = "2026-08-31T14:05:00Z"
+        evicted["window"]["through"] = "2026-08-31T14:05:00Z"
+        atomic_write_json(self.fixture, evicted)
+        refresh(self.environment, now=CLOCK + timedelta(minutes=5))
+        set_event_read_state(
+            plugin_story["id"], True, self.environment, now=CLOCK + timedelta(minutes=5)
+        )
+
+        stored = json.loads(state_path.read_text(encoding="utf-8"))
+        self.assertIs(
+            True,
+            stored["readOverrides"].get(news["id"]),
+            "an evicted story's dismissal must survive an unrelated read",
+        )
+
+        # A later collect rematerializes the identical deterministic ID.
+        returned_feed = copy.deepcopy(self.feed)
+        returned_feed["generatedAt"] = "2026-08-31T14:10:00Z"
+        returned_feed["window"]["through"] = "2026-08-31T14:10:00Z"
+        atomic_write_json(self.fixture, returned_feed)
+        refresh(self.environment, now=CLOCK + timedelta(minutes=10))
+        projection = projection_model(
+            "core", "[]", "", self.environment, now=CLOCK + timedelta(minutes=10)
+        )
+        returned = next(
+            event for event in projection["events"] if event["id"] == news["id"]
+        )
+        self.assertFalse(
+            returned["isUnread"], "a rematerialized story must not resurface unread"
+        )
+
+    def test_the_override_cap_drops_unreachable_entries_before_reachable_ones(self) -> None:
+        from radar.constants import MAX_READ_OVERRIDES
+        from radar.state import _bound_read_overrides
+
+        present = {f"evt_{index:024x}": True for index in range(10)}
+        absent = {f"evt_{0xF0000 + index:024x}": True for index in range(MAX_READ_OVERRIDES)}
+        bounded = _bound_read_overrides({**present, **absent}, set(present))
+
+        self.assertEqual(MAX_READ_OVERRIDES, len(bounded))
+        self.assertTrue(set(present) <= set(bounded), "reachable decisions are never dropped")
+        # Deterministic: the same input always yields the same survivors.
+        self.assertEqual(
+            bounded, _bound_read_overrides({**present, **absent}, set(present))
+        )
+        # Under the cap nothing is dropped at all.
+        self.assertEqual(present, _bound_read_overrides(present, set()))
+
     def test_background_update_cadence_adopts_unread_without_opening_panel(self) -> None:
         initial = refresh(self.environment, now=CLOCK)
         initial_unread = indicator_model(self.environment, now=CLOCK)["unread"]

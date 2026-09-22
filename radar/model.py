@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .constants import (
+    CORE_RETENTION_FLOOR,
     EVENT_TRIM_PRIORITY,
     FEED_SCHEMA_VERSION,
     MAX_EVENTS,
@@ -57,7 +58,8 @@ def retain_events(
 
     Stories older than ``retention_days`` are dropped. Within the window,
     protected Core/YouTube types are kept preferentially so marketplace
-    verification floods cannot wipe them. Remaining slots fill with other
+    verification floods cannot wipe them, and the newest official Core rows
+    are reserved first so ordinary release volume cannot evict recent news. Remaining slots fill with other
     recent events, dropping ``plugin-verification-changed`` first.
     """
 
@@ -81,22 +83,42 @@ def retain_events(
         return ordered
 
     required = [event for event in ordered if event["id"] in required_ids]
+    # Reserve the newest official Core rows before the rest of the protected
+    # lane competes, so marketplace release volume cannot evict recent news.
+    reserved: list[dict[str, Any]] = []
+    reserved_ids: set[str] = set()
+    remaining = max_events - len(required)
+    for event_type, floor in sorted(CORE_RETENTION_FLOOR.items()):
+        for event in ordered:
+            if len(reserved) >= max(0, remaining):
+                break
+            if event["id"] in required_ids or event["id"] in reserved_ids:
+                continue
+            if str(event["type"]) != event_type:
+                continue
+            if sum(1 for item in reserved if item["type"] == event_type) >= floor:
+                break
+            reserved.append(event)
+            reserved_ids.add(event["id"])
     protected = [
         event
         for event in ordered
         if event["id"] not in required_ids
+        and event["id"] not in reserved_ids
         and str(event["type"]) in PROTECTED_EVENT_TYPES
     ]
-    protected_slots = max_events - len(required)
+    protected_slots = max_events - len(required) - len(reserved)
     if len(protected) >= protected_slots:
-        return sorted(required + protected[:protected_slots], key=event_sort_key)
+        return sorted(
+            required + reserved + protected[:protected_slots], key=event_sort_key
+        )
 
-    reserved_ids = required_ids | {event["id"] for event in protected}
-    remainder = [event for event in ordered if event["id"] not in reserved_ids]
+    taken_ids = required_ids | reserved_ids | {event["id"] for event in protected}
+    remainder = [event for event in ordered if event["id"] not in taken_ids]
     # Keep preferred first: lower trim priority, then newer (event_sort_key).
     remainder.sort(key=lambda event: (_trim_priority(event),) + event_sort_key(event))
-    slots = max_events - len(required) - len(protected)
-    kept = required + protected + remainder[:slots]
+    slots = max_events - len(required) - len(reserved) - len(protected)
+    kept = required + reserved + protected + remainder[:slots]
     return sorted(kept, key=event_sort_key)
 
 

@@ -233,9 +233,14 @@ class StateTests(unittest.TestCase):
         self.assertFalse(event_is_read(state, event))
         self.assertEqual({event["id"]: False}, state["readOverrides"])
 
+        # An override for a story outside the current edition is retained.
+        # Eviction from the rolling ledger is temporary: the next successful
+        # collect rematerializes the same deterministic ID, and discarding the
+        # reader's decision made it resurface unread forever (D073).
         state["readOverrides"]["evt_ffffffffffffffffffffffff"] = True
         state = set_event_read(state, event, True, current_event_ids=event_ids)
-        self.assertEqual({}, state["readOverrides"])
+        self.assertEqual({"evt_ffffffffffffffffffffffff": True}, state["readOverrides"])
+        del state["readOverrides"]["evt_ffffffffffffffffffffffff"]
 
         updated, saved = toggle_saved(state, self.feed["events"][0], now=CLOCK)
         self.assertTrue(saved)
@@ -257,10 +262,15 @@ class StateTests(unittest.TestCase):
         )
         self.assertTrue(all(event_is_read(updated, event) for event in events))
         self.assertEqual(
-            sorted(event["id"] for event in events),
+            sorted([event["id"] for event in events] + ["evt_ffffffffffffffffffffffff"]),
             list(updated["readOverrides"]),
+            "a batch read keeps decisions for stories the edition no longer carries",
         )
-        self.assertNotIn("evt_ffffffffffffffffffffffff", updated["readOverrides"])
+        self.assertIn(
+            "evt_ffffffffffffffffffffffff",
+            updated["readOverrides"],
+            "an unreachable decision is kept, not silently discarded (D073)",
+        )
 
         restored = set_events_read(
             updated,
@@ -269,7 +279,9 @@ class StateTests(unittest.TestCase):
             current_event_ids=event_ids,
         )
         self.assertTrue(all(not event_is_read(restored, event) for event in events))
-        self.assertEqual({}, restored["readOverrides"])
+        # Reversing the batch clears its own overrides; the unreachable
+        # decision injected above is still not this operation's to discard.
+        self.assertEqual({"evt_ffffffffffffffffffffffff": True}, restored["readOverrides"])
 
         with self.assertRaisesRegex(ValidationError, "duplicate"):
             set_events_read(state, [events[0], events[0]], True, current_event_ids=event_ids)

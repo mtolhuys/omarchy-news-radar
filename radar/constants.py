@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 PLUGIN_ID = "io.github.mtolhuys.news-radar"
-BUILD_ID = "news-radar-0.5.10"
+BUILD_ID = "news-radar-0.5.11"
 FEED_SCHEMA_VERSION = 2
 STATE_SCHEMA_VERSION = 13
 HELPER_PROTOCOL_VERSION = 1
@@ -59,6 +59,13 @@ FEED_HTTP_MAX_BYTES = 4096
 FUTURE_SKEW_SECONDS = 300
 # Front Page news slots, spent on distinct topic clusters first (D049).
 NEWS_FRONT_PAGE_QUOTA = 3
+# Core is a small lane beside a marketplace that now lists thousands of
+# plugins. Without a floor, ordinary release volume evicts official news from
+# the 500-event ledger within days, and every eviction/rematerialization cycle
+# resurfaced stories the reader had already dismissed (D073). Reserve the
+# newest rows of each official Core type before the rest of the protected lane
+# competes for capacity.
+CORE_RETENTION_FLOOR = {"omarchy-news": 20, "omarchy-released": 3}
 
 EVENT_TYPES = frozenset(
     {

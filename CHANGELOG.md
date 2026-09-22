@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Keep a read/unread decision when its story leaves the rolling edition, so dismissed Omarchy News stories no longer reappear as unread after the ledger evicts and rematerializes them (D073).
+- Reserve a Core retention floor of 20 Omarchy News and 3 Omarchy release rows before the remaining protected lane competes for the 500-event bound, so marketplace release volume cannot squeeze official news out of the edition.
+
 ### Changed
 
 - Replace the newspaper's independent 30-second full-model poll with coalesced state/feed/setup/plugin-config watches and the existing five-minute due-check fallback.

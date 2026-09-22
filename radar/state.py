@@ -344,6 +344,27 @@ def set_event_read(
     )
 
 
+
+def _bound_read_overrides(
+    overrides: Mapping[str, bool], current_event_ids: set[str]
+) -> dict[str, bool]:
+    """Keep the override map inside its cap without losing reachable decisions.
+
+    Overrides for stories in the current edition are always retained. Only when
+    the map exceeds its bound are unreachable entries dropped, oldest event ID
+    first so the result stays deterministic across machines and collects.
+    """
+
+    if len(overrides) <= MAX_READ_OVERRIDES:
+        return dict(overrides)
+    present = {key: value for key, value in overrides.items() if key in current_event_ids}
+    if len(present) > MAX_READ_OVERRIDES:
+        raise ValidationError("read override limit reached")
+    absent = sorted(key for key in overrides if key not in current_event_ids)
+    keep = absent[len(absent) - (MAX_READ_OVERRIDES - len(present)):]
+    return {**present, **{key: overrides[key] for key in keep}}
+
+
 def set_events_read(
     state: Mapping[str, Any],
     events: Sequence[Mapping[str, Any]],
@@ -369,11 +390,13 @@ def set_events_read(
             raise ValidationError("read event batch contains a duplicate")
         selected_ids.add(event_id)
         validated_events.append(event)
-    overrides = {
-        key: value
-        for key, value in current["readOverrides"].items()
-        if key in current_event_ids
-    }
+    # Absence from the current edition is temporary, not final: the rolling
+    # ledger evicts a story when newer activity crowds it out, and the next
+    # successful collect rematerializes it under the same deterministic ID.
+    # Deleting its override here silently discarded the reader's dismissal, so
+    # the story returned unread forever (D073). Keep every override and bound
+    # the map by its existing cap instead.
+    overrides = dict(current["readOverrides"])
     for event in validated_events:
         event_id = event["id"]
         default_read = event["occurredAt"] <= current["readThrough"]
@@ -381,8 +404,7 @@ def set_events_read(
             overrides.pop(event_id, None)
         else:
             overrides[event_id] = read
-    if len(overrides) > MAX_READ_OVERRIDES:
-        raise ValidationError("read override limit reached")
+    overrides = _bound_read_overrides(overrides, current_event_ids)
     current["readOverrides"] = dict(sorted(overrides.items()))
     return validate_state(current)
 

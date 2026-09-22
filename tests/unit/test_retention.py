@@ -6,9 +6,9 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from radar.constants import MAX_EVENTS
 from radar.errors import ValidationError
-from radar.model import canonical_events, retain_events
+from radar.constants import CORE_RETENTION_FLOOR, MAX_EVENTS
+from radar.model import canonical_events, event_sort_key, retain_events
 
 ROOT = Path(__file__).resolve().parents[2]
 CLOCK = datetime(2026, 9, 4, 12, 0, tzinfo=timezone.utc)
@@ -116,6 +116,104 @@ class RetentionTests(unittest.TestCase):
         kept = retain_events(news + flood, now=CLOCK, max_events=20)
         self.assertEqual(5, sum(1 for event in kept if event["type"] == "omarchy-news"))
         self.assertEqual(20, len(kept))
+
+    def test_release_volume_cannot_evict_the_core_news_floor(self) -> None:
+        """The reported production shape: thousands of releases, news squeezed out.
+
+        On 22 September 2026 the public edition carried 480 `plugin-released`
+        rows and only five `omarchy-news` rows, leaving an eleven-day news
+        window. Every eviction erased the reader's dismissal, so the story
+        returned unread on the next collect (D073).
+        """
+
+        now = datetime(2026, 9, 23, 12, 0, tzinfo=timezone.utc)
+        events = [
+            _event(
+                event_id=_eid(f"{index:024x}"),
+                event_type="plugin-released",
+                occurred=now - timedelta(days=index % 12, minutes=index),
+                title=f"Release {index}",
+            )
+            for index in range(900)
+        ]
+        events += [
+            _event(
+                event_id=_eid(f"{0xC0 + index:024x}"),
+                event_type="omarchy-news",
+                occurred=now - timedelta(days=index),
+                title=f"Official news {index}",
+            )
+            for index in range(28)
+        ]
+        kept = retain_events(events, now=now)
+        news = [item for item in kept if item["type"] == "omarchy-news"]
+
+        self.assertEqual(MAX_EVENTS, len(kept))
+        self.assertEqual(CORE_RETENTION_FLOOR["omarchy-news"], len(news))
+        # The floor keeps the newest rows, not an arbitrary slice.
+        self.assertEqual(
+            [item["title"] for item in sorted(news, key=event_sort_key)],
+            [f"Official news {index}" for index in range(CORE_RETENTION_FLOOR["omarchy-news"])],
+        )
+        self.assertGreater(
+            len([item for item in kept if item["type"] == "plugin-released"]), 400
+        )
+
+    def test_the_core_floor_never_breaks_the_bound_or_required_additions(self) -> None:
+        now = datetime(2026, 9, 23, 12, 0, tzinfo=timezone.utc)
+        additions = [
+            _event(
+                event_id=_eid(f"{0xADD00 + index:024x}"),
+                event_type="plugin-added",
+                occurred=now - timedelta(days=1, minutes=index),
+                title=f"Added {index}",
+            )
+            for index in range(40)
+        ]
+        events = additions + [
+            _event(
+                event_id=_eid(f"{0xB0000 + index:024x}"),
+                event_type="plugin-released",
+                occurred=now - timedelta(days=2, minutes=index),
+                title=f"Release {index}",
+            )
+            for index in range(800)
+        ] + [
+            _event(
+                event_id=_eid(f"{0xC000 + index:024x}"),
+                event_type="omarchy-news",
+                occurred=now - timedelta(days=index),
+                title=f"News {index}",
+            )
+            for index in range(28)
+        ]
+        required = {item["id"] for item in additions}
+        kept = retain_events(events, now=now, required_event_ids=required)
+        kept_ids = {item["id"] for item in kept}
+
+        self.assertEqual(MAX_EVENTS, len(kept))
+        self.assertTrue(required <= kept_ids, "mandatory additions must survive (D066)")
+        self.assertEqual(
+            CORE_RETENTION_FLOOR["omarchy-news"],
+            len([item for item in kept if item["type"] == "omarchy-news"]),
+        )
+        self.assertEqual(len(kept_ids), len(kept), "retention must not duplicate an event")
+        self.assertEqual(kept, sorted(kept, key=event_sort_key))
+
+    def test_a_small_edition_is_unchanged_by_the_floor(self) -> None:
+        now = datetime(2026, 9, 23, 12, 0, tzinfo=timezone.utc)
+        events = [
+            _event(
+                event_id=_eid(f"{0xD000 + index:024x}"),
+                event_type="plugin-released",
+                occurred=now - timedelta(hours=index),
+                title=f"Release {index}",
+            )
+            for index in range(5)
+        ]
+        self.assertEqual(
+            sorted(events, key=event_sort_key), retain_events(events, now=now)
+        )
 
     def test_canonical_events_uses_priority_trim(self) -> None:
         youtube = _event(
