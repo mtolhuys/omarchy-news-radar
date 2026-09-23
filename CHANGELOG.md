@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.5.12 — 2026-09-23
+
+### Security
+
+- Make the plugin-update check notify-only (D074). A newer release shows a notice pointing at the Omarchy plugin marketplace; the panel's **Update plugin** and **Retry update** controls, the `update-apply` helper command, and every call to `omarchy-plugin-update` are removed, so Radar can no longer install a mutable default-branch commit the marketplace has not verified.
+
+## 0.5.11 — 2026-09-23
+
 ### Fixed
 
 - Keep a read/unread decision when its story leaves the rolling edition, so dismissed Omarchy News stories no longer reappear as unread after the ledger evicts and rematerializes them (D073).

@@ -45,7 +45,7 @@ from .collector import (
     save_snapshot,
 )
 from .errors import FetchError, RadarError
-from .plugin_update import apply_update, inspect_update
+from .plugin_update import inspect_update
 from .io import atomic_write_json, read_json_bounded
 from .insights import INSIGHTS_MAX_BYTES, validate_insights
 from .local_edition import import_local_edition
@@ -95,7 +95,6 @@ def client_main(argv: Sequence[str] | None = None) -> int:
     commands.add_parser("indicator-current")
     commands.add_parser("installed")
     commands.add_parser("update-status")
-    commands.add_parser("update-apply")
     commands.add_parser("purge")
     commands.add_parser("activate-window")
     commands.add_parser("window-state")
@@ -172,8 +171,6 @@ def client_main(argv: Sequence[str] | None = None) -> int:
             result = installed_plugins()
         elif args.command == "update-status":
             result = inspect_update()
-        elif args.command == "update-apply":
-            result = apply_update()
         elif args.command == "activate-window":
             result = activate_window()
         elif args.command == "window-state":

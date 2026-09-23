@@ -30,6 +30,7 @@ ColumnLayout {
   property alias noCacheNotice: noCacheNoticeControl
   property alias shortcutNotice: shortcutNoticeControl
   property alias shortcutButton: shortcutMigrationButtonControl
+  property alias pluginUpdateNotice: pluginUpdateNoticeControl
   GridLayout {
     Layout.fillWidth: true
     columns: root.narrow ? 1 : 2
@@ -207,18 +208,17 @@ ColumnLayout {
     }
   }
 
+  // Notify-only (D074): Radar reports a newer release and points at the
+  // marketplace. It offers no install action, because the repository's
+  // default branch is not the exact commit the marketplace verified.
   BorderSurface {
-    id: pluginUpdateNotice
+    id: pluginUpdateNoticeControl
     Layout.fillWidth: true
     Layout.preferredHeight: pluginUpdateNoticeRow.implicitHeight + Style.spacing.controlPaddingY * 2
-    visible: maintenance.pluginUpdateState === "behind" || maintenance.pluginUpdateState === "updating"
-      || maintenance.pluginUpdateState === "updated" || maintenance.pluginUpdateState === "failed"
-      || maintenance.pluginUpdateState === "blocked"
+    visible: maintenance.pluginUpdateState === "behind"
     color: Style.normalFillFor(Color.popups.text, Color.accent, Color.urgent)
     radius: Style.cornerRadius
-    borderSpec: Border.controlSpec(
-      maintenance.pluginUpdateState === "failed" ? "focus" : "normal",
-      Color.popups.text, Color.accent, Color.urgent)
+    borderSpec: Border.controlSpec("normal", Color.popups.text, Color.accent, Color.urgent)
 
     RowLayout {
       id: pluginUpdateNoticeRow
@@ -233,22 +233,12 @@ ColumnLayout {
         Layout.fillWidth: true
         text: maintenance.pluginUpdateMessage
         textFormat: Text.PlainText
-        color: maintenance.pluginUpdateState === "failed" ? Color.urgent : Color.popups.text
+        color: Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
         wrapMode: Text.WordWrap
         Accessible.role: Accessible.StaticText
         Accessible.name: text
-      }
-
-      RadarButton {
-        id: pluginUpdateButton
-        visible: (maintenance.pluginUpdateState === "behind" && maintenance.pluginUpdateCanApply)
-          || maintenance.pluginUpdateState === "failed"
-        label: maintenance.pluginUpdateState === "failed" ? "Retry update" : "Update plugin"
-        tooltipText: "Fast-forward News Radar with Omarchy's official plugin updater"
-        enabled: !maintenance.updateRunning && (maintenance.pluginUpdateCanApply || maintenance.pluginUpdateState === "failed")
-        onClicked: maintenance.applyPluginUpdate()
       }
     }
   }

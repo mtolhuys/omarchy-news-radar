@@ -164,7 +164,11 @@ class QmlContractTests(unittest.TestCase):
         self.assertIn("startSystemResize", panel)
         self.assertIn("minimumSize:", panel)
         self.assertIn('"update-status"', sources["controllers/PluginMaintenance.qml"])
-        self.assertIn('"update-apply"', sources["controllers/PluginMaintenance.qml"])
+        # Notify-only release check (D074): no QML path may start an install.
+        for source_name in ("controllers/PluginMaintenance.qml", "components/RadarMasthead.qml"):
+            for forbidden in ('"update-apply"', "applyPluginUpdate", "pluginUpdateCanApply",
+                              "omarchy-plugin-update", "Update plugin", "Retry update"):
+                self.assertNotIn(forbidden, sources[source_name], f"{source_name}: {forbidden}")
         self.assertIn('result.classification === "owned-legacy"', sources["controllers/PluginMaintenance.qml"])
         self.assertIn('text: "NEWS RADAR"', sources["components/RadarMasthead.qml"])
         self.assertIn("TUNE YOUR RADAR", sources["components/PreferencesDialog.qml"])

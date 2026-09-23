@@ -1,9 +1,14 @@
-"""Detect released Omarchy News Radar updates via the official updater.
+"""Notice released Omarchy News Radar updates without ever installing them.
 
 Repository commits are not releases: the same tree also contains the Forge
 collector and documentation. Availability is therefore based on the bounded,
-strict versions in the installed and fetched manifests. Apply always shells
-out to `omarchy-plugin-update <PLUGIN_ID> --yes`, which validates and rescans.
+strict versions in the installed and fetched manifests.
+
+This module only reports. It never runs an updater, moves the installed
+checkout, or executes fetched code. The marketplace verifies one exact commit;
+the repository's default branch is mutable, so installing whatever it names
+would run code outside that reviewed snapshot (D074). A newer release is
+installed through Omarchy's plugin marketplace once that release is verified.
 """
 
 from __future__ import annotations
@@ -11,7 +16,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
@@ -19,7 +23,6 @@ from typing import Any, Mapping
 from .constants import HELPER_PROTOCOL_VERSION, PLUGIN_ID
 from .errors import RadarError
 
-UPDATER_NAME = "omarchy-plugin-update"
 DEFAULT_PLUGINS_DIR = Path(".config/omarchy/plugins")
 MANIFEST_MAX_BYTES = 64 * 1024
 VERSION_RE = re.compile(
@@ -48,33 +51,13 @@ def _run_git(plugin_dir: Path, *arguments: str, check: bool = True) -> subproces
     )
 
 
-def _resolve_updater() -> str:
-    path = shutil.which(UPDATER_NAME)
-    if not path:
-        raise RadarError(f"{UPDATER_NAME} is not available on PATH")
-    return path
-
-
 def _is_git_checkout(plugin_dir: Path) -> bool:
     return plugin_dir.is_dir() and not plugin_dir.is_symlink() and (plugin_dir / ".git").exists()
-
-
-def _dirty(plugin_dir: Path) -> bool:
-    result = _run_git(plugin_dir, "status", "--porcelain", "--untracked-files=normal")
-    return bool(result.stdout.strip())
 
 
 def _rev_parse(plugin_dir: Path, ref: str) -> str:
     result = _run_git(plugin_dir, "rev-parse", "--verify", ref)
     return result.stdout.strip()
-
-
-def _can_fast_forward(plugin_dir: Path, current: str, remote: str) -> bool:
-    """True when remote is a descendant of current (ff-only merge would succeed)."""
-    merge_base = _run_git(plugin_dir, "merge-base", current, remote, check=False)
-    if merge_base.returncode != 0:
-        return False
-    return merge_base.stdout.strip() == current
 
 
 def _manifest_version(plugin_dir: Path, ref: str) -> tuple[str, tuple[int, int, int]]:
@@ -125,7 +108,6 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         "availableCommit": "",
         "installedVersion": "",
         "availableVersion": "",
-        "updater": UPDATER_NAME,
     }
 
     if not plugin_dir.exists():
@@ -183,128 +165,12 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         payload["message"] = ""
         return payload
 
+    # Notify only. `canApply` stays false on every path, so even an older panel
+    # paired with this helper can never offer to install unverified code.
     payload["updateAvailable"] = True
-    try:
-        _resolve_updater()
-    except RadarError as exc:
-        payload["state"] = "blocked"
-        payload["message"] = str(exc)
-        return payload
-
-    if _dirty(plugin_dir):
-        payload["state"] = "blocked"
-        payload["message"] = "Installed plugin has local changes; update is blocked until it is clean."
-        return payload
-
-    if not _can_fast_forward(plugin_dir, installed, available):
-        payload["state"] = "blocked"
-        payload["message"] = (
-            f"News Radar {available_version} is available, but this checkout has local history. "
-            "Automatic update is unavailable."
-        )
-        return payload
-
     payload["state"] = "behind"
-    payload["canApply"] = True
-    payload["message"] = f"News Radar {available_version} is available."
-    return payload
-
-
-def apply_update(environment: Mapping[str, str] | None = None) -> dict[str, Any]:
-    """Re-check, then run the official Omarchy updater for this plugin only."""
-
-    status = inspect_update(environment)
-    if not status.get("canApply"):
-        return {
-            "protocolVersion": HELPER_PROTOCOL_VERSION,
-            "status": "failed" if status.get("state") in {"blocked", "check-failed", "unavailable"} else "ok",
-            "state": status.get("state") or "unavailable",
-            "pluginId": PLUGIN_ID,
-            "updateAvailable": bool(status.get("updateAvailable")),
-            "canApply": False,
-            "message": status.get("message")
-            or "No applyable News Radar update is available.",
-            "installedCommit": status.get("installedCommit") or "",
-            "availableCommit": status.get("availableCommit") or "",
-            "installedVersion": status.get("installedVersion") or "",
-            "availableVersion": status.get("availableVersion") or "",
-            "updater": UPDATER_NAME,
-        }
-
-    updater = _resolve_updater()
-    before = str(status.get("installedCommit") or "")
-    expected = str(status.get("availableCommit") or "")
-    before_version = str(status.get("installedVersion") or "")
-    expected_version = str(status.get("availableVersion") or "")
-    expected_key = tuple(int(part) for part in expected_version.split("."))
-    completed = subprocess.run(
-        [updater, PLUGIN_ID, "--yes"],
-        capture_output=True,
-        text=True,
-        env=dict(environment or os.environ),
+    payload["message"] = (
+        f"News Radar {available_version} is available. Install it through the "
+        "Omarchy plugin marketplace once that release is verified there."
     )
-    detail = (completed.stdout or completed.stderr or "").strip()
-
-    plugin_dir = plugin_install_dir(environment)
-    after = ""
-    try:
-        after = _rev_parse(plugin_dir, "HEAD")
-    except (OSError, subprocess.CalledProcessError):
-        after = ""
-
-    if completed.returncode != 0:
-        return {
-            "protocolVersion": HELPER_PROTOCOL_VERSION,
-            "status": "failed",
-            "state": "failed",
-            "pluginId": PLUGIN_ID,
-            "updateAvailable": True,
-            "canApply": True,
-            "message": detail or "Official plugin update failed.",
-            "installedCommit": after or before,
-            "availableCommit": expected,
-            "installedVersion": before_version,
-            "availableVersion": expected_version,
-            "updater": UPDATER_NAME,
-        }
-
-    after_version = ""
-    after_key: tuple[int, int, int] | None = None
-    if after:
-        try:
-            after_version, after_key = _manifest_version(plugin_dir, after)
-        except RadarError:
-            pass
-    if after_key is None or after_key < expected_key:
-        # A server-only commit may land between inspection and apply. Reaching
-        # the expected release version is the invariant, not one transient SHA.
-        return {
-            "protocolVersion": HELPER_PROTOCOL_VERSION,
-            "status": "failed",
-            "state": "failed",
-            "pluginId": PLUGIN_ID,
-            "updateAvailable": True,
-            "canApply": True,
-            "message": detail or "Updater finished without reaching the expected commit.",
-            "installedCommit": after,
-            "availableCommit": expected,
-            "installedVersion": after_version,
-            "availableVersion": expected_version,
-            "updater": UPDATER_NAME,
-        }
-
-    return {
-        "protocolVersion": HELPER_PROTOCOL_VERSION,
-        "status": "ok",
-        "state": "updated",
-        "pluginId": PLUGIN_ID,
-        "updateAvailable": False,
-        "canApply": False,
-        "message": "News Radar updated. The panel will reload with the new version.",
-        "installedCommit": after or expected,
-        "availableCommit": expected,
-        "installedVersion": after_version or expected_version,
-        "availableVersion": expected_version,
-        "updater": UPDATER_NAME,
-        "detail": detail,
-    }
+    return payload

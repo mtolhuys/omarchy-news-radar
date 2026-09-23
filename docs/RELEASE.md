@@ -170,6 +170,10 @@ The owner tested runtime commit `968cdf5` on the daily desktop and approved publ
 The owner reviewed the regression and approved a patch release on 2026-09-10. The [evidence](evidence/0.5.6-local.md) records source checks, exact Omarchy 4.0.3 QML validation, and the focused disposable-guest helper-path journey. Publish one clean final commit, require green CI and an exact public-clone journey, then update marketplace verification issue #6193 in place with the full release SHA. Marketplace approval and snapshot promotion remain maintainer-controlled.
 
 
+## 0.5.12 notify-only update gate
+
+A marketplace reviewer blocked verification because the in-panel updater could install a mutable default-branch commit outside the exact reviewed snapshot. The [evidence](evidence/0.5.12-local.md) must prove that the check reports a newer release with `canApply: false` for clean, dirty and divergent checkouts; that every subprocess it starts is a read-only `git` subcommand and the installed `HEAD` and worktree never move; that no install entry point, CLI command, QML action or button remains; and that the suite fails against the previous install path. Source validation, the official marketplace baseline, green GitHub CI, and disposable-guest evidence must match the exact release commit.
+
 ## 0.5.11 Core reading-durability gate
 
 Dismissed Omarchy News stories reappeared as unread whenever the rolling ledger evicted and rematerialized them. The [evidence](evidence/0.5.11-local.md) must prove the complete cycle in a disposable guest: dismiss a Core story in the rendered reader, adopt an edition that no longer carries it, perform an unrelated read, confirm the override survives in `state.json`, adopt a later edition carrying the identical deterministic ID, and confirm the story projects as read. Source validation, the mutation check against the previous pruning behaviour, the official marketplace baseline, green GitHub CI, and Forge publication of the Core retention floor must match the exact release commit before this repair is declared complete.

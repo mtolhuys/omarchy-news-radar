@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell.Io
 import "../Model.js" as RadarModel
 
-// Explicit compatibility migration and the official plugin updater.
+// Explicit shortcut migration and a notify-only release check (D074).
 Item {
   id: root
   property string shortcutAction: ""
@@ -13,7 +13,6 @@ Item {
 
   property string pluginUpdateMessage: ""
 
-  property bool pluginUpdateCanApply: false
 
   property string shortcutMessage: ""
 
@@ -36,52 +35,30 @@ Item {
     shortcutProc.running = true
   }
 
+  // Checking only. Radar never installs a release: the repository's default
+  // branch is mutable, and installing it would run code outside the exact
+  // snapshot the marketplace verified (D074).
   function inspectPluginUpdate() {
     if (!helperPath || updateProc.running) return
-    if (pluginUpdateState === "updating") return
     startProcess(updateProc, ["update-status"])
-  }
-
-  function applyPluginUpdate() {
-    if (!helperPath || updateProc.running) return
-    if (!pluginUpdateCanApply && pluginUpdateState !== "failed") return
-    pluginUpdateState = "updating"
-    pluginUpdateMessage = "Updating News Radar…"
-    startProcess(updateProc, ["update-apply"])
   }
 
   function handlePluginUpdate(raw) {
     var result = RadarModel.parseResponse(raw)
     var state = String(result.state || "")
     var message = String(result.message || "")
-    pluginUpdateCanApply = result.canApply === true
     if (state === "behind" && result.updateAvailable === true) {
       pluginUpdateState = "behind"
-      pluginUpdateMessage = message || "A newer News Radar is available."
-      pluginUpdateCanApply = result.canApply === true
-    } else if (state === "updated") {
-      pluginUpdateState = "updated"
-      pluginUpdateMessage = message || "News Radar updated. The panel will reload with the new version."
-      pluginUpdateCanApply = false
-    } else if (state === "failed" || result.status === "failed") {
-      pluginUpdateState = "failed"
-      pluginUpdateMessage = message || "News Radar update failed."
-      pluginUpdateCanApply = true
-    } else if (state === "blocked" && result.updateAvailable === true) {
-      pluginUpdateState = "blocked"
-      pluginUpdateMessage = message || "A newer News Radar exists, but this checkout cannot update automatically."
-      pluginUpdateCanApply = false
+      pluginUpdateMessage = message || "A newer News Radar is available through the Omarchy plugin marketplace."
     } else if (state === "check-failed") {
-      // Stay quiet on transient network blips; keep any existing behind notice.
-      if (pluginUpdateState !== "behind" && pluginUpdateState !== "failed" && pluginUpdateState !== "updating") {
+      // Stay quiet on transient network blips; keep any existing notice.
+      if (pluginUpdateState !== "behind") {
         pluginUpdateState = "unknown"
         pluginUpdateMessage = ""
-        pluginUpdateCanApply = false
       }
     } else {
       pluginUpdateState = "current"
       pluginUpdateMessage = ""
-      pluginUpdateCanApply = false
     }
   }
 
@@ -100,13 +77,6 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.handlePluginUpdate(text)
-    }
-    onExited: function(exitCode) {
-      if (exitCode !== 0 && root.pluginUpdateState === "updating") {
-        root.pluginUpdateState = "failed"
-        root.pluginUpdateMessage = "News Radar update failed."
-        root.pluginUpdateCanApply = true
-      }
     }
   }
 

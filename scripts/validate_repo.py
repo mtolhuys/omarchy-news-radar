@@ -311,16 +311,23 @@ def validate_manifest() -> None:
         if "exec python3 -B -m " not in helper:
             fail(f"{helper_name} must disable bytecode writes in the watched plugin directory")
 
+    # D074: the release check reports and never installs. The marketplace
+    # verifies one exact commit; the default branch is mutable.
     update_source = (ROOT / "radar" / "plugin_update.py").read_text(encoding="utf-8")
-    if "omarchy-plugin-update" not in update_source:
-        fail("plugin update helper must call omarchy-plugin-update")
-    for forbidden_update in ("merge --ff-only", "git pull", "git reset"):
+    for forbidden_update in (
+        "omarchy-plugin-update", "def apply_update", "shutil.which",
+        "merge --ff-only", "git pull", "git reset",
+        '"merge"', '"pull"', '"checkout"', '"reset"', '"rebase"', '"switch"',
+    ):
         if forbidden_update in update_source:
-            fail(f"plugin update helper must not implement its own git mutation: {forbidden_update}")
+            fail(f"plugin update check must stay notify-only: {forbidden_update}")
     panel_source = ui
-    for required_update_ui in ("pluginUpdateNotice", "Update plugin", '"update-status"', '"update-apply"'):
+    for required_update_ui in ("pluginUpdateNotice", '"update-status"'):
         if required_update_ui not in panel_source:
-            fail(f"panel lacks plugin update UI contract: {required_update_ui}")
+            fail(f"panel lacks the notify-only update notice: {required_update_ui}")
+    for forbidden_update_ui in ('"update-apply"', "applyPluginUpdate", "Update plugin", "Retry update"):
+        if forbidden_update_ui in panel_source:
+            fail(f"panel must not offer to install an update: {forbidden_update_ui}")
     makefile_text = (ROOT / "Makefile").read_text(encoding="utf-8")
     if "local-downgrade" not in makefile_text or "local-behind" not in makefile_text:
         fail("Makefile must expose local-downgrade and local-behind test helpers")

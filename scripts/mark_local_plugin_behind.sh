@@ -46,4 +46,4 @@ AFTER_SOURCE=$(git -C "$SOURCE_ROOT" rev-parse --verify HEAD)
 
 echo "Source advanced to $AFTER_SOURCE"
 echo "Installed plugin remains at $BEFORE_INSTALL"
-echo "Reopen News Radar — Update plugin should appear. Click it, or run make local-latest."
+echo "Reopen News Radar — a notify-only update notice should appear. Run make local-latest to install."
