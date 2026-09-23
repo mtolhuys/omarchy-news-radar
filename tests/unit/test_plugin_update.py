@@ -89,9 +89,20 @@ class PluginUpdateTests(unittest.TestCase):
         )
         return tip
 
-    # Every git subcommand the release check may run. Anything that moves the
-    # installed checkout (merge, pull, checkout, reset, rebase) is an install.
-    READ_ONLY_GIT = {"rev-parse", "fetch", "cat-file", "show"}
+    # The only git subcommands the check may run against the installed plugin.
+    # Fetching happens in a throwaway repository outside it (D074).
+    READ_ONLY_PLUGIN_GIT = {"rev-parse", "cat-file", "show", "remote"}
+
+    def _snapshot_plugin(self) -> dict[str, str]:
+        """Every file under the installed plugin, including .git, by content."""
+
+        import hashlib
+
+        return {
+            str(path.relative_to(self.plugin)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(self.plugin.rglob("*"))
+            if path.is_file()
+        }
 
     def _inspect_recording(self) -> tuple[dict, list[list[str]]]:
         real_run = subprocess.run
@@ -105,17 +116,20 @@ class PluginUpdateTests(unittest.TestCase):
             status = inspect_update(self.env)
         return status, calls
 
-    def _assert_nothing_installed(self, calls: list[list[str]], head: str) -> None:
+    def _assert_plugin_untouched(self, calls: list[list[str]], before: dict[str, str]) -> None:
         for command in calls:
             self.assertEqual("git", command[0], f"the check may run git only: {command}")
-            subcommand = command[3]
-            self.assertIn(subcommand, self.READ_ONLY_GIT, f"not a read-only git call: {command}")
-        self.assertEqual(head, self._rev("HEAD"), "the installed checkout must not move")
-        status = subprocess.run(
-            ["git", "-C", str(self.plugin), "status", "--porcelain"],
-            check=True, capture_output=True, text=True,
-        ).stdout
-        self.assertEqual("", status, "the installed worktree must not change")
+            if command[1:3] == ["-C", str(self.plugin)]:
+                self.assertIn(
+                    command[3], self.READ_ONLY_PLUGIN_GIT,
+                    f"only read-only git may run inside the installed plugin: {command}",
+                )
+            self.assertNotIn(
+                str(self.plugin), " ".join(command[3:]) if command[1] == "-C" else " ".join(command[1:]),
+                f"no command may target the installed plugin as a destination: {command}",
+            )
+        self.assertEqual(before, self._snapshot_plugin(), "nothing inside the installed plugin may change")
+        self.assertFalse((self.plugin / ".git" / "FETCH_HEAD").exists())
 
     def test_current_when_tip_matches(self) -> None:
         status = inspect_update(self.env)
@@ -145,6 +159,7 @@ class PluginUpdateTests(unittest.TestCase):
         """
 
         tip = self._advance_remote(version="0.0.2")
+        before = self._snapshot_plugin()
         status, calls = self._inspect_recording()
 
         self.assertEqual("behind", status["state"])
@@ -154,7 +169,8 @@ class PluginUpdateTests(unittest.TestCase):
         self.assertEqual("0.0.2", status["availableVersion"])
         self.assertIn("marketplace", status["message"])
         self.assertNotIn("updater", status)
-        self._assert_nothing_installed(calls, self.base)
+        self.assertEqual(self.base, self._rev("HEAD"))
+        self._assert_plugin_untouched(calls, before)
 
     def test_the_helper_exposes_no_install_entry_point(self) -> None:
         from radar.cli import client_main
@@ -179,10 +195,52 @@ class PluginUpdateTests(unittest.TestCase):
         self._git("add", "candidate.txt")
         self._git("commit", "-m", "local candidate")
         divergent_head = self._rev("HEAD")
+        before = self._snapshot_plugin()
         divergent, calls = self._inspect_recording()
         self.assertEqual("behind", divergent["state"])
         self.assertFalse(divergent["canApply"])
-        self._assert_nothing_installed(calls, divergent_head)
+        self.assertEqual(divergent_head, self._rev("HEAD"))
+        self._assert_plugin_untouched(calls, before)
+
+    def test_the_remote_is_fetched_outside_the_installed_plugin(self) -> None:
+        """Nothing is written inside the installed plugin, not even FETCH_HEAD."""
+
+        self._advance_remote(version="0.0.2")
+        before = self._snapshot_plugin()
+        status, calls = self._inspect_recording()
+
+        self.assertEqual("behind", status["state"])
+        fetches = [command for command in calls if "fetch" in command]
+        self.assertEqual(1, len(fetches))
+        self.assertNotEqual(str(self.plugin), fetches[0][2], "the fetch must not run in the plugin")
+        self.assertIn("--depth=1", fetches[0])
+        self._assert_plugin_untouched(calls, before)
+
+    def test_an_unsafe_origin_address_is_refused_before_any_fetch(self) -> None:
+        """The origin URL becomes a git argument, so option- and command-shaped
+        addresses are refused rather than passed on."""
+
+        for hostile in (
+            "--upload-pack=touch /tmp/radar-pwned",
+            "ext::sh -c touch% /tmp/radar-pwned",
+            "fd::7",
+            "https://example.com/repo\n--upload-pack=x",
+        ):
+            with self.subTest(hostile):
+                # git's own CLI refuses to set these, so write the config the
+                # way a hostile process would.
+                config = self.plugin / ".git" / "config"
+                lines = config.read_text(encoding="utf-8").splitlines()
+                lines = [
+                    "\turl = " + hostile.replace("\n", "\\n") if line.strip().startswith("url =") else line
+                    for line in lines
+                ]
+                config.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                status, calls = self._inspect_recording()
+                self.assertEqual("blocked", status["state"])
+                self.assertFalse(status["canApply"])
+                self.assertEqual([], [command for command in calls if "fetch" in command])
+        self.assertFalse(Path("/tmp/radar-pwned").exists())
 
     def test_invalid_remote_release_version_fails_the_check_closed(self) -> None:
         self._advance_remote(version="01.0.0")

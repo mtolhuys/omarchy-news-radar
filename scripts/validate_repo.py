@@ -321,6 +321,9 @@ def validate_manifest() -> None:
     ):
         if forbidden_update in update_source:
             fail(f"plugin update check must stay notify-only: {forbidden_update}")
+    # The remote tip is fetched into a throwaway repository, never the plugin.
+    if '_run_git(plugin_dir, "fetch"' in update_source or "tempfile.TemporaryDirectory" not in update_source:
+        fail("plugin update check must fetch outside the installed plugin")
     panel_source = ui
     for required_update_ui in ("pluginUpdateNotice", '"update-status"'):
         if required_update_ui not in panel_source:

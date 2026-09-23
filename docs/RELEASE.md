@@ -170,6 +170,10 @@ The owner tested runtime commit `968cdf5` on the daily desktop and approved publ
 The owner reviewed the regression and approved a patch release on 2026-09-10. The [evidence](evidence/0.5.6-local.md) records source checks, exact Omarchy 4.0.3 QML validation, and the focused disposable-guest helper-path journey. Publish one clean final commit, require green CI and an exact public-clone journey, then update marketplace verification issue #6193 in place with the full release SHA. Marketplace approval and snapshot promotion remain maintainer-controlled.
 
 
+## 0.5.13 fetch-outside-the-plugin gate
+
+The [evidence](evidence/0.5.13-local.md) must prove that a byte-for-byte snapshot of every file in the installed plugin, including `.git`, is identical before and after the update check; that the single shallow fetch runs outside the plugin and creates no `FETCH_HEAD` in it; that option-shaped, `ext::`, `fd::` and newline-bearing origin addresses written directly into `.git/config` are refused before any fetch; and that the suite fails against the 0.5.12 fetch. Source validation, the official marketplace baseline, green GitHub CI, and disposable-guest evidence must match the exact release commit.
+
 ## 0.5.12 notify-only update gate
 
 A marketplace reviewer blocked verification because the in-panel updater could install a mutable default-branch commit outside the exact reviewed snapshot. The [evidence](evidence/0.5.12-local.md) must prove that the check reports a newer release with `canApply: false` for clean, dirty and divergent checkouts; that every subprocess it starts is a read-only `git` subcommand and the installed `HEAD` and worktree never move; that no install entry point, CLI command, QML action or button remains; and that the suite fails against the previous install path. Source validation, the official marketplace baseline, green GitHub CI, and disposable-guest evidence must match the exact release commit.

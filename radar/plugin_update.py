@@ -5,7 +5,9 @@ collector and documentation. Availability is therefore based on the bounded,
 strict versions in the installed and fetched manifests.
 
 This module only reports. It never runs an updater, moves the installed
-checkout, or executes fetched code. The marketplace verifies one exact commit;
+checkout, or executes fetched code, and it writes nothing inside the installed
+plugin: the remote tip is fetched into a throwaway repository outside it, and
+the installed checkout is only read. The marketplace verifies one exact commit;
 the repository's default branch is mutable, so installing whatever it names
 would run code outside that reviewed snapshot (D074). A newer release is
 installed through Omarchy's plugin marketplace once that release is verified.
@@ -17,6 +19,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -25,6 +28,18 @@ from .errors import RadarError
 
 DEFAULT_PLUGINS_DIR = Path(".config/omarchy/plugins")
 MANIFEST_MAX_BYTES = 64 * 1024
+FETCH_TIMEOUT_SECONDS = 30
+REMOTE_URL_MAX = 2048
+# The origin URL becomes a git argument. A leading "-" would be read as an
+# option, and transports such as ext:: run commands, so only plain repository
+# addresses are accepted.
+REMOTE_URL_RE = re.compile(
+    r"^(?:https://[A-Za-z0-9][^\s]*"
+    r"|ssh://[A-Za-z0-9][^\s]*"
+    r"|file:///[^\s]*"
+    r"|/[^\s]*"
+    r"|[A-Za-z0-9][A-Za-z0-9._-]*@[A-Za-z0-9][A-Za-z0-9.-]*:[^\s]+)$"
+)
 VERSION_RE = re.compile(
     r"^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$"
 )
@@ -49,6 +64,47 @@ def _run_git(plugin_dir: Path, *arguments: str, check: bool = True) -> subproces
         capture_output=True,
         text=True,
     )
+
+
+def _origin_url(plugin_dir: Path) -> str:
+    """Read the installed checkout's origin, accepting only a plain address."""
+
+    result = _run_git(plugin_dir, "remote", "get-url", "origin", check=False)
+    url = result.stdout.strip() if result.returncode == 0 else ""
+    if (
+        not url
+        or len(url) > REMOTE_URL_MAX
+        or any(ord(character) < 0x20 or ord(character) == 0x7F for character in url)
+        or "::" in url
+        or not REMOTE_URL_RE.fullmatch(url)
+    ):
+        raise RadarError("origin is not a supported repository address")
+    return url
+
+
+def _fetch_remote_tip(url: str, scratch: Path) -> str:
+    """Fetch only the remote tip into a throwaway bare repository.
+
+    Nothing lands in the installed plugin's own repository: no objects, no
+    FETCH_HEAD, and none of its local configuration or hooks apply to the fetch.
+    """
+
+    subprocess.run(
+        ["git", "init", "--quiet", "--bare", str(scratch)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    environment = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    subprocess.run(
+        ["git", "-C", str(scratch), "fetch", "--quiet", "--depth=1", url, "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=environment,
+        timeout=FETCH_TIMEOUT_SECONDS,
+    )
+    return _rev_parse(scratch, "FETCH_HEAD")
 
 
 def _is_git_checkout(plugin_dir: Path) -> bool:
@@ -136,26 +192,35 @@ def inspect_update(environment: Mapping[str, str] | None = None) -> dict[str, An
         return payload
     payload["installedVersion"] = installed_version
 
-    fetch = _run_git(plugin_dir, "fetch", "--quiet", "origin", "HEAD", check=False)
-    if fetch.returncode != 0:
-        detail = (fetch.stderr or fetch.stdout or "fetch failed").strip()
-        payload["state"] = "check-failed"
-        payload["message"] = f"Could not check for updates ({detail})."
+    try:
+        origin = _origin_url(plugin_dir)
+    except RadarError as exc:
+        payload["state"] = "blocked"
+        payload["message"] = f"Installed plugin {exc}."
         return payload
 
-    try:
-        available = _rev_parse(plugin_dir, "FETCH_HEAD")
-    except subprocess.CalledProcessError:
-        payload["state"] = "check-failed"
-        payload["message"] = "Update check could not resolve the remote tip."
-        return payload
-    payload["availableCommit"] = available
-    try:
-        available_version, available_key = _manifest_version(plugin_dir, available)
-    except RadarError as exc:
-        payload["state"] = "check-failed"
-        payload["message"] = f"Fetched plugin {exc}."
-        return payload
+    # The remote tip is fetched and read in a throwaway repository outside the
+    # installed plugin, which this check only ever reads.
+    with tempfile.TemporaryDirectory(prefix="news-radar-update-check-") as scratch_name:
+        scratch = Path(scratch_name) / "remote.git"
+        try:
+            available = _fetch_remote_tip(origin, scratch)
+        except subprocess.TimeoutExpired:
+            payload["state"] = "check-failed"
+            payload["message"] = "Could not check for updates (the remote did not answer in time)."
+            return payload
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or exc.stdout or "fetch failed").strip()
+            payload["state"] = "check-failed"
+            payload["message"] = f"Could not check for updates ({detail})."
+            return payload
+        payload["availableCommit"] = available
+        try:
+            available_version, available_key = _manifest_version(scratch, available)
+        except RadarError as exc:
+            payload["state"] = "check-failed"
+            payload["message"] = f"Fetched plugin {exc}."
+            return payload
     payload["availableVersion"] = available_version
 
     # Collector, documentation and other server-owned commits are deliberately

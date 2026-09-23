@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.13 — 2026-09-23
+
+### Security
+
+- Fetch the remote tip for the notify-only update check into a temporary repository outside the installed plugin, so the check writes nothing inside the plugin and no longer inherits its local Git configuration or hooks. Refuse origin addresses that are not plain repository addresses before passing them to Git, and bound the fetch to the latest commit, 30 seconds, and no credential prompt (D074).
+
 ## 0.5.12 — 2026-09-23
 
 ### Security

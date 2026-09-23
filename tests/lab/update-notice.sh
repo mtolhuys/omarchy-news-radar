@@ -6,7 +6,7 @@
 
 omarchy_host_test() {
   local product_root plugin_dir start_epoch runtime_identity
-  local installed_before installed_version newer_commit
+  local installed_before installed_version newer_commit git_before git_after
   local candidate=/tmp/omarchy-news-radar-candidate
   local scenario_root=/tmp/news-radar-update-notice
   product_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -64,6 +64,12 @@ omarchy_host_test() {
   newer_commit="$(ssh_guest "git -C $candidate rev-parse HEAD")" || return 1
   [[ $newer_commit != "$installed_before" ]] || return 1
 
+  # Fingerprint the installed plugin's own repository: the check must fetch
+  # into a throwaway repository and write nothing here, not even FETCH_HEAD.
+  # shellcheck disable=SC2016
+  git_before="$(ssh_session "cd $plugin_dir/.git && { if test -e FETCH_HEAD; then sha256sum FETCH_HEAD; else echo no-FETCH_HEAD; fi; \
+    git count-objects -v | grep -E '^(count|in-pack|packs):'; find refs -type f | sort | xargs -r sha256sum; }")" || return 1
+
   log "Opening Radar: it must report the release and install nothing"
   ssh_session "omarchy-shell shell summon io.github.mtolhuys.news-radar" || return 1
   notice_wait "the panel reports the newer release as a notice" \
@@ -85,6 +91,14 @@ omarchy_host_test() {
       printf 'the installed checkout moved after an update notice\n' >&2
       return 1
     }
+  git_after="$(ssh_session "cd $plugin_dir/.git && { if test -e FETCH_HEAD; then sha256sum FETCH_HEAD; else echo no-FETCH_HEAD; fi; \
+    git count-objects -v | grep -E '^(count|in-pack|packs):'; find refs -type f | sort | xargs -r sha256sum; }")" || return 1
+  printf '%s\n' "$git_before" >"$RUN_DIR/update-notice-plugin-git-before.txt"
+  printf '%s\n' "$git_after" >"$RUN_DIR/update-notice-plugin-git-after.txt"
+  [[ $git_before == "$git_after" ]] || {
+    printf 'the update check wrote inside the installed plugin repository\n' >&2
+    return 1
+  }
   # The helper itself must refuse the removed install command.
   ssh_session "! $plugin_dir/bin/news-radar-client update-apply >/dev/null 2>&1" || return 1
   ssh_session "$plugin_dir/bin/news-radar-client update-status" >"$RUN_DIR/update-notice-status.json" || return 1
@@ -106,5 +120,5 @@ omarchy_host_test() {
     "$RUN_DIR/update-notice-journal.log"; then
     return 1
   fi
-  printf 'ok - a newer origin release produced a marketplace notice, the installed checkout never moved, and no install path remained\n'
+  printf 'ok - a newer origin release produced a marketplace notice, nothing inside the installed plugin changed, and no install path remained\n'
 }
